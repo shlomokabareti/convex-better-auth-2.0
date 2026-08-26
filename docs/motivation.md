@@ -4,7 +4,7 @@ This workspace is a full-stack, open-source auth solution that sits at the inter
 
 ## Where it came from
 
-This code was originally built for **Plasma**, my previous startup. After Plasma was sunsetted, I extracted the auth layer and released it as a public project. The goal is to give Convex developers an out-of-the-box auth stack that covers the same surface area as Clerk or WorkOS, without giving up Convex's native database model.
+This is an open-source, full-stack auth stack for Convex. The goal is to give Convex developers an out-of-the-box auth layer that covers the same surface area as Clerk or WorkOS, without giving up Convex's native database model.
 
 ## The three problems it addresses
 

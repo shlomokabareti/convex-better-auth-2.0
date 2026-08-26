@@ -16,16 +16,18 @@ Read the full rationale in [`docs/motivation.md`](docs/motivation.md) and the de
 
 ## Origin
 
-This code was originally built for **Plasma**, then extracted and open-sourced after Plasma was sunsetted. The goal is to give Convex developers an out-of-the-box auth stack that covers the same surface area as Clerk or WorkOS, without giving up Convex's native database model.
+This is an open-source, full-stack auth stack for Convex. The goal is to give Convex developers an out-of-the-box auth layer that covers the same surface area as Clerk or WorkOS, without giving up Convex's native database model.
 
 ## Packages
 
 | Package                    | Path                    | Description                           |
 | -------------------------- | ----------------------- | ------------------------------------- |
+| `convex-auth-core`         | `packages/core`         | Auth domain core (permissions, etc.)  |
 | `convex-better-auth`       | `packages/better-auth`  | Better Auth ↔ Convex bridge           |
 | `convex-auth`              | `packages/auth`         | Convex auth component + control plane |
 | `convex-auth-react`        | `packages/react`        | React UI and hooks                    |
 | `convex-auth-react-native` | `packages/react-native` | Expo / React Native client            |
+| `convex-auth-ui`           | `packages/ui`           | Base shadcn-style UI primitives       |
 
 All packages are independently buildable and published under the Apache-2.0 license.
 

@@ -6,6 +6,7 @@ export default defineConfig({
     format: "esm",
     dts: true,
     clean: true,
+    sourcemap: false,
     fixedExtension: false,
     hash: false,
     outDir: "dist",

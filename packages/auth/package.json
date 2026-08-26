@@ -14,7 +14,6 @@
   "files": [
     "dist",
     "conformance",
-    "scripts",
     "test.ts"
   ],
   "type": "module",

@@ -13,7 +13,7 @@
  * failure into THIS package's CI instead of a downstream consumer's.
  *
  * The binding is type-level only and never invokes the factory (no
- * network / no `window`); `bun test` just confirms it linked.
+ * network / no `window`); the test runner just confirms it linked.
  */
 import assert from "node:assert/strict";
 

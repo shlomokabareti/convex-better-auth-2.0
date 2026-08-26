@@ -24,6 +24,7 @@ export default defineConfig({
         "react-native": "src/react-native.ts",
         mcp: "src/mcp.ts",
         "component/convex.config": "src/component/convex.config.ts",
+        "component/_generated/component": "src/component/_generated/component.ts",
       },
       format: "esm",
       dts: true,

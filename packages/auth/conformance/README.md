@@ -25,7 +25,7 @@ imports), so the suite drops into any project unchanged.
 ```bash
 CONVEX_SITE_URL=https://<your>.convex.site \
 CONVEX_URL=https://<your>.convex.cloud \
-pnpm run ./node_modules/@convexnyc/convex-auth/conformance/prove-auth-lifecycle.ts
+pnpm dlx tsx ./node_modules/convex-auth/conformance/prove-auth-lifecycle.ts
 ```
 
 A pass exits 0 and prints `[SUCCESS]`; a fail exits 1 and lists the failed checks.
@@ -35,6 +35,6 @@ A pass exits 0 and prints `[SUCCESS]`; a fail exits 1 and lists the failed check
 Each project provides its own:
 
 - API-key sensitive-action gate proof (depends on the project's `apiKeysSecure`
-  module + its scope/permission model). Copy `crm/scripts/prove-apikey-password-gate.ts`
-  as a starting template.
+  module + its scope/permission model). Start from the same shape as the
+  included conformance proofs.
 - Frontend / UI tests.
