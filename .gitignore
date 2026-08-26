@@ -1,0 +1,17 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+*.test.ts
+*.test.tsx
+*.vitest.ts
+*.integration.test.ts
+test.ts
+CHANGELOG.md
+conformance/
+scripts/
+coverage/
+.vite/

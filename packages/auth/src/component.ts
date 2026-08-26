@@ -1,0 +1,25 @@
+export {
+  agentAuthAuditActorTypeValidator,
+  agentCapabilityGrantStatusValidator,
+  agentHostStatusValidator,
+  agentKeyStatusValidator,
+  agentModeValidator,
+  agentStatusValidator,
+  authMdAssertionStatusValidator,
+  authMdAuditActorTypeValidator,
+  authMdCredentialStatusValidator,
+  authMdRegistrationStatusValidator,
+  apiKeyOwnerTypeValidator,
+  apiKeyStatusValidator,
+  authAuditActorTypeValidator,
+  invitationEmailDeliveryStatusValidator,
+  organizationInvitationStatusValidator,
+  organizationMemberStatusValidator,
+  organizationStatusValidator,
+  servicePrincipalStatusValidator,
+  webhookEndpointStatusValidator,
+  webhookDeliveryStatusValidator,
+  webhookFailureKindValidator,
+} from "./component/schema";
+
+export type { ComponentApi as VortexAuthComponentApi } from "./component/_generated/component";

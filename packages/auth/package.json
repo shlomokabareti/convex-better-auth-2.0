@@ -1,0 +1,159 @@
+{
+  "name": "convex-auth",
+  "version": "0.18.0-alpha.0",
+  "description": "Convex + Better Auth server, component, and integration.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shlomokabareti/convex-better-auth-2.0.git",
+    "directory": "packages/auth"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./convex": {
+      "types": "./dist/convex.d.ts",
+      "import": "./dist/convex.js",
+      "default": "./dist/convex.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp.d.ts",
+      "import": "./dist/mcp.js",
+      "default": "./dist/mcp.js"
+    },
+    "./better-auth": {
+      "types": "./dist/better-auth.d.ts",
+      "import": "./dist/better-auth.js",
+      "default": "./dist/better-auth.js"
+    },
+    "./better-auth/client": {
+      "types": "./dist/better-auth-client.d.ts",
+      "import": "./dist/better-auth-client.js",
+      "default": "./dist/better-auth-client.js"
+    },
+    "./better-auth/server": {
+      "types": "./dist/better-auth-server.d.ts",
+      "import": "./dist/better-auth-server.js",
+      "default": "./dist/better-auth-server.js"
+    },
+    "./better-auth/convex": {
+      "types": "./dist/better-auth-convex.d.ts",
+      "import": "./dist/better-auth-convex.js",
+      "default": "./dist/better-auth-convex.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "default": "./dist/react.js"
+    },
+    "./react-native": {
+      "types": "./dist/react-native.d.ts",
+      "import": "./dist/react-native.js",
+      "default": "./dist/react-native.js"
+    },
+    "./preflight": {
+      "types": "./dist/preflight.d.ts",
+      "import": "./dist/preflight.js",
+      "default": "./dist/preflight.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js",
+      "default": "./dist/testing.js"
+    },
+    "./component": {
+      "types": "./dist/component.d.ts",
+      "import": "./dist/component.js",
+      "default": "./dist/component.js"
+    },
+    "./consumer-contract": {
+      "types": "./dist/consumer-contract.d.ts",
+      "import": "./dist/consumer-contract.js",
+      "default": "./dist/consumer-contract.js"
+    },
+    "./agent-auth-protocol": {
+      "types": "./dist/agent-auth-protocol.d.ts",
+      "import": "./dist/agent-auth-protocol.js",
+      "default": "./dist/agent-auth-protocol.js"
+    },
+    "./agent-auth-protocol/convex": {
+      "types": "./dist/agent-auth-protocol-convex.d.ts",
+      "import": "./dist/agent-auth-protocol-convex.js",
+      "default": "./dist/agent-auth-protocol-convex.js"
+    },
+    "./agent-auth-protocol/http": {
+      "types": "./dist/agent-auth-protocol-http.d.ts",
+      "import": "./dist/agent-auth-protocol-http.js",
+      "default": "./dist/agent-auth-protocol-http.js"
+    },
+    "./auth-md": {
+      "types": "./dist/auth-md.d.ts",
+      "import": "./dist/auth-md.js",
+      "default": "./dist/auth-md.js"
+    },
+    "./waitlist": {
+      "types": "./dist/waitlist.d.ts",
+      "import": "./dist/waitlist.js",
+      "default": "./dist/waitlist.js"
+    },
+    "./test": {
+      "types": "./test.ts",
+      "default": "./test.ts"
+    },
+    "./convex.config.js": {
+      "types": "./dist/component/convex.config.d.ts",
+      "default": "./dist/component/convex.config.js"
+    },
+    "./convex.config": {
+      "types": "./dist/component/convex.config.d.ts",
+      "default": "./dist/component/convex.config.js"
+    },
+    "./_generated/component.js": {
+      "types": "./dist/component/_generated/component.d.ts"
+    },
+    "./_generated/component": {
+      "types": "./dist/component/_generated/component.d.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsup src/index.ts src/convex.ts src/agent-auth-protocol-convex.ts src/agent-auth-protocol-http.ts src/better-auth.ts src/better-auth-client.ts src/better-auth-server.ts src/better-auth-convex.ts src/preflight.ts src/testing.ts src/component.ts src/consumer-contract.ts src/agent-auth-protocol.ts src/auth-md.ts src/waitlist.tsx src/react.ts src/react-native.ts --format esm --splitting false --dts --dts-resolve --clean --out-dir dist"
+  },
+  "dependencies": {
+    "convex-auth-react": "workspace:*",
+    "convex-auth-react-native": "workspace:*",
+    "convex-helpers": "^0.1.80",
+    "jose": "^6.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "convex": "^1.45.0",
+    "typescript": "^5.7.0",
+    "tsup": "^8.5.1"
+  },
+  "peerDependencies": {
+    "@convex-dev/better-auth": ">=0.12.5",
+    "better-auth": ">=1.6.11",
+    "convex": ">=1.39.0",
+    "react": ">=19.0.0",
+    "react-dom": ">=19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "convex": {
+      "optional": false
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  }
+}
