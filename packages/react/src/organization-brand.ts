@@ -20,7 +20,7 @@ export type ConvexOrganizationBrand = {
 };
 
 /** Key under organization `metadataJson` for suite brand fields. */
-export const VORTEX_ORGANIZATION_BRAND_METADATA_KEY = "brand" as const;
+export const ORGANIZATION_BRAND_METADATA_KEY = "brand" as const;
 
 type MetadataRecord = Record<string, unknown>;
 
@@ -74,7 +74,7 @@ export function parseOrganizationBrandFromMetadataJson(
     if (!isRecord(parsed)) {
       return undefined;
     }
-    return parseBrandObject(parsed[VORTEX_ORGANIZATION_BRAND_METADATA_KEY]);
+    return parseBrandObject(parsed[ORGANIZATION_BRAND_METADATA_KEY]);
   } catch {
     return undefined;
   }
@@ -134,14 +134,14 @@ export function mergeOrganizationBrandIntoMetadataJson(
   }
 
   const currentBrand = parseBrandObject(
-    base[VORTEX_ORGANIZATION_BRAND_METADATA_KEY]
+    base[ORGANIZATION_BRAND_METADATA_KEY]
   );
   const nextBrand = applyBrandUpdate(currentBrand, brandUpdate);
 
   if (nextBrand === undefined) {
-    delete base[VORTEX_ORGANIZATION_BRAND_METADATA_KEY];
+    delete base[ORGANIZATION_BRAND_METADATA_KEY];
   } else {
-    base[VORTEX_ORGANIZATION_BRAND_METADATA_KEY] = nextBrand;
+    base[ORGANIZATION_BRAND_METADATA_KEY] = nextBrand;
   }
 
   if (Object.keys(base).length === 0) {

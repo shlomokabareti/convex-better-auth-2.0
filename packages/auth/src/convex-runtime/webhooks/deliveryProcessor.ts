@@ -26,9 +26,9 @@ import {
 } from "./signing";
 import type { ConvexWebhookEndpointStatus } from "./types";
 
-export const VORTEX_WEBHOOK_DEFAULT_MAX_ATTEMPTS = 4;
-export const VORTEX_WEBHOOK_DEFAULT_PROCESSING_LIMIT = 10;
-export const VORTEX_WEBHOOK_DEFAULT_STALE_AFTER_MS = 5 * 60 * 1000;
+export const DEFAULT_WEBHOOK_MAX_ATTEMPTS = 4;
+export const DEFAULT_WEBHOOK_PROCESSING_LIMIT = 10;
+export const DEFAULT_WEBHOOK_STALE_AFTER_MS = 5 * 60 * 1000;
 
 export type ConvexWebhookProcessorEndpoint = {
   _id: string;
@@ -88,7 +88,7 @@ export async function processConvexWebhookDelivery(
   args: ProcessConvexWebhookDeliveryArgs
 ): Promise<ProcessConvexWebhookDeliveryResult> {
   const now = args.now ?? Date.now();
-  const maxAttempts = args.maxAttempts ?? VORTEX_WEBHOOK_DEFAULT_MAX_ATTEMPTS;
+  const maxAttempts = args.maxAttempts ?? DEFAULT_WEBHOOK_MAX_ATTEMPTS;
   const attemptCount = args.delivery.attemptCount + 1;
   const deliveryKey = `${args.delivery.endpointId}:${args.delivery.eventId}:${args.delivery._id}`;
 

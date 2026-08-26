@@ -53,7 +53,7 @@ export type ConvexAuthFlowStorage = {
   ) => string | undefined;
 };
 
-export const VORTEX_AUTH_DEFAULT_ROUTE_PATHS = {
+export const DEFAULT_AUTH_ROUTE_PATHS = {
   signInPath: "/sign-in",
   signUpPath: "/sign-up",
   acceptInvitePath: "/accept-invite",
@@ -68,7 +68,7 @@ export function createConvexAuthRoutePaths(
   overrides: Partial<ConvexAuthRoutePaths> = {}
 ): ConvexAuthRoutePaths {
   return {
-    ...VORTEX_AUTH_DEFAULT_ROUTE_PATHS,
+    ...DEFAULT_AUTH_ROUTE_PATHS,
     ...overrides,
   };
 }

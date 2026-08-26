@@ -561,7 +561,7 @@ function getRequiredConvexUrl(
 export type MintConvexAuthTestSessionOptions = {
   /** Convex SITE url hosting the endpoint + `/api/auth` (e.g. `https://calm-x.convex.site`). */
   siteUrl: string;
-  /** Shared secret matching the deployment's `VORTEX_AUTH_TEST_SESSION_SECRET`. */
+  /** Shared secret matching the deployment's `CONVEX_AUTH_TEST_SESSION_SECRET`. */
   secret: string;
   email: string;
   password: string;
@@ -611,7 +611,7 @@ export async function mintConvexAuthTestSession(
   if (!signInResponse.ok) {
     throw new Error(
       `mintConvexAuthTestSession: test-session mint failed (${signInResponse.status} ${signInResponse.statusText}). ` +
-        "Confirm VORTEX_AUTH_TEST_SESSIONS=enabled, the secret matches, and the user exists."
+        "Confirm CONVEX_AUTH_TEST_SESSIONS=enabled, the secret matches, and the user exists."
     );
   }
   const cookie = extractSessionCookieHeader(signInResponse);
