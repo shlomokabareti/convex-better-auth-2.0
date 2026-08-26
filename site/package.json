@@ -1,0 +1,16 @@
+{
+  "name": "site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "blume dev",
+    "build": "blume build",
+    "doctor": "blume doctor",
+    "deploy": "pnpm dlx @convex-dev/static-hosting deploy"
+  },
+  "dependencies": {
+    "@convex-dev/static-hosting": "^0.2.0",
+    "blume": "^1.5.3",
+    "convex": "^1.37.0"
+  }
+}
