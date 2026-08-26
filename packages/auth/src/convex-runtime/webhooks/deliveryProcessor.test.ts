@@ -70,7 +70,10 @@ describe("processConvexWebhookDelivery", () => {
     assert.equal(result.update.nextAttemptAt, undefined);
 
     assert.equal(capturedBody, '{"id":"evt_1"}');
-    const expectedSignature = await signConvexWebhookPayload("cvxsec_test_secret", '{"id":"evt_1"}');
+    const expectedSignature = await signConvexWebhookPayload(
+      "cvxsec_test_secret",
+      '{"id":"evt_1"}',
+    );
     assert.equal(capturedHeaders?.["x-convex-signature"], expectedSignature);
     assert.equal(capturedHeaders?.["x-convex-event"], "user.created");
   });
