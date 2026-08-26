@@ -18,10 +18,10 @@ export type ConvexOrganizationSecurity = {
 };
 
 /** Key under organization `metadataJson` for suite security policy. */
-export const VORTEX_ORGANIZATION_SECURITY_METADATA_KEY = "security" as const;
+export const ORGANIZATION_SECURITY_METADATA_KEY = "security" as const;
 
-export const VORTEX_ORGANIZATION_SESSION_TIMEOUT_MIN = 15;
-export const VORTEX_ORGANIZATION_SESSION_TIMEOUT_MAX = 1440;
+export const ORGANIZATION_SESSION_TIMEOUT_MIN = 15;
+export const ORGANIZATION_SESSION_TIMEOUT_MAX = 1440;
 
 type MetadataRecord = Record<string, unknown>;
 
@@ -39,8 +39,8 @@ function optionalTimeoutMinutes(value: unknown): number | undefined {
   }
   const rounded = Math.round(value);
   if (
-    rounded < VORTEX_ORGANIZATION_SESSION_TIMEOUT_MIN ||
-    rounded > VORTEX_ORGANIZATION_SESSION_TIMEOUT_MAX
+    rounded < ORGANIZATION_SESSION_TIMEOUT_MIN ||
+    rounded > ORGANIZATION_SESSION_TIMEOUT_MAX
   ) {
     return undefined;
   }
@@ -83,7 +83,7 @@ export function parseOrganizationSecurityFromMetadataJson(
       return undefined;
     }
     return parseSecurityObject(
-      parsed[VORTEX_ORGANIZATION_SECURITY_METADATA_KEY]
+      parsed[ORGANIZATION_SECURITY_METADATA_KEY]
     );
   } catch {
     return undefined;
@@ -119,7 +119,7 @@ function applySecurityUpdate(
       const minutes = optionalTimeoutMinutes(update.sessionTimeoutMinutes);
       if (minutes === undefined) {
         throw new Error(
-          `sessionTimeoutMinutes must be between ${VORTEX_ORGANIZATION_SESSION_TIMEOUT_MIN} and ${VORTEX_ORGANIZATION_SESSION_TIMEOUT_MAX}`
+          `sessionTimeoutMinutes must be between ${ORGANIZATION_SESSION_TIMEOUT_MIN} and ${ORGANIZATION_SESSION_TIMEOUT_MAX}`
         );
       }
       next.sessionTimeoutMinutes = minutes;
@@ -151,14 +151,14 @@ export function mergeOrganizationSecurityIntoMetadataJson(
   }
 
   const currentSecurity = parseSecurityObject(
-    base[VORTEX_ORGANIZATION_SECURITY_METADATA_KEY]
+    base[ORGANIZATION_SECURITY_METADATA_KEY]
   );
   const nextSecurity = applySecurityUpdate(currentSecurity, securityUpdate);
 
   if (nextSecurity === undefined) {
-    delete base[VORTEX_ORGANIZATION_SECURITY_METADATA_KEY];
+    delete base[ORGANIZATION_SECURITY_METADATA_KEY];
   } else {
-    base[VORTEX_ORGANIZATION_SECURITY_METADATA_KEY] = nextSecurity;
+    base[ORGANIZATION_SECURITY_METADATA_KEY] = nextSecurity;
   }
 
   if (Object.keys(base).length === 0) {

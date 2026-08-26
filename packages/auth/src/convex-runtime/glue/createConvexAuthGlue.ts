@@ -49,7 +49,7 @@ import type {
   ConvexAuthComponentHandle,
 } from "./types";
 
-const VORTEX_PROVIDER = "convex-auth";
+const DEFAULT_IDENTITY_PROVIDER = "convex-auth";
 
 type ComponentIdTable = "organization_members" | "organizations" | "users";
 
@@ -146,7 +146,7 @@ function createConsumerGlue<TUser extends GlueUserMinimum>(
         config.component,
         identity.subject,
         identity.issuer,
-        config.identityProvider ?? VORTEX_PROVIDER
+        config.identityProvider ?? DEFAULT_IDENTITY_PROVIDER
       );
       if (convexAuthUserId === null) {
         throwAuthError(
@@ -206,7 +206,7 @@ function createB2BGlue<
   TAnchor extends GlueAnchorMinimum,
 >(config: B2BModeConfig<TUser, TAnchor>): B2BGlue<TUser, TAnchor> {
   const invitedUsersGetPersonalOrg = config.invitedUsersGetPersonalOrg ?? false;
-  const identityProvider = config.identityProvider ?? VORTEX_PROVIDER;
+  const identityProvider = config.identityProvider ?? DEFAULT_IDENTITY_PROVIDER;
 
   const resolveViewer = async (
     ctx: GlueCtx

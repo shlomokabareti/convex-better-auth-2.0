@@ -2,7 +2,7 @@ import type {
   AgentCapabilityGrantSnapshot,
   AgentMode,
   AgentPrincipal,
-} from "./coreTypes";
+} from "convex-auth-core";
 
 export type AgentPrincipalInput = {
   agentId: string;

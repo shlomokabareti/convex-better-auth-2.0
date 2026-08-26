@@ -20,6 +20,9 @@ importers:
       better-auth:
         specifier: '>=1.6.11'
         version: 1.6.30(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      convex-auth-core:
+        specifier: workspace:*
+        version: link:../core
       convex-auth-react:
         specifier: workspace:*
         version: link:../react
@@ -66,6 +69,9 @@ importers:
       better-auth:
         specifier: '>=1.6.11 <1.7.0'
         version: 1.6.30(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      convex-auth-core:
+        specifier: workspace:*
+        version: link:../core
       jose:
         specifier: ^6.2.2
         version: 6.2.10
@@ -81,6 +87,18 @@ importers:
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.26)(typescript@5.9.3)(yaml@2.9.0)
       typescript:
         specifier: ^5.5.0
+        version: 5.9.3
+
+  packages/core:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.26)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.7.0
         version: 5.9.3
 
   packages/react:
