@@ -27,7 +27,7 @@ import type {
 
 export function parseMcpOAuthAuthorizeRequest(
   request: Request,
-  config: McpOAuthAuthorizeRequestConfig
+  config: McpOAuthAuthorizeRequestConfig,
 ): McpOAuthAuthorizeRequest {
   const url = new URL(request.url);
   assertAuthorizationCodeResponseType(url);
@@ -38,10 +38,7 @@ export function parseMcpOAuthAuthorizeRequest(
     audience,
     clientId: url.searchParams.get("client_id") ?? "",
     codeChallenge,
-    expiresInMs: parseTestingExpiresInMs(
-      url,
-      config.allowTestingExpiresInMs ?? false
-    ),
+    expiresInMs: parseTestingExpiresInMs(url, config.allowTestingExpiresInMs ?? false),
     organizationId: url.searchParams.get("organization_id"),
     redirectUri: url.searchParams.get("redirect_uri") ?? "",
     resourceId,
@@ -65,16 +62,11 @@ function parsePkceCodeChallenge(url: URL): string {
   return codeChallenge;
 }
 
-function parseAuthorizationTarget(
-  url: URL,
-  config: McpOAuthAuthorizeRequestConfig
-) {
+function parseAuthorizationTarget(url: URL, config: McpOAuthAuthorizeRequestConfig) {
   const expectedAudience = config.expectedAudience ?? config.defaultAudience;
-  const expectedResourceId =
-    config.expectedResourceId ?? config.defaultResourceId;
+  const expectedResourceId = config.expectedResourceId ?? config.defaultResourceId;
   const audience = url.searchParams.get("audience") ?? config.defaultAudience;
-  const resourceId =
-    url.searchParams.get("resource") ?? config.defaultResourceId;
+  const resourceId = url.searchParams.get("resource") ?? config.defaultResourceId;
 
   if (resourceId !== expectedResourceId || audience !== expectedAudience) {
     throw new Error("invalid_target");
@@ -84,7 +76,7 @@ function parseAuthorizationTarget(
 }
 
 export function parseMcpOAuthDynamicClientRegistrationRequest(
-  body: unknown
+  body: unknown,
 ): McpOAuthDynamicClientRegistrationInput {
   if (!isRecord(body)) {
     throw new Error("client_name and redirect_uris are required");
@@ -93,26 +85,18 @@ export function parseMcpOAuthDynamicClientRegistrationRequest(
   const clientName = body.client_name;
   const redirectUris = parseStringArray(body.redirect_uris);
   const grantTypes =
-    body.grant_types === undefined
-      ? undefined
-      : parseStringArray(body.grant_types);
+    body.grant_types === undefined ? undefined : parseStringArray(body.grant_types);
   const responseTypes =
-    body.response_types === undefined
-      ? undefined
-      : parseStringArray(body.response_types);
+    body.response_types === undefined ? undefined : parseStringArray(body.response_types);
 
   if (typeof clientName !== "string" || redirectUris === null) {
     throw new Error("client_name and redirect_uris are required");
   }
-  assertOptionalStringField(
-    body,
-    "scope",
-    "scope must be a string when provided"
-  );
+  assertOptionalStringField(body, "scope", "scope must be a string when provided");
   assertOptionalStringField(
     body,
     "token_endpoint_auth_method",
-    "token_endpoint_auth_method must be a string when provided"
+    "token_endpoint_auth_method must be a string when provided",
   );
   if (grantTypes === null) {
     throw new Error("grant_types must be an array of strings when provided");
@@ -120,39 +104,29 @@ export function parseMcpOAuthDynamicClientRegistrationRequest(
   if (responseTypes === null) {
     throw new Error("response_types must be an array of strings when provided");
   }
-  assertOptionalStringField(
-    body,
-    "software_id",
-    "software_id must be a string when provided"
-  );
+  assertOptionalStringField(body, "software_id", "software_id must be a string when provided");
   assertOptionalStringField(
     body,
     "software_version",
-    "software_version must be a string when provided"
+    "software_version must be a string when provided",
   );
 
   return {
     clientName,
     redirectUris,
     scope: typeof body.scope === "string" ? body.scope : undefined,
-    tokenEndpointAuthMethod: parseOptionalAuthMethod(
-      body.token_endpoint_auth_method
-    ),
+    tokenEndpointAuthMethod: parseOptionalAuthMethod(body.token_endpoint_auth_method),
     grantTypes: grantTypes ?? undefined,
     responseTypes: responseTypes ?? undefined,
-    softwareId:
-      typeof body.software_id === "string" ? body.software_id : undefined,
-    softwareVersion:
-      typeof body.software_version === "string"
-        ? body.software_version
-        : undefined,
+    softwareId: typeof body.software_id === "string" ? body.software_id : undefined,
+    softwareVersion: typeof body.software_version === "string" ? body.software_version : undefined,
   };
 }
 
 function assertOptionalStringField(
   body: Record<string, unknown>,
   key: string,
-  message: string
+  message: string,
 ): void {
   const value = body[key];
   if (value !== undefined && value !== null && typeof value !== "string") {
@@ -162,13 +136,10 @@ function assertOptionalStringField(
 
 export function validateMcpOAuthDynamicClientRegistrationRequest(
   body: unknown,
-  policy: McpOAuthDynamicClientRegistrationPolicy
+  policy: McpOAuthDynamicClientRegistrationPolicy,
 ): McpOAuthDynamicClientRegistrationValidation {
   const parsed = parseMcpOAuthDynamicClientRegistrationRequest(body);
-  const validationError = validateMcpOAuthDynamicClientRegistrationInput(
-    parsed,
-    policy
-  );
+  const validationError = validateMcpOAuthDynamicClientRegistrationInput(parsed, policy);
   return {
     parsed,
     validationError,
@@ -177,7 +148,7 @@ export function validateMcpOAuthDynamicClientRegistrationRequest(
 
 export function createMcpOAuthStoredClientRecord(
   client: McpOAuthDynamicClientRegistrationResult,
-  now: number
+  now: number,
 ): McpOAuthStoredClientRecord {
   return {
     clientId: client.clientId,
@@ -197,7 +168,7 @@ export function createMcpOAuthStoredClientRecord(
 
 export function buildMcpOAuthDynamicClientRegistrationResponse(
   client: McpOAuthDynamicClientRegistrationResult,
-  clientIdIssuedAt: number
+  clientIdIssuedAt: number,
 ): McpOAuthDynamicClientRegistrationResponse {
   return {
     client_id: client.clientId,
@@ -208,9 +179,7 @@ export function buildMcpOAuthDynamicClientRegistrationResponse(
     response_types: client.responseTypes,
     token_endpoint_auth_method: client.tokenEndpointAuthMethod,
     scope: client.allowedScopes.join(" "),
-    ...(typeof client.softwareId === "string"
-      ? { software_id: client.softwareId }
-      : {}),
+    ...(typeof client.softwareId === "string" ? { software_id: client.softwareId } : {}),
     ...(typeof client.softwareVersion === "string"
       ? { software_version: client.softwareVersion }
       : {}),
@@ -224,7 +193,7 @@ export async function createMcpOAuthDynamicClient<TPersisted>(args: {
   generateClientId?: () => string;
   persist: (
     record: McpOAuthStoredClientRecord,
-    registered: McpOAuthDynamicClientRegistrationResult
+    registered: McpOAuthDynamicClientRegistrationResult,
   ) => Promise<TPersisted> | TPersisted;
   now?: number;
 }): Promise<{
@@ -237,10 +206,7 @@ export async function createMcpOAuthDynamicClient<TPersisted>(args: {
     clientId: args.clientId,
     generateClientId: args.generateClientId,
   });
-  const persisted = await args.persist(
-    createMcpOAuthStoredClientRecord(client, now),
-    client
-  );
+  const persisted = await args.persist(createMcpOAuthStoredClientRecord(client, now), client);
 
   return {
     client,
@@ -302,14 +268,9 @@ export async function validateMcpOAuthAuthorizationCodeTokenExchange<
     return invalidGrantFailure();
   }
 
-  const disallowedScope = findMcpOAuthClientDisallowedScope(
-    client,
-    authorizationCode.scopes
-  );
+  const disallowedScope = findMcpOAuthClientDisallowedScope(client, authorizationCode.scopes);
   if (disallowedScope !== null) {
-    return invalidGrantFailure(
-      "Authorization code scope is not allowed for client"
-    );
+    return invalidGrantFailure("Authorization code scope is not allowed for client");
   }
 
   const now = args.now ?? Date.now();
@@ -416,8 +377,7 @@ export async function validateMcpOAuthClientCredentialsTokenExchange<
   if (!(client.grantTypes ?? []).includes("client_credentials")) {
     return tokenExchangeFailure(400, {
       error: "unauthorized_client",
-      error_description:
-        "Client is not registered for the client_credentials grant",
+      error_description: "Client is not registered for the client_credentials grant",
     });
   }
 
@@ -454,8 +414,7 @@ export async function validateMcpOAuthClientCredentialsTokenExchange<
     if (args.verifyClientSecret === undefined) {
       return tokenExchangeFailure(401, {
         error: "invalid_client",
-        error_description:
-          "client_secret presented but this deployment cannot verify secrets",
+        error_description: "client_secret presented but this deployment cannot verify secrets",
       });
     }
     const secretOk = await args.verifyClientSecret({
@@ -498,10 +457,7 @@ export async function validateMcpOAuthClientCredentialsTokenExchange<
       ? [...client.allowedScopes]
       : parsed.scope.split(/\s+/u).filter((scope) => scope.length > 0);
 
-  const disallowedScope = findMcpOAuthClientDisallowedScope(
-    client,
-    requestedScopes
-  );
+  const disallowedScope = findMcpOAuthClientDisallowedScope(client, requestedScopes);
   if (disallowedScope !== null) {
     return tokenExchangeFailure(400, {
       error: "invalid_scope",
@@ -519,10 +475,7 @@ async function parseMcpOAuthClientCredentialsTokenRequest(request: Request) {
     clientId: getOptionalSearchParam(params, "client_id"),
     clientSecret: getOptionalSearchParam(params, "client_secret"),
     clientAssertion: getOptionalSearchParam(params, "client_assertion"),
-    clientAssertionType: getOptionalSearchParam(
-      params,
-      "client_assertion_type"
-    ),
+    clientAssertionType: getOptionalSearchParam(params, "client_assertion_type"),
     scope: getOptionalSearchParam(params, "scope"),
     authorizationHeader: request.headers.get("authorization"),
   };
@@ -530,7 +483,7 @@ async function parseMcpOAuthClientCredentialsTokenRequest(request: Request) {
 
 function tokenExchangeFailure(
   status: number,
-  body: McpOAuthAuthorizationCodeTokenExchangeFailure["body"]
+  body: McpOAuthAuthorizationCodeTokenExchangeFailure["body"],
 ): McpOAuthAuthorizationCodeTokenExchangeFailure {
   return { ok: false, status, body };
 }
@@ -554,18 +507,16 @@ function unknownClientFailure(): McpOAuthAuthorizationCodeTokenExchangeFailure {
 }
 
 function invalidGrantFailure(
-  errorDescription?: string
+  errorDescription?: string,
 ): McpOAuthAuthorizationCodeTokenExchangeFailure {
   return tokenExchangeFailure(400, {
     error: "invalid_grant",
-    ...(errorDescription === undefined
-      ? {}
-      : { error_description: errorDescription }),
+    ...(errorDescription === undefined ? {} : { error_description: errorDescription }),
   });
 }
 
 function hasRequiredTokenRequestParams(
-  parsed: McpOAuthAuthorizationCodeTokenRequest
+  parsed: McpOAuthAuthorizationCodeTokenRequest,
 ): parsed is McpOAuthAuthorizationCodeTokenRequest & {
   clientId: string;
   code: string;
@@ -582,17 +533,14 @@ function hasRequiredTokenRequestParams(
 
 function isAuthorizationCodeExpired(
   authorizationCode: McpOAuthAuthorizationCodeRecord,
-  now: number
+  now: number,
 ): boolean {
   // Fail closed when a consumer ignored the package-stamped expiry contract.
-  return (
-    typeof authorizationCode.expiresAt !== "number" ||
-    now >= authorizationCode.expiresAt
-  );
+  return typeof authorizationCode.expiresAt !== "number" || now >= authorizationCode.expiresAt;
 }
 
 async function parseMcpOAuthAuthorizationCodeTokenRequest(
-  request: Request
+  request: Request,
 ): Promise<McpOAuthAuthorizationCodeTokenRequest> {
   const params = new URLSearchParams(await request.text());
 
@@ -607,10 +555,7 @@ async function parseMcpOAuthAuthorizationCodeTokenRequest(
   };
 }
 
-function parseTestingExpiresInMs(
-  url: URL,
-  allowTestingExpiresInMs: boolean
-): number | undefined {
+function parseTestingExpiresInMs(url: URL, allowTestingExpiresInMs: boolean): number | undefined {
   if (!allowTestingExpiresInMs) {
     return undefined;
   }
@@ -624,19 +569,12 @@ function parseTestingExpiresInMs(
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-function getOptionalSearchParam(
-  params: URLSearchParams,
-  key: string
-): string | null {
+function getOptionalSearchParam(params: URLSearchParams, key: string): string | null {
   return params.get(key);
 }
 
-function parseOptionalAuthMethod(
-  value: unknown
-): McpOAuthTokenEndpointAuthMethod | undefined {
-  return value === "client_secret_basic" ||
-    value === "client_secret_post" ||
-    value === "none"
+function parseOptionalAuthMethod(value: unknown): McpOAuthTokenEndpointAuthMethod | undefined {
+  return value === "client_secret_basic" || value === "client_secret_post" || value === "none"
     ? value
     : undefined;
 }

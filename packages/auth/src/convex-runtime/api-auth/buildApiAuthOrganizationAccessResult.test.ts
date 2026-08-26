@@ -43,7 +43,7 @@ describe("buildApiAuthOrganizationAccessResult", () => {
         membershipIds: ["membership_1", "membership_2"],
         roleKeys: ["owner"],
         permissions: ["*", "crm:read", "crm:write"],
-      }
+      },
     );
   });
 
@@ -59,7 +59,7 @@ describe("buildApiAuthOrganizationAccessResult", () => {
         membershipIds: [],
         roleKeys: [],
         permissions: [],
-      }
+      },
     );
   });
 });

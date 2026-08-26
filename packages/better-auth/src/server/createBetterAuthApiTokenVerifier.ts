@@ -1,11 +1,5 @@
 import type { ApiTokenVerifier, VerifiedUserToken } from "convex-auth-core";
-import {
-  createLocalJWKSet,
-  createRemoteJWKSet,
-  jwtVerify,
-  type JWTPayload,
-  type JWK,
-} from "jose";
+import { createLocalJWKSet, createRemoteJWKSet, jwtVerify, type JWTPayload, type JWK } from "jose";
 
 import type { BetterAuthConvexAuthProvider } from "./createConvexAuthConfig";
 
@@ -58,9 +52,7 @@ function normalizeScopes(payload: JWTPayload): string[] {
 
   const scpClaim = payload.scp;
   if (Array.isArray(scpClaim)) {
-    return scpClaim.filter(
-      (scope): scope is string => typeof scope === "string"
-    );
+    return scpClaim.filter((scope): scope is string => typeof scope === "string");
   }
 
   return [];
@@ -73,10 +65,7 @@ function normalizeAudience(payload: JWTPayload): string | null {
   }
 
   if (Array.isArray(audience)) {
-    return (
-      audience.find((entry): entry is string => typeof entry === "string") ??
-      null
-    );
+    return audience.find((entry): entry is string => typeof entry === "string") ?? null;
   }
 
   return null;
@@ -126,7 +115,7 @@ function parseTrustedJwksUrl(jwksUrl: string): URL {
 }
 
 export function createBetterAuthApiTokenVerifier(
-  config: BetterAuthApiTokenVerifierConfig
+  config: BetterAuthApiTokenVerifierConfig,
 ): ApiTokenVerifier {
   const jwkResolver = createJwkResolver(config);
 
@@ -164,7 +153,7 @@ export function createBetterAuthApiTokenVerifierFromConvexAuthConfig(
   // (token confusion). Forcing the caller to name the audience closes that by
   // construction. Use the low-level createBetterAuthApiTokenVerifier directly if
   // you genuinely have a single-audience issuer and accept the risk.
-  options: { audience: string | string[] }
+  options: { audience: string | string[] },
 ): ApiTokenVerifier {
   if (
     options.audience === undefined ||
@@ -172,7 +161,7 @@ export function createBetterAuthApiTokenVerifierFromConvexAuthConfig(
     (Array.isArray(options.audience) && options.audience.length === 0)
   ) {
     throw new Error(
-      "createBetterAuthApiTokenVerifierFromConvexAuthConfig: `audience` is required to prevent cross-service token confusion."
+      "createBetterAuthApiTokenVerifierFromConvexAuthConfig: `audience` is required to prevent cross-service token confusion.",
     );
   }
   if (provider.jwks.startsWith("data:")) {
@@ -192,16 +181,11 @@ export function createBetterAuthApiTokenVerifierFromConvexAuthConfig(
 
 function decodeInlineJwksDataUrl(dataUrl: string): { keys: JWK[] } {
   const [prefix, base64Payload] = dataUrl.split(",", 2);
-  if (
-    prefix !== "data:text/plain;charset=utf-8;base64" ||
-    base64Payload === undefined
-  ) {
+  if (prefix !== "data:text/plain;charset=utf-8;base64" || base64Payload === undefined) {
     throw new Error("Invalid Better Auth inline JWKS data URL.");
   }
 
-  const decoded = JSON.parse(
-    Buffer.from(base64Payload, "base64").toString("utf8")
-  ) as unknown;
+  const decoded = JSON.parse(Buffer.from(base64Payload, "base64").toString("utf8")) as unknown;
   if (!isJsonWebKeySet(decoded)) {
     throw new Error("Invalid Better Auth inline JWKS payload.");
   }
@@ -215,8 +199,5 @@ function isJsonWebKeySet(value: unknown): value is { keys: JWK[] } {
   }
 
   const keys = (value as { keys?: unknown }).keys;
-  return (
-    Array.isArray(keys) &&
-    keys.every((key) => typeof key === "object" && key !== null)
-  );
+  return Array.isArray(keys) && keys.every((key) => typeof key === "object" && key !== null);
 }

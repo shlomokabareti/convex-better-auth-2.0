@@ -1,9 +1,7 @@
 import type { ApiResolvedAuthContext } from "../coreTypes";
 import { ApiAuthError } from "./errors";
 
-export type AuthorizeResolvedUserOrganizationAccessArgs<
-  TRole extends string = string,
-> = {
+export type AuthorizeResolvedUserOrganizationAccessArgs<TRole extends string = string> = {
   auth: ApiResolvedAuthContext;
   userId?: string | null;
   organizationId?: string | null;
@@ -25,10 +23,8 @@ export type AuthorizedUserOrganizationAccess<TRole extends string = string> = {
   scopes: string[];
 };
 
-export async function resolveAuthorizedUserOrganizationAccess<
-  TRole extends string = string,
->(
-  args: AuthorizeResolvedUserOrganizationAccessArgs<TRole>
+export async function resolveAuthorizedUserOrganizationAccess<TRole extends string = string>(
+  args: AuthorizeResolvedUserOrganizationAccessArgs<TRole>,
 ): Promise<AuthorizedUserOrganizationAccess<TRole> | null> {
   const userId = args.userId ?? args.auth.userId;
   const organizationId = args.organizationId ?? args.auth.organizationId;
@@ -36,7 +32,7 @@ export async function resolveAuthorizedUserOrganizationAccess<
   if (userId === null || organizationId === null) {
     throw new ApiAuthError(
       "API_CREDENTIAL_INVALID",
-      "Resolved auth context is missing required user or organization context."
+      "Resolved auth context is missing required user or organization context.",
     );
   }
 

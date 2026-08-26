@@ -1,7 +1,4 @@
-import type {
-  ConvexWebhookDeliveryOutcome,
-  ConvexWebhookFailureKind,
-} from "./types";
+import type { ConvexWebhookDeliveryOutcome, ConvexWebhookFailureKind } from "./types";
 
 const defaultMaxResponseBodyLength = 2_000;
 
@@ -9,14 +6,8 @@ export type ConvexWebhookOutcomeOptions = {
   maxResponseBodyLength?: number;
 };
 
-function trimResponseBody(
-  body: string,
-  options?: ConvexWebhookOutcomeOptions
-): string {
-  return body.slice(
-    0,
-    options?.maxResponseBodyLength ?? defaultMaxResponseBodyLength
-  );
+function trimResponseBody(body: string, options?: ConvexWebhookOutcomeOptions): string {
+  return body.slice(0, options?.maxResponseBodyLength ?? defaultMaxResponseBodyLength);
 }
 
 export function classifyConvexWebhookHttpResult(args: {
@@ -37,18 +28,10 @@ export function classifyConvexWebhookHttpResult(args: {
   }
 
   const failureKind: ConvexWebhookFailureKind =
-    statusCode === 429
-      ? "rate_limited"
-      : statusCode >= 500
-        ? "server_error"
-        : "client_error";
+    statusCode === 429 ? "rate_limited" : statusCode >= 500 ? "server_error" : "client_error";
 
   const status =
-    failureKind === "client_error"
-      ? "failed"
-      : attemptCount >= maxAttempts
-        ? "failed"
-        : "pending";
+    failureKind === "client_error" ? "failed" : attemptCount >= maxAttempts ? "failed" : "pending";
 
   return {
     status,
@@ -73,7 +56,7 @@ export function classifyConvexWebhookExecutionError(args: {
 }
 
 export function classifyInactiveConvexWebhookEndpointOutcome(
-  message = "Endpoint not found or inactive"
+  message = "Endpoint not found or inactive",
 ): ConvexWebhookDeliveryOutcome {
   return {
     status: "failed",

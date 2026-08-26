@@ -23,10 +23,7 @@ export function resolveApiScopeAuthorization<Scope extends string>(args: {
     return { allowed: false, reason: "missing_api_key_scope" };
   }
 
-  if (
-    args.authType === "jwt" &&
-    (args.fullAccessRoles ?? ["owner", "admin"]).includes(args.role)
-  ) {
+  if (args.authType === "jwt" && (args.fullAccessRoles ?? ["owner", "admin"]).includes(args.role)) {
     return { allowed: true };
   }
 

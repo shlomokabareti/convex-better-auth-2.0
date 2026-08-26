@@ -114,15 +114,12 @@ describe("authorizationDeniedPayload", () => {
   });
 
   it("returns null for non-authz errors or partial data", () => {
-    assert.equal(
-      extractAuthorizationDeniedAuditPayload(new Error("boom")),
-      null
-    );
+    assert.equal(extractAuthorizationDeniedAuditPayload(new Error("boom")), null);
     assert.equal(
       extractAuthorizationDeniedAuditPayload({
         data: { denialReason: "permission" },
       }),
-      null
+      null,
     );
     assert.equal(
       extractAuthorizationDeniedAuditPayload({
@@ -134,7 +131,7 @@ describe("authorizationDeniedPayload", () => {
           resourceId: "organizations:setActiveOrganization",
         },
       }),
-      null
+      null,
     );
   });
 });

@@ -42,7 +42,7 @@ type IndexRangeBuilder = {
 type QueryBuilder = {
   withIndex: (
     indexName: string,
-    range: (q: IndexRangeBuilder) => IndexRangeBuilder
+    range: (q: IndexRangeBuilder) => IndexRangeBuilder,
   ) => { unique: () => Promise<unknown> };
 };
 
@@ -51,17 +51,11 @@ type QueryDatabase = { query: (table: string) => QueryBuilder };
 type MutationDatabase = QueryDatabase & {
   insert: (table: string, value: Record<string, unknown>) => Promise<unknown>;
   get: (table: string, id: unknown) => Promise<unknown>;
-  patch: (
-    table: string,
-    id: unknown,
-    value: Record<string, unknown>
-  ) => Promise<void>;
+  patch: (table: string, id: unknown, value: Record<string, unknown>) => Promise<void>;
   normalizeId: (table: string, id: string) => unknown;
 };
 
-function hasQueryDatabase(
-  ctx: GlueCtx
-): ctx is GlueCtx & { db: QueryDatabase } {
+function hasQueryDatabase(ctx: GlueCtx): ctx is GlueCtx & { db: QueryDatabase } {
   return (
     typeof ctx.db === "object" &&
     ctx.db !== null &&
@@ -69,9 +63,7 @@ function hasQueryDatabase(
   );
 }
 
-function hasMutationDatabase(
-  ctx: GlueCtx
-): ctx is GlueCtx & { db: MutationDatabase } {
+function hasMutationDatabase(ctx: GlueCtx): ctx is GlueCtx & { db: MutationDatabase } {
   if (!hasQueryDatabase(ctx)) return false;
   const db: object = ctx.db;
   return (
@@ -84,7 +76,7 @@ function hasMutationDatabase(
 function requireQueryDatabase(ctx: GlueCtx): QueryDatabase {
   if (!hasQueryDatabase(ctx)) {
     throw new TypeError(
-      "createConvexAuthBackend: adapter requires a Convex query database on ctx.db"
+      "createConvexAuthBackend: adapter requires a Convex query database on ctx.db",
     );
   }
   return ctx.db;
@@ -128,10 +120,7 @@ export type ConvexAuthBackendAdaptersConfig<
   buildOrganization: (args: BuildOrganizationArgs) => Record<string, unknown>;
 
   /** Role key -> concrete permissions. Omit to use the component's raw list. */
-  expandPermissions?: (
-    roleKey: string,
-    permissions: readonly string[]
-  ) => readonly string[];
+  expandPermissions?: (roleKey: string, permissions: readonly string[]) => readonly string[];
 
   /**
    * Row guards, required.
@@ -168,17 +157,12 @@ export type CreateConvexAuthBackendConfig<
 export function createConvexAuthBackendAdapters<
   TUser extends GlueUserMinimum = GlueUserMinimum,
   TAnchor extends GlueAnchorMinimum = GlueAnchorMinimum,
->(
-  config: ConvexAuthBackendAdaptersConfig<TUser, TAnchor>
-): B2BModeAdapters<TUser, TAnchor> {
+>(config: ConvexAuthBackendAdaptersConfig<TUser, TAnchor>): B2BModeAdapters<TUser, TAnchor> {
   const usersTable = config.storage?.usersTable ?? "users";
-  const organizationsTable =
-    config.storage?.organizationsTable ?? "organizations";
-  const usersIndex =
-    config.storage?.usersByConvexAuthUserIdIndex ?? "by_convex_auth_user";
+  const organizationsTable = config.storage?.organizationsTable ?? "organizations";
+  const usersIndex = config.storage?.usersByConvexAuthUserIdIndex ?? "by_convex_auth_user";
   const organizationsIndex =
-    config.storage?.organizationsByConvexAuthOrganizationIdIndex ??
-    "by_convex_auth_organization";
+    config.storage?.organizationsByConvexAuthOrganizationIdIndex ?? "by_convex_auth_organization";
 
   const { isUser, isAnchor } = config;
 
@@ -197,50 +181,42 @@ export function createConvexAuthBackendAdapters<
      */
     findUserByConvexAuthUserId: async (
       ctx: GlueCtx,
-      convexAuthUserId: string
+      convexAuthUserId: string,
     ): Promise<TUser | null> => {
       const db = requireQueryDatabase(ctx);
       const row = await db
         .query(usersTable)
-        .withIndex(usersIndex, (q) =>
-          q.eq("convexAuthUserId", convexAuthUserId)
-        )
+        .withIndex(usersIndex, (q) => q.eq("convexAuthUserId", convexAuthUserId))
         .unique();
       return narrowUser(row);
     },
 
     findAnchorByConvexAuthOrganizationId: async (
       ctx: GlueCtx,
-      convexAuthOrganizationId: string
+      convexAuthOrganizationId: string,
     ): Promise<TAnchor | null> => {
       const db = requireQueryDatabase(ctx);
       const row = await db
         .query(organizationsTable)
         .withIndex(organizationsIndex, (q) =>
-          q.eq("convexAuthOrganizationId", convexAuthOrganizationId)
+          q.eq("convexAuthOrganizationId", convexAuthOrganizationId),
         )
         .unique();
       return narrowAnchor(row);
     },
 
-    insertAnchor: async (
-      ctx: GlueCtx,
-      args: BuildOrganizationArgs
-    ): Promise<TAnchor> => {
+    insertAnchor: async (ctx: GlueCtx, args: BuildOrganizationArgs): Promise<TAnchor> => {
       if (!hasMutationDatabase(ctx)) {
         throw new TypeError(
-          "createConvexAuthBackend: insertAnchor needs a mutation database; retry via a mutation"
+          "createConvexAuthBackend: insertAnchor needs a mutation database; retry via a mutation",
         );
       }
-      const id = await ctx.db.insert(
-        organizationsTable,
-        config.buildOrganization(args)
-      );
+      const id = await ctx.db.insert(organizationsTable, config.buildOrganization(args));
       const row = await ctx.db.get(organizationsTable, id);
       const anchor = narrowAnchor(row);
       if (anchor === null) {
         throw new Error(
-          "createConvexAuthBackend: inserted organization did not match the anchor shape; buildOrganization must set convexAuthOrganizationId"
+          "createConvexAuthBackend: inserted organization did not match the anchor shape; buildOrganization must set convexAuthOrganizationId",
         );
       }
       return anchor;
@@ -253,13 +229,10 @@ export function createConvexAuthBackendAdapters<
     setActiveOrganization: async (
       ctx: GlueCtx,
       user: TUser,
-      convexAuthOrganizationId: string
+      convexAuthOrganizationId: string,
     ): Promise<void> => {
       if (!hasMutationDatabase(ctx)) return;
-      const id =
-        typeof user._id === "string"
-          ? ctx.db.normalizeId(usersTable, user._id)
-          : user._id;
+      const id = typeof user._id === "string" ? ctx.db.normalizeId(usersTable, user._id) : user._id;
       if (id === null || id === undefined) return;
       await ctx.db.patch(usersTable, id, {
         activeConvexAuthOrganizationId: convexAuthOrganizationId,
@@ -279,16 +252,12 @@ export function createConvexAuthBackendAdapters<
 export function createConvexAuthBackend<
   TUser extends GlueUserMinimum = GlueUserMinimum,
   TAnchor extends GlueAnchorMinimum = GlueAnchorMinimum,
->(
-  config: CreateConvexAuthBackendConfig<TUser, TAnchor>
-): B2BGlue<TUser, TAnchor> {
+>(config: CreateConvexAuthBackendConfig<TUser, TAnchor>): B2BGlue<TUser, TAnchor> {
   return createConvexAuthGlue<TUser, TAnchor>({
     orgs: "enabled",
     component: config.component,
     adapters: createConvexAuthBackendAdapters(config),
     invitedUsersGetPersonalOrg: config.invitedUsersGetPersonalOrg ?? false,
-    ...(config.identityProvider === undefined
-      ? {}
-      : { identityProvider: config.identityProvider }),
+    ...(config.identityProvider === undefined ? {} : { identityProvider: config.identityProvider }),
   });
 }

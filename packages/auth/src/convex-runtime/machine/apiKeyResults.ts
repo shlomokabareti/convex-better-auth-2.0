@@ -77,18 +77,13 @@ export const convexApiKeyListItemValidator = v.object({
       name: v.optional(v.string()),
       email: v.string(),
     }),
-    v.null()
+    v.null(),
   ),
 });
 
-export const convexApiKeyListResultValidator = v.array(
-  convexApiKeyListItemValidator
-);
+export const convexApiKeyListResultValidator = v.array(convexApiKeyListItemValidator);
 
-export function createConvexApiKeyTokenResult<
-  ApiKeyId extends string,
-  Scope extends string,
->(args: {
+export function createConvexApiKeyTokenResult<ApiKeyId extends string, Scope extends string>(args: {
   apiKeyId: ApiKeyId;
   keyPrefix: string;
   secret: string;

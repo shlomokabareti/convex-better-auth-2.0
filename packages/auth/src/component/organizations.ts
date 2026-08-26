@@ -29,7 +29,7 @@ function normalizeSessionTimeoutMinutes(value: number): number {
   const rounded = Math.round(value);
   if (rounded < SESSION_TIMEOUT_MIN || rounded > SESSION_TIMEOUT_MAX) {
     throw new Error(
-      `sessionTimeoutMinutes must be between ${SESSION_TIMEOUT_MIN} and ${SESSION_TIMEOUT_MAX}`
+      `sessionTimeoutMinutes must be between ${SESSION_TIMEOUT_MIN} and ${SESSION_TIMEOUT_MAX}`,
     );
   }
   return rounded;
@@ -57,9 +57,7 @@ function parseSecurityFromMetadataJson(metadataJson: string | undefined): {
         : undefined;
     return {
       requireMfa: security.requireMfa === true,
-      ...(timeout !== undefined &&
-      timeout >= SESSION_TIMEOUT_MIN &&
-      timeout <= SESSION_TIMEOUT_MAX
+      ...(timeout !== undefined && timeout >= SESSION_TIMEOUT_MIN && timeout <= SESSION_TIMEOUT_MAX
         ? { sessionTimeoutMinutes: timeout }
         : {}),
     };
@@ -73,7 +71,7 @@ function mergeSecurityIntoMetadataJson(
   securityUpdate: {
     requireMfa?: boolean | null;
     sessionTimeoutMinutes?: number | null;
-  }
+  },
 ): string | undefined {
   let base: Record<string, unknown> = {};
   if (metadataJson && metadataJson.trim() !== "") {
@@ -92,10 +90,7 @@ function mergeSecurityIntoMetadataJson(
     : {};
 
   if ("requireMfa" in securityUpdate) {
-    if (
-      securityUpdate.requireMfa === null ||
-      securityUpdate.requireMfa === undefined
-    ) {
+    if (securityUpdate.requireMfa === null || securityUpdate.requireMfa === undefined) {
       delete current.requireMfa;
     } else {
       current.requireMfa = securityUpdate.requireMfa;
@@ -109,7 +104,7 @@ function mergeSecurityIntoMetadataJson(
       delete current.sessionTimeoutMinutes;
     } else {
       current.sessionTimeoutMinutes = normalizeSessionTimeoutMinutes(
-        securityUpdate.sessionTimeoutMinutes
+        securityUpdate.sessionTimeoutMinutes,
       );
     }
   }
@@ -237,7 +232,7 @@ async function emitOrganizationEvent(
     eventType: string;
     organizationId: Id<"organizations">;
     data: Record<string, unknown>;
-  }
+  },
 ): Promise<void> {
   const eventId = crypto.randomUUID();
   await fanOutConvexWebhookEvent(ctx, {
@@ -268,9 +263,8 @@ export const upsertOrganization = mutation({
     const slug = normalizeRequired(args.slug, "slug");
     const name = normalizeRequired(args.name, "name");
     const existing =
-      (args.organizationId
-        ? await ctx.db.get("organizations", args.organizationId)
-        : null) ?? (await findOrganizationBySlug(ctx, slug));
+      (args.organizationId ? await ctx.db.get("organizations", args.organizationId) : null) ??
+      (await findOrganizationBySlug(ctx, slug));
     const patch = {
       name,
       slug,
@@ -339,9 +333,7 @@ export const listOrganizations = query({
     const queryBuilder =
       status === undefined
         ? ctx.db.query("organizations")
-        : ctx.db
-            .query("organizations")
-            .withIndex("by_status", (q) => q.eq("status", status));
+        : ctx.db.query("organizations").withIndex("by_status", (q) => q.eq("status", status));
     return await queryBuilder.take(resolveListLimit(limit));
   },
 });
@@ -364,7 +356,7 @@ function mergeBrandIntoMetadataJson(
     website?: string | null;
     emailFromName?: string | null;
     emailReplyTo?: string | null;
-  }
+  },
 ): string | undefined {
   let base: Record<string, unknown> = {};
   if (metadataJson && metadataJson.trim() !== "") {
@@ -382,13 +374,7 @@ function mergeBrandIntoMetadataJson(
     ? { ...base[ORGANIZATION_BRAND_METADATA_KEY] }
     : {};
 
-  const keys = [
-    "primaryColor",
-    "accentColor",
-    "website",
-    "emailFromName",
-    "emailReplyTo",
-  ] as const;
+  const keys = ["primaryColor", "accentColor", "website", "emailFromName", "emailReplyTo"] as const;
   for (const key of keys) {
     if (!(key in brandUpdate)) {
       continue;
@@ -427,7 +413,7 @@ export const setOrganizationDetails = mutation({
       v.object({
         requireMfa: v.optional(v.union(v.boolean(), v.null())),
         sessionTimeoutMinutes: v.optional(v.union(v.number(), v.null())),
-      })
+      }),
     ),
   },
   returns: okResultValidator,
@@ -443,10 +429,7 @@ export const setOrganizationDetails = mutation({
     if (args.slug !== undefined) {
       const slug = normalizeRequired(args.slug, "slug");
       const existingWithSlug = await findOrganizationBySlug(ctx, slug);
-      if (
-        existingWithSlug !== null &&
-        existingWithSlug._id !== organization._id
-      ) {
+      if (existingWithSlug !== null && existingWithSlug._id !== organization._id) {
         throw new Error("Organization slug already exists");
       }
       patch.slug = slug;
@@ -459,9 +442,7 @@ export const setOrganizationDetails = mutation({
       args.metadataJson !== undefined &&
       (args.brand !== undefined || args.security !== undefined)
     ) {
-      throw new Error(
-        "Pass either metadataJson or brand/security fields, not both"
-      );
+      throw new Error("Pass either metadataJson or brand/security fields, not both");
     }
     if (args.metadataJson !== undefined) {
       patch.metadataJson = normalizeOptional(args.metadataJson);
@@ -471,10 +452,7 @@ export const setOrganizationDetails = mutation({
         nextMetadata = mergeBrandIntoMetadataJson(nextMetadata, args.brand);
       }
       if (args.security !== undefined) {
-        nextMetadata = mergeSecurityIntoMetadataJson(
-          nextMetadata,
-          args.security
-        );
+        nextMetadata = mergeSecurityIntoMetadataJson(nextMetadata, args.security);
       }
       patch.metadataJson = nextMetadata;
     }
@@ -534,11 +512,7 @@ export const setUserActiveOrganization = mutation({
     }
 
     const organization = await requireOrganization(ctx, organizationId);
-    const member = await findMemberByUserOrganization(
-      ctx,
-      userId,
-      organizationId
-    );
+    const member = await findMemberByUserOrganization(ctx, userId, organizationId);
     if (member === null || member.status !== "active") {
       throw new Error("Active organization membership not found");
     }
@@ -546,7 +520,7 @@ export const setUserActiveOrganization = mutation({
     const policy = parseSecurityFromMetadataJson(organization.metadataJson);
     if (policy.requireMfa && twoFactorEnabled !== true) {
       throw new Error(
-        "This organization requires two-factor authentication. Enable TOTP on your account, then try again."
+        "This organization requires two-factor authentication. Enable TOTP on your account, then try again.",
       );
     }
 
@@ -570,7 +544,7 @@ type EnsureRoleArgs = {
 
 async function ensureRoleInner(
   ctx: MutationCtx,
-  args: EnsureRoleArgs
+  args: EnsureRoleArgs,
 ): Promise<{ roleId: Id<"organization_roles">; created: boolean }> {
   await requireOrganization(ctx, args.organizationId);
 
@@ -578,11 +552,7 @@ async function ensureRoleInner(
   const key = normalizeRequired(args.key, "key");
   const name = normalizeRequired(args.name, "name");
   const existing = await findRoleByKey(ctx, args.organizationId, key);
-  if (
-    existing !== null &&
-    args.isSystem !== undefined &&
-    args.isSystem !== existing.isSystem
-  ) {
+  if (existing !== null && args.isSystem !== undefined && args.isSystem !== existing.isSystem) {
     throw new Error("Organization role system flag cannot be changed");
   }
   const patch = {
@@ -590,9 +560,7 @@ async function ensureRoleInner(
     key,
     name,
     description:
-      args.description === undefined
-        ? existing?.description
-        : normalizeOptional(args.description),
+      args.description === undefined ? existing?.description : normalizeOptional(args.description),
     permissions: args.permissions,
     isSystem: args.isSystem ?? existing?.isSystem ?? false,
     createdBy: args.createdBy ?? existing?.createdBy,
@@ -635,8 +603,7 @@ const DEFAULT_SEED_ROLE_CATALOG: ReadonlyArray<{
   {
     key: "owner",
     name: "Owner",
-    description:
-      "Full control over the organization, including billing and deletion.",
+    description: "Full control over the organization, including billing and deletion.",
     permissions: ["*"],
     isSystem: true,
   },
@@ -661,8 +628,8 @@ export const seedDefaultRoles = mutation({
           description: v.optional(v.string()),
           permissions: v.array(v.string()),
           isSystem: v.optional(v.boolean()),
-        })
-      )
+        }),
+      ),
     ),
   },
   returns: v.object({
@@ -683,7 +650,7 @@ export const seedDefaultRoles = mutation({
           createdBy: args.createdBy,
         });
         return result.roleId;
-      })
+      }),
     );
     return { roleIds, seeded: roleIds.length };
   },
@@ -765,9 +732,7 @@ export const listRolesByOrganization = query({
   handler: async (ctx, { organizationId, limit }) => {
     return await ctx.db
       .query("organization_roles")
-      .withIndex("by_organization", (q) =>
-        q.eq("organizationId", organizationId)
-      )
+      .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
       .take(resolveListLimit(limit));
   },
 });
@@ -790,14 +755,9 @@ export const setRoleDetails = mutation({
       throw new Error("Organization role system flag cannot be changed");
     }
     await ctx.db.patch("organization_roles", role._id, {
-      name:
-        args.name === undefined
-          ? role.name
-          : normalizeRequired(args.name, "name"),
+      name: args.name === undefined ? role.name : normalizeRequired(args.name, "name"),
       description:
-        args.description === undefined
-          ? role.description
-          : normalizeOptional(args.description),
+        args.description === undefined ? role.description : normalizeOptional(args.description),
       permissions: args.permissions ?? role.permissions,
       isSystem: role.isSystem,
       updatedAt: Date.now(),
@@ -833,11 +793,7 @@ export const getMemberByUserOrganization = query({
   },
   returns: v.union(v.null(), memberDocValidator),
   handler: async (ctx, args) => {
-    return await findMemberByUserOrganization(
-      ctx,
-      args.userId,
-      args.organizationId
-    );
+    return await findMemberByUserOrganization(ctx, args.userId, args.organizationId);
   },
 });
 
@@ -878,11 +834,7 @@ export const getInvitedMemberByEmail = query({
   },
   returns: v.union(v.null(), memberDocValidator),
   handler: async (ctx, { organizationId, invitedEmail }) => {
-    return await findInvitedMember(
-      ctx,
-      organizationId,
-      normalizeRequiredEmail(invitedEmail)
-    );
+    return await findInvitedMember(ctx, organizationId, normalizeRequiredEmail(invitedEmail));
   },
 });
 
@@ -898,13 +850,11 @@ export const listMembersByOrganization = query({
       status === undefined
         ? ctx.db
             .query("organization_members")
-            .withIndex("by_organization", (q) =>
-              q.eq("organizationId", organizationId)
-            )
+            .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
         : ctx.db
             .query("organization_members")
             .withIndex("by_org_status", (q) =>
-              q.eq("organizationId", organizationId).eq("status", status)
+              q.eq("organizationId", organizationId).eq("status", status),
             );
     return await queryBuilder.take(resolveListLimit(limit));
   },
@@ -922,9 +872,7 @@ export const listMembershipsByUser = query({
       .query("organization_members")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .take(resolveListLimit(limit));
-    return status === undefined
-      ? rows
-      : rows.filter((m) => m.status === status);
+    return status === undefined ? rows : rows.filter((m) => m.status === status);
   },
 });
 
@@ -973,10 +921,7 @@ export const setMemberStatus = mutation({
     const previousStatus = member.status;
     await ctx.db.patch("organization_members", memberId, {
       status,
-      acceptedAt:
-        acceptedAt ??
-        member.acceptedAt ??
-        (status === "active" ? now : undefined),
+      acceptedAt: acceptedAt ?? member.acceptedAt ?? (status === "active" ? now : undefined),
       updatedAt: now,
     });
     if (status === "suspended") {
@@ -1060,10 +1005,7 @@ export const getInvitation = query({
   },
   returns: v.union(v.null(), invitationDocValidator),
   handler: async (ctx, { invitationId, organizationId }) => {
-    const invitation = await ctx.db.get(
-      "organization_invitations",
-      invitationId
-    );
+    const invitation = await ctx.db.get("organization_invitations", invitationId);
     if (invitation === null || invitation.organizationId !== organizationId) {
       return null;
     }
@@ -1100,13 +1042,11 @@ export const listInvitationsByOrganization = query({
       status === undefined
         ? ctx.db
             .query("organization_invitations")
-            .withIndex("by_organization", (q) =>
-              q.eq("organizationId", organizationId)
-            )
+            .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
         : ctx.db
             .query("organization_invitations")
             .withIndex("by_org_status", (q) =>
-              q.eq("organizationId", organizationId).eq("status", status)
+              q.eq("organizationId", organizationId).eq("status", status),
             );
     return await queryBuilder.take(resolveListLimit(limit));
   },
@@ -1135,13 +1075,9 @@ export const setInvitationStatus = mutation({
       status: args.status,
       acceptedByUserId: args.acceptedByUserId ?? invitation.acceptedByUserId,
       acceptedAt:
-        args.acceptedAt ??
-        invitation.acceptedAt ??
-        (args.status === "accepted" ? now : undefined),
+        args.acceptedAt ?? invitation.acceptedAt ?? (args.status === "accepted" ? now : undefined),
       revokedAt:
-        args.revokedAt ??
-        invitation.revokedAt ??
-        (args.status === "revoked" ? now : undefined),
+        args.revokedAt ?? invitation.revokedAt ?? (args.status === "revoked" ? now : undefined),
       updatedAt: now,
     });
     return okResult();
@@ -1187,11 +1123,7 @@ export const redeemInvitation = mutation({
   },
   returns: redeemInvitationResultValidator,
   handler: async (ctx, args) => {
-    const invitation = await requireInvitationForRedemption(
-      ctx,
-      args.invitationId,
-      args.tokenHash
-    );
+    const invitation = await requireInvitationForRedemption(ctx, args.invitationId, args.tokenHash);
     await requireUser(ctx, args.acceptedByUserId);
     if (args.assignedBy !== undefined) {
       await requireUser(ctx, args.assignedBy);
@@ -1275,10 +1207,7 @@ export const resendInvitation = mutation({
     }
     const now = Date.now();
     await ctx.db.patch("organization_invitations", invitation._id, {
-      emailId:
-        args.emailId === undefined
-          ? invitation.emailId
-          : normalizeOptional(args.emailId),
+      emailId: args.emailId === undefined ? invitation.emailId : normalizeOptional(args.emailId),
       emailDeliveryStatus: args.emailDeliveryStatus ?? "queued",
       emailDeliveryEvent:
         args.emailDeliveryEvent === undefined
@@ -1335,19 +1264,17 @@ async function findOrganizationBySlug(ctx: DbCtx, slug: string) {
 async function findRoleByKey(
   ctx: DbCtx,
   organizationId: Id<"organizations">,
-  key: string
+  key: string,
 ): Promise<Doc<"organization_roles"> | null> {
   return await ctx.db
     .query("organization_roles")
-    .withIndex("by_organization_key", (q) =>
-      q.eq("organizationId", organizationId).eq("key", key)
-    )
+    .withIndex("by_organization_key", (q) => q.eq("organizationId", organizationId).eq("key", key))
     .unique();
 }
 
 async function requireRoleById(
   ctx: DbCtx,
-  roleId: Id<"organization_roles">
+  roleId: Id<"organization_roles">,
 ): Promise<Doc<"organization_roles">> {
   const role = await ctx.db.get("organization_roles", roleId);
   if (role === null) {
@@ -1359,19 +1286,19 @@ async function requireRoleById(
 async function findMemberByUserOrganization(
   ctx: DbCtx,
   userId: Id<"users">,
-  organizationId: Id<"organizations">
+  organizationId: Id<"organizations">,
 ): Promise<Doc<"organization_members"> | null> {
   return await ctx.db
     .query("organization_members")
     .withIndex("by_user_organization", (q) =>
-      q.eq("userId", userId).eq("organizationId", organizationId)
+      q.eq("userId", userId).eq("organizationId", organizationId),
     )
     .unique();
 }
 
 async function requireMember(
   ctx: DbCtx,
-  memberId: Id<"organization_members">
+  memberId: Id<"organization_members">,
 ): Promise<Doc<"organization_members">> {
   const member = await ctx.db.get("organization_members", memberId);
   if (member === null) {
@@ -1383,12 +1310,12 @@ async function requireMember(
 async function findInvitedMember(
   ctx: DbCtx,
   organizationId: Id<"organizations">,
-  invitedEmail: string
+  invitedEmail: string,
 ): Promise<Doc<"organization_members"> | null> {
   return await ctx.db
     .query("organization_members")
     .withIndex("by_organization_invited_email", (q) =>
-      q.eq("organizationId", organizationId).eq("invitedEmail", invitedEmail)
+      q.eq("organizationId", organizationId).eq("invitedEmail", invitedEmail),
     )
     .unique();
 }
@@ -1407,21 +1334,12 @@ type UpsertOrganizationMemberArgs = {
 
 async function upsertOrganizationMemberRecord(
   ctx: MutationCtx,
-  args: UpsertOrganizationMemberArgs
+  args: UpsertOrganizationMemberArgs,
 ): Promise<{ memberId: Id<"organization_members">; created: boolean }> {
   const now = Date.now();
   const normalizedEmail = normalizeEmail(args.invitedEmail ?? undefined);
-  const existing = await findExistingOrganizationMember(
-    ctx,
-    args,
-    normalizedEmail
-  );
-  const patch = buildOrganizationMemberPatch(
-    args,
-    existing,
-    normalizedEmail,
-    now
-  );
+  const existing = await findExistingOrganizationMember(ctx, args, normalizedEmail);
+  const patch = buildOrganizationMemberPatch(args, existing, normalizedEmail, now);
 
   if (existing !== null) {
     await ctx.db.patch("organization_members", existing._id, patch);
@@ -1444,19 +1362,13 @@ async function upsertOrganizationMemberRecord(
 async function findExistingOrganizationMember(
   ctx: DbCtx,
   args: UpsertOrganizationMemberArgs,
-  normalizedEmail: string | undefined
+  normalizedEmail: string | undefined,
 ): Promise<Doc<"organization_members"> | null> {
   return (
     (args.userId
-      ? await findMemberByUserOrganization(
-          ctx,
-          args.userId,
-          args.organizationId
-        )
+      ? await findMemberByUserOrganization(ctx, args.userId, args.organizationId)
       : null) ??
-    (normalizedEmail
-      ? await findInvitedMember(ctx, args.organizationId, normalizedEmail)
-      : null)
+    (normalizedEmail ? await findInvitedMember(ctx, args.organizationId, normalizedEmail) : null)
   );
 }
 
@@ -1464,7 +1376,7 @@ function buildOrganizationMemberPatch(
   args: UpsertOrganizationMemberArgs,
   existing: Doc<"organization_members"> | null,
   normalizedEmail: string | undefined,
-  now: number
+  now: number,
 ) {
   const status = resolveOrganizationMemberStatus(args, existing);
   return {
@@ -1476,42 +1388,31 @@ function buildOrganizationMemberPatch(
     invitedBy: preferDefined(args.invitedBy, existing?.invitedBy),
     assignedBy: preferDefined(args.assignedBy, existing?.assignedBy),
     invitedAt: preferDefined(args.invitedAt, existing?.invitedAt),
-    acceptedAt: resolveOrganizationMemberAcceptedAt(
-      args,
-      existing,
-      status,
-      now
-    ),
+    acceptedAt: resolveOrganizationMemberAcceptedAt(args, existing, status, now),
     updatedAt: now,
   };
 }
 
 function resolveOrganizationMemberStatus(
   args: UpsertOrganizationMemberArgs,
-  existing: Doc<"organization_members"> | null
+  existing: Doc<"organization_members"> | null,
 ) {
-  return (
-    args.status ?? existing?.status ?? (args.userId ? "active" : "invited")
-  );
+  return args.status ?? existing?.status ?? (args.userId ? "active" : "invited");
 }
 
 function resolveOrganizationMemberAcceptedAt(
   args: UpsertOrganizationMemberArgs,
   existing: Doc<"organization_members"> | null,
   status: Doc<"organization_members">["status"],
-  now: number
+  now: number,
 ) {
-  return (
-    args.acceptedAt ??
-    existing?.acceptedAt ??
-    (status === "active" ? now : undefined)
-  );
+  return args.acceptedAt ?? existing?.acceptedAt ?? (status === "active" ? now : undefined);
 }
 
 async function emitMemberRoleChangedIfNeeded(
   ctx: MutationCtx,
   existing: Doc<"organization_members">,
-  patch: ReturnType<typeof buildOrganizationMemberPatch>
+  patch: ReturnType<typeof buildOrganizationMemberPatch>,
 ): Promise<void> {
   if (existing.roleId === patch.roleId) {
     return;
@@ -1520,18 +1421,14 @@ async function emitMemberRoleChangedIfNeeded(
   await emitOrganizationEvent(ctx, {
     eventType: "member.role_changed",
     organizationId: existing.organizationId,
-    data: buildMemberWebhookPayload(
-      existing.organizationId,
-      existing._id,
-      patch
-    ),
+    data: buildMemberWebhookPayload(existing.organizationId, existing._id, patch),
   });
 }
 
 function buildMemberWebhookPayload(
   organizationId: Id<"organizations">,
   memberId: Id<"organization_members">,
-  member: Pick<Doc<"organization_members">, "roleId" | "status" | "userId">
+  member: Pick<Doc<"organization_members">, "roleId" | "status" | "userId">,
 ) {
   return {
     organizationId,
@@ -1544,7 +1441,7 @@ function buildMemberWebhookPayload(
 
 async function requireInvitation(
   ctx: DbCtx,
-  invitationId: Id<"organization_invitations">
+  invitationId: Id<"organization_invitations">,
 ): Promise<Doc<"organization_invitations">> {
   const invitation = await ctx.db.get("organization_invitations", invitationId);
   if (invitation === null) {
@@ -1556,16 +1453,12 @@ async function requireInvitation(
 async function requireInvitationForRedemption(
   ctx: DbCtx,
   invitationId: Id<"organization_invitations"> | undefined,
-  tokenHash: string | undefined
+  tokenHash: string | undefined,
 ): Promise<Doc<"organization_invitations">> {
   const invitation =
-    invitationId === undefined
-      ? null
-      : await ctx.db.get("organization_invitations", invitationId);
+    invitationId === undefined ? null : await ctx.db.get("organization_invitations", invitationId);
   const normalizedTokenHash =
-    tokenHash === undefined
-      ? undefined
-      : normalizeRequired(tokenHash, "tokenHash");
+    tokenHash === undefined ? undefined : normalizeRequired(tokenHash, "tokenHash");
   const foundByToken =
     normalizedTokenHash === undefined
       ? null
@@ -1575,10 +1468,7 @@ async function requireInvitationForRedemption(
   if (resolved === null) {
     throw new Error("Organization invitation not found");
   }
-  if (
-    normalizedTokenHash !== undefined &&
-    resolved.tokenHash !== normalizedTokenHash
-  ) {
+  if (normalizedTokenHash !== undefined && resolved.tokenHash !== normalizedTokenHash) {
     throw new Error("Organization invitation token mismatch");
   }
   return resolved;
@@ -1596,13 +1486,13 @@ async function upsertAcceptedInvitationMember(
     acceptedByUserId: Id<"users">;
     acceptedAt: number;
     assignedBy: Id<"users"> | undefined;
-  }
+  },
 ): Promise<{ memberId: Id<"organization_members">; activated: boolean }> {
   const now = Date.now();
   const existing = await findMemberByUserOrganization(
     ctx,
     acceptedByUserId,
-    invitation.organizationId
+    invitation.organizationId,
   );
   const patch = {
     organizationId: invitation.organizationId,
@@ -1651,7 +1541,7 @@ type UpsertOrganizationInvitationArgs = {
 
 async function upsertOrganizationInvitationRecord(
   ctx: MutationCtx,
-  args: UpsertOrganizationInvitationArgs
+  args: UpsertOrganizationInvitationArgs,
 ): Promise<{ invitationId: Id<"organization_invitations">; created: boolean }> {
   const now = Date.now();
   const email = normalizeRequiredEmail(args.email);
@@ -1677,12 +1567,11 @@ async function upsertOrganizationInvitationRecord(
 
 async function findExistingOrganizationInvitation(
   ctx: DbCtx,
-  args: UpsertOrganizationInvitationArgs
+  args: UpsertOrganizationInvitationArgs,
 ): Promise<Doc<"organization_invitations"> | null> {
   return (
-    (args.invitationId
-      ? await ctx.db.get("organization_invitations", args.invitationId)
-      : null) ?? (await findInvitationByTokenHash(ctx, args.tokenHash))
+    (args.invitationId ? await ctx.db.get("organization_invitations", args.invitationId) : null) ??
+    (await findInvitationByTokenHash(ctx, args.tokenHash))
   );
 }
 
@@ -1690,7 +1579,7 @@ function buildOrganizationInvitationPatch(
   args: UpsertOrganizationInvitationArgs,
   existing: Doc<"organization_invitations"> | null,
   email: string,
-  now: number
+  now: number,
 ) {
   return {
     organizationId: args.organizationId,
@@ -1700,38 +1589,29 @@ function buildOrganizationInvitationPatch(
     status: args.status ?? existing?.status ?? "pending",
     invitedBy: args.invitedBy,
     expiresAt: args.expiresAt,
-    acceptedByUserId: preferDefined(
-      args.acceptedByUserId,
-      existing?.acceptedByUserId
-    ),
+    acceptedByUserId: preferDefined(args.acceptedByUserId, existing?.acceptedByUserId),
     acceptedAt: preferDefined(args.acceptedAt, existing?.acceptedAt),
     revokedAt: preferDefined(args.revokedAt, existing?.revokedAt),
     emailId: args.emailId ?? undefined,
-    emailDeliveryStatus: preferDefined(
-      args.emailDeliveryStatus,
-      existing?.emailDeliveryStatus
-    ),
+    emailDeliveryStatus: preferDefined(args.emailDeliveryStatus, existing?.emailDeliveryStatus),
     emailDeliveryEvent: args.emailDeliveryEvent ?? undefined,
     emailDeliveryError: args.emailDeliveryError ?? undefined,
     emailDeliveryUpdatedAt: preferDefined(
       args.emailDeliveryUpdatedAt,
-      existing?.emailDeliveryUpdatedAt
+      existing?.emailDeliveryUpdatedAt,
     ),
     metadataJson: args.metadataJson ?? undefined,
     updatedAt: now,
   };
 }
 
-function preferDefined<T>(
-  value: T | undefined,
-  fallback: T | undefined
-): T | undefined {
+function preferDefined<T>(value: T | undefined, fallback: T | undefined): T | undefined {
   return value ?? fallback;
 }
 
 async function findInvitationByTokenHash(
   ctx: DbCtx,
-  tokenHash: string
+  tokenHash: string,
 ): Promise<Doc<"organization_invitations"> | null> {
   return await ctx.db
     .query("organization_invitations")
@@ -1741,7 +1621,7 @@ async function findInvitationByTokenHash(
 
 async function requireOrganization(
   ctx: DbCtx,
-  organizationId: Id<"organizations">
+  organizationId: Id<"organizations">,
 ): Promise<Doc<"organizations">> {
   const organization = await ctx.db.get("organizations", organizationId);
   if (organization === null) {
@@ -1753,7 +1633,7 @@ async function requireOrganization(
 async function requireRole(
   ctx: DbCtx,
   roleId: Id<"organization_roles">,
-  organizationId: Id<"organizations">
+  organizationId: Id<"organizations">,
 ) {
   const role = await ctx.db.get("organization_roles", roleId);
   if (role === null || role.organizationId !== organizationId) {
@@ -1761,10 +1641,7 @@ async function requireRole(
   }
 }
 
-async function requireUser(
-  ctx: DbCtx,
-  userId: Id<"users">
-): Promise<Doc<"users">> {
+async function requireUser(ctx: DbCtx, userId: Id<"users">): Promise<Doc<"users">> {
   const user = await ctx.db.get("users", userId);
   if (user === null) {
     throw new Error("User not found");
@@ -1788,9 +1665,7 @@ function normalizeRequiredEmail(email: string): string {
   return normalized;
 }
 
-function normalizeOptional(
-  value: string | null | undefined
-): string | undefined {
+function normalizeOptional(value: string | null | undefined): string | undefined {
   const normalized = value?.trim();
   return normalized && normalized.length > 0 ? normalized : undefined;
 }

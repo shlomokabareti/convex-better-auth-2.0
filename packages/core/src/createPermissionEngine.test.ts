@@ -41,10 +41,7 @@ const engine = createPermissionEngine<TestRole>({
 describe("createPermissionEngine — hasPermission (wildcard matching)", () => {
   for (const testCase of permissionMatcherConformanceCases) {
     it(`shared conformance: ${testCase.name}`, () => {
-      assert.equal(
-        engine.hasPermission(testCase.granted, testCase.required),
-        testCase.expected
-      );
+      assert.equal(engine.hasPermission(testCase.granted, testCase.required), testCase.expected);
     });
   }
 
@@ -54,26 +51,14 @@ describe("createPermissionEngine — hasPermission (wildcard matching)", () => {
   });
 
   it("exact grant matches only itself", () => {
-    assert.equal(
-      engine.hasPermission(["companies:view"], "companies:view"),
-      true
-    );
-    assert.equal(
-      engine.hasPermission(["companies:view"], "companies:edit"),
-      false
-    );
-    assert.equal(
-      engine.hasPermission(["companies:view"], "contacts:view"),
-      false
-    );
+    assert.equal(engine.hasPermission(["companies:view"], "companies:view"), true);
+    assert.equal(engine.hasPermission(["companies:view"], "companies:edit"), false);
+    assert.equal(engine.hasPermission(["companies:view"], "contacts:view"), false);
   });
 
   it("`domain:*` grants only that domain", () => {
     assert.equal(engine.hasPermission(["companies:*"], "companies:view"), true);
-    assert.equal(
-      engine.hasPermission(["companies:*"], "companies:delete"),
-      true
-    );
+    assert.equal(engine.hasPermission(["companies:*"], "companies:delete"), true);
     // does NOT leak into another domain
     assert.equal(engine.hasPermission(["companies:*"], "contacts:view"), false);
     assert.equal(engine.hasPermission(["companies:*"], "reports:view"), false);
@@ -100,12 +85,7 @@ describe("createPermissionEngine — expandPermissions (role → concrete keys)"
     const manager = [...engine.expandPermissions("manager")].toSorted();
     assert.deepEqual(
       manager,
-      [
-        "companies:delete",
-        "companies:edit",
-        "companies:view",
-        "contacts:view",
-      ].toSorted()
+      ["companies:delete", "companies:edit", "companies:view", "contacts:view"].toSorted(),
     );
     // contacts:edit was NOT granted (manager only has contacts:view exact)
     assert.equal(manager.includes("contacts:edit"), false);
@@ -123,9 +103,7 @@ describe("createPermissionEngine — expandPermissions (role → concrete keys)"
       registry: REGISTRY,
       roleCatalog: { ghost: ["companies:view", "not:in:registry"] },
     });
-    assert.deepEqual([...e.expandPermissions("ghost")].toSorted(), [
-      "companies:view",
-    ]);
+    assert.deepEqual([...e.expandPermissions("ghost")].toSorted(), ["companies:view"]);
   });
 
   it("expanded permissions still resolve via hasPermission (exact, post-expansion)", () => {
@@ -140,36 +118,24 @@ describe("createPermissionEngine — expandPermissions (role → concrete keys)"
 describe("createPermissionEngine — any/all composition", () => {
   it("hasAnyPermission: true if ANY required is granted", () => {
     assert.equal(
-      engine.hasAnyPermission(
-        ["companies:view"],
-        ["companies:view", "reports:view"]
-      ),
-      true
+      engine.hasAnyPermission(["companies:view"], ["companies:view", "reports:view"]),
+      true,
     );
     assert.equal(
-      engine.hasAnyPermission(
-        ["companies:view"],
-        ["reports:view", "contacts:view"]
-      ),
-      false
+      engine.hasAnyPermission(["companies:view"], ["reports:view", "contacts:view"]),
+      false,
     );
     assert.equal(engine.hasAnyPermission([], ["companies:view"]), false);
   });
 
   it("hasAllPermissions: true only if ALL required are granted", () => {
     assert.equal(
-      engine.hasAllPermissions(
-        ["companies:*", "reports:view"],
-        ["companies:view", "reports:view"]
-      ),
-      true
+      engine.hasAllPermissions(["companies:*", "reports:view"], ["companies:view", "reports:view"]),
+      true,
     );
     assert.equal(
-      engine.hasAllPermissions(
-        ["companies:*"],
-        ["companies:view", "reports:view"]
-      ),
-      false
+      engine.hasAllPermissions(["companies:*"], ["companies:view", "reports:view"]),
+      false,
     );
     assert.equal(engine.hasAllPermissions(["*"], ["a", "b", "c"]), true);
   });

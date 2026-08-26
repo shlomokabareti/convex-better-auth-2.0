@@ -59,7 +59,7 @@ describe("parseApiCredentialFromHeaders", () => {
         headers: new Headers({ Authorization: "Bearer session.jwt" }),
         apiKeyTokenPrefixes: ["crm_live_"],
       }),
-      { credentialType: "userBearer", token: "session.jwt" }
+      { credentialType: "userBearer", token: "session.jwt" },
     );
 
     assert.deepEqual(
@@ -67,7 +67,7 @@ describe("parseApiCredentialFromHeaders", () => {
         headers: new Headers({ "X-API-Key": "crm_live_123.secret" }),
         apiKeyTokenPrefixes: ["crm_live_"],
       }),
-      { credentialType: "apiKeyBearer", token: "crm_live_123.secret" }
+      { credentialType: "apiKeyBearer", token: "crm_live_123.secret" },
     );
   });
 });

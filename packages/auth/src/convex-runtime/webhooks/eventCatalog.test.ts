@@ -25,7 +25,7 @@ describe("webhook event catalog", () => {
         "invitation.created",
         "invitation.accepted",
         "invitation.revoked",
-      ]
+      ],
     );
   });
 
@@ -39,23 +39,14 @@ describe("webhook event catalog", () => {
 
   it("matches endpoints by explicit subscription", () => {
     assert.equal(
-      convexWebhookEndpointSubscribesTo(
-        ["user.created", "user.updated"],
-        "user.created"
-      ),
-      true
+      convexWebhookEndpointSubscribesTo(["user.created", "user.updated"], "user.created"),
+      true,
     );
-    assert.equal(
-      convexWebhookEndpointSubscribesTo(["user.updated"], "user.created"),
-      false
-    );
+    assert.equal(convexWebhookEndpointSubscribesTo(["user.updated"], "user.created"), false);
   });
 
   it("matches endpoints subscribed to the wildcard", () => {
-    assert.equal(
-      convexWebhookEndpointSubscribesTo(["*"], "organization.created"),
-      true
-    );
+    assert.equal(convexWebhookEndpointSubscribesTo(["*"], "organization.created"), true);
   });
 
   it("matches nothing for an empty subscription list", () => {

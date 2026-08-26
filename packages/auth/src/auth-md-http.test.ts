@@ -17,21 +17,18 @@ describe("auth.md service_auth HTTP transport", () => {
       jsonRequest("/agent/identity", {
         type: "service_auth",
         login_hint: "owner@example.com",
-      })
+      }),
     );
     assert.equal(registration.status, 201);
     assert.equal(registration.headers.get("cache-control"), "no-store");
-    assert.deepEqual(calls, [
-      "authorize",
-      "register:owner@example.com:chat:read,chat:write",
-    ]);
+    assert.deepEqual(calls, ["authorize", "register:owner@example.com:chat:read,chat:write"]);
 
     const pending = await server.handleHttpRequest(
       {},
       formRequest("/oauth2/token", {
         grant_type: AUTH_MD_CLAIM_GRANT,
         claim_token: "pending",
-      })
+      }),
     );
     assert.equal(pending.status, 400);
     assert.deepEqual(await pending.json(), {
@@ -44,7 +41,7 @@ describe("auth.md service_auth HTTP transport", () => {
       formRequest("/oauth2/token", {
         grant_type: AUTH_MD_CLAIM_GRANT,
         claim_token: "claimed",
-      })
+      }),
     );
     assert.equal(claimed.status, 200);
     assert.equal((await claimed.json()).access_token, "access-1");
@@ -55,7 +52,7 @@ describe("auth.md service_auth HTTP transport", () => {
         grant_type: AUTH_MD_JWT_BEARER_GRANT,
         assertion: "assertion-1",
         resource: "https://chat.example.com/",
-      })
+      }),
     );
     assert.equal(refreshed.status, 200);
     assert.equal((await refreshed.json()).access_token, "access-2");
@@ -66,7 +63,7 @@ describe("auth.md service_auth HTTP transport", () => {
     const server = createServer(calls);
     const wrongType = await server.handleHttpRequest(
       {},
-      jsonRequest("/agent/identity", { type: "anonymous" })
+      jsonRequest("/agent/identity", { type: "anonymous" }),
     );
     assert.equal(wrongType.status, 400);
     assert.equal((await wrongType.json()).error, "unsupported_identity_type");
@@ -77,14 +74,14 @@ describe("auth.md service_auth HTTP transport", () => {
         method: "POST",
         body: "{}",
         headers: { "content-type": "text/plain" },
-      })
+      }),
     );
     assert.equal(wrongContentType.status, 400);
     assert.equal((await wrongContentType.json()).error, "invalid_request");
 
     const revoked = await server.handleHttpRequest(
       {},
-      formRequest("/oauth2/revoke", { token: "invalid" })
+      formRequest("/oauth2/revoke", { token: "invalid" }),
     );
     assert.equal(revoked.status, 200);
     assert.equal(await revoked.text(), "");
@@ -111,8 +108,7 @@ function createServer(calls: string[]) {
           claim: {
             user_code: "123456",
             expires_in: 600,
-            verification_uri:
-              "https://auth.example.com/claim?claim_attempt_token=attempt-1",
+            verification_uri: "https://auth.example.com/claim?claim_attempt_token=attempt-1",
             interval: 5,
           },
         };

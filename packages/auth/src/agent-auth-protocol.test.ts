@@ -65,16 +65,10 @@ describe("Agent Auth Protocol discovery contract", () => {
     });
     assert.equal(
       resolveAgentAuthProtocolDefaultLocation(document),
-      "https://convex-auth.example.com/capability/execute"
+      "https://convex-auth.example.com/capability/execute",
     );
-    assert.equal(
-      AGENT_AUTH_PROTOCOL_DISCOVERY_PATH,
-      "/.well-known/agent-configuration"
-    );
-    assert.equal(
-      AGENT_AUTH_PROTOCOL_DISCOVERY_CACHE_CONTROL,
-      "public, max-age=3600"
-    );
+    assert.equal(AGENT_AUTH_PROTOCOL_DISCOVERY_PATH, "/.well-known/agent-configuration");
+    assert.equal(AGENT_AUTH_PROTOCOL_DISCOVERY_CACHE_CONTROL, "public, max-age=3600");
   });
 
   it("ignores unknown response fields but rejects an unknown draft or major", () => {
@@ -96,11 +90,9 @@ describe("Agent Auth Protocol discovery contract", () => {
       minor: 3,
       draft: true,
     });
-    expect(() => assertSupportedAgentAuthProtocolVersion("2.0")).toThrow(
-      /major version 2/
-    );
+    expect(() => assertSupportedAgentAuthProtocolVersion("2.0")).toThrow(/major version 2/);
     expect(() => assertSupportedAgentAuthProtocolVersion("1.1-draft")).toThrow(
-      /expected 1\.0-draft/
+      /expected 1\.0-draft/,
     );
   });
 
@@ -119,32 +111,32 @@ describe("Agent Auth Protocol discovery contract", () => {
       parseAgentAuthProtocolDiscoveryDocument({
         ...base,
         algorithms: ["RS256"],
-      })
+      }),
     ).toThrow(/only Ed25519/);
     expect(() =>
       parseAgentAuthProtocolDiscoveryDocument({
         ...base,
         approval_methods: ["ciba"],
-      })
+      }),
     ).toThrow(/device_authorization/);
     expect(() =>
       parseAgentAuthProtocolDiscoveryDocument({
         ...base,
         endpoints: { ...endpoints, introspect: "https://evil.example/path" },
-      })
+      }),
     ).toThrow(/issuer-relative/);
     const { status: _status, ...missingStatus } = endpoints;
     expect(() =>
       parseAgentAuthProtocolDiscoveryDocument({
         ...base,
         endpoints: missingStatus,
-      })
+      }),
     ).toThrow(/status must be/);
     expect(() =>
       parseAgentAuthProtocolDiscoveryDocument({
         ...base,
         issuer: "http:/convex-auth.example.com",
-      })
+      }),
     ).toThrow(/must use https/);
   });
 });
@@ -200,7 +192,7 @@ describe("Agent Auth Protocol JWT wire contract", () => {
           exp: 2,
           jti: "jti",
         },
-      })
+      }),
     ).toThrow(/agent\+jwt/);
     expect(() =>
       parseAgentAuthProtocolHostJwt({
@@ -215,7 +207,7 @@ describe("Agent Auth Protocol JWT wire contract", () => {
           host_public_key: { ...publicKey, d: "private" },
           agent_public_key: publicKey,
         },
-      })
+      }),
     ).toThrow(/private key material/);
     expect(() =>
       parseAgentAuthProtocolHostJwt({
@@ -231,7 +223,7 @@ describe("Agent Auth Protocol JWT wire contract", () => {
           host_jwks_url: "https://host.example/jwks",
           agent_public_key: publicKey,
         },
-      })
+      }),
     ).toThrow(/Exactly one/);
   });
 
@@ -248,7 +240,7 @@ describe("Agent Auth Protocol JWT wire contract", () => {
           jti: "jti",
           host_jwks_url: "https://host.example/jwks",
         },
-      })
+      }),
     ).toThrow(/header kid/);
     expect(() =>
       parseAgentAuthProtocolHostJwt({
@@ -262,7 +254,7 @@ describe("Agent Auth Protocol JWT wire contract", () => {
           jti: "jti",
           host_public_key: publicKey,
         },
-      })
+      }),
     ).toThrow(/registration host JWT requires/);
   });
 });
@@ -279,22 +271,16 @@ describe("Agent Auth Protocol errors", () => {
         error: "invalid_capabilities",
         message: "Unknown capability",
         invalid_capabilities: ["unknown"],
-      }
+      },
     );
-    assert.equal(
-      resolveAgentAuthProtocolErrorHttpStatus("invalid_capabilities"),
-      400
-    );
-    assert.equal(
-      resolveAgentAuthProtocolErrorHttpStatus("future_extension"),
-      undefined
-    );
+    assert.equal(resolveAgentAuthProtocolErrorHttpStatus("invalid_capabilities"), 400);
+    assert.equal(resolveAgentAuthProtocolErrorHttpStatus("future_extension"), undefined);
     expect(() =>
       createAgentAuthProtocolErrorResponse({
         error: "invalid_request",
         message: "Invalid",
         extensions: { error: "internal_error" },
-      })
+      }),
     ).toThrow(/must not override/);
   });
 
@@ -309,13 +295,13 @@ describe("Agent Auth Protocol errors", () => {
         error: "future_extension",
         message: "A future server error",
         retry_after: 5,
-      }
+      },
     );
     expect(() =>
       parseAgentAuthProtocolErrorResponse({
         error: "futureExtension",
         message: "Invalid code",
-      })
+      }),
     ).toThrow(/snake_case/);
   });
 });

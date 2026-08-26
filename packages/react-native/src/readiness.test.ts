@@ -11,7 +11,7 @@ describe("convex expo auth readiness", () => {
         convex: { isAuthenticated: false, isLoading: false },
         session: { data: null, isPending: false },
       }).state,
-      "signedOut"
+      "signedOut",
     );
   });
 
@@ -28,7 +28,7 @@ describe("convex expo auth readiness", () => {
         isRecovering: true,
         state: "providerLoading",
         tokenAvailable: false,
-      }
+      },
     );
   });
 
@@ -45,7 +45,7 @@ describe("convex expo auth readiness", () => {
         reauthRequired: false,
         state: "convexConnecting",
         tokenAvailable: true,
-      }
+      },
     );
   });
 
@@ -55,7 +55,7 @@ describe("convex expo auth readiness", () => {
         convex: { isAuthenticated: true, isLoading: false },
         session: { data: { user: { id: "user_1" } }, isPending: false },
       }).state,
-      "convexReady"
+      "convexReady",
     );
   });
 
@@ -72,7 +72,7 @@ describe("convex expo auth readiness", () => {
         reauthRequired: true,
         state: "reauthRequired",
         tokenAvailable: false,
-      }
+      },
     );
   });
 
@@ -86,7 +86,7 @@ describe("convex expo auth readiness", () => {
           isPending: false,
         },
       }).state,
-      "convexReady"
+      "convexReady",
     );
   });
 });

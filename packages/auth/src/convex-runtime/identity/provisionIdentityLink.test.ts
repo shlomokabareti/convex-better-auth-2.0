@@ -2,10 +2,7 @@ import assert from "node:assert/strict";
 
 import { describe, it } from "vitest";
 
-import {
-  decideIdentityProvision,
-  type ProvisionIdentityInput,
-} from "./provisionIdentityLink";
+import { decideIdentityProvision, type ProvisionIdentityInput } from "./provisionIdentityLink";
 
 const baseIdentity: ProvisionIdentityInput = {
   identityId: "identity_123",

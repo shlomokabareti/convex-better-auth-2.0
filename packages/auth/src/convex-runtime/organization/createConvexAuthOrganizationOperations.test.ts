@@ -34,8 +34,7 @@ function isTestRole(key: string): key is TestRole {
 }
 
 function orgId(value: string): LocalOrgId {
-  if (!isLocalOrgId(value))
-    throw new TypeError("invalid local organization id");
+  if (!isLocalOrgId(value)) throw new TypeError("invalid local organization id");
   return value;
 }
 function userId(value: string): LocalUserId {
@@ -50,9 +49,7 @@ function isLocalUserId(value: string): value is LocalUserId {
 }
 
 function requireRecord(value: unknown): Record<string, unknown> {
-  assert.ok(
-    typeof value === "object" && value !== null && !Array.isArray(value)
-  );
+  assert.ok(typeof value === "object" && value !== null && !Array.isArray(value));
   return Object.fromEntries(Object.entries(value));
 }
 function componentId<
@@ -91,10 +88,8 @@ const operationRefs = {
   // organizations
   getMember: componentApi.organizations.getMember,
   getMemberByIdForSystem: componentApi.organizations.getMemberByIdForSystem,
-  getMemberByUserOrganization:
-    componentApi.organizations.getMemberByUserOrganization,
-  listMembersByOrganization:
-    componentApi.organizations.listMembersByOrganization,
+  getMemberByUserOrganization: componentApi.organizations.getMemberByUserOrganization,
+  listMembersByOrganization: componentApi.organizations.listMembersByOrganization,
   listMembershipsByUser: componentApi.organizations.listMembershipsByUser,
   getRole: componentApi.organizations.getRole,
   getRoleByKey: componentApi.organizations.getRoleByKey,
@@ -105,12 +100,10 @@ const operationRefs = {
   ensureRole: componentApi.organizations.ensureRole,
   upsertInvitation: componentApi.organizations.upsertInvitation,
   setInvitationStatus: componentApi.organizations.setInvitationStatus,
-  recordInvitationEmailDelivery:
-    componentApi.organizations.recordInvitationEmailDelivery,
+  recordInvitationEmailDelivery: componentApi.organizations.recordInvitationEmailDelivery,
   getInvitationByTokenHash: componentApi.organizations.getInvitationByTokenHash,
   getInvitationByEmailId: componentApi.organizations.getInvitationByEmailId,
-  listInvitationsByOrganization:
-    componentApi.organizations.listInvitationsByOrganization,
+  listInvitationsByOrganization: componentApi.organizations.listInvitationsByOrganization,
   // apiKeys
   getApiKey: componentApi.apiKeys.getApiKey,
   getApiKeyByPrefix: componentApi.apiKeys.getApiKeyByPrefix,
@@ -215,11 +208,11 @@ function makeCtx(
     query?: Record<string, (args: Record<string, unknown>) => unknown>;
     mutation?: Record<string, (args: Record<string, unknown>) => unknown>;
   } = {},
-  options: { withMutation?: boolean } = { withMutation: true }
+  options: { withMutation?: boolean } = { withMutation: true },
 ): GlueCtx {
   const dispatchQuery = (
     marker: Parameters<GlueCtx["runQuery"]>[0],
-    args: Record<string, unknown>
+    args: Record<string, unknown>,
   ): unknown => {
     const name = getFunctionName(marker).split(":").at(-1);
     if (name === "getRole") {
@@ -235,8 +228,7 @@ function makeCtx(
 
   const ctx: GlueCtx = {
     auth: { getUserIdentity: async () => null },
-    runQuery: async (marker, ...runArgs) =>
-      dispatchQuery(marker, runArgs[0] ?? {}),
+    runQuery: async (marker, ...runArgs) => dispatchQuery(marker, runArgs[0] ?? {}),
   };
 
   if (options.withMutation !== false) {
@@ -259,30 +251,23 @@ function makeOperations(
   world: World,
   overrides: Partial<
     ConvexAuthOrganizationOperationsConfig<LocalOrgId, LocalUserId, TestRole>
-  > = {}
+  > = {},
 ) {
-  return createConvexAuthOrganizationOperations<
-    LocalOrgId,
-    LocalUserId,
-    TestRole
-  >({
+  return createConvexAuthOrganizationOperations<LocalOrgId, LocalUserId, TestRole>({
     component: fakeComponent,
     resolveLocalOrganizationId: async (_ctx, componentOrganizationId) =>
       world.orgAnchors[componentOrganizationId] ?? null,
-    resolveLocalUserId: async (_ctx, componentUserId) =>
-      world.userAnchors[componentUserId] ?? null,
+    resolveLocalUserId: async (_ctx, componentUserId) => world.userAnchors[componentUserId] ?? null,
     validateRoleKey: isTestRole,
     roleCatalog: TEST_ROLE_CATALOG,
     loadOrganizationForUpsert: async (_ctx, localOrganizationId) => {
       // find the component org id whose anchor is this local org
       const entry = Object.entries(world.orgAnchors).find(
-        ([, local]) => local === localOrganizationId
+        ([, local]) => local === localOrganizationId,
       );
       return {
         convexAuthOrganizationId:
-          entry === undefined
-            ? undefined
-            : componentId("organizations", entry[0]),
+          entry === undefined ? undefined : componentId("organizations", entry[0]),
         name: `org-${localOrganizationId}`,
         slug: `slug-${localOrganizationId}`,
         imageUrl: null,
@@ -290,17 +275,11 @@ function makeOperations(
         metadataJson: null,
       };
     },
-    backfillOrganizationBridgeId: async (
-      _ctx,
-      localOrganizationId,
-      componentOrganizationId
-    ) => {
+    backfillOrganizationBridgeId: async (_ctx, localOrganizationId, componentOrganizationId) => {
       world.orgAnchors[componentOrganizationId] = localOrganizationId;
     },
     loadUserBridgeId: async (_ctx, localUserId) => {
-      const entry = Object.entries(world.userAnchors).find(
-        ([, local]) => local === localUserId
-      );
+      const entry = Object.entries(world.userAnchors).find(([, local]) => local === localUserId);
       return entry === undefined ? null : componentId("users", entry[0]);
     },
     ...overrides,
@@ -345,10 +324,7 @@ describe("createConvexAuthOrganizationOperations — reader safety", () => {
       query: { listMembershipsByUser: () => memberRows },
     });
     const ops = makeOperations(world);
-    const memberships = await ops.reads.resolveMemberships(
-      ctx,
-      componentId("users", "cUser1")
-    );
+    const memberships = await ops.reads.resolveMemberships(ctx, componentId("users", "cUser1"));
     assert.equal(memberships.length, 1, "bogus-role member must be dropped");
     assert.equal(memberships[0]?.roleTemplate, "admin");
     assert.equal(memberships[0]?.convexAuthMemberId, "m1");
@@ -375,10 +351,7 @@ describe("createConvexAuthOrganizationOperations — reader safety", () => {
       },
     });
     const ops = makeOperations(world);
-    const memberships = await ops.reads.resolveMemberships(
-      ctx,
-      componentId("users", "cUser1")
-    );
+    const memberships = await ops.reads.resolveMemberships(ctx, componentId("users", "cUser1"));
     assert.deepEqual(memberships, []);
   });
 
@@ -398,16 +371,9 @@ describe("createConvexAuthOrganizationOperations — reader safety", () => {
           query: { listMembershipsByUser: () => memberRowsForStatus(status) },
         });
         const ops = makeOperations(world);
-        const memberships = await ops.reads.resolveMemberships(
-          ctx,
-          componentId("users", "cUser1")
-        );
-        assert.equal(
-          memberships[0]?.status,
-          expected[status],
-          `status ${status}`
-        );
-      })
+        const memberships = await ops.reads.resolveMemberships(ctx, componentId("users", "cUser1"));
+        assert.equal(memberships[0]?.status, expected[status], `status ${status}`);
+      }),
     );
   });
 
@@ -435,7 +401,7 @@ describe("createConvexAuthOrganizationOperations — reader safety", () => {
     const ops = makeOperations(world);
     const members = await ops.reads.listMembersByOrganization(
       ctx,
-      componentId("organizations", "cOrg1")
+      componentId("organizations", "cOrg1"),
     );
     assert.equal(members.length, 1);
     assert.equal(members[0]?.userId, null);
@@ -517,12 +483,12 @@ describe("createConvexAuthOrganizationOperations — writer ensure-chain", () =>
     const memberIdx = opOrder.indexOf("upsertMember");
     assert.ok(
       orgIdx >= 0 && roleIdx > orgIdx && memberIdx > roleIdx,
-      "ensure order org→role→member"
+      "ensure order org→role→member",
     );
 
     // upsertMember received the resolved component bridge ids, not local ids.
     const upsertMemberArgs = requireRecord(
-      world.mutationLog.find((m) => m.op === "upsertMember")?.args
+      world.mutationLog.find((m) => m.op === "upsertMember")?.args,
     );
     assert.equal(upsertMemberArgs.organizationId, "cOrgNew");
     assert.equal(upsertMemberArgs.userId, "cUserMain");
@@ -547,7 +513,7 @@ describe("createConvexAuthOrganizationOperations — writer ensure-chain", () =>
         roleTemplate: "member",
         status: "active",
       }),
-      /missing convex auth bridge id/
+      /missing convex auth bridge id/,
     );
   });
 
@@ -562,13 +528,11 @@ describe("createConvexAuthOrganizationOperations — writer ensure-chain", () =>
     const ops = makeOperations(world);
     await ops.writes.ensureSystemRoles(ctx, orgId("local-org-1"));
     const seedArgs = requireRecord(
-      world.mutationLog.find((m) => m.op === "seedDefaultRoles")?.args
+      world.mutationLog.find((m) => m.op === "seedDefaultRoles")?.args,
     );
     assert.ok(Array.isArray(seedArgs.catalog));
     const catalog = seedArgs.catalog.map(requireRecord);
-    const byKey = Object.fromEntries(
-      catalog.map((entry) => [entry.key, entry.permissions])
-    );
+    const byKey = Object.fromEntries(catalog.map((entry) => [entry.key, entry.permissions]));
     assert.deepEqual(byKey.owner, ["*"]);
     assert.deepEqual(byKey.admin, ["org:read", "org:members:manage"]);
     assert.deepEqual(byKey.member, ["org:read"]);
@@ -586,20 +550,11 @@ describe("createConvexAuthOrganizationOperations — writer ensure-chain", () =>
       },
     });
     const ops = makeOperations(world);
-    const roleId = await ops.writes.ensureRoleForTemplate(
-      ctx,
-      orgId("local-org-1"),
-      "admin"
-    );
+    const roleId = await ops.writes.ensureRoleForTemplate(ctx, orgId("local-org-1"), "admin");
     assert.equal(roleId, "cRoleAdmin");
-    const ensureArgs = requireRecord(
-      world.mutationLog.find((m) => m.op === "ensureRole")?.args
-    );
+    const ensureArgs = requireRecord(world.mutationLog.find((m) => m.op === "ensureRole")?.args);
     assert.equal(ensureArgs.key, "admin");
-    assert.deepEqual(ensureArgs.permissions, [
-      "org:read",
-      "org:members:manage",
-    ]);
+    assert.deepEqual(ensureArgs.permissions, ["org:read", "org:members:manage"]);
   });
 
   it("does NOT backfill when the component returns the SAME org id already anchored", async () => {
@@ -619,7 +574,7 @@ describe("createConvexAuthOrganizationOperations — writer ensure-chain", () =>
     const ops = makeOperations(world);
     await assert.rejects(
       ops.writes.ensureOrganization(ctx, orgId("local-org-1")),
-      /no runMutation/
+      /no runMutation/,
     );
   });
 });
@@ -630,11 +585,7 @@ describe("createConvexAuthOrganizationOperations — writer ensure-chain", () =>
 
 describe("createConvexAuthOrganizationOperations — generics flow branded ids", () => {
   it("read DTOs carry the consumer's branded id + role types (compile-time)", () => {
-    type Equals<A, B> = [A] extends [B]
-      ? [B] extends [A]
-        ? true
-        : false
-      : false;
+    type Equals<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 
     type Membership = ResolvedComponentMembership<LocalOrgId, TestRole>;
     // organizationId is the branded LocalOrgId, NOT string.
@@ -643,19 +594,11 @@ describe("createConvexAuthOrganizationOperations — generics flow branded ids",
       Equals<Membership["organizationId"] extends string ? true : false, true>,
       Equals<Membership["roleTemplate"], TestRole>,
       Equals<
-        ResolvedComponentInvitation<
-          LocalOrgId,
-          LocalUserId,
-          TestRole
-        >["invitedBy"],
+        ResolvedComponentInvitation<LocalOrgId, LocalUserId, TestRole>["invitedBy"],
         LocalUserId
       >,
       Equals<
-        ResolvedComponentInvitation<
-          LocalOrgId,
-          LocalUserId,
-          TestRole
-        >["organizationId"],
+        ResolvedComponentInvitation<LocalOrgId, LocalUserId, TestRole>["organizationId"],
         LocalOrgId
       >,
     ];
@@ -683,11 +626,11 @@ describe("createConvexAuthOrganizationOperations — error policy", () => {
       (error: unknown) => {
         assert.ok(
           error instanceof ConvexAuthOrganizationOperationsError,
-          "must be the typed package error, not a bare Error"
+          "must be the typed package error, not a bare Error",
         );
         assert.equal(error.code, "missing_run_mutation");
         return true;
-      }
+      },
     );
   });
 
@@ -710,7 +653,7 @@ describe("createConvexAuthOrganizationOperations — error policy", () => {
         assert.equal(error.context?.subject, "member");
         assert.equal(error.context?.localUserId, "local-user-no-bridge");
         return true;
-      }
+      },
     );
   });
 
@@ -728,7 +671,7 @@ describe("createConvexAuthOrganizationOperations — error policy", () => {
         assert.equal(error.code, "organization_not_found");
         assert.equal(error.context?.localOrganizationId, "local-org");
         return true;
-      }
+      },
     );
   });
 
@@ -767,7 +710,7 @@ describe("createConvexAuthOrganizationOperations — error policy", () => {
         assert.ok(!(error instanceof ConvexAuthOrganizationOperationsError));
         assert.equal(error.data.code, "user_bridge_id_missing");
         return true;
-      }
+      },
     );
     assert.deepEqual(received, { code: "user_bridge_id_missing" });
   });

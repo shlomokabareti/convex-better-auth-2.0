@@ -34,9 +34,7 @@ export type ResendAccountEmailEvent =
       };
     };
 
-export function mapResendAccountEmailDelivery(args: {
-  event: ResendAccountEmailEvent;
-}): {
+export function mapResendAccountEmailDelivery(args: { event: ResendAccountEmailEvent }): {
   status: Exclude<AccountEmailDeliveryStatus, "not_configured" | "queued">;
   eventType: ResendAccountEmailEvent["type"];
   error?: string;

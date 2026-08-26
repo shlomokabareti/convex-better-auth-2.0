@@ -7,11 +7,7 @@ import { useGuardedConvexMutation } from "./protected-writes";
 
 export type ConvexWebhookEndpointStatus = "active" | "disabled" | "archived";
 
-export type ConvexWebhookDeliveryStatus =
-  | "pending"
-  | "processing"
-  | "delivered"
-  | "failed";
+export type ConvexWebhookDeliveryStatus = "pending" | "processing" | "delivered" | "failed";
 
 export type ConvexWebhookDeliveryFailureKind =
   | "endpoint_inactive"
@@ -194,9 +190,7 @@ export type ConvexWebhookEndpointListProps<
 > = {
   classNames?: ConvexWebhookClassNames;
   copy: ConvexWebhookEndpointListCopy;
-  endpoints:
-    | readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[]
-    | undefined;
+  endpoints: readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[] | undefined;
   eventOptions: readonly EventType[];
   onArchive: (endpointId: EndpointId) => void;
   onDelete: (endpointId: EndpointId) => void;
@@ -204,7 +198,7 @@ export type ConvexWebhookEndpointListProps<
   onRotateSecret: (endpointId: EndpointId) => void;
   onSave: (
     endpointId: EndpointId,
-    values: { url: string; description?: string; events: EventType[] }
+    values: { url: string; description?: string; events: EventType[] },
   ) => void;
   onSendTest: (endpointId: EndpointId) => void;
   renderTag?: (label: string) => ReactNode;
@@ -218,9 +212,7 @@ export type ConvexWebhookDeliveryFiltersProps<
   classNames?: ConvexWebhookClassNames;
   copy?: Partial<ConvexWebhookDeliveryCopy>;
   endpointId: EndpointId | "all";
-  endpoints:
-    | readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[]
-    | undefined;
+  endpoints: readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[] | undefined;
   eventOptions: readonly EventType[];
   eventType: EventType | "all";
   onEndpointIdChange: (value: EndpointId | "all") => void;
@@ -239,14 +231,7 @@ export type ConvexWebhookDeliveryPaginationProps<
   copy?: Partial<ConvexWebhookDeliveryCopy>;
   onNext: () => void;
   onPrevious: () => void;
-  page:
-    | ConvexWebhookDeliveryPage<
-        EventType,
-        EndpointId,
-        DeliveryId,
-        OrganizationId
-      >
-    | undefined;
+  page: ConvexWebhookDeliveryPage<EventType, EndpointId, DeliveryId, OrganizationId> | undefined;
 };
 
 export type ConvexWebhookDeliveryListProps<
@@ -258,17 +243,10 @@ export type ConvexWebhookDeliveryListProps<
   classNames?: ConvexWebhookClassNames;
   copy: ConvexWebhookDeliveryCopy;
   deliveries:
-    | readonly ConvexWebhookDeliveryListItem<
-        EventType,
-        EndpointId,
-        DeliveryId,
-        OrganizationId
-      >[]
+    | readonly ConvexWebhookDeliveryListItem<EventType, EndpointId, DeliveryId, OrganizationId>[]
     | undefined;
   formatTimestamp?: (timestamp: number) => string;
-  renderFailureBadge?: (
-    failureKind: ConvexWebhookDeliveryFailureKind
-  ) => ReactNode;
+  renderFailureBadge?: (failureKind: ConvexWebhookDeliveryFailureKind) => ReactNode;
   renderTag?: (label: string) => ReactNode;
 };
 
@@ -277,12 +255,7 @@ export type ConvexExhaustedWebhookDeliveryListProps<
   EndpointId extends string = string,
   DeliveryId extends string = string,
   OrganizationId extends string = string,
-> = ConvexWebhookDeliveryListProps<
-  EventType,
-  EndpointId,
-  DeliveryId,
-  OrganizationId
-> & {
+> = ConvexWebhookDeliveryListProps<EventType, EndpointId, DeliveryId, OrganizationId> & {
   onRetry: (deliveryId: DeliveryId) => void;
   retryingDeliveryId: DeliveryId | null;
 };
@@ -311,12 +284,7 @@ export type ConvexWebhookSettingsFunctionReferences<
     "query",
     "public",
     { limit?: number },
-    readonly ConvexWebhookDeliveryListItem<
-      EventType,
-      EndpointId,
-      DeliveryId,
-      OrganizationId
-    >[]
+    readonly ConvexWebhookDeliveryListItem<EventType, EndpointId, DeliveryId, OrganizationId>[]
   >;
   listRecentDeliveries: FunctionReference<
     "query",
@@ -358,42 +326,17 @@ export type ConvexWebhookSettingsFunctionReferences<
     { endpointId: string },
     ConvexWebhookRotateSecretResult
   >;
-  archiveEndpoint: FunctionReference<
-    "mutation",
-    "public",
-    { endpointId: string },
-    unknown
-  >;
-  disableEndpoint: FunctionReference<
-    "mutation",
-    "public",
-    { endpointId: string },
-    unknown
-  >;
-  removeEndpoint: FunctionReference<
-    "mutation",
-    "public",
-    { endpointId: string },
-    unknown
-  >;
+  archiveEndpoint: FunctionReference<"mutation", "public", { endpointId: string }, unknown>;
+  disableEndpoint: FunctionReference<"mutation", "public", { endpointId: string }, unknown>;
+  removeEndpoint: FunctionReference<"mutation", "public", { endpointId: string }, unknown>;
   sendTest: FunctionReference<
     "mutation",
     "public",
     { endpointId: string; requestId?: string },
     unknown
   >;
-  retryDelivery: FunctionReference<
-    "mutation",
-    "public",
-    { deliveryId: string },
-    unknown
-  >;
-  triggerProcessing: FunctionReference<
-    "mutation",
-    "public",
-    { limit?: number },
-    unknown
-  >;
+  retryDelivery: FunctionReference<"mutation", "public", { deliveryId: string }, unknown>;
+  triggerProcessing: FunctionReference<"mutation", "public", { limit?: number }, unknown>;
 };
 
 export type ConvexWebhookSettingsSurfaceCopy = {
@@ -414,9 +357,7 @@ export type ConvexWebhookSettingsSurfaceProps<
 > = {
   captureEvent?: (name: string, properties: Record<string, unknown>) => void;
   classNames?: ConvexWebhookClassNames;
-  confirmDeleteEndpoint?: (args: {
-    endpointId: EndpointId;
-  }) => boolean | Promise<boolean>;
+  confirmDeleteEndpoint?: (args: { endpointId: EndpointId }) => boolean | Promise<boolean>;
   copy?: ConvexWebhookSettingsSurfaceCopy;
   createRequestId: (prefix: string) => string;
   deliveryLimit?: number;
@@ -426,20 +367,10 @@ export type ConvexWebhookSettingsSurfaceProps<
   formatTimestamp?: (timestamp: number) => string;
   getErrorMessage?: (error: unknown, fallback: string) => string;
   organizationId?: string;
-  refs: ConvexWebhookSettingsFunctionReferences<
-    EventType,
-    EndpointId,
-    DeliveryId,
-    OrganizationId
-  >;
+  refs: ConvexWebhookSettingsFunctionReferences<EventType, EndpointId, DeliveryId, OrganizationId>;
   renderActionError?: (message: string) => ReactNode;
-  renderFailureBadge?: (
-    failureKind: ConvexWebhookDeliveryFailureKind
-  ) => ReactNode;
-  renderProcessQueueButton?: (args: {
-    label: string;
-    onClick: () => void;
-  }) => ReactNode;
+  renderFailureBadge?: (failureKind: ConvexWebhookDeliveryFailureKind) => ReactNode;
+  renderProcessQueueButton?: (args: { label: string; onClick: () => void }) => ReactNode;
   renderSecret?: (args: { secret: string; title: string }) => ReactNode;
   renderTag?: (label: string) => ReactNode;
 };
@@ -499,12 +430,7 @@ const defaultDeliveryCopy = {
   statusFilterLabel: "Filter by status",
 } satisfies Omit<ConvexWebhookDeliveryCopy, "emptyMessage">;
 
-const deliveryStatuses = [
-  "pending",
-  "processing",
-  "delivered",
-  "failed",
-] as const;
+const deliveryStatuses = ["pending", "processing", "delivered", "failed"] as const;
 
 export function canSubmitConvexWebhookCreateForm({
   creating,
@@ -523,13 +449,13 @@ export function formatConvexWebhookTimestamp(timestamp: number): string {
 }
 
 export function getConvexWebhookFailureKindLabel(
-  failureKind: ConvexWebhookDeliveryFailureKind
+  failureKind: ConvexWebhookDeliveryFailureKind,
 ): string {
   return failureKind.replaceAll("_", " ");
 }
 
 export function getConvexWebhookFailureKindTone(
-  failureKind: ConvexWebhookDeliveryFailureKind
+  failureKind: ConvexWebhookDeliveryFailureKind,
 ): "destructive" | "warning" | "secondary" {
   if (failureKind === "client_error" || failureKind === "endpoint_inactive") {
     return "destructive";
@@ -540,10 +466,7 @@ export function getConvexWebhookFailureKindTone(
   return "secondary";
 }
 
-export function getConvexWebhookMutationErrorMessage(
-  error: unknown,
-  fallback: string
-): string {
+export function getConvexWebhookMutationErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.length > 0) {
     return error.message;
   }
@@ -577,12 +500,7 @@ export function ConvexWebhookSettingsSurface<
   renderProcessQueueButton,
   renderSecret,
   renderTag,
-}: ConvexWebhookSettingsSurfaceProps<
-  EventType,
-  EndpointId,
-  DeliveryId,
-  OrganizationId
->) {
+}: ConvexWebhookSettingsSurfaceProps<EventType, EndpointId, DeliveryId, OrganizationId>) {
   const webhookEndpoints = useQuery(refs.listEndpoints, {});
   const exhaustedDeliveries = useQuery(refs.listExhaustedDeliveries, {
     limit: exhaustedDeliveryLimit,
@@ -600,11 +518,8 @@ export function ConvexWebhookSettingsSurface<
   });
   const endpointCopy = resolveSettingsEndpointCopy(copy?.endpoints);
   const deliveryCopy = resolveSettingsDeliveryCopy(copy?.deliveries);
-  const exhaustedCopy = resolveSettingsExhaustedDeliveryCopy(
-    copy?.exhaustedDeliveries
-  );
-  const processQueueLabel =
-    copy?.processQueueLabel ?? "Process webhook queue now";
+  const exhaustedCopy = resolveSettingsExhaustedDeliveryCopy(copy?.exhaustedDeliveries);
+  const processQueueLabel = copy?.processQueueLabel ?? "Process webhook queue now";
   const secretTitle = copy?.secretTitle ?? "Webhook secret. Copy now.";
 
   return (
@@ -635,12 +550,7 @@ export function ConvexWebhookSettingsSurface<
         onClick={endpointActions.processQueue}
         renderProcessQueueButton={renderProcessQueueButton}
       />
-      <ConvexWebhookDeliverySection<
-        EventType,
-        EndpointId,
-        DeliveryId,
-        OrganizationId
-      >
+      <ConvexWebhookDeliverySection<EventType, EndpointId, DeliveryId, OrganizationId>
         classNames={classNames}
         copy={deliveryCopy}
         deliveries={deliveries}
@@ -650,12 +560,7 @@ export function ConvexWebhookSettingsSurface<
         renderFailureBadge={renderFailureBadge}
         renderTag={renderTag}
       />
-      <ConvexExhaustedWebhookDeliveryList<
-        EventType,
-        EndpointId,
-        DeliveryId,
-        OrganizationId
-      >
+      <ConvexExhaustedWebhookDeliveryList<EventType, EndpointId, DeliveryId, OrganizationId>
         classNames={classNames}
         copy={exhaustedCopy}
         deliveries={exhaustedDeliveries}
@@ -681,9 +586,7 @@ function ConvexWebhookCreateSection<EventType extends string = string>({
   title,
 }: {
   actions: Pick<
-    ReturnType<
-      typeof useConvexWebhookEndpointActions<EventType, string, string, string>
-    >,
+    ReturnType<typeof useConvexWebhookEndpointActions<EventType, string, string, string>>,
     | "actionError"
     | "create"
     | "createdWebhookSecret"
@@ -751,14 +654,7 @@ function ConvexWebhookEndpointSection<
   renderTag,
 }: {
   actions: Pick<
-    ReturnType<
-      typeof useConvexWebhookEndpointActions<
-        EventType,
-        EndpointId,
-        string,
-        string
-      >
-    >,
+    ReturnType<typeof useConvexWebhookEndpointActions<EventType, EndpointId, string, string>>,
     | "archive"
     | "disable"
     | "removeWithConfirmation"
@@ -772,9 +668,7 @@ function ConvexWebhookEndpointSection<
     | ((args: { endpointId: EndpointId }) => boolean | Promise<boolean>)
     | undefined;
   copy: ConvexWebhookEndpointListCopy;
-  endpoints:
-    | readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[]
-    | undefined;
+  endpoints: readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[] | undefined;
   eventOptions: readonly EventType[];
   renderTag: ConvexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
 }) {
@@ -816,16 +710,9 @@ function ConvexWebhookDeliverySection<
   classNames: ConvexWebhookClassNames | undefined;
   copy: ConvexWebhookDeliveryCopy;
   deliveries: ReturnType<
-    typeof useConvexWebhookDeliveryPage<
-      EventType,
-      EndpointId,
-      DeliveryId,
-      OrganizationId
-    >
+    typeof useConvexWebhookDeliveryPage<EventType, EndpointId, DeliveryId, OrganizationId>
   >;
-  endpoints:
-    | readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[]
-    | undefined;
+  endpoints: readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[] | undefined;
   eventOptions: readonly EventType[];
   formatTimestamp: ((timestamp: number) => string) | undefined;
   renderFailureBadge: ConvexWebhookDeliveryListProps<
@@ -863,23 +750,13 @@ function ConvexWebhookDeliverySection<
         }}
         status={deliveries.deliveryStatus}
       />
-      <ConvexWebhookDeliveryPagination<
-        EventType,
-        EndpointId,
-        DeliveryId,
-        OrganizationId
-      >
+      <ConvexWebhookDeliveryPagination<EventType, EndpointId, DeliveryId, OrganizationId>
         classNames={classNames}
         onNext={deliveries.nextPage}
         onPrevious={deliveries.previousPage}
         page={deliveries.webhookDeliveriesPage}
       />
-      <ConvexWebhookDeliveryList<
-        EventType,
-        EndpointId,
-        DeliveryId,
-        OrganizationId
-      >
+      <ConvexWebhookDeliveryList<EventType, EndpointId, DeliveryId, OrganizationId>
         classNames={classNames}
         copy={copy}
         deliveries={deliveries.webhookDeliveriesPage?.items}
@@ -908,11 +785,7 @@ function ConvexWebhookSecretSlot({
 
   return (
     renderSecret?.({ secret, title }) ?? (
-      <ConvexWebhookSecretNotice
-        classNames={classNames}
-        secret={secret}
-        title={title}
-      />
+      <ConvexWebhookSecretNotice classNames={classNames} secret={secret} title={title} />
     )
   );
 }
@@ -934,11 +807,7 @@ function ConvexWebhookActionErrorSlot({
 
   return (
     renderActionError?.(message) ?? (
-      <ConvexWebhookActionErrorNotice
-        classNames={classNames}
-        message={message}
-        title={title}
-      />
+      <ConvexWebhookActionErrorNotice classNames={classNames} message={message} title={title} />
     )
   );
 }
@@ -956,11 +825,7 @@ function ConvexWebhookProcessQueueSlot({
 }) {
   return (
     renderProcessQueueButton?.({ label, onClick }) ?? (
-      <button
-        className={secondaryButtonClassName(classNames)}
-        onClick={onClick}
-        type="button"
-      >
+      <button className={secondaryButtonClassName(classNames)} onClick={onClick} type="button">
         {label}
       </button>
     )
@@ -988,10 +853,7 @@ export function ConvexWebhookCreateForm<EventType extends string = string>({
 
   return (
     <div
-      className={cn(
-        "border-foreground/10 bg-background/20 rounded-lg border",
-        classNames?.card
-      )}
+      className={cn("border-foreground/10 bg-background/20 rounded-lg border", classNames?.card)}
     >
       <div className={cn("space-y-3 p-5", classNames?.cardContent)}>
         <label className={cn("block space-y-2 text-sm", classNames?.label)}>
@@ -1026,7 +888,7 @@ export function ConvexWebhookCreateForm<EventType extends string = string>({
         <button
           className={cn(
             primaryButtonClassName(classNames),
-            !canCreate && classNames?.primaryButtonDisabled
+            !canCreate && classNames?.primaryButtonDisabled,
           )}
           disabled={!canCreate}
           onClick={onSubmit}
@@ -1059,19 +921,11 @@ export function ConvexWebhookEndpointList<
   const resolvedCopy = resolveEndpointCopy(copy);
 
   if (endpoints === undefined) {
-    return (
-      <p className={stateTextClassName(classNames)}>
-        {resolvedCopy.loadingMessage}
-      </p>
-    );
+    return <p className={stateTextClassName(classNames)}>{resolvedCopy.loadingMessage}</p>;
   }
 
   if (endpoints.length === 0) {
-    return (
-      <p className={stateTextClassName(classNames)}>
-        {resolvedCopy.emptyMessage}
-      </p>
-    );
+    return <p className={stateTextClassName(classNames)}>{resolvedCopy.emptyMessage}</p>;
   }
 
   return (
@@ -1115,15 +969,14 @@ export function ConvexWebhookDeliveryFilters<
   const resolvedCopy = resolveDeliveryCopy({ emptyMessage: "", ...copy });
   const filterEndpoints =
     endpoints?.filter(
-      (endpoint) =>
-        endpoint.status !== "archived" || endpoint._id === endpointId
+      (endpoint) => endpoint.status !== "archived" || endpoint._id === endpointId,
     ) ?? [];
 
   return (
     <div
       className={cn(
         "border-foreground/10 bg-background/20 grid gap-3 rounded-lg border p-4 md:grid-cols-3",
-        classNames?.deliveryFilterGrid
+        classNames?.deliveryFilterGrid,
       )}
     >
       <label className={cn("block space-y-2 text-sm", classNames?.label)}>
@@ -1135,7 +988,7 @@ export function ConvexWebhookDeliveryFilters<
           onChange={(event) => {
             const value = event.target.value;
             const selectedEndpointId = filterEndpoints.find(
-              (endpoint) => endpoint._id === value
+              (endpoint) => endpoint._id === value,
             )?._id;
             if (value === "all") {
               onEndpointIdChange("all");
@@ -1186,9 +1039,7 @@ export function ConvexWebhookDeliveryFilters<
           className={selectClassName(classNames)}
           onChange={(event) => {
             const value = event.target.value;
-            const selectedEventType = eventOptions.find(
-              (item) => item === value
-            );
+            const selectedEventType = eventOptions.find((item) => item === value);
             if (value === "all") {
               onEventTypeChange("all");
             } else if (selectedEventType !== undefined) {
@@ -1220,12 +1071,7 @@ export function ConvexWebhookDeliveryPagination<
   onNext,
   onPrevious,
   page,
-}: ConvexWebhookDeliveryPaginationProps<
-  EventType,
-  EndpointId,
-  DeliveryId,
-  OrganizationId
->) {
+}: ConvexWebhookDeliveryPaginationProps<EventType, EndpointId, DeliveryId, OrganizationId>) {
   const resolvedCopy = resolveDeliveryCopy({ emptyMessage: "", ...copy });
 
   if (!page) {
@@ -1238,8 +1084,7 @@ export function ConvexWebhookDeliveryPagination<
   return (
     <div className="border-foreground/10 bg-background/20 text-foreground/60 flex items-center justify-between rounded-lg border p-4 text-sm">
       <p className="tabular-nums">
-        {resolvedCopy.showingLabel} {firstItem}-{lastItem}{" "}
-        {resolvedCopy.ofLabel} {page.total}
+        {resolvedCopy.showingLabel} {firstItem}-{lastItem} {resolvedCopy.ofLabel} {page.total}
       </p>
       <div className="flex gap-2">
         <button
@@ -1275,44 +1120,27 @@ export function ConvexWebhookDeliveryList<
   formatTimestamp = formatConvexWebhookTimestamp,
   renderFailureBadge,
   renderTag,
-}: ConvexWebhookDeliveryListProps<
-  EventType,
-  EndpointId,
-  DeliveryId,
-  OrganizationId
->) {
+}: ConvexWebhookDeliveryListProps<EventType, EndpointId, DeliveryId, OrganizationId>) {
   const resolvedCopy = resolveDeliveryCopy(copy);
 
   if (deliveries === undefined) {
-    return (
-      <p className={stateTextClassName(classNames)}>
-        {resolvedCopy.loadingMessage}
-      </p>
-    );
+    return <p className={stateTextClassName(classNames)}>{resolvedCopy.loadingMessage}</p>;
   }
 
   if (deliveries.length === 0) {
-    return (
-      <p className={stateTextClassName(classNames)}>
-        {resolvedCopy.emptyMessage}
-      </p>
-    );
+    return <p className={stateTextClassName(classNames)}>{resolvedCopy.emptyMessage}</p>;
   }
 
   return (
     <div
       className={cn(
         "border-foreground/10 bg-background/20 space-y-3 rounded-lg border p-4",
-        classNames?.deliveryPanel
+        classNames?.deliveryPanel,
       )}
     >
       <div className="space-y-1">
-        <p className="text-foreground/45 text-xs uppercase">
-          {resolvedCopy.historyTitle}
-        </p>
-        <p className="text-foreground/60 text-sm text-pretty">
-          {resolvedCopy.historyDescription}
-        </p>
+        <p className="text-foreground/45 text-xs uppercase">{resolvedCopy.historyTitle}</p>
+        <p className="text-foreground/60 text-sm text-pretty">{resolvedCopy.historyDescription}</p>
       </div>
       <div className="space-y-3">
         {deliveries.map((delivery) => (
@@ -1345,20 +1173,11 @@ export function ConvexExhaustedWebhookDeliveryList<
   renderFailureBadge,
   renderTag,
   retryingDeliveryId,
-}: ConvexExhaustedWebhookDeliveryListProps<
-  EventType,
-  EndpointId,
-  DeliveryId,
-  OrganizationId
->) {
+}: ConvexExhaustedWebhookDeliveryListProps<EventType, EndpointId, DeliveryId, OrganizationId>) {
   const resolvedCopy = resolveDeliveryCopy(copy);
 
   if (deliveries === undefined) {
-    return (
-      <p className={stateTextClassName(classNames)}>
-        {resolvedCopy.exhaustedLoadingMessage}
-      </p>
-    );
+    return <p className={stateTextClassName(classNames)}>{resolvedCopy.exhaustedLoadingMessage}</p>;
   }
 
   if (deliveries.length === 0) {
@@ -1369,13 +1188,11 @@ export function ConvexExhaustedWebhookDeliveryList<
     <div
       className={cn(
         "border-destructive/30 bg-destructive/5 space-y-3 rounded-lg border p-4",
-        classNames?.exhaustedPanel
+        classNames?.exhaustedPanel,
       )}
     >
       <div className="space-y-1">
-        <p className="text-destructive/70 text-xs uppercase">
-          {resolvedCopy.exhaustedTitle}
-        </p>
+        <p className="text-destructive/70 text-xs uppercase">{resolvedCopy.exhaustedTitle}</p>
         <p className="text-destructive/80 text-sm text-pretty">
           {resolvedCopy.exhaustedDescription}
         </p>
@@ -1419,22 +1236,11 @@ function useConvexWebhookDeliveryPage<
   refs,
 }: {
   deliveryLimit: number;
-  refs: ConvexWebhookSettingsFunctionReferences<
-    EventType,
-    EndpointId,
-    DeliveryId,
-    OrganizationId
-  >;
+  refs: ConvexWebhookSettingsFunctionReferences<EventType, EndpointId, DeliveryId, OrganizationId>;
 }) {
-  const [deliveryEndpointId, setDeliveryEndpointId] = useState<
-    EndpointId | "all"
-  >("all");
-  const [deliveryStatus, setDeliveryStatus] = useState<
-    ConvexWebhookDeliveryStatus | "all"
-  >("all");
-  const [deliveryEventType, setDeliveryEventType] = useState<EventType | "all">(
-    "all"
-  );
+  const [deliveryEndpointId, setDeliveryEndpointId] = useState<EndpointId | "all">("all");
+  const [deliveryStatus, setDeliveryStatus] = useState<ConvexWebhookDeliveryStatus | "all">("all");
+  const [deliveryEventType, setDeliveryEventType] = useState<EventType | "all">("all");
   const [deliveryOffset, setDeliveryOffset] = useState(0);
   const webhookDeliveriesPage = useQuery(refs.listRecentDeliveries, {
     endpointId: deliveryEndpointId === "all" ? undefined : deliveryEndpointId,
@@ -1449,8 +1255,7 @@ function useConvexWebhookDeliveryPage<
     deliveryEventType,
     deliveryStatus,
     nextPage: () => setDeliveryOffset((current) => current + deliveryLimit),
-    previousPage: () =>
-      setDeliveryOffset((current) => Math.max(0, current - deliveryLimit)),
+    previousPage: () => setDeliveryOffset((current) => Math.max(0, current - deliveryLimit)),
     resetOffset: () => setDeliveryOffset(0),
     setDeliveryEndpointId,
     setDeliveryEventType,
@@ -1471,24 +1276,15 @@ function useConvexWebhookEndpointActions<
   organizationId,
   refs,
 }: {
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   createRequestId: (prefix: string) => string;
   getErrorMessage: (error: unknown, fallback: string) => string;
   organizationId: string | undefined;
-  refs: ConvexWebhookSettingsFunctionReferences<
-    EventType,
-    EndpointId,
-    DeliveryId,
-    OrganizationId
-  >;
+  refs: ConvexWebhookSettingsFunctionReferences<EventType, EndpointId, DeliveryId, OrganizationId>;
 }) {
-  const mutations = useConvexWebhookEndpointMutationRunners<
-    EventType,
-    EndpointId,
-    DeliveryId
-  >(refs);
+  const mutations = useConvexWebhookEndpointMutationRunners<EventType, EndpointId, DeliveryId>(
+    refs,
+  );
   const [actionError, setActionError] = useState<string | null>(null);
   const setMutationError = (error: unknown, fallback: string) =>
     setActionError(getErrorMessage(error, fallback));
@@ -1512,13 +1308,12 @@ function useConvexWebhookEndpointActions<
     setActionError,
     setMutationError,
   });
-  const endpointMutationActions =
-    createConvexWebhookEndpointMutationActions<EndpointId>({
-      mutations,
-      setActionError,
-      setCreatedWebhookSecret: createState.setCreatedWebhookSecret,
-      setMutationError,
-    });
+  const endpointMutationActions = createConvexWebhookEndpointMutationActions<EndpointId>({
+    mutations,
+    setActionError,
+    setCreatedWebhookSecret: createState.setCreatedWebhookSecret,
+    setMutationError,
+  });
 
   return {
     actionError,
@@ -1529,18 +1324,14 @@ function useConvexWebhookEndpointActions<
   };
 }
 
-function createConvexWebhookEndpointMutationActions<
-  EndpointId extends string = string,
->({
+function createConvexWebhookEndpointMutationActions<EndpointId extends string = string>({
   mutations,
   setActionError,
   setCreatedWebhookSecret,
   setMutationError,
 }: {
   mutations: Pick<
-    ReturnType<
-      typeof useConvexWebhookEndpointMutationRunners<string, EndpointId, string>
-    >,
+    ReturnType<typeof useConvexWebhookEndpointMutationRunners<string, EndpointId, string>>,
     | "archiveWebhookEndpoint"
     | "disableWebhookEndpoint"
     | "removeWebhookEndpoint"
@@ -1558,7 +1349,7 @@ function createConvexWebhookEndpointMutationActions<
       endpointId,
       setActionError,
       setMutationError,
-      "Could not delete webhook endpoint."
+      "Could not delete webhook endpoint.",
     );
   };
 
@@ -1569,7 +1360,7 @@ function createConvexWebhookEndpointMutationActions<
         endpointId,
         setActionError,
         setMutationError,
-        "Could not archive webhook endpoint."
+        "Could not archive webhook endpoint.",
       ),
     disable: (endpointId: EndpointId) =>
       runWebhookEndpointMutation(
@@ -1577,26 +1368,17 @@ function createConvexWebhookEndpointMutationActions<
         endpointId,
         setActionError,
         setMutationError,
-        "Could not disable webhook endpoint."
+        "Could not disable webhook endpoint.",
       ),
     processQueue: () =>
-      runWebhookQueueProcessing(
-        mutations.triggerProcessing,
-        setActionError,
-        setMutationError
-      ),
+      runWebhookQueueProcessing(mutations.triggerProcessing, setActionError, setMutationError),
     remove,
     removeWithConfirmation: (
       endpointId: EndpointId,
       confirmDeleteEndpoint:
         | ((args: { endpointId: EndpointId }) => boolean | Promise<boolean>)
-        | undefined
-    ) =>
-      removeWebhookEndpointAfterConfirmation(
-        endpointId,
-        confirmDeleteEndpoint,
-        remove
-      ),
+        | undefined,
+    ) => removeWebhookEndpointAfterConfirmation(endpointId, confirmDeleteEndpoint, remove),
     rotateSecret: (endpointId: EndpointId) =>
       rotateWebhookSecretWithState({
         endpointId,
@@ -1607,14 +1389,14 @@ function createConvexWebhookEndpointMutationActions<
       }),
     save: (
       endpointId: EndpointId,
-      values: { description?: string; events: string[]; url: string }
+      values: { description?: string; events: string[]; url: string },
     ) =>
       saveWebhookEndpoint(
         endpointId,
         values,
         mutations.updateWebhookEndpoint,
         setActionError,
-        setMutationError
+        setMutationError,
       ),
   };
 }
@@ -1624,7 +1406,7 @@ function runWebhookEndpointMutation<EndpointId extends string = string>(
   endpointId: EndpointId,
   setActionError: (error: string | null) => void,
   setMutationError: (error: unknown, fallback: string) => void,
-  fallback: string
+  fallback: string,
 ) {
   setActionError(null);
   void mutation({ endpointId }).catch((error: unknown) => {
@@ -1635,7 +1417,7 @@ function runWebhookEndpointMutation<EndpointId extends string = string>(
 function runWebhookQueueProcessing(
   triggerProcessing: MutationRunner<{ limit: number }, unknown>,
   setActionError: (error: string | null) => void,
-  setMutationError: (error: unknown, fallback: string) => void
+  setMutationError: (error: unknown, fallback: string) => void,
 ) {
   setActionError(null);
   void triggerProcessing({ limit: 20 }).catch((error: unknown) => {
@@ -1643,18 +1425,14 @@ function runWebhookQueueProcessing(
   });
 }
 
-async function removeWebhookEndpointAfterConfirmation<
-  EndpointId extends string = string,
->(
+async function removeWebhookEndpointAfterConfirmation<EndpointId extends string = string>(
   endpointId: EndpointId,
   confirmDeleteEndpoint:
     | ((args: { endpointId: EndpointId }) => boolean | Promise<boolean>)
     | undefined,
-  remove: (endpointId: EndpointId) => void
+  remove: (endpointId: EndpointId) => void,
 ) {
-  const confirmed = confirmDeleteEndpoint
-    ? await confirmDeleteEndpoint({ endpointId })
-    : true;
+  const confirmed = confirmDeleteEndpoint ? await confirmDeleteEndpoint({ endpointId }) : true;
   if (confirmed) {
     remove(endpointId);
   }
@@ -1668,10 +1446,7 @@ function rotateWebhookSecretWithState<EndpointId extends string = string>({
   setMutationError,
 }: {
   endpointId: EndpointId;
-  rotateWebhookSecret: MutationRunner<
-    { endpointId: EndpointId },
-    ConvexWebhookRotateSecretResult
-  >;
+  rotateWebhookSecret: MutationRunner<{ endpointId: EndpointId }, ConvexWebhookRotateSecretResult>;
   setActionError: (error: string | null) => void;
   setCreatedWebhookSecret: (secret: string | null) => void;
   setMutationError: (error: unknown, fallback: string) => void;
@@ -1686,10 +1461,7 @@ function rotateWebhookSecretWithState<EndpointId extends string = string>({
     });
 }
 
-function saveWebhookEndpoint<
-  EventType extends string = string,
-  EndpointId extends string = string,
->(
+function saveWebhookEndpoint<EventType extends string = string, EndpointId extends string = string>(
   endpointId: EndpointId,
   values: { description?: string; events: EventType[]; url: string },
   updateWebhookEndpoint: MutationRunner<
@@ -1702,14 +1474,12 @@ function saveWebhookEndpoint<
     unknown
   >,
   setActionError: (error: string | null) => void,
-  setMutationError: (error: unknown, fallback: string) => void
+  setMutationError: (error: unknown, fallback: string) => void,
 ) {
   setActionError(null);
-  void updateWebhookEndpoint({ endpointId, ...values }).catch(
-    (error: unknown) => {
-      setMutationError(error, "Could not save webhook endpoint.");
-    }
-  );
+  void updateWebhookEndpoint({ endpointId, ...values }).catch((error: unknown) => {
+    setMutationError(error, "Could not save webhook endpoint.");
+  });
 }
 
 function useConvexWebhookCreateActionState<EventType extends string = string>({
@@ -1720,9 +1490,7 @@ function useConvexWebhookCreateActionState<EventType extends string = string>({
   setActionError,
   setMutationError,
 }: {
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   createRequestId: (prefix: string) => string;
   createWebhookEndpoint: MutationRunner<
     {
@@ -1740,9 +1508,7 @@ function useConvexWebhookCreateActionState<EventType extends string = string>({
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookDescription, setWebhookDescription] = useState("");
   const [webhookEvents, setWebhookEvents] = useState<EventType[]>([]);
-  const [createdWebhookSecret, setCreatedWebhookSecret] = useState<
-    string | null
-  >(null);
+  const [createdWebhookSecret, setCreatedWebhookSecret] = useState<string | null>(null);
   const [creatingWebhook, setCreatingWebhook] = useState(false);
   const createRequestIdRef = useRef<string | null>(null);
 
@@ -1783,15 +1549,12 @@ function useConvexWebhookRetryActionState<DeliveryId extends string = string>({
   setActionError,
   setMutationError,
 }: {
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   retryWebhookDelivery: MutationRunner<{ deliveryId: DeliveryId }, unknown>;
   setActionError: (error: string | null) => void;
   setMutationError: (error: unknown, fallback: string) => void;
 }) {
-  const [retryingDeliveryId, setRetryingDeliveryId] =
-    useState<DeliveryId | null>(null);
+  const [retryingDeliveryId, setRetryingDeliveryId] = useState<DeliveryId | null>(null);
 
   return {
     retryDelivery: (deliveryId: DeliveryId) =>
@@ -1807,24 +1570,18 @@ function useConvexWebhookRetryActionState<DeliveryId extends string = string>({
   };
 }
 
-function useConvexWebhookSendTestActionState<
-  EndpointId extends string = string,
->({
+function useConvexWebhookSendTestActionState<EndpointId extends string = string>({
   createRequestId,
   sendTestWebhook,
   setActionError,
   setMutationError,
 }: {
   createRequestId: (prefix: string) => string;
-  sendTestWebhook: MutationRunner<
-    { endpointId: EndpointId; requestId: string },
-    unknown
-  >;
+  sendTestWebhook: MutationRunner<{ endpointId: EndpointId; requestId: string }, unknown>;
   setActionError: (error: string | null) => void;
   setMutationError: (error: unknown, fallback: string) => void;
 }) {
-  const [sendingTestEndpointId, setSendingTestEndpointId] =
-    useState<EndpointId | null>(null);
+  const [sendingTestEndpointId, setSendingTestEndpointId] = useState<EndpointId | null>(null);
   const sendTestRequestIdsRef = useRef(new Map<EndpointId, string>());
 
   return {
@@ -1859,9 +1616,7 @@ function createWebhookEndpointWithState<EventType extends string = string>({
   webhookEvents,
   webhookUrl,
 }: {
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   createRequestId: (prefix: string) => string;
   createRequestIdRef: { current: string | null };
   createWebhookEndpoint: MutationRunner<
@@ -1903,10 +1658,7 @@ function createWebhookEndpointWithState<EventType extends string = string>({
       setWebhookUrl("");
       setWebhookDescription("");
       setWebhookEvents([]);
-      captureEvent?.(
-        "settings_webhook_created",
-        organizationId ? { organizationId } : {}
-      );
+      captureEvent?.("settings_webhook_created", organizationId ? { organizationId } : {});
     })
     .catch((error: unknown) => {
       setMutationError(error, "Could not create webhook endpoint.");
@@ -1925,18 +1677,13 @@ function retryWebhookDeliveryWithState<DeliveryId extends string = string>({
   setMutationError,
   setRetryingDeliveryId,
 }: {
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   deliveryId: DeliveryId;
   retryWebhookDelivery: MutationRunner<{ deliveryId: DeliveryId }, unknown>;
   setActionError: (error: string | null) => void;
   setMutationError: (error: unknown, fallback: string) => void;
   setRetryingDeliveryId: (
-    value:
-      | DeliveryId
-      | null
-      | ((current: DeliveryId | null) => DeliveryId | null)
+    value: DeliveryId | null | ((current: DeliveryId | null) => DeliveryId | null),
   ) => void;
 }) {
   setRetryingDeliveryId(deliveryId);
@@ -1952,7 +1699,7 @@ function retryWebhookDeliveryWithState<DeliveryId extends string = string>({
     })
     .finally(() => {
       setRetryingDeliveryId((currentDeliveryId) =>
-        currentDeliveryId === deliveryId ? null : currentDeliveryId
+        currentDeliveryId === deliveryId ? null : currentDeliveryId,
       );
     });
 }
@@ -1969,17 +1716,11 @@ function sendTestWebhookWithState<EndpointId extends string = string>({
   createRequestId: (prefix: string) => string;
   endpointId: EndpointId;
   sendTestRequestIdsRef: { current: Map<EndpointId, string> };
-  sendTestWebhook: MutationRunner<
-    { endpointId: EndpointId; requestId: string },
-    unknown
-  >;
+  sendTestWebhook: MutationRunner<{ endpointId: EndpointId; requestId: string }, unknown>;
   setActionError: (error: string | null) => void;
   setMutationError: (error: unknown, fallback: string) => void;
   setSendingTestEndpointId: (
-    value:
-      | EndpointId
-      | null
-      | ((current: EndpointId | null) => EndpointId | null)
+    value: EndpointId | null | ((current: EndpointId | null) => EndpointId | null),
   ) => void;
 }) {
   if (sendTestRequestIdsRef.current.has(endpointId)) {
@@ -1996,7 +1737,7 @@ function sendTestWebhookWithState<EndpointId extends string = string>({
     .finally(() => {
       sendTestRequestIdsRef.current.delete(endpointId);
       setSendingTestEndpointId((currentEndpointId) =>
-        currentEndpointId === endpointId ? null : currentEndpointId
+        currentEndpointId === endpointId ? null : currentEndpointId,
       );
     });
 }
@@ -2005,38 +1746,16 @@ function useConvexWebhookEndpointMutationRunners<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
->(
-  refs: ConvexWebhookSettingsFunctionReferences<
-    EventType,
-    EndpointId,
-    DeliveryId
-  >
-) {
-  const archiveWebhookEndpoint = useGuardedConvexMutation(
-    useMutation(refs.archiveEndpoint)
-  );
-  const createWebhookEndpoint = useGuardedConvexMutation(
-    useMutation(refs.createEndpoint)
-  );
-  const disableWebhookEndpoint = useGuardedConvexMutation(
-    useMutation(refs.disableEndpoint)
-  );
-  const removeWebhookEndpoint = useGuardedConvexMutation(
-    useMutation(refs.removeEndpoint)
-  );
-  const retryWebhookDelivery = useGuardedConvexMutation(
-    useMutation(refs.retryDelivery)
-  );
-  const rotateWebhookSecret = useGuardedConvexMutation(
-    useMutation(refs.rotateEndpointSecret)
-  );
+>(refs: ConvexWebhookSettingsFunctionReferences<EventType, EndpointId, DeliveryId>) {
+  const archiveWebhookEndpoint = useGuardedConvexMutation(useMutation(refs.archiveEndpoint));
+  const createWebhookEndpoint = useGuardedConvexMutation(useMutation(refs.createEndpoint));
+  const disableWebhookEndpoint = useGuardedConvexMutation(useMutation(refs.disableEndpoint));
+  const removeWebhookEndpoint = useGuardedConvexMutation(useMutation(refs.removeEndpoint));
+  const retryWebhookDelivery = useGuardedConvexMutation(useMutation(refs.retryDelivery));
+  const rotateWebhookSecret = useGuardedConvexMutation(useMutation(refs.rotateEndpointSecret));
   const sendTestWebhook = useGuardedConvexMutation(useMutation(refs.sendTest));
-  const triggerProcessing = useGuardedConvexMutation(
-    useMutation(refs.triggerProcessing)
-  );
-  const updateWebhookEndpoint = useGuardedConvexMutation(
-    useMutation(refs.updateEndpoint)
-  );
+  const triggerProcessing = useGuardedConvexMutation(useMutation(refs.triggerProcessing));
+  const updateWebhookEndpoint = useGuardedConvexMutation(useMutation(refs.updateEndpoint));
 
   return {
     archiveWebhookEndpoint,
@@ -2078,7 +1797,7 @@ function ConvexWebhookEndpointCard<
   onRotateSecret: (endpointId: EndpointId) => void;
   onSave: (
     endpointId: EndpointId,
-    values: { url: string; description?: string; events: EventType[] }
+    values: { url: string; description?: string; events: EventType[] },
   ) => void;
   onSendTest: (endpointId: EndpointId) => void;
   renderTag: ConvexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
@@ -2092,7 +1811,7 @@ function ConvexWebhookEndpointCard<
     <article
       className={cn(
         "border-foreground/10 bg-background/20 rounded-lg border",
-        classNames?.endpointCard
+        classNames?.endpointCard,
       )}
       data-testid="webhook-endpoint-card"
     >
@@ -2164,17 +1883,8 @@ function ConvexWebhookEndpointHeader<
   sendingTestEndpointId: EndpointId | null;
 }) {
   return (
-    <div
-      className={cn(
-        "flex items-start justify-between gap-4",
-        classNames?.endpointHeader
-      )}
-    >
-      <ConvexWebhookEndpointMeta
-        classNames={classNames}
-        copy={copy}
-        endpoint={endpoint}
-      />
+    <div className={cn("flex items-start justify-between gap-4", classNames?.endpointHeader)}>
+      <ConvexWebhookEndpointMeta classNames={classNames} copy={copy} endpoint={endpoint} />
       <ConvexWebhookEndpointActions
         classNames={classNames}
         copy={copy}
@@ -2204,9 +1914,7 @@ function ConvexWebhookEndpointMeta<
 }) {
   return (
     <div className={cn("space-y-1", classNames?.endpointMeta)}>
-      <p className="text-foreground font-medium">
-        {endpoint.description ?? endpoint.url}
-      </p>
+      <p className="text-foreground font-medium">{endpoint.description ?? endpoint.url}</p>
       <p className="text-foreground/45 text-xs">{endpoint.url}</p>
       <p className="text-foreground/45 text-xs uppercase">{endpoint.status}</p>
       <p className="text-foreground/45 text-xs">
@@ -2241,12 +1949,7 @@ function ConvexWebhookEndpointActions<
   sendingTestEndpointId: EndpointId | null;
 }) {
   return (
-    <div
-      className={cn(
-        "flex flex-wrap justify-end gap-2",
-        classNames?.endpointActions
-      )}
-    >
+    <div className={cn("flex flex-wrap justify-end gap-2", classNames?.endpointActions)}>
       <ConvexWebhookSendTestButton
         classNames={classNames}
         copy={copy}
@@ -2319,9 +2022,7 @@ function ConvexWebhookSendTestButton<
       onClick={() => onSendTest(endpoint._id)}
       type="button"
     >
-      {sendingTestEndpointId === endpoint._id
-        ? copy.sendingTestLabel
-        : copy.sendTestLabel}
+      {sendingTestEndpointId === endpoint._id ? copy.sendingTestLabel : copy.sendTestLabel}
     </button>
   );
 }
@@ -2342,12 +2043,7 @@ function ConvexWebhookEndpointEditFields({
   url: string;
 }) {
   return (
-    <div
-      className={cn(
-        "mt-4 grid gap-3 md:grid-cols-2",
-        classNames?.endpointFormGrid
-      )}
-    >
+    <div className={cn("mt-4 grid gap-3 md:grid-cols-2", classNames?.endpointFormGrid)}>
       <label className={cn("block space-y-2 text-sm", classNames?.label)}>
         <span className={cn("text-foreground/70", classNames?.labelText)}>
           {copy.endpointUrlLabel}
@@ -2390,7 +2086,7 @@ function ConvexWebhookEndpointSaveRow<
   events: EventType[];
   onSave: (
     endpointId: EndpointId,
-    values: { url: string; description?: string; events: EventType[] }
+    values: { url: string; description?: string; events: EventType[] },
   ) => void;
   renderTag: ConvexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
   values: { description: string; url: string };
@@ -2439,9 +2135,7 @@ function ConvexWebhookEndpointEventTags<
     <div className="flex flex-wrap gap-2">
       {endpoint.events.length === 0
         ? renderWebhookTag(copy.allEventsLabel, classNames, renderTag)
-        : endpoint.events.map((eventType) =>
-            renderWebhookTag(eventType, classNames, renderTag)
-          )}
+        : endpoint.events.map((eventType) => renderWebhookTag(eventType, classNames, renderTag))}
     </div>
   );
 }
@@ -2474,7 +2168,7 @@ function ConvexWebhookEventPills<EventType extends string>({
               disabled && "cursor-not-allowed opacity-50",
               classNames?.pill,
               isSelected && classNames?.pillSelected,
-              disabled && classNames?.pillDisabled
+              disabled && classNames?.pillDisabled,
             )}
             disabled={disabled}
             key={eventType}
@@ -2482,7 +2176,7 @@ function ConvexWebhookEventPills<EventType extends string>({
               onChange(
                 isSelected
                   ? selected.filter((item) => item !== eventType)
-                  : [...selected, eventType]
+                  : [...selected, eventType],
               )
             }
             type="button"
@@ -2512,12 +2206,7 @@ function ConvexWebhookDeliveryCard<
   actions?: ReactNode;
   classNames: ConvexWebhookClassNames | undefined;
   copy: Required<ConvexWebhookDeliveryCopy>;
-  delivery: ConvexWebhookDeliveryListItem<
-    EventType,
-    EndpointId,
-    DeliveryId,
-    OrganizationId
-  >;
+  delivery: ConvexWebhookDeliveryListItem<EventType, EndpointId, DeliveryId, OrganizationId>;
   formatTimestamp: (timestamp: number) => string;
   renderFailureBadge: ConvexWebhookDeliveryListProps<
     EventType,
@@ -2536,7 +2225,7 @@ function ConvexWebhookDeliveryCard<
     <article
       className={cn(
         "border-foreground/10 bg-background/30 rounded-lg border p-4",
-        classNames?.deliveryCard
+        classNames?.deliveryCard,
       )}
     >
       <ConvexWebhookDeliveryHeader
@@ -2570,12 +2259,7 @@ function ConvexWebhookDeliveryHeader<
 }: {
   actions?: ReactNode;
   classNames: ConvexWebhookClassNames | undefined;
-  delivery: ConvexWebhookDeliveryListItem<
-    EventType,
-    EndpointId,
-    DeliveryId,
-    OrganizationId
-  >;
+  delivery: ConvexWebhookDeliveryListItem<EventType, EndpointId, DeliveryId, OrganizationId>;
   renderFailureBadge: ConvexWebhookDeliveryListProps<
     EventType,
     EndpointId,
@@ -2590,18 +2274,11 @@ function ConvexWebhookDeliveryHeader<
   >["renderTag"];
 }) {
   return (
-    <div
-      className={cn(
-        "flex items-start justify-between gap-4",
-        classNames?.deliveryHeader
-      )}
-    >
+    <div className={cn("flex items-start justify-between gap-4", classNames?.deliveryHeader)}>
       <div className="space-y-1">
         <p className="text-foreground font-medium">{delivery.eventType}</p>
         <p className="text-foreground/45 text-xs">
-          {delivery.endpointDescription ??
-            delivery.endpointUrl ??
-            "Unknown endpoint"}
+          {delivery.endpointDescription ?? delivery.endpointUrl ?? "Unknown endpoint"}
         </p>
       </div>
       <ConvexWebhookDeliveryBadges
@@ -2629,12 +2306,7 @@ function ConvexWebhookDeliveryBadges<
 }: {
   actions?: ReactNode;
   classNames: ConvexWebhookClassNames | undefined;
-  delivery: ConvexWebhookDeliveryListItem<
-    EventType,
-    EndpointId,
-    DeliveryId,
-    OrganizationId
-  >;
+  delivery: ConvexWebhookDeliveryListItem<EventType, EndpointId, DeliveryId, OrganizationId>;
   renderFailureBadge: ConvexWebhookDeliveryListProps<
     EventType,
     EndpointId,
@@ -2653,21 +2325,13 @@ function ConvexWebhookDeliveryBadges<
       {renderWebhookTag(
         `${delivery.status} - attempts ${delivery.attemptCount}`,
         classNames,
-        renderTag
+        renderTag,
       )}
       {delivery.failureKind
-        ? renderDeliveryFailureBadge(
-            delivery.failureKind,
-            classNames,
-            renderFailureBadge
-          )
+        ? renderDeliveryFailureBadge(delivery.failureKind, classNames, renderFailureBadge)
         : null}
       {delivery.recoveryCount
-        ? renderWebhookTag(
-            `recovered ${delivery.recoveryCount}x`,
-            classNames,
-            renderTag
-          )
+        ? renderWebhookTag(`recovered ${delivery.recoveryCount}x`, classNames, renderTag)
         : null}
       {actions}
     </div>
@@ -2687,21 +2351,11 @@ function ConvexWebhookDeliveryDetails<
 }: {
   classNames: ConvexWebhookClassNames | undefined;
   copy: Required<ConvexWebhookDeliveryCopy>;
-  delivery: ConvexWebhookDeliveryListItem<
-    EventType,
-    EndpointId,
-    DeliveryId,
-    OrganizationId
-  >;
+  delivery: ConvexWebhookDeliveryListItem<EventType, EndpointId, DeliveryId, OrganizationId>;
   formatTimestamp: (timestamp: number) => string;
 }) {
   return (
-    <div
-      className={cn(
-        "text-foreground/60 mt-3 grid gap-2 text-xs",
-        classNames?.deliveryDetails
-      )}
-    >
+    <div className={cn("text-foreground/60 mt-3 grid gap-2 text-xs", classNames?.deliveryDetails)}>
       <p>
         {copy.eventIdLabel}: {delivery.eventId}
       </p>
@@ -2717,7 +2371,7 @@ function ConvexWebhookDeliveryDetails<
         <pre
           className={cn(
             "border-foreground/10 bg-background/20 text-foreground/55 overflow-x-auto rounded-md border p-3 text-[11px] break-all whitespace-pre-wrap",
-            classNames?.codeBlock
+            classNames?.codeBlock,
           )}
         >
           {delivery.responseBody}
@@ -2738,12 +2392,7 @@ function ConvexWebhookDeliveryOptionalDetails<
   formatTimestamp,
 }: {
   copy: Required<ConvexWebhookDeliveryCopy>;
-  delivery: ConvexWebhookDeliveryListItem<
-    EventType,
-    EndpointId,
-    DeliveryId,
-    OrganizationId
-  >;
+  delivery: ConvexWebhookDeliveryListItem<EventType, EndpointId, DeliveryId, OrganizationId>;
   formatTimestamp: (timestamp: number) => string;
 }) {
   return (
@@ -2770,78 +2419,63 @@ function ConvexWebhookDeliveryOptionalDetails<
       ) : null}
       {delivery.failureKind ? (
         <p>
-          {copy.failureKindLabel}:{" "}
-          {getConvexWebhookFailureKindLabel(delivery.failureKind)}
+          {copy.failureKindLabel}: {getConvexWebhookFailureKindLabel(delivery.failureKind)}
         </p>
       ) : null}
     </>
   );
 }
 
-function inputClassName(
-  classNames: ConvexWebhookClassNames | undefined
-): string {
+function inputClassName(classNames: ConvexWebhookClassNames | undefined): string {
   return cn(
     "border-foreground/10 bg-foreground/5 text-foreground placeholder:text-foreground/35 focus:border-foreground/25 h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
-    classNames?.input
+    classNames?.input,
   );
 }
 
-function selectClassName(
-  classNames: ConvexWebhookClassNames | undefined
-): string {
+function selectClassName(classNames: ConvexWebhookClassNames | undefined): string {
   return cn(
     "border-foreground/10 bg-foreground/5 text-foreground focus:border-foreground/25 h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
-    classNames?.select
+    classNames?.select,
   );
 }
 
-function primaryButtonClassName(
-  classNames: ConvexWebhookClassNames | undefined
-): string {
+function primaryButtonClassName(classNames: ConvexWebhookClassNames | undefined): string {
   return cn(
     "bg-foreground text-background hover:bg-foreground/90 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-    classNames?.primaryButton
+    classNames?.primaryButton,
   );
 }
 
-function secondaryButtonClassName(
-  classNames: ConvexWebhookClassNames | undefined
-): string {
+function secondaryButtonClassName(classNames: ConvexWebhookClassNames | undefined): string {
   return cn(
     "border-foreground/15 text-foreground/70 hover:bg-foreground/5 inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-    classNames?.secondaryButton
+    classNames?.secondaryButton,
   );
 }
 
-function warningButtonClassName(
-  classNames: ConvexWebhookClassNames | undefined
-): string {
+function warningButtonClassName(classNames: ConvexWebhookClassNames | undefined): string {
   return cn(
     "border-warning/30 text-warning hover:bg-warning/10 inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-    classNames?.warningButton
+    classNames?.warningButton,
   );
 }
 
-function destructiveButtonClassName(
-  classNames: ConvexWebhookClassNames | undefined
-): string {
+function destructiveButtonClassName(classNames: ConvexWebhookClassNames | undefined): string {
   return cn(
     "bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-    classNames?.destructiveButton
+    classNames?.destructiveButton,
   );
 }
 
-function stateTextClassName(
-  classNames: ConvexWebhookClassNames | undefined
-): string {
+function stateTextClassName(classNames: ConvexWebhookClassNames | undefined): string {
   return cn("text-foreground/50 text-sm", classNames?.stateText);
 }
 
 function renderWebhookTag(
   label: string,
   classNames: ConvexWebhookClassNames | undefined,
-  renderTag: ((label: string) => ReactNode) | undefined
+  renderTag: ((label: string) => ReactNode) | undefined,
 ): ReactNode {
   if (renderTag) {
     return renderTag(label);
@@ -2851,7 +2485,7 @@ function renderWebhookTag(
     <span
       className={cn(
         "border-foreground/10 text-foreground/70 inline-flex items-center rounded-sm border px-2 py-0.5 text-xs font-medium",
-        classNames?.tag
+        classNames?.tag,
       )}
       key={label}
     >
@@ -2863,9 +2497,7 @@ function renderWebhookTag(
 function renderDeliveryFailureBadge(
   failureKind: ConvexWebhookDeliveryFailureKind,
   classNames: ConvexWebhookClassNames | undefined,
-  renderFailureBadge:
-    | ((failureKind: ConvexWebhookDeliveryFailureKind) => ReactNode)
-    | undefined
+  renderFailureBadge: ((failureKind: ConvexWebhookDeliveryFailureKind) => ReactNode) | undefined,
 ): ReactNode {
   if (renderFailureBadge) {
     return renderFailureBadge(failureKind);
@@ -2876,12 +2508,10 @@ function renderDeliveryFailureBadge(
     <span
       className={cn(
         "inline-flex items-center rounded-sm border px-2 py-0.5 text-xs font-medium",
-        tone === "destructive" &&
-          "border-destructive/25 bg-destructive/10 text-destructive",
+        tone === "destructive" && "border-destructive/25 bg-destructive/10 text-destructive",
         tone === "warning" && "border-warning/25 bg-warning/10 text-warning",
-        tone === "secondary" &&
-          "border-foreground/10 bg-foreground/10 text-foreground/80",
-        classNames?.tag
+        tone === "secondary" && "border-foreground/10 bg-foreground/10 text-foreground/80",
+        classNames?.tag,
       )}
     >
       {getConvexWebhookFailureKindLabel(failureKind)}
@@ -2899,17 +2529,12 @@ function ConvexWebhookSecretNotice({
   title: string;
 }) {
   return (
-    <div
-      className={cn(
-        "border-info/20 bg-info/10 rounded-lg border p-4",
-        classNames?.card
-      )}
-    >
+    <div className={cn("border-info/20 bg-info/10 rounded-lg border p-4", classNames?.card)}>
       <p className="text-info text-sm font-medium">{title}</p>
       <code
         className={cn(
           "border-foreground/10 bg-background/30 text-foreground/70 mt-2 block overflow-x-auto rounded-md border p-3 text-xs",
-          classNames?.codeBlock
+          classNames?.codeBlock,
         )}
       >
         {secret}
@@ -2931,7 +2556,7 @@ function ConvexWebhookActionErrorNotice({
     <div
       className={cn(
         "border-destructive/30 bg-destructive/10 text-destructive rounded-lg border p-4 text-sm",
-        classNames?.card
+        classNames?.card,
       )}
       role="alert"
     >
@@ -2942,7 +2567,7 @@ function ConvexWebhookActionErrorNotice({
 }
 
 function resolveSettingsEndpointCopy(
-  copy: Partial<ConvexWebhookEndpointListCopy> | undefined
+  copy: Partial<ConvexWebhookEndpointListCopy> | undefined,
 ): ConvexWebhookEndpointListCopy {
   return {
     ...copy,
@@ -2951,7 +2576,7 @@ function resolveSettingsEndpointCopy(
 }
 
 function resolveSettingsDeliveryCopy(
-  copy: Partial<ConvexWebhookDeliveryCopy> | undefined
+  copy: Partial<ConvexWebhookDeliveryCopy> | undefined,
 ): ConvexWebhookDeliveryCopy {
   return {
     ...copy,
@@ -2960,7 +2585,7 @@ function resolveSettingsDeliveryCopy(
 }
 
 function resolveSettingsExhaustedDeliveryCopy(
-  copy: Partial<ConvexWebhookDeliveryCopy> | undefined
+  copy: Partial<ConvexWebhookDeliveryCopy> | undefined,
 ): ConvexWebhookDeliveryCopy {
   return {
     ...copy,
@@ -2969,26 +2594,23 @@ function resolveSettingsExhaustedDeliveryCopy(
 }
 
 function resolveCreateCopy(
-  copy: ConvexWebhookCreateFormCopy | undefined
+  copy: ConvexWebhookCreateFormCopy | undefined,
 ): Required<ConvexWebhookCreateFormCopy> {
   return { ...defaultCreateCopy, ...copy };
 }
 
 function resolveEndpointCopy(
-  copy: ConvexWebhookEndpointListCopy
+  copy: ConvexWebhookEndpointListCopy,
 ): Required<ConvexWebhookEndpointListCopy> {
   return { ...defaultEndpointCopy, ...copy, emptyMessage: copy.emptyMessage };
 }
 
 function resolveDeliveryCopy(
-  copy: Partial<ConvexWebhookDeliveryCopy> &
-    Pick<ConvexWebhookDeliveryCopy, "emptyMessage">
+  copy: Partial<ConvexWebhookDeliveryCopy> & Pick<ConvexWebhookDeliveryCopy, "emptyMessage">,
 ): Required<ConvexWebhookDeliveryCopy> {
   return { ...defaultDeliveryCopy, ...copy, emptyMessage: copy.emptyMessage };
 }
 
 function capitalize(value: string): string {
-  return value.length === 0
-    ? value
-    : `${value[0]?.toUpperCase() ?? ""}${value.slice(1)}`;
+  return value.length === 0 ? value : `${value[0]?.toUpperCase() ?? ""}${value.slice(1)}`;
 }

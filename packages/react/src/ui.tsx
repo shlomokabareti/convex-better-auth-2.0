@@ -43,26 +43,16 @@ export function AuthScreen(props: {
       className={cn(
         "bg-background text-foreground flex min-h-screen items-center justify-center px-4 py-10",
         props.className,
-        props.classNames?.screen
+        props.classNames?.screen,
       )}
     >
       <div className={cn("w-full max-w-md space-y-6", props.classNames?.inner)}>
         <div className={cn("space-y-2 text-center", props.classNames?.header)}>
-          <h1
-            className={cn(
-              "text-3xl font-semibold tracking-tight",
-              props.classNames?.title
-            )}
-          >
+          <h1 className={cn("text-3xl font-semibold tracking-tight", props.classNames?.title)}>
             {props.title}
           </h1>
           {props.description ? (
-            <p
-              className={cn(
-                "text-muted-foreground text-sm",
-                props.classNames?.description
-              )}
-            >
+            <p className={cn("text-muted-foreground text-sm", props.classNames?.description)}>
               {props.description}
             </p>
           ) : null}
@@ -70,10 +60,7 @@ export function AuthScreen(props: {
         {props.children}
         {props.footer ? (
           <div
-            className={cn(
-              "text-muted-foreground text-center text-sm",
-              props.classNames?.footer
-            )}
+            className={cn("text-muted-foreground text-center text-sm", props.classNames?.footer)}
           >
             {props.footer}
           </div>
@@ -88,7 +75,7 @@ export function AuthCard(props: { children: ReactNode; className?: string }) {
     <Card
       className={cn(
         "border-foreground/10 bg-foreground/5 rounded-2xl px-6 py-6 shadow-2xl backdrop-blur",
-        props.className
+        props.className,
       )}
     >
       {props.children}
@@ -110,20 +97,12 @@ export function AuthCardHeader(props: {
 }) {
   return (
     <CardHeader className={cn("space-y-1.5 p-0", props.classNames?.header)}>
-      <CardTitle
-        className={cn(
-          "text-xl font-medium tracking-tight",
-          props.classNames?.title
-        )}
-      >
+      <CardTitle className={cn("text-xl font-medium tracking-tight", props.classNames?.title)}>
         {props.title}
       </CardTitle>
       {props.description ? (
         <CardDescription
-          className={cn(
-            "text-muted-foreground text-sm",
-            props.classNames?.description
-          )}
+          className={cn("text-muted-foreground text-sm", props.classNames?.description)}
         >
           {props.description}
         </CardDescription>
@@ -133,10 +112,7 @@ export function AuthCardHeader(props: {
   );
 }
 
-export function AuthCardContent(props: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function AuthCardContent(props: { children: ReactNode; className?: string }) {
   return (
     <CardContent className={cn("mt-5 space-y-4 p-0", props.className)}>
       {props.children}
@@ -150,10 +126,7 @@ export function AuthField(props: HTMLAttributes<HTMLDivElement>) {
 
 export function AuthLabel(props: LabelHTMLAttributes<HTMLLabelElement>) {
   return (
-    <Label
-      {...props}
-      className={cn("text-foreground text-sm font-medium", props.className)}
-    />
+    <Label {...props} className={cn("text-foreground text-sm font-medium", props.className)} />
   );
 }
 
@@ -164,7 +137,7 @@ export function AuthInput(props: InputHTMLAttributes<HTMLInputElement>) {
       className={cn(
         "border-foreground/10 bg-background/30 text-foreground flex h-10 w-full rounded-xl border px-3 py-2 text-sm transition outline-none",
         "placeholder:text-muted-foreground focus:border-foreground/25 focus:ring-foreground/10 focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
-        props.className
+        props.className,
       )}
     />
   );
@@ -173,7 +146,7 @@ export function AuthInput(props: InputHTMLAttributes<HTMLInputElement>) {
 export function AuthButton(
   props: ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: "primary" | "secondary" | "ghost";
-  }
+  },
 ) {
   const variant = props.variant ?? "primary";
 
@@ -184,12 +157,11 @@ export function AuthButton(
       className={cn(
         "inline-flex h-10 w-full items-center justify-center rounded-xl px-4 text-sm font-medium transition outline-none",
         "focus:ring-foreground/10 focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
-        variant === "primary" &&
-          "bg-foreground text-background hover:bg-foreground/90",
+        variant === "primary" && "bg-foreground text-background hover:bg-foreground/90",
         variant === "secondary" &&
           "border-foreground/10 bg-foreground/5 text-foreground hover:bg-foreground/10 border",
         variant === "ghost" && "text-muted-foreground hover:bg-foreground/5",
-        props.className
+        props.className,
       )}
     />
   );
@@ -207,18 +179,14 @@ export function AuthAlert(props: {
     <div
       className={cn(
         "rounded-xl border px-3 py-3 text-sm",
-        tone === "default" &&
-          "border-foreground/10 bg-foreground/5 text-muted-foreground",
-        tone === "error" &&
-          "border-destructive/30 bg-destructive/10 text-destructive",
+        tone === "default" && "border-foreground/10 bg-foreground/5 text-muted-foreground",
+        tone === "error" && "border-destructive/30 bg-destructive/10 text-destructive",
         tone === "success" && "border-success/30 bg-success/10 text-success",
         tone === "warning" && "border-warning/30 bg-warning/10 text-warning",
-        props.className
+        props.className,
       )}
     >
-      {props.title ? (
-        <div className="mb-1 font-medium">{props.title}</div>
-      ) : null}
+      {props.title ? <div className="mb-1 font-medium">{props.title}</div> : null}
       <div>{props.children}</div>
     </div>
   );
@@ -229,7 +197,7 @@ export function AuthDivider(props: { label?: string; className?: string }) {
     <div
       className={cn(
         "text-muted-foreground flex items-center gap-3 text-xs tracking-[0.2em] uppercase",
-        props.className
+        props.className,
       )}
     >
       <Separator className="bg-foreground/10 flex-1" />
@@ -240,7 +208,7 @@ export function AuthDivider(props: { label?: string; className?: string }) {
 }
 
 export function AuthProviderButton(
-  props: ButtonHTMLAttributes<HTMLButtonElement> & { providerLabel: string }
+  props: ButtonHTMLAttributes<HTMLButtonElement> & { providerLabel: string },
 ) {
   const { providerLabel, ...buttonProps } = props;
   return (
@@ -271,7 +239,7 @@ export function AuthRuntimeStatusBadge(props: { className?: string }) {
       className={cn(
         "inline-flex items-center rounded-full border px-2.5 py-1 text-xs",
         tone,
-        props.className
+        props.className,
       )}
     >
       {status.state}
@@ -286,10 +254,7 @@ export function AuthRuntimeSummary(props: { className?: string }) {
     <AuthAlert className={props.className} title="Runtime status">
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
         <RuntimeRow label="state" value={status.state} />
-        <RuntimeRow
-          label="provider"
-          value={String(status.providerAuthenticated)}
-        />
+        <RuntimeRow label="provider" value={String(status.providerAuthenticated)} />
         <RuntimeRow label="token" value={String(status.tokenAvailable)} />
         <RuntimeRow label="convex" value={String(status.convexAuthenticated)} />
         <RuntimeRow label="recovering" value={String(status.isRecovering)} />

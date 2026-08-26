@@ -21,7 +21,7 @@ const DEFAULT_SUPPORTED_METHODS = ["none"] as const;
  * public-client behaviour it had before.
  */
 export function validateTokenEndpointClientAuthentication(
-  args: McpOAuthTokenEndpointClientAuthArgs
+  args: McpOAuthTokenEndpointClientAuthArgs,
 ): McpOAuthTokenEndpointClientAuthError | null {
   const supportedMethods = args.supportedMethods ?? DEFAULT_SUPPORTED_METHODS;
   const presented = presentedCredential(args);
@@ -33,13 +33,13 @@ export function validateTokenEndpointClientAuthentication(
       return null;
     }
     return authError(
-      `Client authentication is required. Supported token endpoint auth methods: ${supportedMethods.join(", ")}`
+      `Client authentication is required. Supported token endpoint auth methods: ${supportedMethods.join(", ")}`,
     );
   }
 
   if (!supportedMethods.includes(presented)) {
     return authError(
-      `Client authentication is not supported. Supported token endpoint auth methods: ${supportedMethods.join(", ")}`
+      `Client authentication is not supported. Supported token endpoint auth methods: ${supportedMethods.join(", ")}`,
     );
   }
 
@@ -55,14 +55,11 @@ export function validateTokenEndpointClientAuthentication(
  * was attempted so an unsupported one fails before any comparison runs.
  */
 function presentedCredential(
-  args: McpOAuthTokenEndpointClientAuthArgs
+  args: McpOAuthTokenEndpointClientAuthArgs,
 ): McpOAuthTokenEndpointAuthMethod | null {
   // Checked first: an assertion is a distinct method, and a client presenting
   // one must not be classified as (and evaluated against) a secret method.
-  if (
-    typeof args.clientAssertion === "string" &&
-    args.clientAssertion.length > 0
-  ) {
+  if (typeof args.clientAssertion === "string" && args.clientAssertion.length > 0) {
     return "private_key_jwt";
   }
   if (args.authorizationHeader !== null) {
@@ -75,7 +72,7 @@ function presentedCredential(
 }
 
 function hasClientSecret(
-  clientSecret: McpOAuthTokenEndpointClientAuthArgs["clientSecret"]
+  clientSecret: McpOAuthTokenEndpointClientAuthArgs["clientSecret"],
 ): boolean {
   if (clientSecret === null) {
     return false;

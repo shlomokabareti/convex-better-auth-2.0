@@ -71,14 +71,10 @@ const DEFAULT_COPY: Required<ExpoForgotPasswordFormCopy> = {
   unavailable: "Password recovery is not available on this auth client.",
 };
 
-export function ConvexForgotPasswordForm(
-  props: ExpoForgotPasswordFormProps
-) {
+export function ConvexForgotPasswordForm(props: ExpoForgotPasswordFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { requestReset, isRequesting } = useExpoAuthForgotPassword(
-    props.authClient
-  );
+  const { requestReset, isRequesting } = useExpoAuthForgotPassword(props.authClient);
   const [email, setEmail] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -95,10 +91,7 @@ export function ConvexForgotPasswordForm(
     if (!result.ok) {
       // Surface a real unavailable error; otherwise show generic
       // success (avoid email enumeration).
-      if (
-        result.error ===
-        "Password recovery is not available on this auth client"
-      ) {
+      if (result.error === "Password recovery is not available on this auth client") {
         setError(result.error);
         return;
       }
@@ -111,9 +104,7 @@ export function ConvexForgotPasswordForm(
     <View style={[styles.root, s.root]}>
       <View style={[styles.header, s.header]}>
         <Text style={[styles.title, s.title]}>{copy.title}</Text>
-        <Text style={[styles.description, s.description]}>
-          {copy.description}
-        </Text>
+        <Text style={[styles.description, s.description]}>{copy.description}</Text>
       </View>
       <View>
         <View style={[styles.field, s.field]}>
@@ -141,10 +132,7 @@ export function ConvexForgotPasswordForm(
           <Text style={[styles.successState, s.successState]}>{success}</Text>
         ) : null}
         {error !== null ? (
-          <Text
-            className="text-destructive"
-            style={[styles.errorState, s.errorState]}
-          >
+          <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
             {error}
           </Text>
         ) : null}

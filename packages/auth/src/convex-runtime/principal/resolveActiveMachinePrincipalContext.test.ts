@@ -29,9 +29,7 @@ describe("resolveActiveApiKeyContext", () => {
 
     assert.equal(context.principal.kind, "apiKey");
     assert.equal(context.principal.apiKeyId, "key_123");
-    assert.deepStrictEqual(context.principal.effectivePermissions, [
-      "org:read",
-    ]);
+    assert.deepStrictEqual(context.principal.effectivePermissions, ["org:read"]);
     assert.deepStrictEqual(context.execution, {
       organizationId: "org_123",
       resourceType: "convex.query",
@@ -56,7 +54,7 @@ describe("resolveActiveApiKeyContext", () => {
           },
           ownerPermissions: ["org:read"],
         }),
-      /API key is not active: revoked/
+      /API key is not active: revoked/,
     );
   });
 });
@@ -100,7 +98,7 @@ describe("resolveActiveServiceContext", () => {
             status: "disabled",
           },
         }),
-      /Service principal is not active: disabled/
+      /Service principal is not active: disabled/,
     );
   });
 });
@@ -134,13 +132,8 @@ describe("resolveActiveServiceOwnedApiKeyContext", () => {
     assert.equal(context.principal.ownerType, "service");
     assert.equal(context.servicePrincipal.kind, "service");
     assert.equal(context.servicePrincipal.keyId, "key_123");
-    assert.deepStrictEqual(context.principal.inheritedPermissions, [
-      "org:read",
-      "org:write",
-    ]);
-    assert.deepStrictEqual(context.principal.effectivePermissions, [
-      "org:read",
-    ]);
+    assert.deepStrictEqual(context.principal.inheritedPermissions, ["org:read", "org:write"]);
+    assert.deepStrictEqual(context.principal.effectivePermissions, ["org:read"]);
     assert.deepStrictEqual(context.execution, {
       organizationId: "org_123",
       resourceType: "mcp.tool",
@@ -197,7 +190,7 @@ describe("resolveActiveServiceOwnedApiKeyContext", () => {
             status: "disabled",
           },
         }),
-      /Service principal is not active: disabled/
+      /Service principal is not active: disabled/,
     );
   });
 
@@ -221,7 +214,7 @@ describe("resolveActiveServiceOwnedApiKeyContext", () => {
             status: "active",
           },
         }),
-      /API key owner does not match service principal/
+      /API key owner does not match service principal/,
     );
   });
 });

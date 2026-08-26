@@ -18,7 +18,7 @@ describe("webhook helpers", () => {
         enabled: false,
         url: "https://example.com/webhooks",
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexWebhookCreateForm({
@@ -26,7 +26,7 @@ describe("webhook helpers", () => {
         enabled: true,
         url: "https://example.com/webhooks",
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexWebhookCreateForm({
@@ -34,7 +34,7 @@ describe("webhook helpers", () => {
         enabled: true,
         url: " ",
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexWebhookCreateForm({
@@ -42,19 +42,13 @@ describe("webhook helpers", () => {
         enabled: true,
         url: "https://example.com/webhooks",
       }),
-      true
+      true,
     );
   });
 
   it("formats webhook failure kinds for display", () => {
-    assert.equal(
-      getConvexWebhookFailureKindLabel("endpoint_inactive"),
-      "endpoint inactive"
-    );
-    assert.equal(
-      getConvexWebhookFailureKindLabel("network_error"),
-      "network error"
-    );
+    assert.equal(getConvexWebhookFailureKindLabel("endpoint_inactive"), "endpoint inactive");
+    assert.equal(getConvexWebhookFailureKindLabel("network_error"), "network error");
   });
 
   it("maps failure kinds to stable tones", () => {
@@ -71,28 +65,19 @@ describe("webhook helpers", () => {
     ];
 
     for (const item of cases) {
-      assert.equal(
-        getConvexWebhookFailureKindTone(item.failureKind),
-        item.tone
-      );
+      assert.equal(getConvexWebhookFailureKindTone(item.failureKind), item.tone);
     }
   });
 
   it("keeps webhook mutation error messages user-facing with a fallback", () => {
     assert.equal(
-      getConvexWebhookMutationErrorMessage(
-        new Error("Endpoint already exists."),
-        "Fallback"
-      ),
-      "Endpoint already exists."
+      getConvexWebhookMutationErrorMessage(new Error("Endpoint already exists."), "Fallback"),
+      "Endpoint already exists.",
     );
     assert.equal(
       getConvexWebhookMutationErrorMessage("Rate limited.", "Fallback"),
-      "Rate limited."
+      "Rate limited.",
     );
-    assert.equal(
-      getConvexWebhookMutationErrorMessage(null, "Fallback"),
-      "Fallback"
-    );
+    assert.equal(getConvexWebhookMutationErrorMessage(null, "Fallback"), "Fallback");
   });
 });

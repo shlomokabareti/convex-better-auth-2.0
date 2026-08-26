@@ -29,15 +29,11 @@ const userContext = (permissions: string[]): ResolvedAuthContext => ({
 
 describe("requirePermission", () => {
   it("allows held permission", () => {
-    assert.doesNotThrow(() =>
-      requirePermission(userContext(["org:read"]), "org:read")
-    );
+    assert.doesNotThrow(() => requirePermission(userContext(["org:read"]), "org:read"));
   });
 
   it("denies missing permission", () => {
-    assert.throws(() =>
-      requirePermission(userContext(["org:read"]), "org:write")
-    );
+    assert.throws(() => requirePermission(userContext(["org:read"]), "org:write"));
   });
 
   it("allows apiKey effectivePermissions", () => {

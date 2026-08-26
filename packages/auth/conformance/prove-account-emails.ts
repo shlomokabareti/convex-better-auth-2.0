@@ -46,9 +46,7 @@ const signUp = await fetch(`${site}/api/auth/sign-up/email`, {
 if (signUp.status >= 200 && signUp.status < 300) {
   r.ok(`sign-up accepted (HTTP ${signUp.status})`);
 } else {
-  r.bad(
-    `sign-up rejected (HTTP ${signUp.status}) — cannot exercise email flows`
-  );
+  r.bad(`sign-up rejected (HTTP ${signUp.status}) — cannot exercise email flows`);
 }
 const cookie = mergeCookies(signUp);
 
@@ -62,17 +60,13 @@ const reset = await fetch(`${site}/api/auth/request-password-reset`, {
 if (reset.status === 404) {
   r.bad("request-password-reset endpoint not mounted (HTTP 404)");
 } else if (reset.status >= 500) {
-  r.bad(
-    `request-password-reset crashed (HTTP ${reset.status}) — sendEmail callback likely threw`
-  );
+  r.bad(`request-password-reset crashed (HTTP ${reset.status}) — sendEmail callback likely threw`);
 } else if (reset.status >= 200 && reset.status < 300) {
   r.ok(`request-password-reset accepted (HTTP ${reset.status})`);
 } else {
   // 4xx that isn't 404 (e.g. validation) still proves the route exists
   // and didn't crash; flag it for visibility but don't fail the suite.
-  r.ok(
-    `request-password-reset reachable, returned HTTP ${reset.status} (route mounted, no crash)`
-  );
+  r.ok(`request-password-reset reachable, returned HTTP ${reset.status} (route mounted, no crash)`);
 }
 
 // --- Email verification send ------------------------------------------
@@ -87,13 +81,13 @@ if (verify.status === 404) {
   r.bad("send-verification-email endpoint not mounted (HTTP 404)");
 } else if (verify.status >= 500) {
   r.bad(
-    `send-verification-email crashed (HTTP ${verify.status}) — sendEmail callback likely threw`
+    `send-verification-email crashed (HTTP ${verify.status}) — sendEmail callback likely threw`,
   );
 } else if (verify.status >= 200 && verify.status < 300) {
   r.ok(`send-verification-email accepted (HTTP ${verify.status})`);
 } else {
   r.ok(
-    `send-verification-email reachable, returned HTTP ${verify.status} (route mounted, no crash)`
+    `send-verification-email reachable, returned HTTP ${verify.status} (route mounted, no crash)`,
   );
 }
 

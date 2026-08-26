@@ -1,12 +1,9 @@
 import type { AuthReadinessState } from "../types";
 
-import type {
-  BetterAuthBridgeInputs,
-  BetterAuthReadinessMapper,
-} from "./types";
+import type { BetterAuthBridgeInputs, BetterAuthReadinessMapper } from "./types";
 
 export const mapBetterAuthReadiness: BetterAuthReadinessMapper = (
-  inputs: BetterAuthBridgeInputs
+  inputs: BetterAuthBridgeInputs,
 ): AuthReadinessState => {
   if (inputs.terminalFailure) {
     return "reauthRequired";

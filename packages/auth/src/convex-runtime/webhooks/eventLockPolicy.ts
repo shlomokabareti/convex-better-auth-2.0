@@ -1,7 +1,4 @@
-import type {
-  ConvexWebhookEventLockDecision,
-  ConvexWebhookEventLockRecord,
-} from "./types";
+import type { ConvexWebhookEventLockDecision, ConvexWebhookEventLockRecord } from "./types";
 
 const defaultStaleClaimMs = 5 * 60 * 1000;
 
@@ -26,10 +23,7 @@ export function decideConvexWebhookEventLock(args: {
     };
   }
 
-  if (
-    args.existing.claimedAt >
-    args.now - (args.staleClaimMs ?? defaultStaleClaimMs)
-  ) {
+  if (args.existing.claimedAt > args.now - (args.staleClaimMs ?? defaultStaleClaimMs)) {
     return {
       action: "inflight",
       alreadyProcessed: false,

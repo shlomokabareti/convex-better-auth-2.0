@@ -104,9 +104,7 @@ export function AuthProviderButtons(props: AuthProviderButtonsProps) {
   );
 }
 
-function shouldShowAuthProviders(
-  props: AuthFormSharedProps
-): props is AuthFormSharedProps & {
+function shouldShowAuthProviders(props: AuthFormSharedProps): props is AuthFormSharedProps & {
   onProviderSelect: NonNullable<AuthFormSharedProps["onProviderSelect"]>;
   providers: readonly AuthProviderOption[];
 } {
@@ -120,7 +118,7 @@ function shouldShowAuthProviders(
 function AuthFormAlerts(
   props: Pick<AuthFormSharedProps, "error" | "success"> & {
     classNames?: AuthFormClassNames;
-  }
+  },
 ) {
   return (
     <>
@@ -138,9 +136,7 @@ function AuthFormAlerts(
   );
 }
 
-function AuthFormProviders(
-  props: AuthFormSharedProps & { classNames?: AuthFormClassNames }
-) {
+function AuthFormProviders(props: AuthFormSharedProps & { classNames?: AuthFormClassNames }) {
   if (!shouldShowAuthProviders(props)) {
     return null;
   }
@@ -159,21 +155,13 @@ function AuthFormProviders(
   );
 }
 
-function AuthFormFooter(props: {
-  classNames?: AuthFormClassNames;
-  footer?: ReactNode;
-}) {
+function AuthFormFooter(props: { classNames?: AuthFormClassNames; footer?: ReactNode }) {
   if (!props.footer) {
     return null;
   }
 
   return (
-    <div
-      className={cn(
-        "text-muted-foreground pt-1 text-center text-sm",
-        props.classNames?.footer
-      )}
-    >
+    <div className={cn("text-muted-foreground pt-1 text-center text-sm", props.classNames?.footer)}>
       {props.footer}
     </div>
   );
@@ -212,7 +200,7 @@ function resolveAuthButtonLabel(
   defaults: {
     submitLabel: string;
     submittingLabel: string;
-  }
+  },
 ): string {
   if (props.isSubmitting) {
     return props.submittingLabel ?? defaults.submittingLabel;
@@ -223,17 +211,14 @@ function resolveAuthButtonLabel(
 function signInHeaderCopy(props: AuthSignInFormProps) {
   return {
     title: props.title ?? "Sign in",
-    description:
-      props.description ??
-      "Access your account and continue where you left off.",
+    description: props.description ?? "Access your account and continue where you left off.",
   };
 }
 
 function signUpHeaderCopy(props: AuthSignUpFormProps) {
   return {
     title: props.title ?? "Create account",
-    description:
-      props.description ?? "Create your account and continue into setup.",
+    description: props.description ?? "Create your account and continue into setup.",
   };
 }
 
@@ -247,17 +232,14 @@ function SignInPasswordField(props: {
   return (
     <AuthField className={props.classNames?.field}>
       <div className="flex items-center justify-between gap-3">
-        <AuthLabel
-          className={props.classNames?.label}
-          htmlFor={props.passwordId}
-        >
+        <AuthLabel className={props.classNames?.label} htmlFor={props.passwordId}>
           Password
         </AuthLabel>
         {props.forgotPasswordHref ? (
           <a
             className={cn(
               "text-muted-foreground hover:text-foreground text-xs",
-              props.classNames?.link
+              props.classNames?.link,
             )}
             href={props.forgotPasswordHref}
           >
@@ -298,11 +280,7 @@ export function AuthSignInForm(props: AuthSignInFormProps) {
         }}
       />
       <AuthCardContent className={classNames?.content}>
-        <AuthFormAlerts
-          classNames={classNames}
-          error={props.error}
-          success={props.success}
-        />
+        <AuthFormAlerts classNames={classNames} error={props.error} success={props.success} />
         <AuthFormProviders {...props} classNames={classNames} />
         <form
           className="space-y-4"
@@ -367,11 +345,7 @@ export function AuthSignUpForm(props: AuthSignUpFormProps) {
         }}
       />
       <AuthCardContent className={classNames?.content}>
-        <AuthFormAlerts
-          classNames={classNames}
-          error={props.error}
-          success={props.success}
-        />
+        <AuthFormAlerts classNames={classNames} error={props.error} success={props.success} />
         <AuthFormProviders {...props} classNames={classNames} />
         <form
           className="space-y-4"
@@ -415,9 +389,7 @@ export function AuthSignUpForm(props: AuthSignUpFormProps) {
             value={password}
           />
           {props.termsNotice ? (
-            <div className="text-muted-foreground text-xs">
-              {props.termsNotice}
-            </div>
+            <div className="text-muted-foreground text-xs">{props.termsNotice}</div>
           ) : null}
           <AuthButton
             className={classNames?.primaryButton}

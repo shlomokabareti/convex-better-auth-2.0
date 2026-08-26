@@ -56,8 +56,7 @@ describe("mcp oauth runtime helpers", () => {
       status: 400,
       body: {
         error: "invalid_request",
-        error_description:
-          "organization_id is required for multi-organization users",
+        error_description: "organization_id is required for multi-organization users",
       },
     });
   });
@@ -144,7 +143,7 @@ describe("mcp oauth runtime helpers", () => {
       await runtime.resolveIdentityForSession({
         betterAuthUserId: "ba_user_123",
       }),
-      { userId: "user_123" }
+      { userId: "user_123" },
     );
 
     assert.deepEqual(
@@ -158,7 +157,7 @@ describe("mcp oauth runtime helpers", () => {
         ok: true,
         organizationId: "org_123",
         scopes: ["crm:organization:read"],
-      }
+      },
     );
 
     assert.deepEqual(
@@ -174,7 +173,7 @@ describe("mcp oauth runtime helpers", () => {
         expiresIn: 900,
         scope: "crm:organization:read",
         tokenType: "Bearer",
-      }
+      },
     );
   });
 
@@ -185,17 +184,14 @@ describe("mcp oauth runtime helpers", () => {
       },
     });
 
-    assert.equal(
-      getMcpOAuthSessionTokenFromRequest(request),
-      "session_token_123"
-    );
+    assert.equal(getMcpOAuthSessionTokenFromRequest(request), "session_token_123");
   });
 
   it("rejects management-client scope escalation before session or code creation", async () => {
     let createdCode = false;
     const response = await handleMcpOAuthAuthorizeRequest({
       request: new Request(
-        "https://crm.test/oauth/crm-mcp/authorize?response_type=code&client_id=management-client&redirect_uri=https%3A%2F%2Fmanagement.example.com%2Fcallback&scope=crm%3Agrowth%3Awrite&code_challenge=challenge&code_challenge_method=S256"
+        "https://crm.test/oauth/crm-mcp/authorize?response_type=code&client_id=management-client&redirect_uri=https%3A%2F%2Fmanagement.example.com%2Fcallback&scope=crm%3Agrowth%3Awrite&code_challenge=challenge&code_challenge_method=S256",
       ),
       defaultAudience: "https://api.example.com",
       defaultResourceId: "crm-mcp",
@@ -238,7 +234,7 @@ describe("mcp oauth runtime helpers", () => {
           headers: {
             cookie: "better-auth.session_token=session_123.signature",
           },
-        }
+        },
       ),
       defaultAudience: "https://api.example.com",
       defaultResourceId: "crm-mcp",
@@ -269,7 +265,7 @@ describe("mcp oauth runtime helpers", () => {
     assert.deepEqual(storedScopes, ["crm:organization:read"]);
     assert.equal(
       new URL(response.headers.get("location") ?? "").searchParams.get("code"),
-      "authorization-code-1"
+      "authorization-code-1",
     );
   });
 
@@ -282,7 +278,7 @@ describe("mcp oauth runtime helpers", () => {
           headers: {
             cookie: "better-auth.session_token=session_123.signature",
           },
-        }
+        },
       ),
       defaultAudience: "https://api.example.com",
       defaultResourceId: "crm-mcp",
@@ -429,9 +425,7 @@ describe("mcp oauth runtime helpers", () => {
         throw new Error("disallowed code scopes must not reach token signing");
       },
       issueRefreshToken: async () => {
-        throw new Error(
-          "disallowed code scopes must not reach refresh-token issuance"
-        );
+        throw new Error("disallowed code scopes must not reach refresh-token issuance");
       },
     });
 
@@ -542,8 +536,8 @@ describe("mcp oauth runtime helpers", () => {
 
     const authorizeResponse = await handlers.handleAuthorizeRequest(
       new Request(
-        "https://crm.test/oauth/crm-mcp/authorize?response_type=code&client_id=test&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback&scope=crm%3Aorganization%3Aread&code_challenge=abc&code_challenge_method=S256"
-      )
+        "https://crm.test/oauth/crm-mcp/authorize?response_type=code&client_id=test&redirect_uri=https%3A%2F%2Fapp.example.com%2Fcallback&scope=crm%3Aorganization%3Aread&code_challenge=abc&code_challenge_method=S256",
+      ),
     );
     assert.equal(authorizeResponse.status, 400);
     assert.deepEqual(await authorizeResponse.json(), {
@@ -559,7 +553,7 @@ describe("mcp oauth runtime helpers", () => {
           client_name: "CRM Desktop",
           redirect_uris: ["https://app.example.com/oauth/callback"],
         }),
-      })
+      }),
     );
     assert.equal(registrationResponse.status, 400);
     assert.deepEqual(await registrationResponse.json(), {
@@ -576,7 +570,7 @@ describe("mcp oauth runtime helpers", () => {
           refresh_token: "refresh_123",
           client_id: "mcp_client_123",
         }),
-      })
+      }),
     );
     assert.equal(tokenResponse.status, 400);
     assert.deepEqual(await tokenResponse.json(), {

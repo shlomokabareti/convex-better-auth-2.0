@@ -26,9 +26,8 @@ type RealConvexClient = ReturnType<typeof createBetterAuthConvexClient>;
 
 // If RealConvexClient is not assignable to ConvexBetterAuthClient, this
 // declaration fails to typecheck — the whole point of the contract.
-const clientAssignableToConvex: (
-  client: RealConvexClient
-) => ConvexBetterAuthClient = (client) => client;
+const clientAssignableToConvex: (client: RealConvexClient) => ConvexBetterAuthClient = (client) =>
+  client;
 
 describe("Better Auth client ↔ ConvexBetterAuthClient contract", () => {
   it("real createBetterAuthConvexClient return type is assignable to ConvexBetterAuthClient", () => {

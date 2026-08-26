@@ -17,14 +17,11 @@ describe("package component source", () => {
   it("does not depend on sibling workspace source paths", async () => {
     await Promise.all(
       componentFiles.map(async (fileName) => {
-        const source = await readFile(
-          join(import.meta.dirname, "component", fileName),
-          "utf8"
-        );
+        const source = await readFile(join(import.meta.dirname, "component", fileName), "utf8");
         assert.equal(source.includes("../convex/src"), false, fileName);
         assert.equal(source.includes("../../convex/src"), false, fileName);
         assert.equal(source.includes("email-otp"), false, fileName);
-      })
+      }),
     );
   });
 });

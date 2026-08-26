@@ -1,13 +1,10 @@
 import type { AuthRuntimeStatus } from "../types";
 
 import { mapBetterAuthReadiness } from "../bridge/mapBetterAuthReadiness";
-import type {
-  BetterAuthClientBridgeInput,
-  BetterAuthClientBridgeState,
-} from "./types";
+import type { BetterAuthClientBridgeInput, BetterAuthClientBridgeState } from "./types";
 
 export function createBetterAuthBridgeState(
-  input: BetterAuthClientBridgeInput
+  input: BetterAuthClientBridgeInput,
 ): BetterAuthClientBridgeState {
   const runtimeStatus: AuthRuntimeStatus = {
     state: mapBetterAuthReadiness({

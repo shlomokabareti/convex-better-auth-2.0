@@ -19,16 +19,13 @@ const badgeVariants = cva(
       },
     },
     defaultVariants: { variant: "neutral" },
-  }
+  },
 );
 
-export type BadgeProps = React.ComponentProps<"span"> &
-  VariantProps<typeof badgeVariants>;
+export type BadgeProps = React.ComponentProps<"span"> & VariantProps<typeof badgeVariants>;
 
 export function Badge({ className, variant, ...props }: BadgeProps) {
-  return (
-    <span className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+  return <span className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
 export { badgeVariants };

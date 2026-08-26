@@ -35,7 +35,7 @@ describe("post sign-up helpers", () => {
         { canSelect: false },
         { canSelect: true },
       ]),
-      2
+      2,
     );
     assert.equal(getSelectableOrganizationCount(undefined), 0);
   });
@@ -48,7 +48,7 @@ describe("post sign-up helpers", () => {
         selectableOrganizationCount: 1,
         hasAttemptedEnsure: false,
       }),
-      true
+      true,
     );
     assert.equal(
       shouldAttemptEnsureOrganization({
@@ -57,7 +57,7 @@ describe("post sign-up helpers", () => {
         selectableOrganizationCount: 1,
         hasAttemptedEnsure: false,
       }),
-      false
+      false,
     );
     assert.equal(
       shouldAttemptEnsureOrganization({
@@ -66,7 +66,7 @@ describe("post sign-up helpers", () => {
         selectableOrganizationCount: 1,
         hasAttemptedEnsure: false,
       }),
-      false
+      false,
     );
     assert.equal(
       shouldAttemptEnsureOrganization({
@@ -75,7 +75,7 @@ describe("post sign-up helpers", () => {
         selectableOrganizationCount: 0,
         hasAttemptedEnsure: false,
       }),
-      true
+      true,
     );
     assert.equal(
       shouldAttemptEnsureOrganization({
@@ -84,7 +84,7 @@ describe("post sign-up helpers", () => {
         selectableOrganizationCount: 1,
         hasAttemptedEnsure: true,
       }),
-      false
+      false,
     );
   });
 
@@ -94,13 +94,10 @@ describe("post sign-up helpers", () => {
   });
 
   it("returns correct status description", () => {
-    assert.equal(
-      getPostSignUpStatusDescription(true),
-      "Activating your organization now..."
-    );
+    assert.equal(getPostSignUpStatusDescription(true), "Activating your organization now...");
     assert.equal(
       getPostSignUpStatusDescription(false),
-      "We're waiting for your organization access to finish syncing."
+      "We're waiting for your organization access to finish syncing.",
     );
   });
 

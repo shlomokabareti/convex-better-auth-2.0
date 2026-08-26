@@ -17,10 +17,9 @@ describe("organizationSecurityPolicy (VOR-183)", () => {
     assert.deepEqual(parseOrganizationSecurityPolicy(undefined), {
       requireMfa: false,
     });
-    assert.deepEqual(
-      parseOrganizationSecurityPolicy(JSON.stringify({ security: {} })),
-      { requireMfa: false }
-    );
+    assert.deepEqual(parseOrganizationSecurityPolicy(JSON.stringify({ security: {} })), {
+      requireMfa: false,
+    });
   });
 
   it("parses requireMfa + sessionTimeoutMinutes", () => {
@@ -28,9 +27,9 @@ describe("organizationSecurityPolicy (VOR-183)", () => {
       parseOrganizationSecurityPolicy(
         JSON.stringify({
           security: { requireMfa: true, sessionTimeoutMinutes: 90 },
-        })
+        }),
       ),
-      { requireMfa: true, sessionTimeoutMinutes: 90 }
+      { requireMfa: true, sessionTimeoutMinutes: 90 },
     );
   });
 
@@ -48,7 +47,7 @@ describe("organizationSecurityPolicy (VOR-183)", () => {
         requireMfa: true,
         twoFactorEnabled: true,
       }),
-      null
+      null,
     );
   });
 

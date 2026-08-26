@@ -19,10 +19,9 @@ export type ResolveApiAuthHttpErrorResponseArgs = {
   internalErrorMessage?: string;
 };
 
-export type CreateApiAuthHttpErrorResponseArgs =
-  ResolveApiAuthHttpErrorResponseArgs & {
-    headers?: Record<string, string>;
-  };
+export type CreateApiAuthHttpErrorResponseArgs = ResolveApiAuthHttpErrorResponseArgs & {
+  headers?: Record<string, string>;
+};
 
 const unauthorizedErrorCodes = new Set<ApiAuthErrorCode>([
   "AUTHORIZATION_HEADER_MISSING",
@@ -65,7 +64,7 @@ export function resolveApiAuthHttpStatus(code: ApiAuthErrorCode): number {
 }
 
 export function resolveApiAuthHttpErrorResponse(
-  args: ResolveApiAuthHttpErrorResponseArgs
+  args: ResolveApiAuthHttpErrorResponseArgs,
 ): ApiAuthHttpErrorResponseParts {
   if (args.error instanceof ApiAuthError) {
     const status = resolveApiAuthHttpStatus(args.error.code);
@@ -91,9 +90,7 @@ export function resolveApiAuthHttpErrorResponse(
   };
 }
 
-export function createApiAuthHttpErrorResponse(
-  args: CreateApiAuthHttpErrorResponseArgs
-): Response {
+export function createApiAuthHttpErrorResponse(args: CreateApiAuthHttpErrorResponseArgs): Response {
   const parts = resolveApiAuthHttpErrorResponse(args);
 
   return new Response(JSON.stringify(parts.body), {

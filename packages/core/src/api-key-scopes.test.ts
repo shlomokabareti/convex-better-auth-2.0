@@ -3,10 +3,7 @@ import assert from "node:assert/strict";
 import { permissionMatcherConformanceCases } from "convex-auth-core";
 import { describe, it } from "vitest";
 
-import {
-  createApiKeyScopeRegistry,
-  type ApiKeyScopeFromDescriptors,
-} from "./api-key-scopes";
+import { createApiKeyScopeRegistry, type ApiKeyScopeFromDescriptors } from "./api-key-scopes";
 
 const scopeDescriptors = [
   {
@@ -34,10 +31,7 @@ describe("createApiKeyScopeRegistry", () => {
           requiredPermissions: [testCase.required],
         },
       ]);
-      assert.equal(
-        registry.canUseScope("test:scope", testCase.granted),
-        testCase.expected
-      );
+      assert.equal(registry.canUseScope("test:scope", testCase.granted), testCase.expected);
     });
   }
 
@@ -51,18 +45,12 @@ describe("createApiKeyScopeRegistry", () => {
   it("normalizes, deduplicates, and validates scopes", () => {
     const registry = createApiKeyScopeRegistry(scopeDescriptors);
 
-    assert.deepEqual(
-      registry.normalizeScopes([" crm:read ", "unknown", "crm:read"]),
-      ["crm:read"]
-    );
-    assert.deepEqual(
-      registry.requireKnownScopes([" crm:read ", "crm:write", "crm:read"]),
-      ["crm:read", "crm:write"]
-    );
-    assert.throws(
-      () => registry.requireKnownScopes(["unknown"]),
-      /Unknown API key scope/
-    );
+    assert.deepEqual(registry.normalizeScopes([" crm:read ", "unknown", "crm:read"]), ["crm:read"]);
+    assert.deepEqual(registry.requireKnownScopes([" crm:read ", "crm:write", "crm:read"]), [
+      "crm:read",
+      "crm:write",
+    ]);
+    assert.throws(() => registry.requireKnownScopes(["unknown"]), /Unknown API key scope/);
   });
 
   it("checks scope permissions against descriptor requirements", () => {
@@ -74,10 +62,9 @@ describe("createApiKeyScopeRegistry", () => {
     assert.equal(registry.canUseScope("crm:write", ["crm:edit"]), true);
     assert.equal(registry.canUseScope("crm:write", ["crm:view"]), false);
     assert.equal(registry.canUseScope("crm:ping", []), true);
-    assert.deepEqual(
-      registry.filterUsableScopes(["crm:read", "crm:write"], ["crm:view"]),
-      ["crm:read"]
-    );
+    assert.deepEqual(registry.filterUsableScopes(["crm:read", "crm:write"], ["crm:view"]), [
+      "crm:read",
+    ]);
   });
 
   it("does not let a domain wildcard satisfy a bare (non-namespaced) required permission", () => {
@@ -94,14 +81,10 @@ describe("createApiKeyScopeRegistry", () => {
   });
 
   it("rejects duplicate descriptors", () => {
-    const duplicated = [
-      { scope: "crm:read" },
-      { scope: "crm:read" },
-    ] as const satisfies readonly { scope: TestScope }[];
+    const duplicated = [{ scope: "crm:read" }, { scope: "crm:read" }] as const satisfies readonly {
+      scope: TestScope;
+    }[];
 
-    assert.throws(
-      () => createApiKeyScopeRegistry(duplicated),
-      /Duplicate API key scope/
-    );
+    assert.throws(() => createApiKeyScopeRegistry(duplicated), /Duplicate API key scope/);
   });
 });

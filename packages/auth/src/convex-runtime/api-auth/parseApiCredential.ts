@@ -10,18 +10,14 @@ export type ParseApiCredentialArgs = {
   apiKeyTokenPrefixes?: readonly string[];
 };
 
-export function parseApiCredential(
-  args: ParseApiCredentialArgs
-): ApiBearerCredential {
-  const authorizationHeader = normalizeHeaderValue(
-    args.authorizationHeader ?? null
-  );
+export function parseApiCredential(args: ParseApiCredentialArgs): ApiBearerCredential {
+  const authorizationHeader = normalizeHeaderValue(args.authorizationHeader ?? null);
   const apiKeyHeader = normalizeHeaderValue(args.apiKeyHeader ?? null);
 
   if (authorizationHeader !== null && apiKeyHeader !== null) {
     throw new ApiAuthError(
       "API_CREDENTIAL_AMBIGUOUS",
-      "Use either Authorization or X-API-Key, not both."
+      "Use either Authorization or X-API-Key, not both.",
     );
   }
 
@@ -36,7 +32,7 @@ export function parseApiCredential(
   if (authorizationHeader === null) {
     throw new ApiAuthError(
       "AUTHORIZATION_HEADER_MISSING",
-      "Authorization or X-API-Key header is required."
+      "Authorization or X-API-Key header is required.",
     );
   }
 
@@ -61,7 +57,7 @@ export function resolveCredentialTypeFromBearerToken(args: {
 
 export function matchesApiKeyTokenPrefix(
   token: string,
-  apiKeyTokenPrefixes: readonly string[]
+  apiKeyTokenPrefixes: readonly string[],
 ): boolean {
   const prefixes = normalizeApiKeyTokenPrefixes(apiKeyTokenPrefixes);
   return prefixes.some((prefix) => token.startsWith(prefix));
@@ -69,31 +65,21 @@ export function matchesApiKeyTokenPrefix(
 
 function normalizeHeaderValue(value: string | null): string | null {
   const normalized = value?.trim();
-  return normalized === undefined || normalized.length === 0
-    ? null
-    : normalized;
+  return normalized === undefined || normalized.length === 0 ? null : normalized;
 }
 
-function assertApiKeyTokenPrefix(
-  token: string,
-  apiKeyTokenPrefixes: readonly string[]
-): void {
-  if (
-    apiKeyTokenPrefixes.length === 0 ||
-    matchesApiKeyTokenPrefix(token, apiKeyTokenPrefixes)
-  ) {
+function assertApiKeyTokenPrefix(token: string, apiKeyTokenPrefixes: readonly string[]): void {
+  if (apiKeyTokenPrefixes.length === 0 || matchesApiKeyTokenPrefix(token, apiKeyTokenPrefixes)) {
     return;
   }
 
   throw new ApiAuthError(
     "API_KEY_HEADER_INVALID",
-    "X-API-Key header contains an unsupported key prefix."
+    "X-API-Key header contains an unsupported key prefix.",
   );
 }
 
-function normalizeApiKeyTokenPrefixes(
-  apiKeyTokenPrefixes: readonly string[]
-): string[] {
+function normalizeApiKeyTokenPrefixes(apiKeyTokenPrefixes: readonly string[]): string[] {
   const prefixes = new Set<string>();
 
   for (const rawPrefix of apiKeyTokenPrefixes) {

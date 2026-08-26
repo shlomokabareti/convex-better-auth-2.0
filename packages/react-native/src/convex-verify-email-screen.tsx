@@ -24,10 +24,7 @@ import {
 } from "react-native";
 
 import type { ExpoBetterAuthClient } from "./client";
-import {
-  useExpoAuthResendVerification,
-  useExpoAuthVerifyEmail,
-} from "./runtime";
+import { useExpoAuthResendVerification, useExpoAuthVerifyEmail } from "./runtime";
 
 export type ExpoVerifyEmailScreenStyles = {
   root?: StyleProp<ViewStyle>;
@@ -79,24 +76,16 @@ const DEFAULT_COPY: Required<ExpoVerifyEmailScreenCopy> = {
   unavailable: "Email verification is not available on this auth client.",
 };
 
-export function ConvexVerifyEmailScreen(
-  props: ExpoVerifyEmailScreenProps
-) {
+export function ConvexVerifyEmailScreen(props: ExpoVerifyEmailScreenProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { status, error, verifyEmail } = useExpoAuthVerifyEmail(
-    props.authClient
-  );
-  const { resend, isResending } = useExpoAuthResendVerification(
-    props.authClient
-  );
+  const { status, error, verifyEmail } = useExpoAuthVerifyEmail(props.authClient);
+  const { resend, isResending } = useExpoAuthResendVerification(props.authClient);
   const [resendResult, setResendResult] = useState<string | null>(null);
 
   const hasToken = props.token.length > 0;
   const canResend =
-    props.userEmail !== null &&
-    props.userEmail !== undefined &&
-    props.userEmail.length > 0;
+    props.userEmail !== null && props.userEmail !== undefined && props.userEmail.length > 0;
 
   useEffect(() => {
     if (!hasToken) return undefined;
@@ -114,11 +103,7 @@ export function ConvexVerifyEmailScreen(
 
   async function handleResend() {
     setResendResult(null);
-    if (
-      props.userEmail === null ||
-      props.userEmail === undefined ||
-      props.userEmail.length === 0
-    ) {
+    if (props.userEmail === null || props.userEmail === undefined || props.userEmail.length === 0) {
       return;
     }
     const result = await resend({
@@ -136,31 +121,19 @@ export function ConvexVerifyEmailScreen(
     <View style={[styles.root, s.root]}>
       <View style={[styles.header, s.header]}>
         <Text style={[styles.title, s.title]}>{copy.title}</Text>
-        <Text style={[styles.description, s.description]}>
-          {copy.description}
-        </Text>
+        <Text style={[styles.description, s.description]}>{copy.description}</Text>
       </View>
       {!hasToken ? (
-        <Text
-          className="text-destructive"
-          style={[styles.errorState, s.missingTokenState]}
-        >
+        <Text className="text-destructive" style={[styles.errorState, s.missingTokenState]}>
           {copy.missingTokenMessage}
         </Text>
       ) : status === "verifying" || status === "idle" ? (
-        <Text style={[styles.successState, s.verifyingState]}>
-          {copy.verifying}
-        </Text>
+        <Text style={[styles.successState, s.verifyingState]}>{copy.verifying}</Text>
       ) : status === "verified" ? (
-        <Text style={[styles.successState, s.verifiedState]}>
-          {copy.verified}
-        </Text>
+        <Text style={[styles.successState, s.verifiedState]}>{copy.verified}</Text>
       ) : (
         <View>
-          <Text
-            className="text-destructive"
-            style={[styles.errorState, s.errorState]}
-          >
+          <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
             {copy.errorPrefix} {error}
           </Text>
           {canResend ? (
@@ -175,9 +148,7 @@ export function ConvexVerifyEmailScreen(
             </Pressable>
           ) : null}
           {resendResult !== null ? (
-            <Text style={[styles.successState, s.verifiedState]}>
-              {resendResult}
-            </Text>
+            <Text style={[styles.successState, s.verifiedState]}>{resendResult}</Text>
           ) : null}
         </View>
       )}

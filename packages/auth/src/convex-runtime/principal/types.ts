@@ -30,10 +30,7 @@ export type PrincipalResolutionResult = ResolvedAuthContext & {
 };
 
 export type PrincipalResolutionRequest =
-  | ({ credentialType: "anonymous" } & Omit<
-      PrincipalResolutionInput,
-      "credentialType"
-    >)
+  | ({ credentialType: "anonymous" } & Omit<PrincipalResolutionInput, "credentialType">)
   | ({ credentialType: "userToken"; principal: UserPrincipal } & Omit<
       PrincipalResolutionInput,
       "credentialType"

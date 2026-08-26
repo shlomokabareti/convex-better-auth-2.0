@@ -35,7 +35,7 @@ describe("createBetterAuthIdentityProvisionPayload", () => {
           name: "Shlomo",
           image: "https://cdn.example.com/avatar.png",
         },
-      }
+      },
     );
   });
 
@@ -51,7 +51,7 @@ describe("createBetterAuthIdentityProvisionPayload", () => {
           imageUrl: "https://cdn.example.com/operator.png",
           sid: "session_123",
         },
-        { env: {} }
+        { env: {} },
       ),
       {
         identity: {
@@ -70,7 +70,7 @@ describe("createBetterAuthIdentityProvisionPayload", () => {
           name: "Operator",
           image: "https://cdn.example.com/operator.png",
         },
-      }
+      },
     );
   });
 
@@ -82,9 +82,9 @@ describe("createBetterAuthIdentityProvisionPayload", () => {
           email: "founder@example.com",
           emailVerified: true,
         },
-        { issuer: "https://explicit.example.com" }
+        { issuer: "https://explicit.example.com" },
       ).identity.issuer,
-      "https://explicit.example.com"
+      "https://explicit.example.com",
     );
   });
 
@@ -97,7 +97,7 @@ describe("createBetterAuthIdentityProvisionPayload", () => {
           email: " ",
           emailVerified: true,
         }),
-      /Better Auth identity email is required/
+      /Better Auth identity email is required/,
     );
   });
 });

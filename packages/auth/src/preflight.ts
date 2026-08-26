@@ -53,7 +53,7 @@ const DEFAULT_TIMEOUT_MS = 2_000;
 const DEFAULT_APP_PROBE_PATHS = ["/"];
 
 export async function runAuthPreflight(
-  options: AuthPreflightOptions
+  options: AuthPreflightOptions,
 ): Promise<AuthPreflightResult> {
   const checks: AuthPreflightCheck[] = [];
   const fetchImpl = options.fetchImpl ?? fetch;
@@ -77,8 +77,8 @@ export async function runAuthPreflight(
     checks.push(
       checkPackageVersion(
         options.expectedPackageVersion ?? null,
-        options.actualPackageVersion ?? null
-      )
+        options.actualPackageVersion ?? null,
+      ),
     );
   }
 
@@ -108,42 +108,34 @@ export function formatAuthPreflightResult(result: AuthPreflightResult): string {
   return lines.join("\n");
 }
 
-function checkBackendSetup(
-  setup: AuthPreflightBackendSetup
-): AuthPreflightCheck[] {
+function checkBackendSetup(setup: AuthPreflightBackendSetup): AuthPreflightCheck[] {
   return [
     ...(setup.files ?? []).map(checkRequiredFile),
     ...(setup.envGroups ?? []).map(checkRequiredEnvGroup),
   ];
 }
 
-function checkRequiredFile(
-  file: AuthPreflightRequiredFile
-): AuthPreflightCheck {
+function checkRequiredFile(file: AuthPreflightRequiredFile): AuthPreflightCheck {
   if (file.content === null || file.content === undefined) {
     return errorCheck(file.name, `${file.path} is missing.`);
   }
 
   const missingSnippets = (file.requiredSnippets ?? []).filter(
-    (snippet) => !file.content?.includes(snippet)
+    (snippet) => !file.content?.includes(snippet),
   );
 
   if (missingSnippets.length > 0) {
     return errorCheck(
       file.name,
-      `${file.path} is missing required setup: ${missingSnippets.join(", ")}.`
+      `${file.path} is missing required setup: ${missingSnippets.join(", ")}.`,
     );
   }
 
   return passCheck(file.name, file.path);
 }
 
-function checkRequiredEnvGroup(
-  group: AuthPreflightRequiredEnvGroup
-): AuthPreflightCheck {
-  const configuredName = group.envNames.find((name) =>
-    Boolean(group.values[name]?.trim())
-  );
+function checkRequiredEnvGroup(group: AuthPreflightRequiredEnvGroup): AuthPreflightCheck {
+  const configuredName = group.envNames.find((name) => Boolean(group.values[name]?.trim()));
 
   if (configuredName !== undefined) {
     return passCheck(group.name, `configured via ${configuredName}.`);
@@ -157,10 +149,7 @@ function checkRequiredEnvGroup(
   };
 }
 
-function requiredUrlCheck(
-  name: string,
-  value: string | null
-): AuthPreflightCheck {
+function requiredUrlCheck(name: string, value: string | null): AuthPreflightCheck {
   if (value === null) {
     return {
       name,
@@ -178,142 +167,84 @@ function requiredUrlCheck(
   };
 }
 
-async function checkAuthSessionEndpoint(
-  fetchImpl: typeof fetch,
-  betterAuthUrl: string
-) {
-  const url = new URL(
-    "./get-session",
-    ensureTrailingSlash(betterAuthUrl)
-  ).toString();
+async function checkAuthSessionEndpoint(fetchImpl: typeof fetch, betterAuthUrl: string) {
+  const url = new URL("./get-session", ensureTrailingSlash(betterAuthUrl)).toString();
   const response = await fetchWithTimeout(
     fetchImpl,
     url,
     { credentials: "include" },
-    DEFAULT_TIMEOUT_MS
+    DEFAULT_TIMEOUT_MS,
   );
 
   if (response.kind === "network-error") {
-    return errorCheck(
-      "Better Auth /get-session",
-      `unreachable: ${response.message}`
-    );
+    return errorCheck("Better Auth /get-session", `unreachable: ${response.message}`);
   }
 
   if (response.status === 404) {
     return errorCheck(
       "Better Auth /get-session",
-      "endpoint returned 404; Better Auth routes are missing."
+      "endpoint returned 404; Better Auth routes are missing.",
     );
   }
 
   if (response.status >= 500) {
-    return errorCheck(
-      "Better Auth /get-session",
-      `endpoint returned ${response.status}.`
-    );
+    return errorCheck("Better Auth /get-session", `endpoint returned ${response.status}.`);
   }
 
-  return passCheck(
-    "Better Auth /get-session",
-    `reachable with status ${response.status}.`
-  );
+  return passCheck("Better Auth /get-session", `reachable with status ${response.status}.`);
 }
 
-async function checkTokenEndpoint(
-  fetchImpl: typeof fetch,
-  betterAuthUrl: string
-) {
-  const url = new URL(
-    "./convex/token",
-    ensureTrailingSlash(betterAuthUrl)
-  ).toString();
+async function checkTokenEndpoint(fetchImpl: typeof fetch, betterAuthUrl: string) {
+  const url = new URL("./convex/token", ensureTrailingSlash(betterAuthUrl)).toString();
   const response = await fetchWithTimeout(
     fetchImpl,
     url,
     { credentials: "include" },
-    DEFAULT_TIMEOUT_MS
+    DEFAULT_TIMEOUT_MS,
   );
 
   if (response.kind === "network-error") {
-    return errorCheck(
-      "Better Auth /convex/token",
-      `unreachable: ${response.message}`
-    );
+    return errorCheck("Better Auth /convex/token", `unreachable: ${response.message}`);
   }
 
   if (response.status === 404) {
     return errorCheck(
       "Better Auth /convex/token",
-      "endpoint returned 404; Convex plugin is missing."
+      "endpoint returned 404; Convex plugin is missing.",
     );
   }
 
   if (response.status >= 500) {
-    return errorCheck(
-      "Better Auth /convex/token",
-      `endpoint returned ${response.status}.`
-    );
+    return errorCheck("Better Auth /convex/token", `endpoint returned ${response.status}.`);
   }
 
-  return passCheck(
-    "Better Auth /convex/token",
-    `reachable with status ${response.status}.`
-  );
+  return passCheck("Better Auth /convex/token", `reachable with status ${response.status}.`);
 }
 
-async function checkJwksEndpoint(
-  fetchImpl: typeof fetch,
-  betterAuthUrl: string
-) {
-  const url = new URL(
-    "./convex/jwks",
-    ensureTrailingSlash(betterAuthUrl)
-  ).toString();
-  const response = await fetchWithTimeout(
-    fetchImpl,
-    url,
-    {},
-    DEFAULT_TIMEOUT_MS
-  );
+async function checkJwksEndpoint(fetchImpl: typeof fetch, betterAuthUrl: string) {
+  const url = new URL("./convex/jwks", ensureTrailingSlash(betterAuthUrl)).toString();
+  const response = await fetchWithTimeout(fetchImpl, url, {}, DEFAULT_TIMEOUT_MS);
 
   if (response.kind === "network-error") {
-    return errorCheck(
-      "Better Auth /convex/jwks",
-      `unreachable: ${response.message}`
-    );
+    return errorCheck("Better Auth /convex/jwks", `unreachable: ${response.message}`);
   }
 
   if (response.status === 404) {
     return errorCheck(
       "Better Auth /convex/jwks",
-      "endpoint returned 404; Convex plugin JWKS is missing."
+      "endpoint returned 404; Convex plugin JWKS is missing.",
     );
   }
 
   if (response.status >= 500) {
-    return errorCheck(
-      "Better Auth /convex/jwks",
-      `endpoint returned ${response.status}.`
-    );
+    return errorCheck("Better Auth /convex/jwks", `endpoint returned ${response.status}.`);
   }
 
-  return passCheck(
-    "Better Auth /convex/jwks",
-    `reachable with status ${response.status}.`
-  );
+  return passCheck("Better Auth /convex/jwks", `reachable with status ${response.status}.`);
 }
 
-async function checkConvexDeployment(
-  fetchImpl: typeof fetch,
-  convexUrl: string
-) {
-  const response = await fetchWithTimeout(
-    fetchImpl,
-    convexUrl,
-    {},
-    DEFAULT_TIMEOUT_MS
-  );
+async function checkConvexDeployment(fetchImpl: typeof fetch, convexUrl: string) {
+  const response = await fetchWithTimeout(fetchImpl, convexUrl, {}, DEFAULT_TIMEOUT_MS);
 
   if (response.kind === "network-error") {
     return errorCheck("Convex deployment", `unreachable: ${response.message}`);
@@ -323,20 +254,17 @@ async function checkConvexDeployment(
     return errorCheck("Convex deployment", `returned ${response.status}.`);
   }
 
-  return passCheck(
-    "Convex deployment",
-    `reachable with status ${response.status}.`
-  );
+  return passCheck("Convex deployment", `reachable with status ${response.status}.`);
 }
 
 function checkPackageVersion(
   expectedPackageVersion: string | null,
-  actualPackageVersion: string | null
+  actualPackageVersion: string | null,
 ): AuthPreflightCheck {
   if (!expectedPackageVersion || !actualPackageVersion) {
     return warningCheck(
       "Package version",
-      `expected=${expectedPackageVersion ?? "<missing>"} actual=${actualPackageVersion ?? "<missing>"}`
+      `expected=${expectedPackageVersion ?? "<missing>"} actual=${actualPackageVersion ?? "<missing>"}`,
     );
   }
 
@@ -344,61 +272,41 @@ function checkPackageVersion(
     return passCheck("Package version", actualPackageVersion);
   }
 
-  if (
-    expectedPackageVersion.startsWith("link:") ||
-    expectedPackageVersion.startsWith("file:")
-  ) {
+  if (expectedPackageVersion.startsWith("link:") || expectedPackageVersion.startsWith("file:")) {
     return passCheck(
       "Package version",
-      `local dependency ${expectedPackageVersion} resolved to package version ${actualPackageVersion}.`
+      `local dependency ${expectedPackageVersion} resolved to package version ${actualPackageVersion}.`,
     );
   }
 
   return errorCheck(
     "Package version",
-    `expected convex-auth ${expectedPackageVersion}, found ${actualPackageVersion}.`
+    `expected convex-auth ${expectedPackageVersion}, found ${actualPackageVersion}.`,
   );
 }
 
-async function checkAppServer(
-  fetchImpl: typeof fetch,
-  probe: AuthPreflightAppServerProbe
-) {
+async function checkAppServer(fetchImpl: typeof fetch, probe: AuthPreflightAppServerProbe) {
   const baseUrl = normalizeUrl(probe.baseUrl);
   if (baseUrl === null) {
-    return [
-      warningCheck(
-        "App server",
-        "PLAYWRIGHT_TEST_BASE_URL is missing or invalid."
-      ),
-    ];
+    return [warningCheck("App server", "PLAYWRIGHT_TEST_BASE_URL is missing or invalid.")];
   }
 
   const timeoutMs = probe.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const health = await fetchWithTimeout(fetchImpl, baseUrl, {}, timeoutMs);
   if (health.kind === "network-error") {
-    return [
-      warningCheck(
-        "App server",
-        `not running at ${baseUrl}; Playwright may start it.`
-      ),
-    ];
+    return [warningCheck("App server", `not running at ${baseUrl}; Playwright may start it.`)];
   }
 
-  const checks = [
-    passCheck("App server", `reachable with status ${health.status}.`),
-  ];
+  const checks = [passCheck("App server", `reachable with status ${health.status}.`)];
   const expectedValues = probe.expectedValues ?? [];
   if (expectedValues.length === 0) {
     return checks;
   }
 
-  const paths = probe.probePaths?.length
-    ? probe.probePaths
-    : DEFAULT_APP_PROBE_PATHS;
-  const servedText = (
-    await fetchAppServerProbeBodies(fetchImpl, baseUrl, paths, timeoutMs)
-  ).join("\n");
+  const paths = probe.probePaths?.length ? probe.probePaths : DEFAULT_APP_PROBE_PATHS;
+  const servedText = (await fetchAppServerProbeBodies(fetchImpl, baseUrl, paths, timeoutMs)).join(
+    "\n",
+  );
   checks.push(...checkServedExpectedValues(servedText, expectedValues));
 
   return checks;
@@ -408,26 +316,23 @@ async function fetchAppServerProbeBodies(
   fetchImpl: typeof fetch,
   baseUrl: string,
   paths: readonly string[],
-  timeoutMs: number
+  timeoutMs: number,
 ): Promise<string[]> {
   const probes = await Promise.all(
     paths.map(async (path) => {
       const url = new URL(path, ensureTrailingSlash(baseUrl)).toString();
       const response = await fetchWithTimeout(fetchImpl, url, {}, timeoutMs);
       const body =
-        response.kind === "response" && response.status < 500
-          ? await response.text()
-          : null;
+        response.kind === "response" && response.status < 500 ? await response.text() : null;
       return { body, url };
-    })
+    }),
   );
   const bodies: string[] = [];
   const scriptUrls = new Set<string>();
   for (const { body, url } of probes) {
     if (body !== null) {
       bodies.push(body);
-      for (const scriptUrl of extractSameOriginScriptUrls(body, url))
-        scriptUrls.add(scriptUrl);
+      for (const scriptUrl of extractSameOriginScriptUrls(body, url)) scriptUrls.add(scriptUrl);
     }
   }
   bodies.push(...(await fetchScriptBodies(fetchImpl, scriptUrls, timeoutMs)));
@@ -437,34 +342,24 @@ async function fetchAppServerProbeBodies(
 async function fetchScriptBodies(
   fetchImpl: typeof fetch,
   scriptUrls: ReadonlySet<string>,
-  timeoutMs: number
+  timeoutMs: number,
 ): Promise<string[]> {
   return Promise.all(
     [...scriptUrls].map(async (scriptUrl) => {
-      const response = await fetchWithTimeout(
-        fetchImpl,
-        scriptUrl,
-        {},
-        timeoutMs
-      );
-      return response.kind === "response" && response.status < 500
-        ? response.text()
-        : "";
-    })
+      const response = await fetchWithTimeout(fetchImpl, scriptUrl, {}, timeoutMs);
+      return response.kind === "response" && response.status < 500 ? response.text() : "";
+    }),
   ).then((bodies) => bodies.filter((body) => body.length > 0));
 }
 
 function checkServedExpectedValues(
   servedText: string,
-  expectedValues: readonly string[]
+  expectedValues: readonly string[],
 ): AuthPreflightCheck[] {
   return expectedValues.map((expectedValue) =>
     servedText.includes(expectedValue)
       ? passCheck("App served env", `found ${expectedValue}.`)
-      : errorCheck(
-          "App served env",
-          `running app server is not serving ${expectedValue}.`
-        )
+      : errorCheck("App served env", `running app server is not serving ${expectedValue}.`),
   );
 }
 
@@ -498,7 +393,7 @@ async function fetchWithTimeout(
   fetchImpl: typeof fetch,
   url: string,
   init: RequestInit,
-  timeoutMs: number
+  timeoutMs: number,
 ): Promise<FetchWithTimeoutResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => {

@@ -59,13 +59,8 @@ export type ExpoAuthRuntime = {
     userId: string | null;
   };
   useAppAuthActions: () => {
-    signInEmail: (args: {
-      email: string;
-      password: string;
-    }) => Promise<ExpoAuthActionResult>;
-    signInSocial: (args: {
-      provider: string;
-    }) => Promise<ExpoAuthActionResult>;
+    signInEmail: (args: { email: string; password: string }) => Promise<ExpoAuthActionResult>;
+    signInSocial: (args: { provider: string }) => Promise<ExpoAuthActionResult>;
     signOut: () => Promise<ExpoAuthActionResult>;
     signUpEmail: (args: {
       email: string;
@@ -80,9 +75,7 @@ export type ExpoAuthRuntime = {
   };
 };
 
-export function createExpoAuthRuntime(
-  options: ExpoAuthRuntimeOptions
-): ExpoAuthRuntime {
+export function createExpoAuthRuntime(options: ExpoAuthRuntimeOptions): ExpoAuthRuntime {
   const config = resolveExpoAuthConfig(options);
   const authClient = createExpoBetterAuthClient({
     ...options,
@@ -124,8 +117,7 @@ export function createExpoAuthRuntime(
 
   function useAppAuthActions() {
     return {
-      signInEmail: (args: { email: string; password: string }) =>
-        actionClient.signIn.email(args),
+      signInEmail: (args: { email: string; password: string }) => actionClient.signIn.email(args),
       signInSocial: (args: { provider: string }) =>
         actionClient.signIn.social({
           provider: args.provider,
@@ -187,10 +179,7 @@ type SessionManagementClient = {
     data?: unknown;
     error?: unknown;
   }>;
-  sendVerificationEmail?: (args: {
-    email: string;
-    callbackURL?: string;
-  }) => Promise<{
+  sendVerificationEmail?: (args: { email: string; callbackURL?: string }) => Promise<{
     data?: unknown;
     error?: unknown;
   }>;
@@ -212,11 +201,9 @@ export type ExpoAuthSessionListState = {
 };
 
 export function useExpoAuthSessionList(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
 ): ExpoAuthSessionListState {
-  const [sessions, setSessions] = useState<
-    ExpoAuthSessionListItem[] | null
-  >(null);
+  const [sessions, setSessions] = useState<ExpoAuthSessionListItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -232,11 +219,7 @@ export function useExpoAuthSessionList(
     try {
       const result = await authClient.listSessions();
       if (result.error) {
-        setError(
-          result.error instanceof Error
-            ? result.error.message
-            : "Could not load sessions"
-        );
+        setError(result.error instanceof Error ? result.error.message : "Could not load sessions");
         setSessions(null);
         return;
       }
@@ -257,15 +240,13 @@ export function useExpoAuthSessionList(
 }
 
 export type ExpoAuthRevokeSessionState = {
-  revokeSession: (args: {
-    token: string;
-  }) => Promise<{ ok: boolean; error: string | null }>;
+  revokeSession: (args: { token: string }) => Promise<{ ok: boolean; error: string | null }>;
   revokeOtherSessions: () => Promise<{ ok: boolean; error: string | null }>;
   isRevoking: boolean;
 };
 
 export function useExpoAuthRevokeSession(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
 ): ExpoAuthRevokeSessionState {
   const [isRevoking, setIsRevoking] = useState(false);
 
@@ -281,10 +262,7 @@ export function useExpoAuthRevokeSession(
       try {
         const result = await authClient.revokeSession(args);
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Revoke failed";
+          const msg = result.error instanceof Error ? result.error.message : "Revoke failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
@@ -297,7 +275,7 @@ export function useExpoAuthRevokeSession(
         setIsRevoking(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   const revokeOtherSessions = useCallback(async () => {
@@ -311,10 +289,7 @@ export function useExpoAuthRevokeSession(
     try {
       const result = await authClient.revokeOtherSessions();
       if (result.error) {
-        const msg =
-          result.error instanceof Error
-            ? result.error.message
-            : "Revoke failed";
+        const msg = result.error instanceof Error ? result.error.message : "Revoke failed";
         return { ok: false, error: msg };
       }
       return { ok: true, error: null };
@@ -340,7 +315,7 @@ export type ExpoAuthUpdateProfileState = {
 };
 
 export function useExpoAuthUpdateProfile(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
 ): ExpoAuthUpdateProfileState {
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -356,10 +331,7 @@ export function useExpoAuthUpdateProfile(
       try {
         const result = await authClient.updateUser(args);
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Update failed";
+          const msg = result.error instanceof Error ? result.error.message : "Update failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
@@ -372,7 +344,7 @@ export function useExpoAuthUpdateProfile(
         setIsUpdating(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { updateProfile, isUpdating };
@@ -389,7 +361,7 @@ export type ExpoAuthForgotPasswordState = {
 };
 
 export function useExpoAuthForgotPassword(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
 ): ExpoAuthForgotPasswordState {
   const [isRequesting, setIsRequesting] = useState(false);
 
@@ -405,10 +377,7 @@ export function useExpoAuthForgotPassword(
       try {
         const result = await authClient.forgetPassword(args);
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Reset request failed";
+          const msg = result.error instanceof Error ? result.error.message : "Reset request failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
@@ -421,7 +390,7 @@ export function useExpoAuthForgotPassword(
         setIsRequesting(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { requestReset, isRequesting };
@@ -436,7 +405,7 @@ export type ExpoAuthResetPasswordState = {
 };
 
 export function useExpoAuthResetPassword(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
 ): ExpoAuthResetPasswordState {
   const [isResetting, setIsResetting] = useState(false);
 
@@ -452,10 +421,7 @@ export function useExpoAuthResetPassword(
       try {
         const result = await authClient.resetPassword(args);
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Reset failed";
+          const msg = result.error instanceof Error ? result.error.message : "Reset failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
@@ -468,7 +434,7 @@ export function useExpoAuthResetPassword(
         setIsResetting(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { resetPassword, isResetting };
@@ -476,22 +442,16 @@ export function useExpoAuthResetPassword(
 
 // ---- Email-verification hooks (RN mirror of web) ----
 
-export type ExpoAuthVerifyEmailStatus =
-  | "idle"
-  | "verifying"
-  | "verified"
-  | "error";
+export type ExpoAuthVerifyEmailStatus = "idle" | "verifying" | "verified" | "error";
 
 export type ExpoAuthVerifyEmailState = {
   status: ExpoAuthVerifyEmailStatus;
   error: string | null;
-  verifyEmail: (args: {
-    token: string;
-  }) => Promise<{ ok: boolean; error: string | null }>;
+  verifyEmail: (args: { token: string }) => Promise<{ ok: boolean; error: string | null }>;
 };
 
 export function useExpoAuthVerifyEmail(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
 ): ExpoAuthVerifyEmailState {
   const [status, setStatus] = useState<ExpoAuthVerifyEmailStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -511,10 +471,7 @@ export function useExpoAuthVerifyEmail(
           query: { token: args.token },
         });
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Verification failed";
+          const msg = result.error instanceof Error ? result.error.message : "Verification failed";
           setStatus("error");
           setError(msg);
           return { ok: false, error: msg };
@@ -528,7 +485,7 @@ export function useExpoAuthVerifyEmail(
         return { ok: false, error: msg };
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { status, error, verifyEmail };
@@ -543,7 +500,7 @@ export type ExpoAuthResendVerificationState = {
 };
 
 export function useExpoAuthResendVerification(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
 ): ExpoAuthResendVerificationState {
   const [isResending, setIsResending] = useState(false);
 
@@ -559,10 +516,7 @@ export function useExpoAuthResendVerification(
       try {
         const result = await authClient.sendVerificationEmail(args);
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Resend failed";
+          const msg = result.error instanceof Error ? result.error.message : "Resend failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
@@ -575,7 +529,7 @@ export function useExpoAuthResendVerification(
         setIsResending(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { resend, isResending };
@@ -592,7 +546,7 @@ export type ExpoAuthChangeEmailState = {
 };
 
 export function useExpoAuthChangeEmail(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
 ): ExpoAuthChangeEmailState {
   const [isRequesting, setIsRequesting] = useState(false);
 
@@ -609,23 +563,20 @@ export function useExpoAuthChangeEmail(
         const result = await authClient.changeEmail(args);
         if (result.error) {
           const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Email change request failed";
+            result.error instanceof Error ? result.error.message : "Email change request failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
       } catch (err) {
         return {
           ok: false,
-          error:
-            err instanceof Error ? err.message : "Email change request failed",
+          error: err instanceof Error ? err.message : "Email change request failed",
         };
       } finally {
         setIsRequesting(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { requestChange, isRequesting };
@@ -639,14 +590,14 @@ export function useExpoAuthChangeEmail(
 
 export type ExpoAuthUploadProfileImageState = {
   uploadAndSave: (
-    file: Blob | string
+    file: Blob | string,
   ) => Promise<{ ok: boolean; url: string | null; error: string | null }>;
   isUploading: boolean;
 };
 
 export function useExpoAuthUploadProfileImage(
   authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
-  options: { uploadFile: (file: Blob | string) => Promise<string> }
+  options: { uploadFile: (file: Blob | string) => Promise<string> },
 ): ExpoAuthUploadProfileImageState {
   const [isUploading, setIsUploading] = useState(false);
   const { uploadFile } = options;
@@ -665,10 +616,7 @@ export function useExpoAuthUploadProfileImage(
         const url = await uploadFile(file);
         const result = await authClient.updateUser({ image: url });
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Image save failed";
+          const msg = result.error instanceof Error ? result.error.message : "Image save failed";
           return { ok: false, url: null, error: msg };
         }
         return { ok: true, url, error: null };
@@ -682,7 +630,7 @@ export function useExpoAuthUploadProfileImage(
         setIsUploading(false);
       }
     },
-    [authClient, uploadFile]
+    [authClient, uploadFile],
   );
 
   return { uploadAndSave, isUploading };
@@ -696,8 +644,7 @@ export function useExpoAuthUploadProfileImage(
 // methods) so a hand-built client without the plugin degrades to a
 // clear "not available" error rather than throwing.
 
-const TWO_FACTOR_UNAVAILABLE_RN =
-  "Two-factor authentication is not available on this auth client";
+const TWO_FACTOR_UNAVAILABLE_RN = "Two-factor authentication is not available on this auth client";
 
 type TwoFactorClient = {
   twoFactor?: {
@@ -709,10 +656,7 @@ type TwoFactorClient = {
       data?: { token?: string | null } | null;
       error?: { message?: string | null } | null;
     }>;
-    verifyBackupCode: (args: {
-      code: string;
-      trustDevice?: boolean;
-    }) => Promise<{
+    verifyBackupCode: (args: { code: string; trustDevice?: boolean }) => Promise<{
       data?: { token?: string | null } | null;
       error?: { message?: string | null } | null;
     }>;
@@ -735,15 +679,12 @@ export type ExpoAuthEnableTwoFactorResult = {
 };
 
 export type ExpoAuthEnableTwoFactorState = {
-  enable: (args: {
-    password: string;
-    issuer?: string;
-  }) => Promise<ExpoAuthEnableTwoFactorResult>;
+  enable: (args: { password: string; issuer?: string }) => Promise<ExpoAuthEnableTwoFactorResult>;
   isEnabling: boolean;
 };
 
 export function useExpoAuthEnableTwoFactor(
-  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null
+  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null,
 ): ExpoAuthEnableTwoFactorState {
   const [isEnabling, setIsEnabling] = useState(false);
 
@@ -761,9 +702,7 @@ export function useExpoAuthEnableTwoFactor(
       try {
         const result = await authClient.twoFactor.enable(args);
         if (result.error) {
-          const msg =
-            result.error.message ??
-            "Could not enable two-factor authentication";
+          const msg = result.error.message ?? "Could not enable two-factor authentication";
           return { ok: false, totpURI: null, backupCodes: null, error: msg };
         }
         return {
@@ -777,16 +716,13 @@ export function useExpoAuthEnableTwoFactor(
           ok: false,
           totpURI: null,
           backupCodes: null,
-          error:
-            err instanceof Error
-              ? err.message
-              : "Could not enable two-factor authentication",
+          error: err instanceof Error ? err.message : "Could not enable two-factor authentication",
         };
       } finally {
         setIsEnabling(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { enable, isEnabling };
@@ -801,7 +737,7 @@ export type ExpoAuthVerifyTotpState = {
 };
 
 export function useExpoAuthVerifyTotp(
-  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null
+  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null,
 ): ExpoAuthVerifyTotpState {
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -826,7 +762,7 @@ export function useExpoAuthVerifyTotp(
         setIsVerifying(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { verifyTotp, isVerifying };
@@ -841,7 +777,7 @@ export type ExpoAuthVerifyBackupCodeState = {
 };
 
 export function useExpoAuthVerifyBackupCode(
-  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null
+  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null,
 ): ExpoAuthVerifyBackupCodeState {
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -869,21 +805,19 @@ export function useExpoAuthVerifyBackupCode(
         setIsVerifying(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { verifyBackupCode, isVerifying };
 }
 
 export type ExpoAuthDisableTwoFactorState = {
-  disable: (args: {
-    password: string;
-  }) => Promise<{ ok: boolean; error: string | null }>;
+  disable: (args: { password: string }) => Promise<{ ok: boolean; error: string | null }>;
   isDisabling: boolean;
 };
 
 export function useExpoAuthDisableTwoFactor(
-  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null
+  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null,
 ): ExpoAuthDisableTwoFactorState {
   const [isDisabling, setIsDisabling] = useState(false);
 
@@ -905,14 +839,13 @@ export function useExpoAuthDisableTwoFactor(
       } catch (err) {
         return {
           ok: false,
-          error:
-            err instanceof Error ? err.message : "Could not disable two-factor",
+          error: err instanceof Error ? err.message : "Could not disable two-factor",
         };
       } finally {
         setIsDisabling(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { disable, isDisabling };
@@ -928,7 +861,7 @@ export type ExpoAuthGenerateBackupCodesState = {
 };
 
 export function useExpoAuthGenerateBackupCodes(
-  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null
+  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null,
 ): ExpoAuthGenerateBackupCodesState {
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -960,16 +893,13 @@ export function useExpoAuthGenerateBackupCodes(
         return {
           ok: false,
           backupCodes: null,
-          error:
-            err instanceof Error
-              ? err.message
-              : "Could not regenerate backup codes",
+          error: err instanceof Error ? err.message : "Could not regenerate backup codes",
         };
       } finally {
         setIsGenerating(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { generateBackupCodes, isGenerating };

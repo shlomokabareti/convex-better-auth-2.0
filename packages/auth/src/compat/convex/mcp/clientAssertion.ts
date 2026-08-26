@@ -1,9 +1,6 @@
 import { decodeProtectedHeader, importJWK, jwtVerify } from "jose";
 
-import type {
-  McpOAuthClientAssertionResult,
-  McpOAuthClientAssertionVerifyArgs,
-} from "./types";
+import type { McpOAuthClientAssertionResult, McpOAuthClientAssertionVerifyArgs } from "./types";
 
 /**
  * RFC 7523 client assertion type. The only value the token endpoint accepts.
@@ -34,11 +31,11 @@ export const MCP_OAUTH_CLIENT_ASSERTION_MAX_LIFETIME_SECONDS = 300;
  * client id, `aud` the token endpoint, `exp` present and bounded).
  */
 export async function verifyMcpOAuthClientAssertion(
-  args: McpOAuthClientAssertionVerifyArgs
+  args: McpOAuthClientAssertionVerifyArgs,
 ): Promise<McpOAuthClientAssertionResult> {
   if (args.assertionType !== MCP_OAUTH_CLIENT_ASSERTION_TYPE) {
     return failure(
-      `Unsupported client_assertion_type. Expected ${MCP_OAUTH_CLIENT_ASSERTION_TYPE}`
+      `Unsupported client_assertion_type. Expected ${MCP_OAUTH_CLIENT_ASSERTION_TYPE}`,
     );
   }
 
@@ -83,7 +80,7 @@ export async function verifyMcpOAuthClientAssertion(
         algorithms: [key.algorithm],
         audience: args.tokenEndpoint,
         currentDate: new Date(now),
-      }
+      },
     );
     payload = { ...verified.payload };
   } catch {
@@ -104,7 +101,7 @@ export async function verifyMcpOAuthClientAssertion(
   const lifetimeSeconds = expiresAt - Math.floor(now / 1000);
   if (lifetimeSeconds > MCP_OAUTH_CLIENT_ASSERTION_MAX_LIFETIME_SECONDS) {
     return failure(
-      `client_assertion exp exceeds the ${MCP_OAUTH_CLIENT_ASSERTION_MAX_LIFETIME_SECONDS}s maximum lifetime`
+      `client_assertion exp exceeds the ${MCP_OAUTH_CLIENT_ASSERTION_MAX_LIFETIME_SECONDS}s maximum lifetime`,
     );
   }
 

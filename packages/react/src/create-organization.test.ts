@@ -32,7 +32,7 @@ function render(props: Partial<ConvexCreateOrganizationProps>): string {
   return renderToStaticMarkup(
     createElement(ConvexCreateOrganization, {
       ...props,
-    })
+    }),
   );
 }
 

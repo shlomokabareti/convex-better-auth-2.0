@@ -41,14 +41,11 @@ const userPathTraps = {
   },
 } satisfies Pick<
   Args,
-  | "consumeAuthorizationCode"
-  | "redeemRefreshToken"
-  | "signAccessToken"
-  | "issueRefreshToken"
+  "consumeAuthorizationCode" | "redeemRefreshToken" | "signAccessToken" | "issueRefreshToken"
 >;
 
 function machineArgs(
-  overrides: Partial<NonNullable<Args["clientCredentials"]>> = {}
+  overrides: Partial<NonNullable<Args["clientCredentials"]>> = {},
 ): Omit<Args, "request"> {
   return {
     resolveClient: () => MACHINE_CLIENT,

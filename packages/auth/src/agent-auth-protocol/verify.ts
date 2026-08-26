@@ -24,16 +24,14 @@ export type AgentAuthProtocolJwtVerificationOptions = {
   clockSkewSeconds?: number;
 };
 
-export type VerifiedAgentAuthProtocolHostJwt =
-  ParsedAgentAuthProtocolHostJwt & {
-    signingKeyThumbprint: string;
-    replayExpiresAt: number;
-  };
+export type VerifiedAgentAuthProtocolHostJwt = ParsedAgentAuthProtocolHostJwt & {
+  signingKeyThumbprint: string;
+  replayExpiresAt: number;
+};
 
-export type VerifiedAgentAuthProtocolAgentJwt =
-  ParsedAgentAuthProtocolAgentJwt & {
-    replayExpiresAt: number;
-  };
+export type VerifiedAgentAuthProtocolAgentJwt = ParsedAgentAuthProtocolAgentJwt & {
+  replayExpiresAt: number;
+};
 
 export async function verifyAgentAuthProtocolHostJwt(args: {
   token: string;
@@ -50,22 +48,13 @@ export async function verifyAgentAuthProtocolHostJwt(args: {
   });
   const publicKey =
     parsed.claims.host_public_key ??
-    parseAgentAuthProtocolPublicEd25519Jwk(
-      args.resolvedPublicKey,
-      "resolved host public JWK"
-    );
+    parseAgentAuthProtocolPublicEd25519Jwk(args.resolvedPublicKey, "resolved host public JWK");
   requireExpectedKeyId(parsed.header.kid, publicKey, args.expectedKeyId);
   const thumbprint = await calculateJwkThumbprint(publicKey, "sha256");
   if (parsed.claims.iss !== thumbprint) {
-    throw new Error(
-      "host JWT issuer does not match its signing key thumbprint"
-    );
+    throw new Error("host JWT issuer does not match its signing key thumbprint");
   }
-  const temporal = verifyTemporalAndAudience(
-    parsed.claims,
-    args.expectedAudience,
-    args.options
-  );
+  const temporal = verifyTemporalAndAudience(parsed.claims, args.expectedAudience, args.options);
   const key = await importJWK(publicKey, "EdDSA");
   await jwtVerify(args.token, key, {
     algorithms: ["EdDSA"],
@@ -100,16 +89,9 @@ export async function verifyAgentAuthProtocolAgentJwt(args: {
   if (parsed.claims.sub !== args.expectedAgentId) {
     throw new Error("agent JWT subject does not match its agent");
   }
-  const publicKey = parseAgentAuthProtocolPublicEd25519Jwk(
-    args.publicKey,
-    "agent public JWK"
-  );
+  const publicKey = parseAgentAuthProtocolPublicEd25519Jwk(args.publicKey, "agent public JWK");
   requireExpectedKeyId(parsed.header.kid, publicKey, args.expectedKeyId);
-  const temporal = verifyTemporalAndAudience(
-    parsed.claims,
-    args.expectedAudience,
-    args.options
-  );
+  const temporal = verifyTemporalAndAudience(parsed.claims, args.expectedAudience, args.options);
   const key = await importJWK(publicKey, "EdDSA");
   await jwtVerify(args.token, key, {
     algorithms: ["EdDSA"],
@@ -132,32 +114,28 @@ function verifyTemporalAndAudience(
     exp: number;
   },
   expectedAudience: string,
-  options: AgentAuthProtocolJwtVerificationOptions | undefined
+  options: AgentAuthProtocolJwtVerificationOptions | undefined,
 ): {
   clockSkewSeconds: number;
   nowSeconds: number;
   replayExpiresAt: number;
 } {
   if (claims.aud !== expectedAudience) {
-    throw new Error(
-      "JWT audience does not exactly match the intended recipient"
-    );
+    throw new Error("JWT audience does not exactly match the intended recipient");
   }
   const maxLifetimeSeconds = readBoundedNonnegativeInteger(
     options?.maxLifetimeSeconds ?? AGENT_AUTH_PROTOCOL_MAX_JWT_LIFETIME_SECONDS,
     "maxLifetimeSeconds",
-    AGENT_AUTH_PROTOCOL_MAX_JWT_LIFETIME_SECONDS
+    AGENT_AUTH_PROTOCOL_MAX_JWT_LIFETIME_SECONDS,
   );
   const clockSkewSeconds = readBoundedNonnegativeInteger(
     options?.clockSkewSeconds ?? AGENT_AUTH_PROTOCOL_MAX_CLOCK_SKEW_SECONDS,
     "clockSkewSeconds",
-    AGENT_AUTH_PROTOCOL_MAX_CLOCK_SKEW_SECONDS
+    AGENT_AUTH_PROTOCOL_MAX_CLOCK_SKEW_SECONDS,
   );
   const now = options?.now ?? Date.now();
   if (!Number.isSafeInteger(now) || now < 0) {
-    throw new TypeError(
-      "now must be a nonnegative safe integer in milliseconds"
-    );
+    throw new TypeError("now must be a nonnegative safe integer in milliseconds");
   }
   const nowSeconds = Math.floor(now / 1000);
   if (claims.iat > nowSeconds + clockSkewSeconds) {
@@ -176,25 +154,17 @@ function verifyTemporalAndAudience(
 function requireExpectedKeyId(
   headerKeyId: string | undefined,
   publicKey: AgentAuthProtocolPublicEd25519Jwk,
-  expectedKeyId: string | undefined
+  expectedKeyId: string | undefined,
 ): void {
   if (expectedKeyId !== undefined && headerKeyId !== expectedKeyId) {
     throw new Error("JWT key id does not match the resolved signing key");
   }
-  if (
-    headerKeyId !== undefined &&
-    publicKey.kid !== undefined &&
-    headerKeyId !== publicKey.kid
-  ) {
+  if (headerKeyId !== undefined && publicKey.kid !== undefined && headerKeyId !== publicKey.kid) {
     throw new Error("JWT key id does not match the public JWK");
   }
 }
 
-function readBoundedNonnegativeInteger(
-  value: number,
-  name: string,
-  maximum: number
-): number {
+function readBoundedNonnegativeInteger(value: number, name: string, maximum: number): number {
   if (!Number.isSafeInteger(value) || value < 0 || value > maximum) {
     throw new TypeError(`${name} must be an integer between 0 and ${maximum}`);
   }

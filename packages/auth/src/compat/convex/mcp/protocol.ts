@@ -13,14 +13,12 @@ const DEFAULT_MCP_PATH = "/mcp";
 const DEFAULT_OAUTH_BASE_PATH = "/oauth";
 
 export function createMcpOAuthProtocolConfig(
-  config: McpOAuthProtocolConfig
+  config: McpOAuthProtocolConfig,
 ): Required<McpOAuthProtocolConfig> {
   const resourceSlug = config.resourceSlug.trim();
   const resourceId = config.resourceId.trim();
   const audience = config.audience.trim();
-  const oauthBasePath = trimTrailingSlash(
-    config.oauthBasePath ?? DEFAULT_OAUTH_BASE_PATH
-  );
+  const oauthBasePath = trimTrailingSlash(config.oauthBasePath ?? DEFAULT_OAUTH_BASE_PATH);
   const issuerPath = config.issuerPath ?? `${oauthBasePath}/${resourceSlug}`;
 
   return {
@@ -31,18 +29,14 @@ export function createMcpOAuthProtocolConfig(
     mcpPath: config.mcpPath ?? DEFAULT_MCP_PATH,
     oauthBasePath,
     issuerPath,
-    responseTypesSupported:
-      config.responseTypesSupported ?? DEFAULT_RESPONSE_TYPES,
+    responseTypesSupported: config.responseTypesSupported ?? DEFAULT_RESPONSE_TYPES,
     grantTypesSupported: config.grantTypesSupported ?? DEFAULT_GRANT_TYPES,
     tokenEndpointAuthMethodsSupported:
-      config.tokenEndpointAuthMethodsSupported ??
-      DEFAULT_TOKEN_ENDPOINT_AUTH_METHODS,
+      config.tokenEndpointAuthMethodsSupported ?? DEFAULT_TOKEN_ENDPOINT_AUTH_METHODS,
     codeChallengeMethodsSupported:
       config.codeChallengeMethodsSupported ?? DEFAULT_CODE_CHALLENGE_METHODS,
-    bearerMethodsSupported:
-      config.bearerMethodsSupported ?? DEFAULT_BEARER_METHODS,
-    clientIdMetadataDocumentSupported:
-      config.clientIdMetadataDocumentSupported ?? false,
+    bearerMethodsSupported: config.bearerMethodsSupported ?? DEFAULT_BEARER_METHODS,
+    clientIdMetadataDocumentSupported: config.clientIdMetadataDocumentSupported ?? false,
   };
 }
 
@@ -60,17 +54,14 @@ export function buildMcpOAuthPaths(config: McpOAuthProtocolConfig) {
   };
 }
 
-export function buildMcpOAuthIssuer(
-  origin: string,
-  config: McpOAuthProtocolConfig
-): string {
+export function buildMcpOAuthIssuer(origin: string, config: McpOAuthProtocolConfig): string {
   const { issuerPath } = buildMcpOAuthPaths(config);
   return `${trimTrailingSlash(origin)}${issuerPath}`;
 }
 
 export function buildAuthorizationServerMetadata(
   origin: string,
-  config: McpOAuthProtocolConfig
+  config: McpOAuthProtocolConfig,
 ): OAuthAuthorizationServerMetadata {
   const resolved = createMcpOAuthProtocolConfig(config);
   const paths = buildMcpOAuthPaths(resolved);
@@ -84,8 +75,7 @@ export function buildAuthorizationServerMetadata(
     jwks_uri: `${normalizedOrigin}${paths.jwksPath}`,
     response_types_supported: resolved.responseTypesSupported,
     grant_types_supported: resolved.grantTypesSupported,
-    token_endpoint_auth_methods_supported:
-      resolved.tokenEndpointAuthMethodsSupported,
+    token_endpoint_auth_methods_supported: resolved.tokenEndpointAuthMethodsSupported,
     code_challenge_methods_supported: resolved.codeChallengeMethodsSupported,
     scopes_supported: resolved.scopesSupported,
     resource: resolved.resourceId,
@@ -102,7 +92,7 @@ export function buildAuthorizationServerMetadata(
 
 export function buildProtectedResourceMetadata(
   origin: string,
-  config: McpOAuthProtocolConfig
+  config: McpOAuthProtocolConfig,
 ): OAuthProtectedResourceMetadata {
   const resolved = createMcpOAuthProtocolConfig(config);
   const paths = buildMcpOAuthPaths(resolved);
@@ -131,8 +121,6 @@ function trimTrailingSlash(value: string): string {
 
 function uniqueStrings(values: readonly string[]): string[] {
   return Array.from(
-    new Set(
-      values.map((value) => value.trim()).filter((value) => value.length > 0)
-    )
+    new Set(values.map((value) => value.trim()).filter((value) => value.length > 0)),
   );
 }

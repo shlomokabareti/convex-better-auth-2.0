@@ -1,16 +1,6 @@
-import type {
-  AuthReadinessState,
-  AuthRuntimeStatus,
-} from "convex-better-auth";
+import type { AuthReadinessState, AuthRuntimeStatus } from "convex-better-auth";
 import { useConvexAuth } from "convex/react";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
   AuthSignInForm,
@@ -41,9 +31,7 @@ import {
 } from "./ui";
 
 type ConvexClientLike = {
-  setAuth(
-    fetchToken: (args: { forceRefreshToken: boolean }) => Promise<string | null>
-  ): void;
+  setAuth(fetchToken: (args: { forceRefreshToken: boolean }) => Promise<string | null>): void;
   clearAuth(): void;
 };
 
@@ -97,19 +85,14 @@ type BetterAuthConvexTokenResponse = {
 
 export type ConvexBetterAuthClient = {
   useSession(): BetterAuthSessionState;
-  signOut(args?: {
-    fetchOptions?: Omit<RequestInit, "body"> & { body?: never };
-  }): Promise<unknown>;
+  signOut(args?: { fetchOptions?: Omit<RequestInit, "body"> & { body?: never } }): Promise<unknown>;
   signIn: {
     email(args: {
       email: string;
       password: string;
       callbackURL?: string;
     }): Promise<BetterAuthResponse>;
-    social(args: {
-      provider: string;
-      callbackURL?: string;
-    }): Promise<BetterAuthResponse>;
+    social(args: { provider: string; callbackURL?: string }): Promise<BetterAuthResponse>;
   };
   signUp: {
     email(args: {
@@ -158,10 +141,7 @@ export type ConvexBetterAuthClient = {
   // some flows fire verification automatically server-side at sign-up
   // and never call this client method. `verifyEmail` consumes the
   // token from the verification email link.
-  sendVerificationEmail?: (args: {
-    email: string;
-    callbackURL?: string;
-  }) => Promise<{
+  sendVerificationEmail?: (args: { email: string; callbackURL?: string }) => Promise<{
     data?: unknown;
     error?: unknown;
   }>;
@@ -256,9 +236,7 @@ export type ConvexAuthUserState = {
 
 export type ConvexAuthRuntimeWindow = Window & {
   __authRuntime?: {
-    getConvexToken: (args?: {
-      forceRefreshToken?: boolean;
-    }) => Promise<string | null>;
+    getConvexToken: (args?: { forceRefreshToken?: boolean }) => Promise<string | null>;
   };
 };
 
@@ -268,7 +246,7 @@ export type ConvexAuthCaptureException = (
     tags?: Record<string, string>;
     extra?: Record<string, unknown>;
     level?: "warning" | "error";
-  }
+  },
 ) => void;
 
 export async function getBetterAuthConvexBearerToken(args: {
@@ -288,20 +266,16 @@ export function ConvexAuthRuntimeProvider(args: {
   betterAuthBaseUrl?: string | null;
   captureAuthEvent?: (
     eventName: string,
-    properties: { surface: "runtime" } & Record<string, unknown>
+    properties: { surface: "runtime" } & Record<string, unknown>,
   ) => void;
   captureException?: ConvexAuthCaptureException;
   identityProvisioner?: ReactNode;
 }) {
-  const runtimeTokenCache = useRef<ReturnType<
-    typeof createBetterAuthConvexTokenCache
-  > | null>(null);
-  const runtimeTokenCacheAuthClientRef = useRef<
-    typeof args.authClient | undefined
-  >(undefined);
-  const runtimeTokenCacheBaseUrlRef = useRef<string | null | undefined>(
-    undefined
+  const runtimeTokenCache = useRef<ReturnType<typeof createBetterAuthConvexTokenCache> | null>(
+    null,
   );
+  const runtimeTokenCacheAuthClientRef = useRef<typeof args.authClient | undefined>(undefined);
+  const runtimeTokenCacheBaseUrlRef = useRef<string | null | undefined>(undefined);
 
   if (
     runtimeTokenCache.current === null ||
@@ -320,10 +294,7 @@ export function ConvexAuthRuntimeProvider(args: {
         }),
       onTokenRefreshFailure: (failure) => {
         const refreshFailureEvent = getAuthTokenRefreshFailureEvent(failure);
-        args.captureAuthEvent?.(
-          refreshFailureEvent.eventName,
-          refreshFailureEvent.properties
-        );
+        args.captureAuthEvent?.(refreshFailureEvent.eventName, refreshFailureEvent.properties);
         args.captureException?.(failure.error, {
           level: "warning",
           tags: {
@@ -356,9 +327,7 @@ export function ConvexAuthRuntimeProvider(args: {
 
   if (args.authClient === null) {
     return (
-      <AuthRuntimeProvider status={SIGNED_OUT_RUNTIME_STATUS}>
-        {args.children}
-      </AuthRuntimeProvider>
+      <AuthRuntimeProvider status={SIGNED_OUT_RUNTIME_STATUS}>{args.children}</AuthRuntimeProvider>
     );
   }
 
@@ -389,7 +358,7 @@ function ObservedAuthRuntimeStatusProvider(args: {
   authClient: ConvexBetterAuthClient;
   captureAuthEvent?: (
     eventName: string,
-    properties: { surface: "runtime" } & Record<string, unknown>
+    properties: { surface: "runtime" } & Record<string, unknown>,
   ) => void;
 }) {
   const { authClient, captureAuthEvent, children } = args;
@@ -400,19 +369,15 @@ function ObservedAuthRuntimeStatusProvider(args: {
   const status = useMemo(
     () =>
       createRuntimeStatus({
-        providerAuthenticated:
-          session.data !== null && session.data !== undefined,
+        providerAuthenticated: session.data !== null && session.data !== undefined,
         providerLoading: session.isPending,
         tokenAvailable:
-          session.data?.session.token !== undefined &&
-          session.data?.session.token !== null,
+          session.data?.session.token !== undefined && session.data?.session.token !== null,
         convexAuthenticated: convexAuth.isAuthenticated,
         terminalFailure: session.error !== null && session.error !== undefined,
         recovering:
           (session.isRefetching ?? false) ||
-          (session.data !== null &&
-            session.data !== undefined &&
-            convexAuth.isLoading),
+          (session.data !== null && session.data !== undefined && convexAuth.isLoading),
       }),
     [
       convexAuth.isAuthenticated,
@@ -421,14 +386,11 @@ function ObservedAuthRuntimeStatusProvider(args: {
       session.error,
       session.isPending,
       session.isRefetching,
-    ]
+    ],
   );
 
   useEffect(() => {
-    const transitionEvent = getAuthRuntimeTransitionEvent(
-      previousStatusRef.current,
-      status
-    );
+    const transitionEvent = getAuthRuntimeTransitionEvent(previousStatusRef.current, status);
     if (transitionEvent !== null) {
       captureAuthEvent?.(transitionEvent.eventName, transitionEvent.properties);
     }
@@ -487,9 +449,7 @@ function mapRuntimeReadiness(args: {
   return "convexReady";
 }
 
-export function useAuthState(
-  authClient: ConvexBetterAuthClient | null
-): ConvexAuthState {
+export function useAuthState(authClient: ConvexBetterAuthClient | null): ConvexAuthState {
   if (authClient === null) {
     return {
       isLoaded: false,
@@ -504,9 +464,7 @@ export function useAuthState(
   };
 }
 
-export function useConvexAuthUser(
-  authClient: ConvexBetterAuthClient | null
-): ConvexAuthUserState {
+export function useConvexAuthUser(authClient: ConvexBetterAuthClient | null): ConvexAuthUserState {
   if (authClient === null) {
     return {
       user: null,
@@ -550,10 +508,7 @@ export function getConvexAuthActions(args: {
     });
 
   return {
-    signInSocial: async (options: {
-      provider: string;
-      callbackURL?: string;
-    }) => {
+    signInSocial: async (options: { provider: string; callbackURL?: string }) => {
       if (args.authClient === null) {
         return;
       }
@@ -582,7 +537,7 @@ export function getConvexAuthActions(args: {
 }
 
 export function toAuthProviderOptions(
-  socialProviders: readonly ConvexAuthSocialProvider[] | undefined
+  socialProviders: readonly ConvexAuthSocialProvider[] | undefined,
 ): readonly AuthProviderOption[] | undefined {
   if (socialProviders === undefined || socialProviders.length === 0) {
     return undefined;
@@ -595,33 +550,19 @@ export function toAuthProviderOptions(
   }));
 }
 
-export function AuthSignedInBoundary(args: {
-  auth: ConvexAuthState;
-  children: ReactNode;
-}) {
+export function AuthSignedInBoundary(args: { auth: ConvexAuthState; children: ReactNode }) {
   return args.auth.isSignedIn ? <>{args.children}</> : null;
 }
 
-export function AuthSignedOutBoundary(args: {
-  auth: ConvexAuthState;
-  children: ReactNode;
-}) {
-  return args.auth.isLoaded && !args.auth.isSignedIn ? (
-    <>{args.children}</>
-  ) : null;
+export function AuthSignedOutBoundary(args: { auth: ConvexAuthState; children: ReactNode }) {
+  return args.auth.isLoaded && !args.auth.isSignedIn ? <>{args.children}</> : null;
 }
 
-export function AuthLoadingBoundaryView(args: {
-  auth: ConvexAuthState;
-  children: ReactNode;
-}) {
+export function AuthLoadingBoundaryView(args: { auth: ConvexAuthState; children: ReactNode }) {
   return args.auth.isLoaded ? null : <>{args.children}</>;
 }
 
-export function AuthLoadedBoundaryView(args: {
-  auth: ConvexAuthState;
-  children: ReactNode;
-}) {
+export function AuthLoadedBoundaryView(args: { auth: ConvexAuthState; children: ReactNode }) {
   return args.auth.isLoaded ? <>{args.children}</> : null;
 }
 
@@ -655,8 +596,8 @@ export function ConvexAuthSignInScreen(args: {
   if (args.authClient === null) {
     return (
       <AuthAlert tone="error" title="Better Auth misconfigured">
-        Missing <code>{args.missingConfigLabel ?? "VITE_BETTER_AUTH_URL"}</code>
-        . This app cannot render Better Auth sign-in without provider base URL.
+        Missing <code>{args.missingConfigLabel ?? "VITE_BETTER_AUTH_URL"}</code>. This app cannot
+        render Better Auth sign-in without provider base URL.
       </AuthAlert>
     );
   }
@@ -679,10 +620,7 @@ export function ConvexAuthSignInScreen(args: {
   return (
     <AuthSignInForm
       classNames={args.classNames}
-      description={
-        args.description ??
-        "Access your workspace with the shared authentication flow."
-      }
+      description={args.description ?? "Access your workspace with the shared authentication flow."}
       error={error}
       forgotPasswordHref={args.forgotPasswordHref}
       providers={providerOptions}
@@ -700,10 +638,7 @@ export function ConvexAuthSignInScreen(args: {
       footer={
         <>
           Need an account?{" "}
-          <a
-            className="text-muted-foreground hover:text-foreground"
-            href={args.signUpUrl}
-          >
+          <a className="text-muted-foreground hover:text-foreground" href={args.signUpUrl}>
             Create one
           </a>
         </>
@@ -755,11 +690,10 @@ function ConvexInlineTwoFactorStepUp(args: {
   authClient: ConvexBetterAuthClient;
   onVerified: () => void;
 }) {
-  const { verifyTotp, isVerifying: isVerifyingTotp } = useConvexAuthVerifyTotp(
-    args.authClient
+  const { verifyTotp, isVerifying: isVerifyingTotp } = useConvexAuthVerifyTotp(args.authClient);
+  const { verifyBackupCode, isVerifying: isVerifyingBackup } = useConvexAuthVerifyBackupCode(
+    args.authClient,
   );
-  const { verifyBackupCode, isVerifying: isVerifyingBackup } =
-    useConvexAuthVerifyBackupCode(args.authClient);
   const [mode, setMode] = useState<"totp" | "backup">("totp");
   const [code, setCode] = useState("");
   const [trustDevice, setTrustDevice] = useState(false);
@@ -854,8 +788,8 @@ export function ConvexAuthSignUpScreen(args: {
   if (args.authClient === null) {
     return (
       <AuthAlert tone="error" title="Better Auth misconfigured">
-        Missing <code>{args.missingConfigLabel ?? "VITE_BETTER_AUTH_URL"}</code>
-        . This app cannot render Better Auth sign-up without provider base URL.
+        Missing <code>{args.missingConfigLabel ?? "VITE_BETTER_AUTH_URL"}</code>. This app cannot
+        render Better Auth sign-up without provider base URL.
       </AuthAlert>
     );
   }
@@ -865,9 +799,7 @@ export function ConvexAuthSignUpScreen(args: {
   return (
     <AuthSignUpForm
       classNames={args.classNames}
-      description={
-        args.description ?? "Create your account, then continue into setup."
-      }
+      description={args.description ?? "Create your account, then continue into setup."}
       error={error}
       providers={providerOptions}
       onProviderSelect={
@@ -884,10 +816,7 @@ export function ConvexAuthSignUpScreen(args: {
       footer={
         <>
           Already have an account?{" "}
-          <a
-            className="text-muted-foreground hover:text-foreground"
-            href={args.signInUrl}
-          >
+          <a className="text-muted-foreground hover:text-foreground" href={args.signInUrl}>
             Sign in
           </a>
         </>
@@ -946,10 +875,7 @@ export function ConvexBetterAuthIdentityProvisioner(args: {
       return;
     }
 
-    if (
-      inFlightRef.current ||
-      attemptedSubjectRef.current === args.sessionSubject
-    ) {
+    if (inFlightRef.current || attemptedSubjectRef.current === args.sessionSubject) {
       return;
     }
 
@@ -979,11 +905,9 @@ export type ConvexAuthSessionListState = {
 };
 
 export function useConvexAuthSessionList(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthSessionListState {
-  const [sessions, setSessions] = useState<ConvexAuthSessionListItem[] | null>(
-    null
-  );
+  const [sessions, setSessions] = useState<ConvexAuthSessionListItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -999,11 +923,7 @@ export function useConvexAuthSessionList(
     try {
       const result = await authClient.listSessions();
       if (result.error) {
-        setError(
-          result.error instanceof Error
-            ? result.error.message
-            : "Could not load sessions"
-        );
+        setError(result.error instanceof Error ? result.error.message : "Could not load sessions");
         setSessions(null);
         return;
       }
@@ -1024,15 +944,13 @@ export function useConvexAuthSessionList(
 }
 
 export type ConvexAuthRevokeSessionState = {
-  revokeSession: (args: {
-    token: string;
-  }) => Promise<{ ok: boolean; error: string | null }>;
+  revokeSession: (args: { token: string }) => Promise<{ ok: boolean; error: string | null }>;
   revokeOtherSessions: () => Promise<{ ok: boolean; error: string | null }>;
   isRevoking: boolean;
 };
 
 export function useConvexAuthRevokeSession(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthRevokeSessionState {
   const [isRevoking, setIsRevoking] = useState(false);
 
@@ -1048,10 +966,7 @@ export function useConvexAuthRevokeSession(
       try {
         const result = await authClient.revokeSession(args);
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Revoke failed";
+          const msg = result.error instanceof Error ? result.error.message : "Revoke failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
@@ -1064,7 +979,7 @@ export function useConvexAuthRevokeSession(
         setIsRevoking(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   const revokeOtherSessions = useCallback(async () => {
@@ -1078,10 +993,7 @@ export function useConvexAuthRevokeSession(
     try {
       const result = await authClient.revokeOtherSessions();
       if (result.error) {
-        const msg =
-          result.error instanceof Error
-            ? result.error.message
-            : "Revoke failed";
+        const msg = result.error instanceof Error ? result.error.message : "Revoke failed";
         return { ok: false, error: msg };
       }
       return { ok: true, error: null };
@@ -1107,7 +1019,7 @@ export type ConvexAuthUpdateProfileState = {
 };
 
 export function useConvexAuthUpdateProfile(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthUpdateProfileState {
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -1123,10 +1035,7 @@ export function useConvexAuthUpdateProfile(
       try {
         const result = await authClient.updateUser(args);
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Update failed";
+          const msg = result.error instanceof Error ? result.error.message : "Update failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
@@ -1139,7 +1048,7 @@ export function useConvexAuthUpdateProfile(
         setIsUpdating(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { updateProfile, isUpdating };
@@ -1161,7 +1070,7 @@ export type ConvexAuthForgotPasswordState = {
 };
 
 export function useConvexAuthForgotPassword(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthForgotPasswordState {
   const [isRequesting, setIsRequesting] = useState(false);
 
@@ -1177,10 +1086,7 @@ export function useConvexAuthForgotPassword(
       try {
         const result = await authClient.forgetPassword(args);
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Reset request failed";
+          const msg = result.error instanceof Error ? result.error.message : "Reset request failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
@@ -1193,7 +1099,7 @@ export function useConvexAuthForgotPassword(
         setIsRequesting(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { requestReset, isRequesting };
@@ -1212,7 +1118,7 @@ export type ConvexAuthResetPasswordState = {
 };
 
 export function useConvexAuthResetPassword(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthResetPasswordState {
   const [isResetting, setIsResetting] = useState(false);
 
@@ -1228,10 +1134,7 @@ export function useConvexAuthResetPassword(
       try {
         const result = await authClient.resetPassword(args);
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Reset failed";
+          const msg = result.error instanceof Error ? result.error.message : "Reset failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
@@ -1244,7 +1147,7 @@ export function useConvexAuthResetPassword(
         setIsResetting(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { resetPassword, isResetting };
@@ -1252,22 +1155,16 @@ export function useConvexAuthResetPassword(
 
 // ---- Email-verification hooks ----
 
-export type ConvexAuthVerifyEmailStatus =
-  | "idle"
-  | "verifying"
-  | "verified"
-  | "error";
+export type ConvexAuthVerifyEmailStatus = "idle" | "verifying" | "verified" | "error";
 
 export type ConvexAuthVerifyEmailState = {
   status: ConvexAuthVerifyEmailStatus;
   error: string | null;
-  verifyEmail: (args: {
-    token: string;
-  }) => Promise<{ ok: boolean; error: string | null }>;
+  verifyEmail: (args: { token: string }) => Promise<{ ok: boolean; error: string | null }>;
 };
 
 export function useConvexAuthVerifyEmail(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthVerifyEmailState {
   const [status, setStatus] = useState<ConvexAuthVerifyEmailStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -1287,10 +1184,7 @@ export function useConvexAuthVerifyEmail(
           query: { token: args.token },
         });
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Verification failed";
+          const msg = result.error instanceof Error ? result.error.message : "Verification failed";
           setStatus("error");
           setError(msg);
           return { ok: false, error: msg };
@@ -1304,7 +1198,7 @@ export function useConvexAuthVerifyEmail(
         return { ok: false, error: msg };
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { status, error, verifyEmail };
@@ -1319,7 +1213,7 @@ export type ConvexAuthResendVerificationState = {
 };
 
 export function useConvexAuthResendVerification(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthResendVerificationState {
   const [isResending, setIsResending] = useState(false);
 
@@ -1335,10 +1229,7 @@ export function useConvexAuthResendVerification(
       try {
         const result = await authClient.sendVerificationEmail(args);
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Resend failed";
+          const msg = result.error instanceof Error ? result.error.message : "Resend failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
@@ -1351,7 +1242,7 @@ export function useConvexAuthResendVerification(
         setIsResending(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { resend, isResending };
@@ -1368,7 +1259,7 @@ export type ConvexAuthChangeEmailState = {
 };
 
 export function useConvexAuthChangeEmail(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthChangeEmailState {
   const [isRequesting, setIsRequesting] = useState(false);
 
@@ -1385,23 +1276,20 @@ export function useConvexAuthChangeEmail(
         const result = await authClient.changeEmail(args);
         if (result.error) {
           const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Email change request failed";
+            result.error instanceof Error ? result.error.message : "Email change request failed";
           return { ok: false, error: msg };
         }
         return { ok: true, error: null };
       } catch (err) {
         return {
           ok: false,
-          error:
-            err instanceof Error ? err.message : "Email change request failed",
+          error: err instanceof Error ? err.message : "Email change request failed",
         };
       } finally {
         setIsRequesting(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { requestChange, isRequesting };
@@ -1424,14 +1312,14 @@ export type ConvexAuthUploadProfileImageState = {
    * three booleans.
    */
   uploadAndSave: (
-    file: File | Blob
+    file: File | Blob,
   ) => Promise<{ ok: boolean; url: string | null; error: string | null }>;
   isUploading: boolean;
 };
 
 export function useConvexAuthUploadProfileImage(
   authClient: ConvexBetterAuthClient | null,
-  options: { uploadFile: (file: File | Blob) => Promise<string> }
+  options: { uploadFile: (file: File | Blob) => Promise<string> },
 ): ConvexAuthUploadProfileImageState {
   const [isUploading, setIsUploading] = useState(false);
   const { uploadFile } = options;
@@ -1450,10 +1338,7 @@ export function useConvexAuthUploadProfileImage(
         const url = await uploadFile(file);
         const result = await authClient.updateUser({ image: url });
         if (result.error) {
-          const msg =
-            result.error instanceof Error
-              ? result.error.message
-              : "Image save failed";
+          const msg = result.error instanceof Error ? result.error.message : "Image save failed";
           return { ok: false, url: null, error: msg };
         }
         return { ok: true, url, error: null };
@@ -1467,7 +1352,7 @@ export function useConvexAuthUploadProfileImage(
         setIsUploading(false);
       }
     },
-    [authClient, uploadFile]
+    [authClient, uploadFile],
   );
 
   return { uploadAndSave, isUploading };
@@ -1483,8 +1368,7 @@ export function useConvexAuthUploadProfileImage(
 // namespace (plugin not wired), every hook returns a clear unavailable
 // error instead of throwing.
 
-const TWO_FACTOR_UNAVAILABLE =
-  "Two-factor authentication is not available on this auth client";
+const TWO_FACTOR_UNAVAILABLE = "Two-factor authentication is not available on this auth client";
 
 export type ConvexAuthEnableTwoFactorResult = {
   ok: boolean;
@@ -1501,15 +1385,12 @@ export type ConvexAuthEnableTwoFactorState = {
    * the otpauth URI + backup codes. 2FA is not yet active — the user
    * must confirm a TOTP code via `useConvexAuthVerifyTotp` first.
    */
-  enable: (args: {
-    password: string;
-    issuer?: string;
-  }) => Promise<ConvexAuthEnableTwoFactorResult>;
+  enable: (args: { password: string; issuer?: string }) => Promise<ConvexAuthEnableTwoFactorResult>;
   isEnabling: boolean;
 };
 
 export function useConvexAuthEnableTwoFactor(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthEnableTwoFactorState {
   const [isEnabling, setIsEnabling] = useState(false);
 
@@ -1527,9 +1408,7 @@ export function useConvexAuthEnableTwoFactor(
       try {
         const result = await authClient.twoFactor.enable(args);
         if (result.error) {
-          const msg =
-            result.error.message ??
-            "Could not enable two-factor authentication";
+          const msg = result.error.message ?? "Could not enable two-factor authentication";
           return { ok: false, totpURI: null, backupCodes: null, error: msg };
         }
         return {
@@ -1543,16 +1422,13 @@ export function useConvexAuthEnableTwoFactor(
           ok: false,
           totpURI: null,
           backupCodes: null,
-          error:
-            err instanceof Error
-              ? err.message
-              : "Could not enable two-factor authentication",
+          error: err instanceof Error ? err.message : "Could not enable two-factor authentication",
         };
       } finally {
         setIsEnabling(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { enable, isEnabling };
@@ -1572,7 +1448,7 @@ export type ConvexAuthVerifyTotpState = {
 };
 
 export function useConvexAuthVerifyTotp(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthVerifyTotpState {
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -1597,7 +1473,7 @@ export function useConvexAuthVerifyTotp(
         setIsVerifying(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { verifyTotp, isVerifying };
@@ -1613,7 +1489,7 @@ export type ConvexAuthVerifyBackupCodeState = {
 };
 
 export function useConvexAuthVerifyBackupCode(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthVerifyBackupCodeState {
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -1641,7 +1517,7 @@ export function useConvexAuthVerifyBackupCode(
         setIsVerifying(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { verifyBackupCode, isVerifying };
@@ -1649,14 +1525,12 @@ export function useConvexAuthVerifyBackupCode(
 
 export type ConvexAuthDisableTwoFactorState = {
   /** Turn 2FA off. Requires re-authentication with the password. */
-  disable: (args: {
-    password: string;
-  }) => Promise<{ ok: boolean; error: string | null }>;
+  disable: (args: { password: string }) => Promise<{ ok: boolean; error: string | null }>;
   isDisabling: boolean;
 };
 
 export function useConvexAuthDisableTwoFactor(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthDisableTwoFactorState {
   const [isDisabling, setIsDisabling] = useState(false);
 
@@ -1678,14 +1552,13 @@ export function useConvexAuthDisableTwoFactor(
       } catch (err) {
         return {
           ok: false,
-          error:
-            err instanceof Error ? err.message : "Could not disable two-factor",
+          error: err instanceof Error ? err.message : "Could not disable two-factor",
         };
       } finally {
         setIsDisabling(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { disable, isDisabling };
@@ -1705,7 +1578,7 @@ export type ConvexAuthGenerateBackupCodesState = {
 };
 
 export function useConvexAuthGenerateBackupCodes(
-  authClient: ConvexBetterAuthClient | null
+  authClient: ConvexBetterAuthClient | null,
 ): ConvexAuthGenerateBackupCodesState {
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -1733,16 +1606,13 @@ export function useConvexAuthGenerateBackupCodes(
         return {
           ok: false,
           backupCodes: null,
-          error:
-            err instanceof Error
-              ? err.message
-              : "Could not regenerate backup codes",
+          error: err instanceof Error ? err.message : "Could not regenerate backup codes",
         };
       } finally {
         setIsGenerating(false);
       }
     },
-    [authClient]
+    [authClient],
   );
 
   return { generateBackupCodes, isGenerating };

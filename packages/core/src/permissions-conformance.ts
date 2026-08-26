@@ -19,152 +19,151 @@ const malformedRequiredPermissionCharacters: readonly {
 ];
 
 /** Shared adversarial contract for the convex-auth permission matcher. */
-export const permissionMatcherConformanceCases: readonly PermissionMatcherConformanceCase[] =
-  [
-    {
-      name: "super wildcard",
-      granted: ["*"],
-      required: "billing:read",
-      expected: true,
-    },
-    {
-      name: "super wildcard grants bare exact",
-      granted: ["*"],
-      required: "billing",
-      expected: true,
-    },
-    {
-      name: "domain wildcard",
-      granted: ["billing:*"],
-      required: "billing:read",
-      expected: true,
-    },
-    {
-      name: "domain wildcard matches nested action",
-      granted: ["billing:*"],
-      required: "billing:invoice:read",
-      expected: true,
-    },
-    {
-      name: "domain wildcard stays in domain",
-      granted: ["billing:*"],
-      required: "people:read",
-      expected: false,
-    },
-    {
-      name: "exact grant",
-      granted: ["billing:read"],
-      required: "billing:read",
-      expected: true,
-    },
-    {
-      name: "exact grant does not widen",
-      granted: ["billing:read"],
-      required: "billing:write",
-      expected: false,
-    },
-    {
-      name: "dot separator remains valid",
-      granted: ["billing.read"],
-      required: "billing.read",
-      expected: true,
-    },
-    {
-      name: "underscore separator remains valid",
-      granted: ["api_v2:read"],
-      required: "api_v2:read",
-      expected: true,
-    },
-    {
-      name: "hyphen separator remains valid in wildcard domain",
-      granted: ["read-only:*"],
-      required: "read-only:x",
-      expected: true,
-    },
-    {
-      name: "bare domain bug stays fixed",
-      granted: ["billing:*"],
-      required: "billing",
-      expected: false,
-    },
-    {
-      name: "bare exact remains valid",
-      granted: ["billing"],
-      required: "billing",
-      expected: true,
-    },
-    {
-      name: "empty required denies",
-      granted: ["*"],
-      required: "",
-      expected: false,
-    },
-    {
-      name: "empty grant denies",
-      granted: [""],
-      required: "billing:read",
-      expected: false,
-    },
-    {
-      name: "whitespace required denies",
-      granted: ["*"],
-      required: "billing: read",
-      expected: false,
-    },
-    {
-      name: "whitespace grant denies",
-      granted: ["billing: read"],
-      required: "billing: read",
-      expected: false,
-    },
-    {
-      name: "leading colon denies",
-      granted: ["*"],
-      required: ":read",
-      expected: false,
-    },
-    {
-      name: "trailing colon denies",
-      granted: ["*"],
-      required: "billing:",
-      expected: false,
-    },
-    {
-      name: "wildcard cannot be required",
-      granted: ["*"],
-      required: "billing:*",
-      expected: false,
-    },
-    {
-      name: "malformed wildcard grant denies",
-      granted: ["billing:**"],
-      required: "billing:read",
-      expected: false,
-    },
-    {
-      name: "case sensitive",
-      granted: ["Billing:*"],
-      required: "billing:read",
-      expected: false,
-    },
-    ...malformedRequiredPermissionCharacters.flatMap(({ label, codePoint }) => {
-      const required = `billing:${String.fromCharCode(codePoint)}read`;
-      return [
-        {
-          name: `${label} required denies domain wildcard`,
-          granted: ["billing:*"],
-          required,
-          expected: false,
-        },
-        {
-          name: `${label} required denies super wildcard`,
-          granted: ["*"],
-          required,
-          expected: false,
-        },
-      ];
-    }),
-  ];
+export const permissionMatcherConformanceCases: readonly PermissionMatcherConformanceCase[] = [
+  {
+    name: "super wildcard",
+    granted: ["*"],
+    required: "billing:read",
+    expected: true,
+  },
+  {
+    name: "super wildcard grants bare exact",
+    granted: ["*"],
+    required: "billing",
+    expected: true,
+  },
+  {
+    name: "domain wildcard",
+    granted: ["billing:*"],
+    required: "billing:read",
+    expected: true,
+  },
+  {
+    name: "domain wildcard matches nested action",
+    granted: ["billing:*"],
+    required: "billing:invoice:read",
+    expected: true,
+  },
+  {
+    name: "domain wildcard stays in domain",
+    granted: ["billing:*"],
+    required: "people:read",
+    expected: false,
+  },
+  {
+    name: "exact grant",
+    granted: ["billing:read"],
+    required: "billing:read",
+    expected: true,
+  },
+  {
+    name: "exact grant does not widen",
+    granted: ["billing:read"],
+    required: "billing:write",
+    expected: false,
+  },
+  {
+    name: "dot separator remains valid",
+    granted: ["billing.read"],
+    required: "billing.read",
+    expected: true,
+  },
+  {
+    name: "underscore separator remains valid",
+    granted: ["api_v2:read"],
+    required: "api_v2:read",
+    expected: true,
+  },
+  {
+    name: "hyphen separator remains valid in wildcard domain",
+    granted: ["read-only:*"],
+    required: "read-only:x",
+    expected: true,
+  },
+  {
+    name: "bare domain bug stays fixed",
+    granted: ["billing:*"],
+    required: "billing",
+    expected: false,
+  },
+  {
+    name: "bare exact remains valid",
+    granted: ["billing"],
+    required: "billing",
+    expected: true,
+  },
+  {
+    name: "empty required denies",
+    granted: ["*"],
+    required: "",
+    expected: false,
+  },
+  {
+    name: "empty grant denies",
+    granted: [""],
+    required: "billing:read",
+    expected: false,
+  },
+  {
+    name: "whitespace required denies",
+    granted: ["*"],
+    required: "billing: read",
+    expected: false,
+  },
+  {
+    name: "whitespace grant denies",
+    granted: ["billing: read"],
+    required: "billing: read",
+    expected: false,
+  },
+  {
+    name: "leading colon denies",
+    granted: ["*"],
+    required: ":read",
+    expected: false,
+  },
+  {
+    name: "trailing colon denies",
+    granted: ["*"],
+    required: "billing:",
+    expected: false,
+  },
+  {
+    name: "wildcard cannot be required",
+    granted: ["*"],
+    required: "billing:*",
+    expected: false,
+  },
+  {
+    name: "malformed wildcard grant denies",
+    granted: ["billing:**"],
+    required: "billing:read",
+    expected: false,
+  },
+  {
+    name: "case sensitive",
+    granted: ["Billing:*"],
+    required: "billing:read",
+    expected: false,
+  },
+  ...malformedRequiredPermissionCharacters.flatMap(({ label, codePoint }) => {
+    const required = `billing:${String.fromCharCode(codePoint)}read`;
+    return [
+      {
+        name: `${label} required denies domain wildcard`,
+        granted: ["billing:*"],
+        required,
+        expected: false,
+      },
+      {
+        name: `${label} required denies super wildcard`,
+        granted: ["*"],
+        required,
+        expected: false,
+      },
+    ];
+  }),
+];
 
 export type PermissionIntersectionConformanceCase = {
   name: string;

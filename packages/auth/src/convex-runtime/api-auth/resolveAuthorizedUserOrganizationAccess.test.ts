@@ -99,8 +99,7 @@ describe("resolveAuthorizedUserOrganizationAccess", () => {
             permissions: ["organization:view"],
           }),
         }),
-      (error: unknown) =>
-        error instanceof ApiAuthError && error.code === "API_CREDENTIAL_INVALID"
+      (error: unknown) => error instanceof ApiAuthError && error.code === "API_CREDENTIAL_INVALID",
     );
   });
 });

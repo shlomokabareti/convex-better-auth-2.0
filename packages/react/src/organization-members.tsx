@@ -3,10 +3,7 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import type { FunctionReference } from "convex/server";
 import { useState, type ReactNode } from "react";
 
-import {
-  useGuardedConvexAction,
-  useGuardedConvexMutation,
-} from "./protected-writes";
+import { useGuardedConvexAction, useGuardedConvexMutation } from "./protected-writes";
 
 export const convexOrganizationRoleTemplates = [
   "owner",
@@ -16,28 +13,22 @@ export const convexOrganizationRoleTemplates = [
   "viewer",
 ] as const;
 
-export type ConvexOrganizationRoleTemplate =
-  (typeof convexOrganizationRoleTemplates)[number];
+export type ConvexOrganizationRoleTemplate = (typeof convexOrganizationRoleTemplates)[number];
 
-export type ConvexOrganizationMemberStatus =
-  | "active"
-  | "pending"
-  | "inactive"
-  | "suspended";
+export type ConvexOrganizationMemberStatus = "active" | "pending" | "inactive" | "suspended";
 
-export type ConvexOrganizationMemberListItem<MemberId extends string = string> =
-  {
-    _id: MemberId;
-    roleTemplate: ConvexOrganizationRoleTemplate;
-    status: ConvexOrganizationMemberStatus;
-    createdAt?: number;
-    updatedAt?: number;
-    user?: {
-      _id?: string;
-      name?: string;
-      email?: string | null;
-    } | null;
-  };
+export type ConvexOrganizationMemberListItem<MemberId extends string = string> = {
+  _id: MemberId;
+  roleTemplate: ConvexOrganizationRoleTemplate;
+  status: ConvexOrganizationMemberStatus;
+  createdAt?: number;
+  updatedAt?: number;
+  user?: {
+    _id?: string;
+    name?: string;
+    email?: string | null;
+  } | null;
+};
 
 export type ConvexOrganizationInviteFormState<
   Role extends string = ConvexOrganizationRoleTemplate,
@@ -123,9 +114,7 @@ export type ConvexOrganizationMemberListProps<
   roleOptions: readonly Role[];
 };
 
-export type ConvexOrganizationInviteMemberResult<
-  InvitationId extends string = string,
-> = {
+export type ConvexOrganizationInviteMemberResult<InvitationId extends string = string> = {
   acceptUrl: string;
   invitationId: InvitationId;
   token: string;
@@ -149,24 +138,14 @@ export type ConvexOrganizationMemberFunctionReferences<
     EmptyArgs,
     readonly ConvexOrganizationMemberListItem<MemberId>[]
   >;
-  reactivateMember: FunctionReference<
-    "mutation",
-    "public",
-    { membershipId: string },
-    unknown
-  >;
+  reactivateMember: FunctionReference<"mutation", "public", { membershipId: string }, unknown>;
   setMemberRole: FunctionReference<
     "mutation",
     "public",
     { membershipId: string; roleTemplate: string },
     unknown
   >;
-  suspendMember: FunctionReference<
-    "mutation",
-    "public",
-    { membershipId: string },
-    unknown
-  >;
+  suspendMember: FunctionReference<"mutation", "public", { membershipId: string }, unknown>;
 };
 
 export type ConvexOrganizationMembersSurfaceCopy = {
@@ -186,19 +165,12 @@ export type ConvexOrganizationMembersSurfaceProps<
   canManageRoles?: boolean;
   captureEvent?: (name: string, properties: Record<string, unknown>) => void;
   classNames?: ConvexOrganizationMembersClassNames;
-  confirmSuspendMember?: (args: {
-    membershipId: MemberId;
-  }) => boolean | Promise<boolean>;
+  confirmSuspendMember?: (args: { membershipId: MemberId }) => boolean | Promise<boolean>;
   copy?: ConvexOrganizationMembersSurfaceCopy;
   defaultInviteRoleTemplate?: Role;
   getErrorMessage?: (error: unknown, fallback: string) => string;
   organizationId?: OrganizationId;
-  refs: ConvexOrganizationMemberFunctionReferences<
-    Role,
-    MemberId,
-    OrganizationId,
-    InvitationId
-  >;
+  refs: ConvexOrganizationMemberFunctionReferences<Role, MemberId, OrganizationId, InvitationId>;
   renderActionError?: (message: string) => ReactNode;
   renderInvitationLink?: (args: { title: string; value: string }) => ReactNode;
   renderStatus?: (status: ConvexOrganizationMemberStatus) => ReactNode;
@@ -232,9 +204,7 @@ const defaultMembersCopy = {
 const defaultSurfaceCopy = {
   actionErrorTitle: "Action failed",
   invitationLinkTitle: "Invitation link",
-} satisfies Required<
-  Omit<ConvexOrganizationMembersSurfaceCopy, "invite" | "members">
->;
+} satisfies Required<Omit<ConvexOrganizationMembersSurfaceCopy, "invite" | "members">>;
 
 export function canSubmitConvexOrganizationInviteForm({
   disabled,
@@ -247,17 +217,12 @@ export function canSubmitConvexOrganizationInviteForm({
   inviting: boolean;
   roleTemplate: string;
 }): boolean {
-  return (
-    !disabled &&
-    !inviting &&
-    isValidInviteEmail(email) &&
-    roleTemplate.trim().length > 0
-  );
+  return !disabled && !inviting && isValidInviteEmail(email) && roleTemplate.trim().length > 0;
 }
 
 export function getConvexOrganizationMemberLabel(
   member: Pick<ConvexOrganizationMemberListItem, "user">,
-  unknownMemberLabel = defaultMembersCopy.unknownMemberLabel
+  unknownMemberLabel = defaultMembersCopy.unknownMemberLabel,
 ): string {
   return member.user?.name ?? member.user?.email ?? unknownMemberLabel;
 }
@@ -267,42 +232,30 @@ export function getConvexOrganizationRoleLabel(role: string): string {
 }
 
 export function getConvexOrganizationMemberStatusLabel(
-  status: ConvexOrganizationMemberStatus
+  status: ConvexOrganizationMemberStatus,
 ): string {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 export function countConvexActiveOwners(
-  members: readonly Pick<
-    ConvexOrganizationMemberListItem,
-    "roleTemplate" | "status"
-  >[]
+  members: readonly Pick<ConvexOrganizationMemberListItem, "roleTemplate" | "status">[],
 ): number {
-  return members.filter(
-    (member) => member.roleTemplate === "owner" && member.status === "active"
-  ).length;
+  return members.filter((member) => member.roleTemplate === "owner" && member.status === "active")
+    .length;
 }
 
 export function isConvexLastActiveOwner(
   member: Pick<ConvexOrganizationMemberListItem, "roleTemplate" | "status">,
-  activeOwnerCount: number
+  activeOwnerCount: number,
 ): boolean {
-  return (
-    member.roleTemplate === "owner" &&
-    member.status === "active" &&
-    activeOwnerCount <= 1
-  );
+  return member.roleTemplate === "owner" && member.status === "active" && activeOwnerCount <= 1;
 }
 
-export function formatConvexOrganizationMemberTimestamp(
-  timestamp: number
-): string {
+export function formatConvexOrganizationMemberTimestamp(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
 }
 
-export function ConvexOrganizationInviteForm<
-  Role extends string = ConvexOrganizationRoleTemplate,
->({
+export function ConvexOrganizationInviteForm<Role extends string = ConvexOrganizationRoleTemplate>({
   classNames,
   copy,
   disabled,
@@ -325,15 +278,10 @@ export function ConvexOrganizationInviteForm<
     <div
       className={cn(
         "border-foreground/10 bg-background/20 rounded-lg border p-5",
-        classNames?.form
+        classNames?.form,
       )}
     >
-      <div
-        className={cn(
-          "grid gap-3 md:grid-cols-[1fr_12rem_auto]",
-          classNames?.formGrid
-        )}
-      >
+      <div className={cn("grid gap-3 md:grid-cols-[1fr_12rem_auto]", classNames?.formGrid)}>
         <label className={cn("block space-y-2 text-sm", classNames?.label)}>
           <span className={cn("text-foreground/70", classNames?.labelText)}>
             {resolvedCopy.emailLabel}
@@ -341,7 +289,7 @@ export function ConvexOrganizationInviteForm<
           <input
             className={cn(
               "border-foreground/10 bg-foreground/5 text-foreground placeholder:text-foreground/35 focus:border-foreground/25 h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
-              classNames?.input
+              classNames?.input,
             )}
             disabled={disabled}
             onChange={(event) => onEmailChange(event.target.value)}
@@ -358,13 +306,11 @@ export function ConvexOrganizationInviteForm<
             aria-label="Invitation role"
             className={cn(
               "border-foreground/10 bg-foreground/5 text-foreground focus:border-foreground/25 h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
-              classNames?.select
+              classNames?.select,
             )}
             disabled={disabled}
             onChange={(event) => {
-              const role = roleOptions.find(
-                (option) => option === event.target.value
-              );
+              const role = roleOptions.find((option) => option === event.target.value);
               if (role !== undefined) onRoleTemplateChange(role);
             }}
             value={state.roleTemplate}
@@ -380,7 +326,7 @@ export function ConvexOrganizationInviteForm<
           className={cn(
             "bg-foreground text-background hover:bg-foreground/90 mt-auto inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
             classNames?.primaryButton,
-            !canInvite && classNames?.primaryButtonDisabled
+            !canInvite && classNames?.primaryButtonDisabled,
           )}
           disabled={!canInvite}
           onClick={onSubmit}
@@ -481,19 +427,12 @@ function ConvexOrganizationMemberCard<
   member: ConvexOrganizationMemberListItem<MemberId>;
   mutatingMemberId: MemberId | null | undefined;
   onReactivate: ((membershipId: MemberId) => void) | undefined;
-  onRoleChange:
-    | ((membershipId: MemberId, roleTemplate: Role) => void)
-    | undefined;
+  onRoleChange: ((membershipId: MemberId, roleTemplate: Role) => void) | undefined;
   onSuspend: ((membershipId: MemberId) => void) | undefined;
-  renderStatus:
-    | ((status: ConvexOrganizationMemberStatus) => ReactNode)
-    | undefined;
+  renderStatus: ((status: ConvexOrganizationMemberStatus) => ReactNode) | undefined;
   roleOptions: readonly Role[];
 }) {
-  const label = getConvexOrganizationMemberLabel(
-    member,
-    copy.unknownMemberLabel
-  );
+  const label = getConvexOrganizationMemberLabel(member, copy.unknownMemberLabel);
   const isLastOwner = isConvexLastActiveOwner(member, activeOwnerCount);
   const isMutating = mutatingMemberId === member._id;
 
@@ -501,16 +440,13 @@ function ConvexOrganizationMemberCard<
     <article
       className={cn(
         "border-foreground/10 bg-background/20 rounded-lg border",
-        classNames?.listCard
+        classNames?.listCard,
       )}
       data-testid="organization-member-card"
     >
       <div className={cn("space-y-4 p-5", classNames?.listContent)}>
         <div
-          className={cn(
-            "flex flex-wrap items-start justify-between gap-4",
-            classNames?.listHeader
-          )}
+          className={cn("flex flex-wrap items-start justify-between gap-4", classNames?.listHeader)}
         >
           <ConvexOrganizationMemberDetails
             classNames={classNames}
@@ -534,9 +470,7 @@ function ConvexOrganizationMemberCard<
             roleOptions={roleOptions}
           />
         </div>
-        {isLastOwner ? (
-          <p className="text-warning text-xs">{copy.lastOwnerDisabledLabel}</p>
-        ) : null}
+        {isLastOwner ? <p className="text-warning text-xs">{copy.lastOwnerDisabledLabel}</p> : null}
       </div>
     </article>
   );
@@ -555,31 +489,14 @@ function ConvexOrganizationMemberDetails<MemberId extends string = string>({
 }) {
   return (
     <div className={cn("min-w-0 space-y-1", classNames?.memberDetails)}>
-      <p
-        className={cn(
-          "text-foreground truncate font-medium",
-          classNames?.memberName
-        )}
-      >
-        {label}
-      </p>
+      <p className={cn("text-foreground truncate font-medium", classNames?.memberName)}>{label}</p>
       {member.user?.email ? (
-        <p
-          className={cn(
-            "text-foreground/45 truncate text-xs",
-            classNames?.memberEmail
-          )}
-        >
+        <p className={cn("text-foreground/45 truncate text-xs", classNames?.memberEmail)}>
           {member.user.email}
         </p>
       ) : null}
       {member.createdAt ? (
-        <p
-          className={cn(
-            "text-foreground/45 text-xs",
-            classNames?.memberMetadata
-          )}
-        >
+        <p className={cn("text-foreground/45 text-xs", classNames?.memberMetadata)}>
           Added {formatTimestamp(member.createdAt)}
         </p>
       ) : null}
@@ -614,22 +531,13 @@ function ConvexOrganizationMemberActions<
   label: string;
   member: ConvexOrganizationMemberListItem<MemberId>;
   onReactivate: ((membershipId: MemberId) => void) | undefined;
-  onRoleChange:
-    | ((membershipId: MemberId, roleTemplate: Role) => void)
-    | undefined;
+  onRoleChange: ((membershipId: MemberId, roleTemplate: Role) => void) | undefined;
   onSuspend: ((membershipId: MemberId) => void) | undefined;
-  renderStatus:
-    | ((status: ConvexOrganizationMemberStatus) => ReactNode)
-    | undefined;
+  renderStatus: ((status: ConvexOrganizationMemberStatus) => ReactNode) | undefined;
   roleOptions: readonly Role[];
 }) {
   return (
-    <div
-      className={cn(
-        "flex flex-wrap items-end justify-end gap-3",
-        classNames?.actions
-      )}
-    >
+    <div className={cn("flex flex-wrap items-end justify-end gap-3", classNames?.actions)}>
       <ConvexOrganizationMemberRoleSelect<Role, MemberId>
         canManageRoles={canManageRoles}
         classNames={classNames}
@@ -682,33 +590,24 @@ function ConvexOrganizationMemberRoleSelect<
   isMutating: boolean;
   label: string;
   member: ConvexOrganizationMemberListItem<MemberId>;
-  onRoleChange:
-    | ((membershipId: MemberId, roleTemplate: Role) => void)
-    | undefined;
+  onRoleChange: ((membershipId: MemberId, roleTemplate: Role) => void) | undefined;
   roleOptions: readonly Role[];
 }) {
   const canChangeRole =
-    canManageRoles &&
-    member.status !== "pending" &&
-    !isLastOwner &&
-    Boolean(onRoleChange);
+    canManageRoles && member.status !== "pending" && !isLastOwner && Boolean(onRoleChange);
 
   return (
     <label className={cn("block space-y-2 text-sm", classNames?.label)}>
-      <span className={cn("text-foreground/70", classNames?.labelText)}>
-        {copy.roleLabel}
-      </span>
+      <span className={cn("text-foreground/70", classNames?.labelText)}>{copy.roleLabel}</span>
       <select
         aria-label={`Role for ${label}`}
         className={cn(
           "border-foreground/10 bg-foreground/5 text-foreground focus:border-foreground/25 h-9 min-w-32 rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
-          classNames?.select
+          classNames?.select,
         )}
         disabled={!canChangeRole || isMutating}
         onChange={(event) => {
-          const role = roleOptions.find(
-            (option) => option === event.target.value
-          );
+          const role = roleOptions.find((option) => option === event.target.value);
           if (role !== undefined) onRoleChange?.(member._id, role);
         }}
         value={member.roleTemplate}
@@ -732,9 +631,7 @@ function ConvexOrganizationMemberStatusSlot<MemberId extends string = string>({
   classNames: ConvexOrganizationMembersClassNames | undefined;
   copy: Required<ConvexOrganizationMembersCopy>;
   member: ConvexOrganizationMemberListItem<MemberId>;
-  renderStatus:
-    | ((status: ConvexOrganizationMemberStatus) => ReactNode)
-    | undefined;
+  renderStatus: ((status: ConvexOrganizationMemberStatus) => ReactNode) | undefined;
 }) {
   return (
     <div className="space-y-2 text-sm">
@@ -747,7 +644,7 @@ function ConvexOrganizationMemberStatusSlot<MemberId extends string = string>({
         <span
           className={cn(
             "border-foreground/10 text-foreground/70 inline-flex h-9 items-center rounded-md border px-3 text-xs font-medium",
-            classNames?.status
+            classNames?.status,
           )}
         >
           {getConvexOrganizationMemberStatusLabel(member.status)}
@@ -757,9 +654,7 @@ function ConvexOrganizationMemberStatusSlot<MemberId extends string = string>({
   );
 }
 
-function ConvexOrganizationMemberLifecycleButtons<
-  MemberId extends string = string,
->({
+function ConvexOrganizationMemberLifecycleButtons<MemberId extends string = string>({
   canManageMembers,
   classNames,
   copy,
@@ -779,12 +674,8 @@ function ConvexOrganizationMemberLifecycleButtons<
   onSuspend: ((membershipId: MemberId) => void) | undefined;
 }) {
   const canSuspend =
-    canManageMembers &&
-    member.status === "active" &&
-    !isLastOwner &&
-    Boolean(onSuspend);
-  const canReactivate =
-    canManageMembers && member.status === "suspended" && Boolean(onReactivate);
+    canManageMembers && member.status === "active" && !isLastOwner && Boolean(onSuspend);
+  const canReactivate = canManageMembers && member.status === "suspended" && Boolean(onReactivate);
 
   return (
     <>
@@ -808,9 +699,7 @@ function ConvexOrganizationMemberLifecycleButtons<
   );
 }
 
-function ConvexOrganizationMemberSuspendButton<
-  MemberId extends string = string,
->({
+function ConvexOrganizationMemberSuspendButton<MemberId extends string = string>({
   canSuspend,
   classNames,
   copy,
@@ -839,9 +728,7 @@ function ConvexOrganizationMemberSuspendButton<
   );
 }
 
-function ConvexOrganizationMemberReactivateButton<
-  MemberId extends string = string,
->({
+function ConvexOrganizationMemberReactivateButton<MemberId extends string = string>({
   canReactivate,
   classNames,
   copy,
@@ -886,7 +773,7 @@ function ConvexOrganizationMemberLifecycleButton({
       className={cn(
         "border-foreground/15 text-foreground/70 hover:bg-foreground/5 mt-auto inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
         classNames?.secondaryButton,
-        disabled && classNames?.secondaryButtonDisabled
+        disabled && classNames?.secondaryButtonDisabled,
       )}
       disabled={disabled}
       onClick={onClick}
@@ -917,12 +804,7 @@ export function ConvexOrganizationMembersSurface<
   renderInvitationLink,
   renderStatus,
   roleOptions,
-}: ConvexOrganizationMembersSurfaceProps<
-  Role,
-  MemberId,
-  OrganizationId,
-  InvitationId
->) {
+}: ConvexOrganizationMembersSurfaceProps<Role, MemberId, OrganizationId, InvitationId>) {
   const members = useQuery(refs.listMembers, {});
   const actions = useConvexOrganizationMemberActions({
     captureEvent,
@@ -933,8 +815,7 @@ export function ConvexOrganizationMembersSurface<
     refs,
     roleOptions,
   });
-  const invitationLinkTitle =
-    copy?.invitationLinkTitle ?? defaultSurfaceCopy.invitationLinkTitle;
+  const invitationLinkTitle = copy?.invitationLinkTitle ?? defaultSurfaceCopy.invitationLinkTitle;
 
   return (
     <>
@@ -998,11 +879,7 @@ function ConvexOrganizationInvitationLinkSlot({
 
   return (
     renderInvitationLink?.({ title, value }) ?? (
-      <ConvexOrganizationInvitationLinkNotice
-        classNames={classNames}
-        title={title}
-        value={value}
-      />
+      <ConvexOrganizationInvitationLinkNotice classNames={classNames} title={title} value={value} />
     )
   );
 }
@@ -1035,11 +912,7 @@ function ConvexOrganizationMemberActionErrorSlot({
 
 function isValidInviteEmail(email: string): boolean {
   const value = email.trim();
-  return (
-    value.includes("@") &&
-    value.indexOf("@") > 0 &&
-    value.indexOf("@") < value.length - 1
-  );
+  return value.includes("@") && value.indexOf("@") > 0 && value.indexOf("@") < value.length - 1;
 }
 
 function useConvexOrganizationMemberActions<
@@ -1056,21 +929,14 @@ function useConvexOrganizationMemberActions<
   refs,
   roleOptions,
 }: {
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   confirmSuspendMember:
     | ((args: { membershipId: MemberId }) => boolean | Promise<boolean>)
     | undefined;
   defaultInviteRoleTemplate: Role | undefined;
   getErrorMessage: (error: unknown, fallback: string) => string;
   organizationId: OrganizationId | undefined;
-  refs: ConvexOrganizationMemberFunctionReferences<
-    Role,
-    MemberId,
-    OrganizationId,
-    InvitationId
-  >;
+  refs: ConvexOrganizationMemberFunctionReferences<Role, MemberId, OrganizationId, InvitationId>;
   roleOptions: readonly Role[];
 }) {
   const mutations = useConvexOrganizationMemberMutationRunners<
@@ -1079,9 +945,7 @@ function useConvexOrganizationMemberActions<
     OrganizationId,
     InvitationId
   >(refs);
-  const [inviteForm, setInviteForm] = useState<
-    ConvexOrganizationInviteFormState<Role>
-  >({
+  const [inviteForm, setInviteForm] = useState<ConvexOrganizationInviteFormState<Role>>({
     email: "",
     roleTemplate: resolveConvexOrganizationDefaultInviteRole({
       defaultInviteRoleTemplate,
@@ -1090,12 +954,8 @@ function useConvexOrganizationMemberActions<
   });
   const [actionError, setActionError] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
-  const [latestInviteAcceptUrl, setLatestInviteAcceptUrl] = useState<
-    string | null
-  >(null);
-  const [mutatingMemberId, setMutatingMemberId] = useState<MemberId | null>(
-    null
-  );
+  const [latestInviteAcceptUrl, setLatestInviteAcceptUrl] = useState<string | null>(null);
+  const [mutatingMemberId, setMutatingMemberId] = useState<MemberId | null>(null);
 
   const setMutationError = (error: unknown, fallback: string) =>
     setActionError(getErrorMessage(error, fallback));
@@ -1148,8 +1008,7 @@ function useConvexOrganizationMemberActions<
         membershipId,
         roleTemplate,
         ...mutationContext,
-        setMemberRole: () =>
-          mutations.setMemberRole({ membershipId, roleTemplate }),
+        setMemberRole: () => mutations.setMemberRole({ membershipId, roleTemplate }),
       });
     },
     suspend: (membershipId: MemberId) => {
@@ -1168,24 +1027,11 @@ function useConvexOrganizationMemberMutationRunners<
   MemberId extends string = string,
   OrganizationId extends string = string,
   InvitationId extends string = string,
->(
-  refs: ConvexOrganizationMemberFunctionReferences<
-    Role,
-    MemberId,
-    OrganizationId,
-    InvitationId
-  >
-) {
+>(refs: ConvexOrganizationMemberFunctionReferences<Role, MemberId, OrganizationId, InvitationId>) {
   const inviteMember = useGuardedConvexAction(useAction(refs.inviteMember));
-  const reactivateMember = useGuardedConvexMutation(
-    useMutation(refs.reactivateMember)
-  );
-  const setMemberRole = useGuardedConvexMutation(
-    useMutation(refs.setMemberRole)
-  );
-  const suspendMember = useGuardedConvexMutation(
-    useMutation(refs.suspendMember)
-  );
+  const reactivateMember = useGuardedConvexMutation(useMutation(refs.reactivateMember));
+  const setMemberRole = useGuardedConvexMutation(useMutation(refs.setMemberRole));
+  const suspendMember = useGuardedConvexMutation(useMutation(refs.suspendMember));
 
   return { inviteMember, reactivateMember, setMemberRole, suspendMember };
 }
@@ -1208,9 +1054,7 @@ function inviteOrganizationMember<
   setLatestInviteAcceptUrl,
   setMutationError,
 }: {
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   defaultInviteRoleTemplate: Role | undefined;
   inviteForm: ConvexOrganizationInviteFormState<Role>;
   inviteMember: ActionRunner<
@@ -1270,9 +1114,7 @@ function reactivateOrganizationMember<MemberId extends string = string>({
   setMutationError,
   setMutatingMemberId,
 }: {
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   membershipId: MemberId;
   organizationId: string | undefined;
   reactivateMember: () => Promise<unknown>;
@@ -1307,9 +1149,7 @@ function updateOrganizationMemberRole<MemberId extends string = string>({
   setMutationError,
   setMutatingMemberId,
 }: {
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   membershipId: MemberId;
   organizationId: string | undefined;
   roleTemplate: string;
@@ -1336,9 +1176,7 @@ function updateOrganizationMemberRole<MemberId extends string = string>({
     });
 }
 
-async function suspendMemberAfterConfirmation<
-  MemberId extends string = string,
->({
+async function suspendMemberAfterConfirmation<MemberId extends string = string>({
   captureEvent,
   confirmSuspendMember,
   membershipId,
@@ -1348,9 +1186,7 @@ async function suspendMemberAfterConfirmation<
   setMutatingMemberId,
   suspendMember,
 }: {
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   confirmSuspendMember:
     | ((args: { membershipId: MemberId }) => boolean | Promise<boolean>)
     | undefined;
@@ -1361,9 +1197,7 @@ async function suspendMemberAfterConfirmation<
   setMutatingMemberId: (membershipId: MemberId | null) => void;
   suspendMember: () => Promise<unknown>;
 }) {
-  const confirmed = confirmSuspendMember
-    ? await confirmSuspendMember({ membershipId })
-    : true;
+  const confirmed = confirmSuspendMember ? await confirmSuspendMember({ membershipId }) : true;
   if (!confirmed) {
     return;
   }
@@ -1385,11 +1219,9 @@ async function suspendMemberAfterConfirmation<
 
 export function getConvexOrganizationMemberMutationErrorMessage(
   error: unknown,
-  fallback: string
+  fallback: string,
 ): string {
-  return error instanceof Error && error.message.trim().length > 0
-    ? error.message
-    : fallback;
+  return error instanceof Error && error.message.trim().length > 0 ? error.message : fallback;
 }
 
 export function resolveConvexOrganizationDefaultInviteRole<
@@ -1418,23 +1250,9 @@ export function ConvexOrganizationInvitationLinkNotice({
   value: string;
 }) {
   return (
-    <div
-      className={cn(
-        "border-info/25 bg-info/10 rounded-lg border p-4",
-        classNames?.listCard
-      )}
-    >
-      <p
-        className={cn("text-info text-sm font-medium", classNames?.memberName)}
-      >
-        {title}
-      </p>
-      <code
-        className={cn(
-          "text-info mt-2 block text-xs break-all",
-          classNames?.memberEmail
-        )}
-      >
+    <div className={cn("border-info/25 bg-info/10 rounded-lg border p-4", classNames?.listCard)}>
+      <p className={cn("text-info text-sm font-medium", classNames?.memberName)}>{title}</p>
+      <code className={cn("text-info mt-2 block text-xs break-all", classNames?.memberEmail)}>
         {value}
       </code>
     </div>
@@ -1454,37 +1272,23 @@ export function ConvexOrganizationMemberActionErrorNotice({
     <div
       className={cn(
         "border-destructive/25 bg-destructive/10 rounded-lg border p-4",
-        classNames?.listCard
+        classNames?.listCard,
       )}
     >
-      <p
-        className={cn(
-          "text-destructive text-sm font-medium",
-          classNames?.memberName
-        )}
-      >
-        {title}
-      </p>
-      <p
-        className={cn(
-          "text-destructive/80 mt-1 text-sm",
-          classNames?.memberEmail
-        )}
-      >
-        {message}
-      </p>
+      <p className={cn("text-destructive text-sm font-medium", classNames?.memberName)}>{title}</p>
+      <p className={cn("text-destructive/80 mt-1 text-sm", classNames?.memberEmail)}>{message}</p>
     </div>
   );
 }
 
 function resolveInviteCopy(
-  copy: ConvexOrganizationInviteFormCopy | undefined
+  copy: ConvexOrganizationInviteFormCopy | undefined,
 ): Required<ConvexOrganizationInviteFormCopy> {
   return { ...defaultInviteCopy, ...copy };
 }
 
 function resolveMembersCopy(
-  copy: Partial<ConvexOrganizationMembersCopy> | undefined
+  copy: Partial<ConvexOrganizationMembersCopy> | undefined,
 ): Required<ConvexOrganizationMembersCopy> {
   return { ...defaultMembersCopy, ...copy };
 }

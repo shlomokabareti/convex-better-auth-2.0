@@ -2,7 +2,7 @@ import { resolveServicePrincipalStatus } from "./resolveServicePrincipalStatus";
 import type { ServicePrincipalRecord } from "./types";
 
 export function requireActiveServicePrincipal(
-  servicePrincipal: Pick<ServicePrincipalRecord, "status">
+  servicePrincipal: Pick<ServicePrincipalRecord, "status">,
 ): void {
   const status = resolveServicePrincipalStatus(servicePrincipal);
 

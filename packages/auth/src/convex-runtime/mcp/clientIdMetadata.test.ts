@@ -28,9 +28,7 @@ describe("assertMcpOAuthClientIdMetadataUrl", () => {
 
   it("rejects plaintext http", () => {
     // Metadata fetched over http can be rewritten in flight.
-    const result = assertMcpOAuthClientIdMetadataUrl(
-      "http://client.dev/oauth/metadata.json"
-    );
+    const result = assertMcpOAuthClientIdMetadataUrl("http://client.dev/oauth/metadata.json");
     assert.equal(result.ok, false);
   });
 
@@ -65,7 +63,7 @@ describe("assertMcpOAuthClientIdMetadataUrl", () => {
       assert.equal(
         assertMcpOAuthClientIdMetadataUrl(candidate).ok,
         false,
-        `expected ${candidate} to be refused`
+        `expected ${candidate} to be refused`,
       );
     }
   });
@@ -88,7 +86,7 @@ describe("isMcpOAuthClientIdMetadataAddressAllowed", () => {
       assert.equal(
         isMcpOAuthClientIdMetadataAddressAllowed(address),
         false,
-        `expected ${address} to be blocked`
+        `expected ${address} to be blocked`,
       );
     }
   });
@@ -114,7 +112,7 @@ describe("isMcpOAuthClientIdMetadataAddressAllowed", () => {
       assert.equal(
         isMcpOAuthClientIdMetadataAddressAllowed(address),
         false,
-        `expected ${address} to be blocked`
+        `expected ${address} to be blocked`,
       );
     }
   });
@@ -131,7 +129,7 @@ describe("isMcpOAuthClientIdMetadataAddressAllowed", () => {
       assert.equal(
         isMcpOAuthClientIdMetadataAddressAllowed(address),
         false,
-        `expected ${address} to be blocked`
+        `expected ${address} to be blocked`,
       );
     }
   });
@@ -159,17 +157,14 @@ describe("CIMD URL guard against normalised IPv6 literals", () => {
       assert.equal(
         assertMcpOAuthClientIdMetadataUrl(clientId).ok,
         false,
-        `expected ${literal} (normalised ${normalisedHost}) to be refused`
+        `expected ${literal} (normalised ${normalisedHost}) to be refused`,
       );
     }
   });
 
   it("still accepts a public IPv6 literal", () => {
     const host = new URL("https://[2606:4700::1111]/m.json").hostname;
-    assert.equal(
-      assertMcpOAuthClientIdMetadataUrl(`https://${host}/m.json`).ok,
-      true
-    );
+    assert.equal(assertMcpOAuthClientIdMetadataUrl(`https://${host}/m.json`).ok, true);
   });
 });
 
@@ -183,9 +178,7 @@ describe("validateMcpOAuthClientIdMetadataDocument", () => {
     assert.equal(result.ok, true);
     if (!result.ok) return;
     assert.equal(result.clientId, CLIENT_ID);
-    assert.deepEqual(result.redirectUris, [
-      "https://client.dev/oauth/callback",
-    ]);
+    assert.deepEqual(result.redirectUris, ["https://client.dev/oauth/callback"]);
     assert.equal(result.clientUriOriginMismatch, false);
   });
 
@@ -215,10 +208,7 @@ describe("validateMcpOAuthClientIdMetadataDocument", () => {
   });
 
   it("rejects wildcard and non-https redirect uris", () => {
-    for (const redirect of [
-      "https://client.dev/*",
-      "http://client.dev/callback",
-    ]) {
+    for (const redirect of ["https://client.dev/*", "http://client.dev/callback"]) {
       const result = validateMcpOAuthClientIdMetadataDocument({
         clientIdUrl: CLIENT_ID,
         document: document({ redirect_uris: [redirect] }),

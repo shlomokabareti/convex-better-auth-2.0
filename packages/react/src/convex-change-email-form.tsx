@@ -18,18 +18,8 @@
  */
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-import {
-  useConvexAuthChangeEmail,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
-import {
-  AuthCard,
-  AuthCardContent,
-  AuthCardHeader,
-  AuthField,
-  AuthInput,
-  AuthLabel,
-} from "./ui";
+import { useConvexAuthChangeEmail, type ConvexBetterAuthClient } from "./better-auth-runtime";
+import { AuthCard, AuthCardContent, AuthCardHeader, AuthField, AuthInput, AuthLabel } from "./ui";
 
 export type ConvexChangeEmailFormClassNames = {
   root?: string;
@@ -87,9 +77,7 @@ export function ConvexChangeEmailForm(props: ConvexChangeEmailFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { requestChange, isRequesting } = useConvexAuthChangeEmail(
-    props.authClient
-  );
+  const { requestChange, isRequesting } = useConvexAuthChangeEmail(props.authClient);
   const [newEmail, setNewEmail] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -130,10 +118,7 @@ export function ConvexChangeEmailForm(props: ConvexChangeEmailFormProps) {
           <form onSubmit={handleSubmit} className={cn.form}>
             {props.currentEmail !== null && props.currentEmail !== undefined ? (
               <AuthField className={cn.field}>
-                <AuthLabel
-                  htmlFor="convex-change-email-current"
-                  className={cn.label}
-                >
+                <AuthLabel htmlFor="convex-change-email-current" className={cn.label}>
                   {copy.currentEmailLabel}
                 </AuthLabel>
                 <AuthInput
@@ -153,18 +138,12 @@ export function ConvexChangeEmailForm(props: ConvexChangeEmailFormProps) {
                 type="email"
                 value={newEmail}
                 placeholder={copy.newEmailPlaceholder}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setNewEmail(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewEmail(e.target.value)}
                 className={cn.input}
                 required
               />
             </AuthField>
-            <button
-              type="submit"
-              disabled={isRequesting}
-              className={cn.submitButton}
-            >
+            <button type="submit" disabled={isRequesting} className={cn.submitButton}>
               {isRequesting ? copy.submitting : copy.submit}
             </button>
             {success !== null ? (

@@ -85,14 +85,11 @@ export function createAuthorizationDeniedErrorDataFromContext(input: {
   resourceId?: string | null;
   permission?: string;
 }): AuthorizationDeniedErrorData {
-  const resourceType =
-    input.resourceType ?? input.context.execution.resourceType;
+  const resourceType = input.resourceType ?? input.context.execution.resourceType;
   const resourceId = input.resourceId ?? input.context.execution.resourceId;
 
   if (resourceType === null || resourceId === null) {
-    throw new Error(
-      "Authorization denied error data requires resourceType and resourceId"
-    );
+    throw new Error("Authorization denied error data requires resourceType and resourceId");
   }
 
   return createAuthorizationDeniedErrorData({
@@ -111,7 +108,7 @@ export function createAuthorizationDeniedErrorDataFromContext(input: {
 }
 
 export function toAuthorizationDeniedAuditPayload(
-  errorData: AuthorizationDeniedErrorData
+  errorData: AuthorizationDeniedErrorData,
 ): AuthorizationDeniedAuditPayload {
   return {
     actorUserId: errorData.actorUserId,
@@ -128,7 +125,7 @@ export function toAuthorizationDeniedAuditPayload(
 }
 
 export function extractAuthorizationDeniedAuditPayload(
-  error: unknown
+  error: unknown,
 ): AuthorizationDeniedAuditPayload | null {
   const record = extractErrorDataRecord(error);
   if (record === null) {
@@ -141,30 +138,20 @@ export function extractAuthorizationDeniedAuditPayload(
   }
 
   return {
-    actorUserId:
-      typeof record.actorUserId === "string" ? record.actorUserId : undefined,
+    actorUserId: typeof record.actorUserId === "string" ? record.actorUserId : undefined,
     principalKind: required.principalKind,
-    principalId:
-      typeof record.principalId === "string" ? record.principalId : null,
-    organizationId:
-      typeof record.organizationId === "string"
-        ? record.organizationId
-        : undefined,
+    principalId: typeof record.principalId === "string" ? record.principalId : null,
+    organizationId: typeof record.organizationId === "string" ? record.organizationId : undefined,
     denialReason: required.denialReason,
-    denialCode: isAuthorizationFailureCode(record.authzCode)
-      ? record.authzCode
-      : null,
+    denialCode: isAuthorizationFailureCode(record.authzCode) ? record.authzCode : null,
     reasonDetail: typeof record.message === "string" ? record.message : null,
     resourceType: required.resourceType,
     resourceId: required.resourceId,
-    permission:
-      typeof record.permission === "string" ? record.permission : undefined,
+    permission: typeof record.permission === "string" ? record.permission : undefined,
   };
 }
 
-function extractErrorDataRecord(
-  error: unknown
-): Record<string, unknown> | null {
+function extractErrorDataRecord(error: unknown): Record<string, unknown> | null {
   if (typeof error !== "object" || error === null || !("data" in error)) {
     return null;
   }
@@ -175,7 +162,7 @@ function extractErrorDataRecord(
 }
 
 function extractRequiredAuthorizationDeniedFields(
-  record: Record<string, unknown>
+  record: Record<string, unknown>,
 ): Pick<
   AuthorizationDeniedAuditPayload,
   "denialReason" | "principalKind" | "resourceId" | "resourceType"
@@ -183,12 +170,9 @@ function extractRequiredAuthorizationDeniedFields(
   const denialReason = isAuthorizationDeniedReason(record.denialReason)
     ? record.denialReason
     : null;
-  const principalKind =
-    typeof record.principalKind === "string" ? record.principalKind : null;
-  const resourceType =
-    typeof record.resourceType === "string" ? record.resourceType : null;
-  const resourceId =
-    typeof record.resourceId === "string" ? record.resourceId : null;
+  const principalKind = typeof record.principalKind === "string" ? record.principalKind : null;
+  const resourceType = typeof record.resourceType === "string" ? record.resourceType : null;
+  const resourceId = typeof record.resourceId === "string" ? record.resourceId : null;
 
   if (
     denialReason === null ||
@@ -202,20 +186,10 @@ function extractRequiredAuthorizationDeniedFields(
   return { denialReason, principalKind, resourceId, resourceType };
 }
 
-function isAuthorizationDeniedReason(
-  value: unknown
-): value is AuthorizationDeniedReason {
-  return (
-    typeof value === "string" &&
-    authorizationDeniedReasons.some((reason) => reason === value)
-  );
+function isAuthorizationDeniedReason(value: unknown): value is AuthorizationDeniedReason {
+  return typeof value === "string" && authorizationDeniedReasons.some((reason) => reason === value);
 }
 
-function isAuthorizationFailureCode(
-  value: unknown
-): value is AuthorizationFailureCode {
-  return (
-    typeof value === "string" &&
-    authorizationFailureCodes.some((code) => code === value)
-  );
+function isAuthorizationFailureCode(value: unknown): value is AuthorizationFailureCode {
+  return typeof value === "string" && authorizationFailureCodes.some((code) => code === value);
 }

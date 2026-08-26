@@ -33,7 +33,7 @@ describe("mcp oauth refresh helpers", () => {
       {
         absoluteLifetimeMs: 86_400_000,
         inactivityLifetimeMs: 3_600_000,
-      }
+      },
     );
   });
 
@@ -234,8 +234,7 @@ describe("mcp oauth refresh helpers", () => {
     assert.deepEqual(result, {
       ok: false,
       error: "invalid_scope",
-      error_description:
-        "Requested scope exceeds originally granted scope: crm:tasks:read",
+      error_description: "Requested scope exceeds originally granted scope: crm:tasks:read",
     });
   });
 
@@ -470,9 +469,9 @@ describe("mcp oauth refresh helpers", () => {
           consumedAt: null,
           revokedAt: null,
         },
-        1_700_000_000_000
+        1_700_000_000_000,
       ),
-      "active"
+      "active",
     );
     assert.equal(
       getMcpOAuthRefreshTokenStatus(
@@ -482,9 +481,9 @@ describe("mcp oauth refresh helpers", () => {
           consumedAt: null,
           revokedAt: null,
         },
-        1_700_000_000_000
+        1_700_000_000_000,
       ),
-      "expired"
+      "expired",
     );
     assert.equal(
       getMcpOAuthRefreshTokenStatus(
@@ -494,9 +493,9 @@ describe("mcp oauth refresh helpers", () => {
           consumedAt: null,
           revokedAt: null,
         },
-        1_700_000_000_000
+        1_700_000_000_000,
       ),
-      "inactive"
+      "inactive",
     );
     assert.equal(
       getMcpOAuthRefreshTokenStatus(
@@ -506,9 +505,9 @@ describe("mcp oauth refresh helpers", () => {
           consumedAt: 1_700_000_000_000,
           revokedAt: null,
         },
-        1_700_000_000_000
+        1_700_000_000_000,
       ),
-      "consumed"
+      "consumed",
     );
     assert.equal(
       getMcpOAuthRefreshTokenStatus(
@@ -518,9 +517,9 @@ describe("mcp oauth refresh helpers", () => {
           consumedAt: null,
           revokedAt: 1_700_000_000_000,
         },
-        1_700_000_000_000
+        1_700_000_000_000,
       ),
-      "revoked"
+      "revoked",
     );
   });
 });

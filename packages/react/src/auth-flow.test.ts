@@ -28,43 +28,25 @@ function createStorage(): ConvexAuthStorageLike {
 
 describe("auth flow helpers", () => {
   it("builds default route paths with app overrides", () => {
-    assert.deepEqual(
-      createConvexAuthRoutePaths({ postSignInPath: "/dashboard" }),
-      {
-        signInPath: "/sign-in",
-        signUpPath: "/sign-up",
-        acceptInvitePath: "/accept-invite",
-        postSignInPath: "/dashboard",
-        postSignUpPath: "/post-sign-up",
-        chooseOrganizationPath: "/onboarding/choose-organization",
-      }
-    );
+    assert.deepEqual(createConvexAuthRoutePaths({ postSignInPath: "/dashboard" }), {
+      signInPath: "/sign-in",
+      signUpPath: "/sign-up",
+      acceptInvitePath: "/accept-invite",
+      postSignInPath: "/dashboard",
+      postSignUpPath: "/post-sign-up",
+      chooseOrganizationPath: "/onboarding/choose-organization",
+    });
   });
 
   it("accepts same-origin relative and absolute redirect paths only", () => {
+    assert.equal(toSafeConvexRedirectPath("/app?tab=1#x", "https://crm.test"), "/app?tab=1#x");
     assert.equal(
-      toSafeConvexRedirectPath("/app?tab=1#x", "https://crm.test"),
-      "/app?tab=1#x"
+      toSafeConvexRedirectPath("https://crm.test/path?q=1#hash", "https://crm.test"),
+      "/path?q=1#hash",
     );
-    assert.equal(
-      toSafeConvexRedirectPath(
-        "https://crm.test/path?q=1#hash",
-        "https://crm.test"
-      ),
-      "/path?q=1#hash"
-    );
-    assert.equal(
-      toSafeConvexRedirectPath("//evil.test/path", "https://crm.test"),
-      undefined
-    );
-    assert.equal(
-      toSafeConvexRedirectPath("https://evil.test/path", "https://crm.test"),
-      undefined
-    );
-    assert.equal(
-      toSafeConvexRedirectPath(undefined, "https://crm.test"),
-      undefined
-    );
+    assert.equal(toSafeConvexRedirectPath("//evil.test/path", "https://crm.test"), undefined);
+    assert.equal(toSafeConvexRedirectPath("https://evil.test/path", "https://crm.test"), undefined);
+    assert.equal(toSafeConvexRedirectPath(undefined, "https://crm.test"), undefined);
   });
 
   it("stores and consumes pending auth flow state once", () => {
@@ -82,9 +64,9 @@ describe("auth flow helpers", () => {
         getConvexPendingAuthFlowStorageKey({
           flow: "sign-in",
           storageKeyPrefix: "crm.auth",
-        })
+        }),
       ),
-      JSON.stringify({ redirectPath: "/app" })
+      JSON.stringify({ redirectPath: "/app" }),
     );
     assert.deepEqual(authFlow.consumePendingAuthFlow("sign-in"), {
       redirectPath: "/app",
@@ -111,39 +93,23 @@ describe("auth flow helpers", () => {
     });
 
     authFlow.markPendingPostSignUpSync();
-    assert.equal(
-      storage.getItem(getConvexPendingPostSignUpStorageKey("crm.auth")),
-      "true"
-    );
+    assert.equal(storage.getItem(getConvexPendingPostSignUpStorageKey("crm.auth")), "true");
 
-    storage.setItem(
-      getConvexPostSignUpFailureStorageKey("crm.auth"),
-      "invite-email-mismatch"
-    );
+    storage.setItem(getConvexPostSignUpFailureStorageKey("crm.auth"), "invite-email-mismatch");
     authFlow.clearPendingPostSignUpSync();
 
-    assert.equal(
-      storage.getItem(getConvexPendingPostSignUpStorageKey("crm.auth")),
-      null
-    );
-    assert.equal(
-      storage.getItem(getConvexPostSignUpFailureStorageKey("crm.auth")),
-      null
-    );
+    assert.equal(storage.getItem(getConvexPendingPostSignUpStorageKey("crm.auth")), null);
+    assert.equal(storage.getItem(getConvexPostSignUpFailureStorageKey("crm.auth")), null);
   });
 
   it("wraps app event capture", () => {
     const events: Array<{ eventName: string; surface: string }> = [];
-    const captureAuthEvent = createConvexAuthEventCapture(
-      (eventName, properties) => {
-        events.push({ eventName, surface: properties.surface });
-      }
-    );
+    const captureAuthEvent = createConvexAuthEventCapture((eventName, properties) => {
+      events.push({ eventName, surface: properties.surface });
+    });
 
     captureAuthEvent("auth_sign_in_opened", { surface: "sign-in" });
 
-    assert.deepEqual(events, [
-      { eventName: "auth_sign_in_opened", surface: "sign-in" },
-    ]);
+    assert.deepEqual(events, [{ eventName: "auth_sign_in_opened", surface: "sign-in" }]);
   });
 });

@@ -3,7 +3,6 @@
   "version": "2.0.0-alpha.0",
   "description": "A public Better Auth runtime for Convex.",
   "license": "Apache-2.0",
-  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/shlomokabareti/convex-better-auth-2.0.git",
@@ -13,6 +12,7 @@
     "dist",
     "src"
   ],
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -48,14 +48,14 @@
     "convex-auth-core": "workspace:*",
     "jose": "^6.2.2"
   },
-  "peerDependencies": {
-    "convex": "^1.25.0"
-  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "convex": "^1.45.0",
     "tsup": "^8.5.0",
     "typescript": "^5.5.0",
-    "vitest": "^3.0.0"
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "convex": "^1.25.0"
   }
 }

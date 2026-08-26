@@ -6,9 +6,7 @@ import { parseExpoInvitationUrl } from "./invite-flow";
 
 describe("convex expo invite flow", () => {
   it("extracts invitation_token from URL", () => {
-    const result = parseExpoInvitationUrl(
-      "plasma://accept-invite?invitation_token=abc123"
-    );
+    const result = parseExpoInvitationUrl("plasma://accept-invite?invitation_token=abc123");
     assert.equal(result.kind, "token");
     if (result.kind === "token") {
       assert.equal(result.token, "abc123");
@@ -16,9 +14,7 @@ describe("convex expo invite flow", () => {
   });
 
   it("falls back to generic token param", () => {
-    const result = parseExpoInvitationUrl(
-      "https://example.com/invite?token=tok456"
-    );
+    const result = parseExpoInvitationUrl("https://example.com/invite?token=tok456");
     assert.equal(result.kind, "token");
     if (result.kind === "token") {
       assert.equal(result.token, "tok456");

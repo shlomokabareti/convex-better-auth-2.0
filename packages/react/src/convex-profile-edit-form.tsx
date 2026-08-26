@@ -19,18 +19,8 @@
  */
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-import {
-  useConvexAuthUpdateProfile,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
-import {
-  AuthCard,
-  AuthCardContent,
-  AuthCardHeader,
-  AuthField,
-  AuthInput,
-  AuthLabel,
-} from "./ui";
+import { useConvexAuthUpdateProfile, type ConvexBetterAuthClient } from "./better-auth-runtime";
+import { AuthCard, AuthCardContent, AuthCardHeader, AuthField, AuthInput, AuthLabel } from "./ui";
 
 export type ConvexProfileEditFormClassNames = {
   root?: string;
@@ -83,9 +73,7 @@ export function ConvexProfileEditForm(props: ConvexProfileEditFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { updateProfile, isUpdating } = useConvexAuthUpdateProfile(
-    props.authClient
-  );
+  const { updateProfile, isUpdating } = useConvexAuthUpdateProfile(props.authClient);
   const [name, setName] = useState(props.initialName ?? "");
   const [image, setImage] = useState(props.initialImage ?? "");
   const [success, setSuccess] = useState<string | null>(null);
@@ -101,8 +89,7 @@ export function ConvexProfileEditForm(props: ConvexProfileEditFormProps) {
     const trimmedName = name.trim();
     const trimmedImage = image.trim();
     const args: { name?: string; image?: string } = {};
-    if (trimmedName !== (props.initialName ?? "").trim())
-      args.name = trimmedName;
+    if (trimmedName !== (props.initialName ?? "").trim()) args.name = trimmedName;
     if (showImageField && trimmedImage !== (props.initialImage ?? "").trim()) {
       args.image = trimmedImage;
     }
@@ -133,9 +120,7 @@ export function ConvexProfileEditForm(props: ConvexProfileEditFormProps) {
               <AuthInput
                 id="convex-profile-name"
                 value={name}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setName(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
                 className={cn.input}
               />
             </AuthField>
@@ -148,18 +133,12 @@ export function ConvexProfileEditForm(props: ConvexProfileEditFormProps) {
                   id="convex-profile-image"
                   type="url"
                   value={image}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setImage(e.target.value)
-                  }
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setImage(e.target.value)}
                   className={cn.input}
                 />
               </AuthField>
             ) : null}
-            <button
-              type="submit"
-              disabled={isUpdating}
-              className={cn.submitButton}
-            >
+            <button type="submit" disabled={isUpdating} className={cn.submitButton}>
               {isUpdating ? copy.submitting : copy.submit}
             </button>
             {success !== null ? (

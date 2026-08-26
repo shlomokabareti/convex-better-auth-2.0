@@ -1,10 +1,6 @@
 export type ConvexWebhookEndpointStatus = "active" | "disabled" | "archived";
 
-export type ConvexWebhookDeliveryStatus =
-  | "pending"
-  | "processing"
-  | "delivered"
-  | "failed";
+export type ConvexWebhookDeliveryStatus = "pending" | "processing" | "delivered" | "failed";
 
 export type ConvexWebhookFailureKind =
   | "endpoint_inactive"

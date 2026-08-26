@@ -27,7 +27,7 @@ export type AuthTokenRefreshFailureEvent = {
 
 export function getAuthRuntimeTransitionEvent(
   previousStatus: AuthRuntimeStatus | null,
-  nextStatus: AuthRuntimeStatus
+  nextStatus: AuthRuntimeStatus,
 ): AuthRuntimeTransitionEvent | null {
   if (previousStatus === null || previousStatus.state === nextStatus.state) {
     return null;

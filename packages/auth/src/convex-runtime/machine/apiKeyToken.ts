@@ -25,9 +25,7 @@ export type StoredApiKeyCredential = {
   expiresAt?: number | null;
 };
 
-export type ResolveStoredApiKeyCredentialResult<
-  TApiKey extends StoredApiKeyCredential,
-> =
+export type ResolveStoredApiKeyCredentialResult<TApiKey extends StoredApiKeyCredential> =
   | {
       ok: true;
       apiKey: TApiKey;
@@ -46,17 +44,12 @@ export function createApiKeyPrefix(args: {
   return `${args.tokenPrefix}_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
 }
 
-export function createApiKeySecret(
-  args: { randomUUID?: () => string } = {}
-): string {
+export function createApiKeySecret(args: { randomUUID?: () => string } = {}): string {
   const randomUUID = args.randomUUID ?? crypto.randomUUID.bind(crypto);
   return randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
 }
 
-export function formatApiKeyToken(args: {
-  keyPrefix: string;
-  secret: string;
-}): string {
+export function formatApiKeyToken(args: { keyPrefix: string; secret: string }): string {
   return `${args.keyPrefix}.${args.secret}`;
 }
 
@@ -79,9 +72,7 @@ export function parseApiKeyToken(token: string): ParsedApiKeyToken {
   return { ok: true, keyPrefix, secret };
 }
 
-export async function resolveStoredApiKeyCredential<
-  TApiKey extends StoredApiKeyCredential,
->(args: {
+export async function resolveStoredApiKeyCredential<TApiKey extends StoredApiKeyCredential>(args: {
   token: string;
   findByKeyPrefix: (keyPrefix: string) => Promise<TApiKey | null>;
   hashSecret?: (secret: string) => Promise<string>;
@@ -112,11 +103,7 @@ export async function resolveStoredApiKeyCredential<
   }
 
   const now = args.now ?? Date.now();
-  if (
-    apiKey.expiresAt !== undefined &&
-    apiKey.expiresAt !== null &&
-    apiKey.expiresAt <= now
-  ) {
+  if (apiKey.expiresAt !== undefined && apiKey.expiresAt !== null && apiKey.expiresAt <= now) {
     return { ok: false, reason: "expired" };
   }
 

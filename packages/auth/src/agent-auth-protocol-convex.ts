@@ -85,7 +85,7 @@ export type AgentAuthProtocolAgentAuthorityAdapter = {
     hostThumbprint: string;
   }): Promise<AgentAuthProtocolVerificationMaterial | null>;
   consumeCredential(
-    input: AgentAuthProtocolCredentialConsumptionInput
+    input: AgentAuthProtocolCredentialConsumptionInput,
   ): Promise<AgentAuthProtocolAuthorityResult>;
 };
 
@@ -102,11 +102,11 @@ export type ConvexAgentAuthProtocolAuthorityAdapterConfig<
 > = {
   runQuery: (
     reference: TVerificationMaterialQueryReference,
-    args: ProtocolVerificationMaterialInput
+    args: ProtocolVerificationMaterialInput,
   ) => Promise<AgentAuthProtocolVerificationMaterial | null>;
   runMutation: (
     reference: TConsumeCredentialMutationReference,
-    args: ProtocolConsumeCredentialInput
+    args: ProtocolConsumeCredentialInput,
   ) => Promise<AgentAuthProtocolAuthorityResult>;
   refs: {
     getAgentProtocolVerificationMaterial: TVerificationMaterialQueryReference;
@@ -131,7 +131,7 @@ export type ResolveAgentAuthProtocolHostRequestInput = {
 
 export async function resolveAgentAuthProtocolHostRequest(
   adapter: AgentAuthProtocolHostRequestAuthorityAdapter,
-  input: ResolveAgentAuthProtocolHostRequestInput
+  input: ResolveAgentAuthProtocolHostRequestInput,
 ) {
   const unverified = parseAgentAuthProtocolHostJwt({
     header: decodeProtectedHeader(input.token),
@@ -153,17 +153,12 @@ export async function resolveAgentAuthProtocolHostRequest(
     ...(input.now === undefined ? {} : { options: { now: input.now } }),
   });
   if (verified.signingKeyThumbprint !== material.thumbprint) {
-    throw new Error(
-      "Agent Auth Protocol host verification material does not match credential"
-    );
+    throw new Error("Agent Auth Protocol host verification material does not match credential");
   }
   const authority = await adapter.consumeRequest({
     hostId: material.hostId,
     keyGeneration: material.generation,
-    replayIdHash: await hashAgentAuthProtocolReplayId(
-      material.hostId,
-      verified.claims.jti
-    ),
+    replayIdHash: await hashAgentAuthProtocolReplayId(material.hostId, verified.claims.jti),
     replayExpiresAt: verified.replayExpiresAt,
     requestedOrganizationId: input.requestedOrganizationId,
   });
@@ -172,16 +167,14 @@ export async function resolveAgentAuthProtocolHostRequest(
     authority.organizationId !== material.organizationId ||
     authority.keyGeneration !== material.generation
   ) {
-    throw new Error(
-      "Agent Auth Protocol host authority does not match verified material"
-    );
+    throw new Error("Agent Auth Protocol host authority does not match verified material");
   }
   return { authority, verified };
 }
 
 export async function resolveAgentAuthProtocolAgentPrincipal(
   adapter: AgentAuthProtocolAgentAuthorityAdapter,
-  input: ResolveAgentAuthProtocolAgentPrincipalInput
+  input: ResolveAgentAuthProtocolAgentPrincipalInput,
 ): Promise<ReturnType<typeof resolveAgentPrincipal>> {
   const unverified = parseAgentAuthProtocolAgentJwt({
     header: decodeProtectedHeader(input.token),
@@ -204,10 +197,7 @@ export async function resolveAgentAuthProtocolAgentPrincipal(
     publicKey: publicJwk,
     ...(input.now === undefined ? {} : { options: { now: input.now } }),
   });
-  const replayIdHash = await hashAgentAuthProtocolReplayId(
-    material.agentId,
-    verified.claims.jti
-  );
+  const replayIdHash = await hashAgentAuthProtocolReplayId(material.agentId, verified.claims.jti);
   const authority = await adapter.consumeCredential({
     agentId: material.agentId,
     keyGeneration: material.agentKeyGeneration,
@@ -235,20 +225,14 @@ export function createConvexAgentAuthProtocolAuthorityAdapter<
   config: ConvexAgentAuthProtocolAuthorityAdapterConfig<
     TVerificationMaterialQueryReference,
     TConsumeCredentialMutationReference
-  >
+  >,
 ): AgentAuthProtocolAgentAuthorityAdapter {
   return {
     async getVerificationMaterial(input) {
-      return await config.runQuery(
-        config.refs.getAgentProtocolVerificationMaterial,
-        input
-      );
+      return await config.runQuery(config.refs.getAgentProtocolVerificationMaterial, input);
     },
     async consumeCredential(input) {
-      return await config.runMutation(
-        config.refs.consumeAgentCredential,
-        input
-      );
+      return await config.runMutation(config.refs.consumeAgentCredential, input);
     },
   };
 }
@@ -259,7 +243,7 @@ export function createConvexAgentAuthProtocolHostRequestAuthorityAdapter<
 >(config: {
   runQuery: (
     reference: TVerificationMaterialQueryReference,
-    args: { thumbprint: string }
+    args: { thumbprint: string },
   ) => Promise<AgentAuthProtocolHostVerificationMaterial | null>;
   runMutation: (
     reference: TConsumeRequestMutationReference,
@@ -269,7 +253,7 @@ export function createConvexAgentAuthProtocolHostRequestAuthorityAdapter<
       replayIdHash: string;
       replayExpiresAt: number;
       requestedOrganizationId?: string;
-    }
+    },
   ) => Promise<AgentAuthProtocolHostAuthorityResult>;
   refs: {
     getAgentHostProtocolVerificationMaterial: TVerificationMaterialQueryReference;
@@ -278,69 +262,53 @@ export function createConvexAgentAuthProtocolHostRequestAuthorityAdapter<
 }): AgentAuthProtocolHostRequestAuthorityAdapter {
   return {
     async getVerificationMaterial(input) {
-      return await config.runQuery(
-        config.refs.getAgentHostProtocolVerificationMaterial,
-        input
-      );
+      return await config.runQuery(config.refs.getAgentHostProtocolVerificationMaterial, input);
     },
     async consumeRequest(input) {
-      return await config.runMutation(
-        config.refs.consumeAgentHostRequest,
-        input
-      );
+      return await config.runMutation(config.refs.consumeAgentHostRequest, input);
     },
   };
 }
 
 function requireVerificationMaterialMatchesUnverifiedClaims(
   material: AgentAuthProtocolVerificationMaterial,
-  unverified: ReturnType<typeof parseAgentAuthProtocolAgentJwt>
+  unverified: ReturnType<typeof parseAgentAuthProtocolAgentJwt>,
 ): void {
   if (
     material.agentId !== unverified.claims.sub ||
     material.hostThumbprint !== unverified.claims.iss
   ) {
-    throw new Error(
-      "Agent Auth Protocol verification material does not match credential"
-    );
+    throw new Error("Agent Auth Protocol verification material does not match credential");
   }
 }
 
 function requireAuthorityMatchesVerificationMaterial(
   authority: AgentAuthProtocolAuthorityResult,
-  material: AgentAuthProtocolVerificationMaterial
+  material: AgentAuthProtocolVerificationMaterial,
 ): void {
   if (
     authority.agentId !== material.agentId ||
     authority.hostId !== material.hostId ||
     authority.organizationId !== material.organizationId
   ) {
-    throw new Error(
-      "Agent Auth Protocol authority does not match verified material"
-    );
+    throw new Error("Agent Auth Protocol authority does not match verified material");
   }
 }
 
-async function hashAgentAuthProtocolReplayId(
-  agentId: string,
-  replayId: string
-): Promise<string> {
+async function hashAgentAuthProtocolReplayId(agentId: string, replayId: string): Promise<string> {
   const digest = await crypto.subtle.digest(
     "SHA-256",
-    new TextEncoder().encode(`${agentId}\u0000${replayId}`)
+    new TextEncoder().encode(`${agentId}\u0000${replayId}`),
   );
   let binary = "";
   for (const byte of new Uint8Array(digest)) {
     binary += String.fromCharCode(byte);
   }
-  return btoa(binary)
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/u, "");
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
 }
 
 function parseConstraints(
-  value: string | undefined
+  value: string | undefined,
 ): Readonly<Record<string, AgentCapabilityConstraint>> | null {
   if (value === undefined) return null;
   const parsed: unknown = JSON.parse(value);
@@ -348,27 +316,19 @@ function parseConstraints(
     throw new TypeError("Agent capability constraints are invalid");
   }
   return Object.fromEntries(
-    Object.entries(parsed).map(([key, constraint]) => [
-      key,
-      parseConstraint(constraint),
-    ])
+    Object.entries(parsed).map(([key, constraint]) => [key, parseConstraint(constraint)]),
   );
 }
 
 function parseConstraint(value: unknown): AgentCapabilityConstraint {
-  if (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
     return value;
   }
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError("Agent capability constraint is invalid");
   }
   const record = Object.fromEntries(Object.entries(value));
-  const parsed: Exclude<AgentCapabilityConstraint, string | number | boolean> =
-    {};
+  const parsed: Exclude<AgentCapabilityConstraint, string | number | boolean> = {};
   if (record.eq !== undefined) parsed.eq = requirePrimitive(record.eq);
   if (record.min !== undefined) parsed.min = requireFiniteNumber(record.min);
   if (record.max !== undefined) parsed.max = requireFiniteNumber(record.max);
@@ -379,11 +339,7 @@ function parseConstraint(value: unknown): AgentCapabilityConstraint {
 }
 
 function requirePrimitive(value: unknown) {
-  if (
-    typeof value !== "string" &&
-    typeof value !== "number" &&
-    typeof value !== "boolean"
-  ) {
+  if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") {
     throw new TypeError("Agent capability primitive is invalid");
   }
   return value;

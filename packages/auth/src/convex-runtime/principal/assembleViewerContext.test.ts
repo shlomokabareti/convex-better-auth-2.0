@@ -3,10 +3,7 @@ import assert from "node:assert/strict";
 import { permissionMatcherConformanceCases } from "convex-auth-core";
 import { describe, it } from "vitest";
 
-import {
-  assembleViewerContext,
-  sessionIdFromConvexIdentity,
-} from "./assembleViewerContext";
+import { assembleViewerContext, sessionIdFromConvexIdentity } from "./assembleViewerContext";
 
 describe("assembleViewerContext", () => {
   for (const testCase of permissionMatcherConformanceCases) {
@@ -77,7 +74,7 @@ describe("assembleViewerContext", () => {
         tokenIdentifier: "issuer|u1",
         sessionId: "session_1",
       }),
-      "session_1"
+      "session_1",
     );
 
     assert.equal(
@@ -87,7 +84,7 @@ describe("assembleViewerContext", () => {
         tokenIdentifier: "issuer|u1",
         sid: "session_2",
       }),
-      "session_2"
+      "session_2",
     );
 
     assert.equal(
@@ -96,7 +93,7 @@ describe("assembleViewerContext", () => {
         issuer: "issuer",
         tokenIdentifier: "issuer|u1",
       }),
-      null
+      null,
     );
   });
 });

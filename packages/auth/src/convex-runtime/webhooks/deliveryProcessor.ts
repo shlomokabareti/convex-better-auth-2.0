@@ -20,10 +20,7 @@ import {
 } from "./deliveryState";
 import { assertWebhookHostIsDeliverable } from "./endpointLifecycle";
 import type { ConvexWebhookRetryPolicyOptions } from "./retryPolicy";
-import {
-  createConvexWebhookHeaders,
-  signConvexWebhookPayload,
-} from "./signing";
+import { createConvexWebhookHeaders, signConvexWebhookPayload } from "./signing";
 import type { ConvexWebhookEndpointStatus } from "./types";
 
 export const DEFAULT_WEBHOOK_MAX_ATTEMPTS = 4;
@@ -56,7 +53,7 @@ export type ConvexWebhookFetchResponse = {
 
 export type ConvexWebhookFetch = (
   url: string,
-  init: { method: "POST"; headers: Record<string, string>; body: string }
+  init: { method: "POST"; headers: Record<string, string>; body: string },
 ) => Promise<ConvexWebhookFetchResponse>;
 
 export type ProcessConvexWebhookDeliveryArgs = {
@@ -85,7 +82,7 @@ export type ProcessConvexWebhookDeliveryResult = {
  * without a network attempt.
  */
 export async function processConvexWebhookDelivery(
-  args: ProcessConvexWebhookDeliveryArgs
+  args: ProcessConvexWebhookDeliveryArgs,
 ): Promise<ProcessConvexWebhookDeliveryResult> {
   const now = args.now ?? Date.now();
   const maxAttempts = args.maxAttempts ?? DEFAULT_WEBHOOK_MAX_ATTEMPTS;
@@ -93,7 +90,7 @@ export async function processConvexWebhookDelivery(
   const deliveryKey = `${args.delivery.endpointId}:${args.delivery.eventId}:${args.delivery._id}`;
 
   const finalize = (
-    outcome: ConvexWebhookDeliveryResultInput
+    outcome: ConvexWebhookDeliveryResultInput,
   ): ProcessConvexWebhookDeliveryResult => ({
     outcome,
     update: buildConvexWebhookDeliveryResultUpdate({
@@ -119,10 +116,7 @@ export async function processConvexWebhookDelivery(
     // target (however it got persisted) can never actually be fetched. Throws →
     // routed through the catch below as an execution failure.
     assertWebhookHostIsDeliverable(new URL(endpoint.url).hostname);
-    const signature = await signConvexWebhookPayload(
-      endpoint.secret,
-      args.delivery.payloadJson
-    );
+    const signature = await signConvexWebhookPayload(endpoint.secret, args.delivery.payloadJson);
     const response = await args.fetch(endpoint.url, {
       method: "POST",
       headers: createConvexWebhookHeaders({
@@ -140,16 +134,15 @@ export async function processConvexWebhookDelivery(
         responseBody: await response.text(),
         attemptCount,
         maxAttempts,
-      })
+      }),
     );
   } catch (error) {
     return finalize(
       classifyConvexWebhookExecutionError({
-        message:
-          error instanceof Error ? error.message : "Webhook delivery failed",
+        message: error instanceof Error ? error.message : "Webhook delivery failed",
         attemptCount,
         maxAttempts,
-      })
+      }),
     );
   }
 }

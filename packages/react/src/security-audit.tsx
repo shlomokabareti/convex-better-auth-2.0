@@ -49,10 +49,7 @@ export type ConvexSecurityAuditListProps = {
   copy: ConvexSecurityAuditListCopy;
   classNames?: ConvexSecurityAuditListClassNames;
   formatCreatedAt?: (createdAt: number) => string;
-  renderBadge?: (args: {
-    label: string;
-    tone: "default" | "secondary";
-  }) => ReactNode;
+  renderBadge?: (args: { label: string; tone: "default" | "secondary" }) => ReactNode;
 };
 
 export type ConvexSecurityAuditRowProps = {
@@ -60,10 +57,7 @@ export type ConvexSecurityAuditRowProps = {
   copy?: Partial<ConvexSecurityAuditListCopy>;
   classNames?: ConvexSecurityAuditListClassNames;
   formatCreatedAt?: (createdAt: number) => string;
-  renderBadge?: (args: {
-    label: string;
-    tone: "default" | "secondary";
-  }) => ReactNode;
+  renderBadge?: (args: { label: string; tone: "default" | "secondary" }) => ReactNode;
 };
 
 const defaultCopy = {
@@ -75,18 +69,10 @@ const defaultCopy = {
 } satisfies Omit<ConvexSecurityAuditListCopy, "emptyMessage">;
 
 export function getConvexSecurityAuditActorLabel(
-  log: Partial<
-    Pick<ConvexSecurityAuditListItem, "actor" | "userEmail" | "userName">
-  >,
-  systemActorLabel = defaultCopy.systemActorLabel
+  log: Partial<Pick<ConvexSecurityAuditListItem, "actor" | "userEmail" | "userName">>,
+  systemActorLabel = defaultCopy.systemActorLabel,
 ): string {
-  return (
-    log.actor?.name ??
-    log.userName ??
-    log.actor?.email ??
-    log.userEmail ??
-    systemActorLabel
-  );
+  return log.actor?.name ?? log.userName ?? log.actor?.email ?? log.userEmail ?? systemActorLabel;
 }
 
 export function formatConvexSecurityAuditCreatedAt(createdAt: number): string {
@@ -146,10 +132,7 @@ export function ConvexSecurityAuditRow({
 
   return (
     <article
-      className={cn(
-        "border-foreground/10 bg-foreground/5 rounded-lg border",
-        classNames?.row
-      )}
+      className={cn("border-foreground/10 bg-foreground/5 rounded-lg border", classNames?.row)}
     >
       <div className={cn("space-y-3 p-4", classNames?.rowHeader)}>
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -158,28 +141,16 @@ export function ConvexSecurityAuditRow({
               {log.description ?? log.action}
             </p>
             <p
-              className={cn(
-                "text-foreground/45 text-xs font-medium uppercase",
-                classNames?.action
-              )}
+              className={cn("text-foreground/45 text-xs font-medium uppercase", classNames?.action)}
             >
               {log.action}
             </p>
-            <p
-              className={cn("text-foreground/45 text-xs", classNames?.metadata)}
-            >
-              {getConvexSecurityAuditActorLabel(
-                log,
-                resolvedCopy.systemActorLabel
-              )}{" "}
-              - {formatCreatedAt(log.createdAt)}
+            <p className={cn("text-foreground/45 text-xs", classNames?.metadata)}>
+              {getConvexSecurityAuditActorLabel(log, resolvedCopy.systemActorLabel)} -{" "}
+              {formatCreatedAt(log.createdAt)}
             </p>
           </div>
-          <ConvexSecurityAuditBadges
-            classNames={classNames}
-            log={log}
-            renderBadge={renderBadge}
-          />
+          <ConvexSecurityAuditBadges classNames={classNames} log={log} renderBadge={renderBadge} />
         </div>
       </div>
       <ConvexSecurityAuditDetails
@@ -211,7 +182,7 @@ function ConvexSecurityAuditDetails({
     <div
       className={cn(
         "border-foreground/10 text-foreground/60 grid gap-2 border-t px-4 pt-0 pb-4 text-xs md:grid-cols-2",
-        classNames?.rowContent
+        classNames?.rowContent,
       )}
     >
       <div className={classNames?.details}>
@@ -285,9 +256,7 @@ function renderAuditBadge(args: {
         args.tone === "secondary"
           ? "border-foreground/10 bg-foreground/10 text-foreground/80"
           : "border-foreground/15 text-foreground/70",
-        args.tone === "secondary"
-          ? args.classNames?.secondaryBadge
-          : args.classNames?.badge
+        args.tone === "secondary" ? args.classNames?.secondaryBadge : args.classNames?.badge,
       )}
     >
       {args.label}
@@ -296,8 +265,7 @@ function renderAuditBadge(args: {
 }
 
 function resolveCopy(
-  copy: Partial<ConvexSecurityAuditListCopy> &
-    Pick<ConvexSecurityAuditListCopy, "emptyMessage">
+  copy: Partial<ConvexSecurityAuditListCopy> & Pick<ConvexSecurityAuditListCopy, "emptyMessage">,
 ): Required<ConvexSecurityAuditListCopy> {
   return { ...defaultCopy, ...copy, emptyMessage: copy.emptyMessage };
 }

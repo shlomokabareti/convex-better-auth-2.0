@@ -83,18 +83,12 @@ export type CreateAuthServiceSessionMinterConfig<TCtx, TPrincipal> = {
    * is unreachable unless this resolves. Baked: the gate cannot be skipped at a
    * call site.
    */
-  authorize: (
-    ctx: TCtx,
-    request: ServiceSessionMintRequest
-  ) => Promise<TPrincipal> | TPrincipal;
+  authorize: (ctx: TCtx, request: ServiceSessionMintRequest) => Promise<TPrincipal> | TPrincipal;
   /**
    * Record every successful mint (acting principal + target + reason). Baked. If
    * it throws, the minted session is revoked before the error propagates.
    */
-  audit: (
-    ctx: TCtx,
-    event: ServiceSessionMintAudit<TPrincipal>
-  ) => Promise<void> | void;
+  audit: (ctx: TCtx, event: ServiceSessionMintAudit<TPrincipal>) => Promise<void> | void;
 };
 
 type InternalAdapterLike = {
@@ -102,7 +96,7 @@ type InternalAdapterLike = {
     userId: string,
     dontRememberMe?: boolean,
     override?: Record<string, unknown>,
-    overrideAll?: boolean
+    overrideAll?: boolean,
   ) => Promise<{ token: string; expiresAt?: number | Date }>;
   deleteSession: (token: string) => Promise<unknown>;
   /** Resolves the target user, or null if no such user exists. */
@@ -134,9 +128,7 @@ function requireInternalAdapter(value: unknown): InternalAdapterLike {
       const expiresAt = Reflect.get(result, "expiresAt");
       if (
         typeof token !== "string" ||
-        (expiresAt !== undefined &&
-          typeof expiresAt !== "number" &&
-          !(expiresAt instanceof Date))
+        (expiresAt !== undefined && typeof expiresAt !== "number" && !(expiresAt instanceof Date))
       ) {
         throw new TypeError("Better Auth createSession returned invalid data");
       }
@@ -148,41 +140,32 @@ function requireInternalAdapter(value: unknown): InternalAdapterLike {
 }
 
 export function createAuthServiceSessionMinter<TCtx, TPrincipal>(
-  config: CreateAuthServiceSessionMinterConfig<TCtx, TPrincipal>
+  config: CreateAuthServiceSessionMinterConfig<TCtx, TPrincipal>,
 ): {
   mintServiceSession: (
     ctx: TCtx,
-    request: ServiceSessionMintRequest
+    request: ServiceSessionMintRequest,
   ) => Promise<ServiceSessionResult>;
 } {
   return {
     mintServiceSession: async (ctx, request) => {
-      if (
-        typeof request.targetUserId !== "string" ||
-        request.targetUserId.length === 0
-      ) {
-        throw new Error(
-          "createAuthServiceSessionMinter: targetUserId is required."
-        );
+      if (typeof request.targetUserId !== "string" || request.targetUserId.length === 0) {
+        throw new Error("createAuthServiceSessionMinter: targetUserId is required.");
       }
 
       // 1. GATE (baked). Throws to deny → everything below is unreachable.
       const principal = await config.authorize(ctx, request);
 
-      const internalAdapter = requireInternalAdapter(
-        await config.createAuth(ctx).$context
-      );
+      const internalAdapter = requireInternalAdapter(await config.createAuth(ctx).$context);
 
       // 2. TARGET MUST EXIST. A stale / mistyped targetUserId would otherwise
       //    mint an ORPHAN session (a valid token authenticating as a user that
       //    does not exist) and audit it as a real mint. Better-Auth's own admin
       //    impersonate does this findUserById check first; we match it.
-      const targetUser = await internalAdapter.findUserById(
-        request.targetUserId
-      );
+      const targetUser = await internalAdapter.findUserById(request.targetUserId);
       if (targetUser === null || targetUser === undefined) {
         throw new Error(
-          `createAuthServiceSessionMinter: target user not found (${request.targetUserId}).`
+          `createAuthServiceSessionMinter: target user not found (${request.targetUserId}).`,
         );
       }
 
@@ -201,7 +184,7 @@ export function createAuthServiceSessionMinter<TCtx, TPrincipal>(
           : undefined;
       if (isActive === false || banned === true) {
         throw new Error(
-          `createAuthServiceSessionMinter: target user is not active (${request.targetUserId}).`
+          `createAuthServiceSessionMinter: target user is not active (${request.targetUserId}).`,
         );
       }
 
@@ -209,14 +192,12 @@ export function createAuthServiceSessionMinter<TCtx, TPrincipal>(
       //    override, so the default component session schema suffices.
       const session = await internalAdapter.createSession(
         request.targetUserId,
-        request.dontRememberMe ?? true
+        request.dontRememberMe ?? true,
       );
       const result: ServiceSessionResult = {
         token: session.token,
         expiresAt:
-          session.expiresAt instanceof Date
-            ? session.expiresAt.getTime()
-            : session.expiresAt,
+          session.expiresAt instanceof Date ? session.expiresAt.getTime() : session.expiresAt,
       };
 
       // 4. AUDIT (baked). On failure, REVOKE the session before propagating so no
@@ -238,16 +219,12 @@ export function createAuthServiceSessionMinter<TCtx, TPrincipal>(
           // must NOT swallow this: surface both failures so the caller/operator
           // can revoke it out-of-band. Do not pretend revocation succeeded.
           const auditMessage =
-            auditError instanceof Error
-              ? auditError.message
-              : String(auditError);
+            auditError instanceof Error ? auditError.message : String(auditError);
           const revokeMessage =
-            revokeError instanceof Error
-              ? revokeError.message
-              : String(revokeError);
+            revokeError instanceof Error ? revokeError.message : String(revokeError);
           throw new Error(
             `createAuthServiceSessionMinter: audit failed AND session revocation failed — a live unaudited session may exist for target ${request.targetUserId} and must be revoked manually. Audit error: ${auditMessage}. Revoke error: ${revokeMessage}.`,
-            { cause: revokeError }
+            { cause: revokeError },
           );
         }
         throw auditError;

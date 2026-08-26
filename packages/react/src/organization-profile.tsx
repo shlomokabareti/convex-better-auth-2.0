@@ -1,19 +1,13 @@
 import { cn } from "./lib/ui";
 import { useState, type ReactNode } from "react";
 
-import type {
-  ConvexOrganizationBrand,
-  ConvexOrganizationBrandUpdate,
-} from "./organization-brand";
+import type { ConvexOrganizationBrand, ConvexOrganizationBrandUpdate } from "./organization-brand";
 import type {
   ConvexOrganizationSecurity,
   ConvexOrganizationSecurityUpdate,
 } from "./organization-security";
 
-export type {
-  ConvexOrganizationBrand,
-  ConvexOrganizationBrandUpdate,
-} from "./organization-brand";
+export type { ConvexOrganizationBrand, ConvexOrganizationBrandUpdate } from "./organization-brand";
 export {
   mergeOrganizationBrandIntoMetadataJson,
   parseOrganizationBrandFromMetadataJson,
@@ -112,10 +106,7 @@ export type ConvexOrgProfileProps = {
   showSecurityFields?: boolean;
   onUpdate?: (input: ConvexOrgProfileUpdateInput) => void | Promise<void>;
   onDelete?: () => void | Promise<void>;
-  renderDeleteConfirm?: (args: {
-    onConfirm: () => void;
-    onCancel: () => void;
-  }) => ReactNode;
+  renderDeleteConfirm?: (args: { onConfirm: () => void; onCancel: () => void }) => ReactNode;
 };
 
 // ─── Default copy ──────────────────────────────────────────────────────────
@@ -149,9 +140,7 @@ const defaultCopy: Required<ConvexOrgProfileCopy> = {
   confirmDeleteDescription: "This cannot be undone.",
 };
 
-function resolveCopy(
-  copy: ConvexOrgProfileCopy | undefined
-): Required<ConvexOrgProfileCopy> {
+function resolveCopy(copy: ConvexOrgProfileCopy | undefined): Required<ConvexOrgProfileCopy> {
   return { ...defaultCopy, ...copy };
 }
 
@@ -163,9 +152,7 @@ function OrganizationProfileHeader(props: {
 
   return (
     <div className={cn("mb-4 space-y-1", classNames?.header)}>
-      <h3 className={cn("text-base font-semibold", classNames?.title)}>
-        {copy.title}
-      </h3>
+      <h3 className={cn("text-base font-semibold", classNames?.title)}>{copy.title}</h3>
       <p className={cn("text-foreground/60 text-sm", classNames?.description)}>
         {copy.description}
       </p>
@@ -200,9 +187,7 @@ function EditableProfileField(props: {
 
   return (
     <div className={cn("space-y-1", classNames?.field)}>
-      <label className={cn("text-foreground/70 text-sm", classNames?.label)}>
-        {label}
-      </label>
+      <label className={cn("text-foreground/70 text-sm", classNames?.label)}>{label}</label>
       {editing ? (
         <input
           type="text"
@@ -210,13 +195,11 @@ function EditableProfileField(props: {
           onChange={(event) => onChange(event.target.value)}
           className={cn(
             "border-foreground/10 bg-foreground/5 text-foreground focus:border-foreground/25 h-9 w-full rounded-md border px-3 text-sm transition-colors outline-none",
-            classNames?.input
+            classNames?.input,
           )}
         />
       ) : (
-        <p className={cn("text-foreground text-sm", classNames?.value)}>
-          {value}
-        </p>
+        <p className={cn("text-foreground text-sm", classNames?.value)}>{value}</p>
       )}
     </div>
   );
@@ -228,23 +211,15 @@ function OrganizationStatusField(props: {
   copy: Required<ConvexOrgProfileCopy>;
 }) {
   const { organization, classNames, copy } = props;
-  const statusLabel =
-    organization.status === "active" ? copy.activeStatus : copy.suspendedStatus;
-  const statusClass =
-    organization.status === "active" ? "text-success" : "text-warning";
+  const statusLabel = organization.status === "active" ? copy.activeStatus : copy.suspendedStatus;
+  const statusClass = organization.status === "active" ? "text-success" : "text-warning";
 
   return (
     <div className={cn("space-y-1", classNames?.field)}>
       <label className={cn("text-foreground/70 text-sm", classNames?.label)}>
         {copy.statusLabel}
       </label>
-      <span
-        className={cn(
-          "inline-flex text-sm font-medium",
-          statusClass,
-          classNames?.statusBadge
-        )}
-      >
+      <span className={cn("inline-flex text-sm font-medium", statusClass, classNames?.statusBadge)}>
         {statusLabel}
       </span>
     </div>
@@ -310,16 +285,10 @@ function OrganizationProfileBody(props: {
         classNames={classNames}
         onChange={onSlugChange}
       />
-      <OrganizationStatusField
-        organization={organization}
-        classNames={classNames}
-        copy={copy}
-      />
+      <OrganizationStatusField organization={organization} classNames={classNames} copy={copy} />
       {showBrandFields ? (
         <div className="border-foreground/10 space-y-3 border-t pt-3">
-          <p className={cn("text-foreground/70 text-sm font-medium")}>
-            {copy.brandSectionTitle}
-          </p>
+          <p className={cn("text-foreground/70 text-sm font-medium")}>{copy.brandSectionTitle}</p>
           <EditableProfileField
             label={copy.primaryColorLabel}
             value={brandSource.primaryColor ?? ""}
@@ -363,9 +332,7 @@ function OrganizationProfileBody(props: {
             {copy.securitySectionTitle}
           </p>
           <div className={cn("space-y-1", classNames?.field)}>
-            <label
-              className={cn("text-foreground/70 text-sm", classNames?.label)}
-            >
+            <label className={cn("text-foreground/70 text-sm", classNames?.label)}>
               {copy.requireMfaLabel}
             </label>
             {editing ? (
@@ -384,9 +351,7 @@ function OrganizationProfileBody(props: {
             )}
           </div>
           <div className={cn("space-y-1", classNames?.field)}>
-            <label
-              className={cn("text-foreground/70 text-sm", classNames?.label)}
-            >
+            <label className={cn("text-foreground/70 text-sm", classNames?.label)}>
               {copy.sessionTimeoutLabel}
             </label>
             {editing ? (
@@ -403,13 +368,11 @@ function OrganizationProfileBody(props: {
                 onChange={(event) => onSessionTimeoutChange(event.target.value)}
                 className={cn(
                   "border-foreground/10 bg-foreground/5 text-foreground focus:border-foreground/25 h-9 w-full rounded-md border px-3 text-sm transition-colors outline-none",
-                  classNames?.input
+                  classNames?.input,
                 )}
               />
             ) : (
-              <p className={cn("text-foreground text-sm", classNames?.value)}>
-                {timeoutDisplay}
-              </p>
+              <p className={cn("text-foreground text-sm", classNames?.value)}>{timeoutDisplay}</p>
             )}
           </div>
         </div>
@@ -427,12 +390,7 @@ function ProfileButton(props: {
   const { children, className, disabled, onClick } = props;
 
   return (
-    <button
-      type="button"
-      className={className}
-      onClick={onClick}
-      disabled={disabled}
-    >
+    <button type="button" className={className} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   );
@@ -453,7 +411,7 @@ function EditingActions(props: {
       <ProfileButton
         className={cn(
           "bg-foreground text-background hover:bg-foreground/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-          classNames?.primaryButton
+          classNames?.primaryButton,
         )}
         onClick={onSave}
         disabled={saving || isLoading}
@@ -463,7 +421,7 @@ function EditingActions(props: {
       <ProfileButton
         className={cn(
           "border-foreground/15 text-foreground/70 hover:bg-foreground/5 inline-flex h-9 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors",
-          classNames?.secondaryButton
+          classNames?.secondaryButton,
         )}
         onClick={onCancel}
         disabled={saving}
@@ -489,7 +447,7 @@ function ReadOnlyActions(props: {
       <ProfileButton
         className={cn(
           "bg-foreground text-background hover:bg-foreground/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors",
-          classNames?.primaryButton
+          classNames?.primaryButton,
         )}
         onClick={onEdit}
         disabled={isLoading}
@@ -500,7 +458,7 @@ function ReadOnlyActions(props: {
         <ProfileButton
           className={cn(
             "border-destructive/30 text-destructive hover:bg-destructive/10 inline-flex h-9 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors",
-            classNames?.dangerButton
+            classNames?.dangerButton,
           )}
           onClick={onDelete}
           disabled={isLoading}
@@ -576,12 +534,8 @@ function DefaultDeleteConfirm(props: {
     // convex-allow-color: modal scrim — intentionally dark in both light and dark
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="border-foreground/10 bg-background w-full max-w-sm rounded-lg border p-5 shadow-xl">
-        <h4 className="text-foreground text-base font-semibold">
-          {copy.confirmDeleteTitle}
-        </h4>
-        <p className="text-foreground/60 mt-1 text-sm">
-          {copy.confirmDeleteDescription}
-        </p>
+        <h4 className="text-foreground text-base font-semibold">{copy.confirmDeleteTitle}</h4>
+        <p className="text-foreground/60 mt-1 text-sm">{copy.confirmDeleteDescription}</p>
         <div className="mt-4 flex justify-end gap-2">
           <button
             type="button"
@@ -606,10 +560,7 @@ function DefaultDeleteConfirm(props: {
 function DeleteConfirm(props: {
   open: boolean;
   copy: Required<ConvexOrgProfileCopy>;
-  renderDeleteConfirm?: (args: {
-    onConfirm: () => void;
-    onCancel: () => void;
-  }) => ReactNode;
+  renderDeleteConfirm?: (args: { onConfirm: () => void; onCancel: () => void }) => ReactNode;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 }) {
@@ -619,11 +570,7 @@ function DeleteConfirm(props: {
   return renderDeleteConfirm ? (
     renderDeleteConfirm({ onConfirm, onCancel })
   ) : (
-    <DefaultDeleteConfirm
-      copy={copy}
-      onConfirm={onConfirm}
-      onCancel={onCancel}
-    />
+    <DefaultDeleteConfirm copy={copy} onConfirm={onConfirm} onCancel={onCancel} />
   );
 }
 
@@ -647,11 +594,9 @@ export function ConvexOrganizationProfile(props: ConvexOrgProfileProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [name, setName] = useState(organization?.name ?? "");
   const [slug, setSlug] = useState(organization?.slug ?? "");
-  const [brand, setBrand] = useState<ConvexOrganizationBrand>(
-    organization?.brand ?? {}
-  );
+  const [brand, setBrand] = useState<ConvexOrganizationBrand>(organization?.brand ?? {});
   const [security, setSecurity] = useState<ConvexOrganizationSecurity>(
-    organization?.security ?? {}
+    organization?.security ?? {},
   );
   const [saving, setSaving] = useState(false);
 
@@ -676,26 +621,16 @@ export function ConvexOrganizationProfile(props: ConvexOrgProfileProps) {
     setSaving(true);
     try {
       const brandUpdate: ConvexOrganizationBrandUpdate = {
-        primaryColor: brand.primaryColor?.trim()
-          ? brand.primaryColor.trim()
-          : null,
-        accentColor: brand.accentColor?.trim()
-          ? brand.accentColor.trim()
-          : null,
+        primaryColor: brand.primaryColor?.trim() ? brand.primaryColor.trim() : null,
+        accentColor: brand.accentColor?.trim() ? brand.accentColor.trim() : null,
         website: brand.website?.trim() ? brand.website.trim() : null,
-        emailFromName: brand.emailFromName?.trim()
-          ? brand.emailFromName.trim()
-          : null,
-        emailReplyTo: brand.emailReplyTo?.trim()
-          ? brand.emailReplyTo.trim()
-          : null,
+        emailFromName: brand.emailFromName?.trim() ? brand.emailFromName.trim() : null,
+        emailReplyTo: brand.emailReplyTo?.trim() ? brand.emailReplyTo.trim() : null,
       };
       const securityUpdate: ConvexOrganizationSecurityUpdate = {
         requireMfa: security.requireMfa === true ? true : null,
         sessionTimeoutMinutes:
-          security.sessionTimeoutMinutes !== undefined
-            ? security.sessionTimeoutMinutes
-            : null,
+          security.sessionTimeoutMinutes !== undefined ? security.sessionTimeoutMinutes : null,
       };
       await onUpdate({
         name: name.trim() || undefined,
@@ -724,17 +659,11 @@ export function ConvexOrganizationProfile(props: ConvexOrgProfileProps) {
       <div
         className={cn(
           "border-foreground/10 bg-foreground/5 rounded-lg border p-5",
-          classNames?.card
+          classNames?.card,
         )}
       >
-        <OrganizationProfileHeader
-          classNames={classNames}
-          copy={resolvedCopy}
-        />
-        <OrganizationProfileImage
-          organization={organization}
-          classNames={classNames}
-        />
+        <OrganizationProfileHeader classNames={classNames} copy={resolvedCopy} />
+        <OrganizationProfileImage organization={organization} classNames={classNames} />
         <OrganizationProfileBody
           organization={organization}
           editing={editing}

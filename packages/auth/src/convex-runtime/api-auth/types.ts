@@ -1,8 +1,4 @@
-import type {
-  ApiResolvedAuthContext,
-  AuthPrincipal,
-  VerifiedUserToken,
-} from "../coreTypes";
+import type { ApiResolvedAuthContext, AuthPrincipal, VerifiedUserToken } from "../coreTypes";
 
 export type ApiBearerCredential = {
   credentialType: "userBearer" | "apiKeyBearer";
@@ -41,10 +37,7 @@ export type ApiAuthLookupAdapter = {
     permissions: string[];
   }>;
 
-  getApiKeyPrincipal?(args: {
-    token: string;
-    requestIp: string | null;
-  }): Promise<{
+  getApiKeyPrincipal?(args: { token: string; requestIp: string | null }): Promise<{
     principal: AuthPrincipal;
     userId: string | null;
     organizationId: string | null;
@@ -64,6 +57,4 @@ export type ResolveApiAuthContextArgs = {
   adapter: ApiAuthLookupAdapter;
 };
 
-export type ApiAuthResolver = (
-  args: ResolveApiAuthContextArgs
-) => Promise<ApiResolvedAuthContext>;
+export type ApiAuthResolver = (args: ResolveApiAuthContextArgs) => Promise<ApiResolvedAuthContext>;

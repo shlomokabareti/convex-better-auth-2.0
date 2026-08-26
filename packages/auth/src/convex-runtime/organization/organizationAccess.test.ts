@@ -30,7 +30,7 @@ const rolePermissions: Record<TestRole, readonly string[]> = {
 function makeOrganization(
   _id: TestId,
   status: TestOrganization["status"],
-  name: string
+  name: string,
 ): TestOrganization {
   return { _id, status, name };
 }
@@ -38,7 +38,7 @@ function makeOrganization(
 function makeMembership(
   organizationId: TestId,
   roleTemplate: TestRole,
-  status: OrganizationAccessMembershipLike<TestId, TestRole>["status"]
+  status: OrganizationAccessMembershipLike<TestId, TestRole>["status"],
 ): OrganizationAccessMembershipLike<TestId, TestRole> {
   return { organizationId, roleTemplate, status };
 }
@@ -88,12 +88,9 @@ describe("resolveAvailableOrganizations", () => {
       makeMembership("org_4", "member", "inactive"),
     ];
 
-    const available = resolveAvailableOrganizations(
-      user,
-      memberships,
-      organizations,
-      { superAdminRole: "owner" }
-    );
+    const available = resolveAvailableOrganizations(user, memberships, organizations, {
+      superAdminRole: "owner",
+    });
 
     assert.deepEqual(available, [
       {
@@ -131,12 +128,9 @@ describe("resolveActiveOrganization", () => {
       },
     ];
 
-    const resolved = resolveActiveOrganization(
-      user,
-      available,
-      activeOrganization,
-      { superAdminRole: "owner" }
-    );
+    const resolved = resolveActiveOrganization(user, available, activeOrganization, {
+      superAdminRole: "owner",
+    });
 
     assert.equal(resolved?._id, "org_2");
     assert.equal(resolved?.roleTemplate, "member");
@@ -158,12 +152,9 @@ describe("resolveActiveOrganization", () => {
       },
     ];
 
-    const resolved = resolveActiveOrganization(
-      user,
-      available,
-      activeOrganization,
-      { superAdminRole: "owner" }
-    );
+    const resolved = resolveActiveOrganization(user, available, activeOrganization, {
+      superAdminRole: "owner",
+    });
 
     assert.equal(resolved?._id, "org_1");
   });

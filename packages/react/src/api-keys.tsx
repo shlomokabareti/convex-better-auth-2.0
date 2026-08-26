@@ -158,7 +158,7 @@ export function parseConvexApiKeyAllowedIpRanges(value: string): string[] {
 
 export function getConvexApiKeyExpiresAt(
   expiresInDays: string,
-  now = Date.now()
+  now = Date.now(),
 ): number | undefined {
   if (expiresInDays === "none" || expiresInDays.trim().length === 0) {
     return undefined;
@@ -188,7 +188,7 @@ export function canSubmitConvexApiKeyCreateForm({
 
 export function getConvexApiKeyCreatorLabel(
   key: Pick<ConvexApiKeyListItem, "createdBy">,
-  unknownCreatorLabel = defaultListCopy.unknownCreatorLabel
+  unknownCreatorLabel = defaultListCopy.unknownCreatorLabel,
 ): string {
   return key.createdBy?.name ?? key.createdBy?.email ?? unknownCreatorLabel;
 }
@@ -223,7 +223,7 @@ export function ConvexApiKeyCreateForm<Scope extends string = string>({
     <div
       className={cn(
         "border-foreground/10 bg-background/20 rounded-lg border",
-        classNames?.createCard
+        classNames?.createCard,
       )}
     >
       <div className={cn("space-y-3 p-5", classNames?.createContent)}>
@@ -234,7 +234,7 @@ export function ConvexApiKeyCreateForm<Scope extends string = string>({
           <input
             className={cn(
               "border-foreground/10 bg-foreground/5 text-foreground placeholder:text-foreground/35 focus:border-foreground/25 h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
-              classNames?.input
+              classNames?.input,
             )}
             disabled={!apiEnabled}
             onChange={(event) => onNameChange(event.target.value)}
@@ -262,7 +262,7 @@ export function ConvexApiKeyCreateForm<Scope extends string = string>({
           className={cn(
             "bg-foreground text-background hover:bg-foreground/90 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
             classNames?.primaryButton,
-            !canCreate && classNames?.primaryButtonDisabled
+            !canCreate && classNames?.primaryButtonDisabled,
           )}
           disabled={!canCreate}
           onClick={onSubmit}
@@ -294,7 +294,7 @@ function ConvexApiKeyCreateDetailsFields<Scope extends string>(props: {
           aria-label="API key expiration"
           className={cn(
             "border-foreground/10 bg-foreground/5 text-foreground focus:border-foreground/25 h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
-            props.classNames?.select
+            props.classNames?.select,
           )}
           disabled={!props.apiEnabled}
           onChange={(event) => props.onExpiresInDaysChange(event.target.value)}
@@ -315,7 +315,7 @@ function ConvexApiKeyCreateDetailsFields<Scope extends string>(props: {
           aria-label="API key allowed IP ranges"
           className={cn(
             "border-foreground/10 bg-foreground/5 text-foreground placeholder:text-foreground/35 focus:border-foreground/25 min-h-20 w-full rounded-md border px-3 py-2 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
-            props.classNames?.textarea
+            props.classNames?.textarea,
           )}
           disabled={!props.apiEnabled}
           onChange={(event) => props.onIpAllowlistChange(event.target.value)}
@@ -349,13 +349,11 @@ function ConvexApiKeyScopeButtons<Scope extends string>(props: {
               !props.apiEnabled && "cursor-not-allowed opacity-50",
               props.classNames?.scopeButton,
               selected && props.classNames?.scopeButtonSelected,
-              !props.apiEnabled && props.classNames?.scopeButtonDisabled
+              !props.apiEnabled && props.classNames?.scopeButtonDisabled,
             )}
             disabled={!props.apiEnabled}
             key={scope}
-            onClick={() =>
-              props.onScopesChange(toggleScope(props.scopes, scope))
-            }
+            onClick={() => props.onScopesChange(toggleScope(props.scopes, scope))}
             type="button"
           >
             {scope}
@@ -366,10 +364,7 @@ function ConvexApiKeyScopeButtons<Scope extends string>(props: {
   );
 }
 
-export function ConvexApiKeyList<
-  Scope extends string = string,
-  ApiKeyId extends string = string,
->({
+export function ConvexApiKeyList<Scope extends string = string, ApiKeyId extends string = string>({
   apiKeys,
   classNames,
   copy,
@@ -414,10 +409,7 @@ export function ConvexApiKeyList<
   );
 }
 
-function ConvexApiKeyCard<
-  Scope extends string = string,
-  ApiKeyId extends string = string,
->({
+function ConvexApiKeyCard<Scope extends string = string, ApiKeyId extends string = string>({
   classNames,
   formatTimestamp,
   onRevoke,
@@ -438,64 +430,37 @@ function ConvexApiKeyCard<
     <article
       className={cn(
         "border-foreground/10 bg-background/20 rounded-lg border",
-        classNames?.listCard
+        classNames?.listCard,
       )}
       data-testid="api-key-card"
     >
       <div className={cn("p-5", classNames?.listContent)}>
-        <div
-          className={cn(
-            "flex items-start justify-between gap-4",
-            classNames?.listHeader
-          )}
-        >
+        <div className={cn("flex items-start justify-between gap-4", classNames?.listHeader)}>
           <div className={cn("space-y-1", classNames?.keyDetails)}>
-            <p
-              className={cn("text-foreground font-medium", classNames?.keyName)}
-            >
-              {value.name}
-            </p>
-            <p
-              className={cn(
-                "text-foreground/45 text-xs",
-                classNames?.keyPrefix
-              )}
-            >
+            <p className={cn("text-foreground font-medium", classNames?.keyName)}>{value.name}</p>
+            <p className={cn("text-foreground/45 text-xs", classNames?.keyPrefix)}>
               {value.keyPrefix}
             </p>
             <p
               className={cn(
                 "text-foreground/45 text-xs font-medium uppercase",
-                classNames?.keyStatus
+                classNames?.keyStatus,
               )}
             >
               {value.status}
             </p>
-            <p
-              className={cn("text-foreground/45 text-xs", classNames?.metadata)}
-            >
+            <p className={cn("text-foreground/45 text-xs", classNames?.metadata)}>
               {resolvedCopy.createdByLabel}{" "}
-              {getConvexApiKeyCreatorLabel(
-                value,
-                resolvedCopy.unknownCreatorLabel
-              )}
+              {getConvexApiKeyCreatorLabel(value, resolvedCopy.unknownCreatorLabel)}
             </p>
-            <p
-              className={cn("text-foreground/45 text-xs", classNames?.metadata)}
-            >
+            <p className={cn("text-foreground/45 text-xs", classNames?.metadata)}>
               {resolvedCopy.lastUsedLabel}{" "}
-              {value.lastUsedAt
-                ? formatTimestamp(value.lastUsedAt)
-                : resolvedCopy.neverLabel}
+              {value.lastUsedAt ? formatTimestamp(value.lastUsedAt) : resolvedCopy.neverLabel}
               {value.lastUsedIp ? ` from ${value.lastUsedIp}` : ""}
             </p>
-            <p
-              className={cn("text-foreground/45 text-xs", classNames?.metadata)}
-            >
+            <p className={cn("text-foreground/45 text-xs", classNames?.metadata)}>
               {resolvedCopy.expiresLabel}{" "}
-              {value.expiresAt
-                ? formatTimestamp(value.expiresAt)
-                : resolvedCopy.neverLabel}
+              {value.expiresAt ? formatTimestamp(value.expiresAt) : resolvedCopy.neverLabel}
             </p>
           </div>
           <ConvexApiKeyCardActions
@@ -508,7 +473,7 @@ function ConvexApiKeyCard<
         </div>
         <div className={cn("mt-3 flex flex-wrap gap-2", classNames?.tags)}>
           {[...value.scopes, ...value.allowedIpRanges].map((label) =>
-            renderApiKeyTag(label, classNames, renderTag)
+            renderApiKeyTag(label, classNames, renderTag),
           )}
         </div>
       </div>
@@ -534,13 +499,11 @@ function ConvexApiKeyCardActions({
   }
 
   return (
-    <div
-      className={cn("flex flex-wrap justify-end gap-2", classNames?.actions)}
-    >
+    <div className={cn("flex flex-wrap justify-end gap-2", classNames?.actions)}>
       <button
         className={cn(
           "border-foreground/15 text-foreground/70 hover:bg-foreground/5 inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
-          classNames?.secondaryButton
+          classNames?.secondaryButton,
         )}
         onClick={onRotate}
         type="button"
@@ -550,7 +513,7 @@ function ConvexApiKeyCardActions({
       <button
         className={cn(
           "border-foreground/15 text-foreground/70 hover:bg-foreground/5 inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
-          classNames?.secondaryButton
+          classNames?.secondaryButton,
         )}
         onClick={onRevoke}
         type="button"
@@ -561,19 +524,14 @@ function ConvexApiKeyCardActions({
   );
 }
 
-function toggleScope<Scope extends string>(
-  scopes: readonly Scope[],
-  scope: Scope
-): Scope[] {
-  return scopes.includes(scope)
-    ? scopes.filter((item) => item !== scope)
-    : [...scopes, scope];
+function toggleScope<Scope extends string>(scopes: readonly Scope[], scope: Scope): Scope[] {
+  return scopes.includes(scope) ? scopes.filter((item) => item !== scope) : [...scopes, scope];
 }
 
 function renderApiKeyTag(
   label: string,
   classNames: ConvexApiKeyClassNames | undefined,
-  renderTag: ConvexApiKeyListProps["renderTag"]
+  renderTag: ConvexApiKeyListProps["renderTag"],
 ): ReactNode {
   if (renderTag) {
     return renderTag(label);
@@ -583,7 +541,7 @@ function renderApiKeyTag(
     <span
       className={cn(
         "border-foreground/10 text-foreground/70 inline-flex items-center rounded-sm border px-2 py-0.5 text-xs font-medium",
-        classNames?.tag
+        classNames?.tag,
       )}
       key={label}
     >
@@ -593,13 +551,11 @@ function renderApiKeyTag(
 }
 
 function resolveCreateCopy(
-  copy: ConvexApiKeyCreateFormCopy | undefined
+  copy: ConvexApiKeyCreateFormCopy | undefined,
 ): Required<ConvexApiKeyCreateFormCopy> {
   return { ...defaultCreateCopy, ...copy };
 }
 
-function resolveListCopy(
-  copy: ConvexApiKeyListCopy
-): Required<ConvexApiKeyListCopy> {
+function resolveListCopy(copy: ConvexApiKeyListCopy): Required<ConvexApiKeyListCopy> {
   return { ...defaultListCopy, ...copy, emptyMessage: copy.emptyMessage };
 }

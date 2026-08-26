@@ -17,7 +17,7 @@ import { signConvexWebhookPayload } from "./signing";
 const NOW = 1_700_000_000_000;
 
 function endpoint(
-  overrides: Partial<ConvexWebhookProcessorEndpoint> = {}
+  overrides: Partial<ConvexWebhookProcessorEndpoint> = {},
 ): ConvexWebhookProcessorEndpoint {
   return {
     _id: "endpoint_1",
@@ -29,7 +29,7 @@ function endpoint(
 }
 
 function delivery(
-  overrides: Partial<ConvexWebhookProcessorDelivery> = {}
+  overrides: Partial<ConvexWebhookProcessorDelivery> = {},
 ): ConvexWebhookProcessorDelivery {
   return {
     _id: "delivery_1",
@@ -70,10 +70,7 @@ describe("processConvexWebhookDelivery", () => {
     assert.equal(result.update.nextAttemptAt, undefined);
 
     assert.equal(capturedBody, '{"id":"evt_1"}');
-    const expectedSignature = await signConvexWebhookPayload(
-      "cvxsec_test_secret",
-      '{"id":"evt_1"}'
-    );
+    const expectedSignature = await signConvexWebhookPayload("cvxsec_test_secret", '{"id":"evt_1"}');
     assert.equal(capturedHeaders?.["x-convex-signature"], expectedSignature);
     assert.equal(capturedHeaders?.["x-convex-event"], "user.created");
   });
@@ -89,10 +86,7 @@ describe("processConvexWebhookDelivery", () => {
 
     assert.equal(result.update.status, "pending");
     assert.equal(result.update.failureKind, "server_error");
-    assert.ok(
-      result.update.nextAttemptAt !== undefined &&
-        result.update.nextAttemptAt > NOW
-    );
+    assert.ok(result.update.nextAttemptAt !== undefined && result.update.nextAttemptAt > NOW);
     assert.equal(result.update.exhaustedAt, undefined);
   });
 

@@ -41,8 +41,7 @@ if (!su.ok) {
 }
 const cookieAfterSignUp = mergeCookies(su);
 const sess1 = await getSession(site, cookieAfterSignUp);
-if (sess1?.user?.email === email)
-  r.ok("sign-up -> identity restored from cookie");
+if (sess1?.user?.email === email) r.ok("sign-up -> identity restored from cookie");
 else r.bad("sign-up did not restore identity");
 
 // sign-out
@@ -66,8 +65,7 @@ while (Date.now() - start < REVOKE_BOUND_MS + 8_000) {
   await new Promise((res) => setTimeout(res, 5_000));
 }
 const elapsed = Math.round((Date.now() - start) / 1000);
-if (revoked)
-  r.ok(`sign-out revokes within cookieCache bound (~${elapsed}s, bound 60s)`);
+if (revoked) r.ok(`sign-out revokes within cookieCache bound (~${elapsed}s, bound 60s)`);
 else r.bad(`sign-out did not revoke within bound (~${elapsed}s)`);
 
 // sign-in -> same user, no duplicate
@@ -77,8 +75,7 @@ const si = await fetch(`${site}/api/auth/sign-in/email`, {
   body: JSON.stringify({ email, password }),
 });
 const sessAfterSignIn = await getSession(site, mergeCookies(si));
-if (sessAfterSignIn?.user?.email === email)
-  r.ok("sign-in -> SAME user resolved (no duplicate)");
+if (sessAfterSignIn?.user?.email === email) r.ok("sign-in -> SAME user resolved (no duplicate)");
 else r.bad("sign-in did not return the original user");
 
 // invalid token rejected
@@ -90,9 +87,7 @@ const bad = await fetch(`${site}/api/auth/get-session`, {
 });
 const badBody: unknown = await bad.json();
 const badUser =
-  typeof badBody === "object" && badBody !== null
-    ? Reflect.get(badBody, "user")
-    : undefined;
+  typeof badBody === "object" && badBody !== null ? Reflect.get(badBody, "user") : undefined;
 if (!badUser) r.ok("invalid token rejected (no user)");
 else r.bad("invalid token accepted (LEAK)");
 

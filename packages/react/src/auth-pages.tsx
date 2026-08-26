@@ -1,12 +1,5 @@
 import { cn } from "./lib/ui";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { AuthFormClassNames } from "./auth-forms";
 import {
@@ -23,10 +16,7 @@ import {
   getInvitationToken,
   prepareInviteAcceptRedirect,
 } from "./invite-sign-up";
-import {
-  type SelectableOrganization,
-  useConvexPostSignUpFlow,
-} from "./post-sign-up";
+import { type SelectableOrganization, useConvexPostSignUpFlow } from "./post-sign-up";
 
 export type ConvexAuthSurfaceFeature = {
   title: string;
@@ -132,16 +122,11 @@ export type ConvexAuthInviteExceptionEvent = {
 
 export type ConvexAuthAcceptInvitePageProps = {
   buildSignUpUrl: () => string;
-  redirectToSignIn: (options?: {
-    signInForceRedirectUrl?: string;
-  }) => void | Promise<void>;
+  redirectToSignIn: (options?: { signInForceRedirectUrl?: string }) => void | Promise<void>;
   signInPath: string;
   signUpPath: string;
   postSignUpPath: string;
-  getInvitationEmail?: (
-    invitationToken: string,
-    params: URLSearchParams
-  ) => Promise<string | null>;
+  getInvitationEmail?: (invitationToken: string, params: URLSearchParams) => Promise<string | null>;
   toSafeRedirectPath?: (url: string) => string | undefined;
   onOpened?: (event: ConvexAuthInviteOpenedEvent) => void;
   onRedirected?: (event: ConvexAuthInviteRedirectedEvent) => void;
@@ -192,9 +177,7 @@ export type ConvexAuthCurrentOrganization = {
 export type ConvexAuthOrganizationChooserPageProps = {
   currentOrganization?: ConvexAuthCurrentOrganization | null;
   organizations: readonly ConvexAuthOrganizationChooserItem[] | undefined;
-  onSelectOrganization: (
-    organization: ConvexAuthOrganizationChooserItem
-  ) => Promise<void>;
+  onSelectOrganization: (organization: ConvexAuthOrganizationChooserItem) => Promise<void>;
   title?: string;
   description?: string;
   eyebrow?: string;
@@ -240,13 +223,13 @@ export function ConvexAuthSurface({
       className={cn(
         "bg-background text-foreground min-h-dvh antialiased",
         className,
-        classNames?.root
+        classNames?.root,
       )}
     >
       <div
         className={cn(
           "mx-auto grid min-h-dvh max-w-6xl grid-cols-1 lg:grid-cols-[minmax(19rem,25rem)_minmax(0,1fr)]",
-          classNames?.grid
+          classNames?.grid,
         )}
       >
         <ConvexAuthSurfaceSidebar
@@ -282,7 +265,7 @@ function ConvexAuthSurfaceSidebar(args: {
     <aside
       className={cn(
         "border-foreground/10 hidden border-r lg:flex lg:flex-col lg:justify-between lg:px-10 lg:py-12",
-        args.classNames?.sidebar
+        args.classNames?.sidebar,
       )}
     >
       <div className="space-y-8">
@@ -293,7 +276,7 @@ function ConvexAuthSurfaceSidebar(args: {
         <div
           className={cn(
             "text-foreground/50 max-w-[30ch] text-sm text-pretty",
-            args.classNames?.sidebarFooter
+            args.classNames?.sidebarFooter,
           )}
         >
           {args.footer}
@@ -314,7 +297,7 @@ function ConvexAuthSurfaceSidebarIntro(args: {
       <div
         className={cn(
           "border-foreground/10 text-foreground/70 inline-flex rounded-full border px-3 py-1 text-sm",
-          args.classNames?.eyebrow
+          args.classNames?.eyebrow,
         )}
       >
         {args.eyebrow}
@@ -323,7 +306,7 @@ function ConvexAuthSurfaceSidebarIntro(args: {
         <p
           className={cn(
             "max-w-[18ch] text-4xl font-semibold tracking-tight text-balance",
-            args.classNames?.sidebarTitle
+            args.classNames?.sidebarTitle,
           )}
         >
           {args.sidebarTitle}
@@ -331,7 +314,7 @@ function ConvexAuthSurfaceSidebarIntro(args: {
         <p
           className={cn(
             "text-foreground/60 max-w-[42ch] text-base text-pretty",
-            args.classNames?.sidebarBody
+            args.classNames?.sidebarBody,
           )}
         >
           {args.sidebarBody}
@@ -341,9 +324,7 @@ function ConvexAuthSurfaceSidebarIntro(args: {
   );
 }
 
-function ConvexAuthSurfaceFeatureList(args: {
-  features: readonly ConvexAuthSurfaceFeature[];
-}) {
+function ConvexAuthSurfaceFeatureList(args: { features: readonly ConvexAuthSurfaceFeature[] }) {
   if (args.features.length === 0) return null;
 
   return (
@@ -366,12 +347,10 @@ function ConvexAuthSurfaceMain(args: {
     <main
       className={cn(
         "flex min-h-dvh items-center justify-center px-5 py-8 sm:px-6 sm:py-10 lg:px-10",
-        args.classNames?.main
+        args.classNames?.main,
       )}
     >
-      <div
-        className={cn("w-full max-w-md space-y-6", args.classNames?.mainInner)}
-      >
+      <div className={cn("w-full max-w-md space-y-6", args.classNames?.mainInner)}>
         <ConvexAuthSurfaceHeader {...args} />
         {args.children}
       </div>
@@ -387,24 +366,17 @@ function ConvexAuthSurfaceHeader(args: {
 }) {
   return (
     <div className={cn("space-y-2", args.classNames?.header)}>
-      <p className="text-foreground/50 text-sm font-medium lg:hidden">
-        {args.eyebrow}
-      </p>
+      <p className="text-foreground/50 text-sm font-medium lg:hidden">{args.eyebrow}</p>
       <div className="space-y-1">
         <h1
           className={cn(
             "text-2xl font-semibold tracking-tight text-balance",
-            args.classNames?.title
+            args.classNames?.title,
           )}
         >
           {args.title}
         </h1>
-        <p
-          className={cn(
-            "text-foreground/60 text-base text-pretty",
-            args.classNames?.description
-          )}
-        >
+        <p className={cn("text-foreground/60 text-base text-pretty", args.classNames?.description)}>
           {args.description}
         </p>
       </div>
@@ -466,10 +438,9 @@ export function ConvexAuthActionButton({
     <button
       className={cn(
         "rounded-sm px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50",
-        variant === "primary" &&
-          "bg-foreground text-background hover:bg-foreground/90",
+        variant === "primary" && "bg-foreground text-background hover:bg-foreground/90",
         variant === "secondary" &&
-          "border-foreground/15 text-foreground hover:bg-foreground/10 border"
+          "border-foreground/15 text-foreground hover:bg-foreground/10 border",
       )}
       onClick={onClick}
       type={type}
@@ -482,8 +453,7 @@ export function ConvexAuthActionButton({
 export function ConvexAuthSignInPage(args: ConvexAuthSignInPageProps) {
   const title = args.title ?? "Sign in";
   const description =
-    args.description ??
-    "Access your workspace with the shared authentication flow.";
+    args.description ?? "Access your workspace with the shared authentication flow.";
 
   useOnce(args.onOpened);
   useRuntimeUnavailableEffect(args.authClient, args.onRuntimeUnavailable);
@@ -517,10 +487,7 @@ export function ConvexAuthSignInPage(args: ConvexAuthSignInPageProps) {
           <AuthLoadingBoundaryView auth={args.auth}>
             <ConvexAuthLoadingCard
               title={args.loadingTitle ?? "Loading sign-in"}
-              description={
-                args.loadingDescription ??
-                "We're preparing your authentication form."
-              }
+              description={args.loadingDescription ?? "We're preparing your authentication form."}
             />
           </AuthLoadingBoundaryView>
           <AuthLoadedBoundaryView auth={args.auth}>
@@ -543,8 +510,7 @@ export function ConvexAuthSignInPage(args: ConvexAuthSignInPageProps) {
 
 export function ConvexAuthSignUpPage(args: ConvexAuthSignUpPageProps) {
   const title = args.title ?? "Create account";
-  const description =
-    args.description ?? "Create your account, then continue into setup.";
+  const description = args.description ?? "Create your account, then continue into setup.";
 
   useOnce(args.onOpened);
   useRuntimeUnavailableEffect(args.authClient, args.onRuntimeUnavailable);
@@ -578,10 +544,7 @@ export function ConvexAuthSignUpPage(args: ConvexAuthSignUpPageProps) {
           <AuthLoadingBoundaryView auth={args.auth}>
             <ConvexAuthLoadingCard
               title={args.loadingTitle ?? "Loading sign-up"}
-              description={
-                args.loadingDescription ??
-                "We're preparing your authentication form."
-              }
+              description={args.loadingDescription ?? "We're preparing your authentication form."}
             />
           </AuthLoadingBoundaryView>
           <AuthLoadedBoundaryView auth={args.auth}>
@@ -601,24 +564,16 @@ export function ConvexAuthSignUpPage(args: ConvexAuthSignUpPageProps) {
   );
 }
 
-export function ConvexAuthAcceptInvitePage(
-  args: ConvexAuthAcceptInvitePageProps
-) {
+export function ConvexAuthAcceptInvitePage(args: ConvexAuthAcceptInvitePageProps) {
   const title = args.title ?? "You're invited";
-  const description =
-    args.description ??
-    "We're connecting you to the workspace that invited you.";
+  const description = args.description ?? "We're connecting you to the workspace that invited you.";
   const inviteRecoveryError =
     args.inviteRecoveryError ??
     "This invite link is missing required access details or has expired. Ask your workspace administrator to resend the invitation.";
   const inviteRuntime = useInviteAcceptRuntime(args, inviteRecoveryError);
 
   return (
-    <ConvexAuthSurface
-      title={title}
-      description={description}
-      eyebrow={args.eyebrow}
-    >
+    <ConvexAuthSurface title={title} description={description} eyebrow={args.eyebrow}>
       {inviteRuntime.error ? (
         <ConvexAuthUnavailableCard
           title={args.unavailableTitle ?? "Unable to start sign-up"}
@@ -638,8 +593,7 @@ export function ConvexAuthAcceptInvitePage(
         <ConvexAuthLoadingCard
           title={args.loadingTitle ?? "Preparing your invitation"}
           description={
-            args.loadingDescription ??
-            "We're opening the account setup tied to your invitation."
+            args.loadingDescription ?? "We're opening the account setup tied to your invitation."
           }
         />
       )}
@@ -649,15 +603,12 @@ export function ConvexAuthAcceptInvitePage(
 
 function useInviteAcceptRuntime(
   args: ConvexAuthAcceptInvitePageProps,
-  inviteRecoveryError: string
+  inviteRecoveryError: string,
 ) {
   const [error, setError] = useState<string | null>(null);
   const openedRef = useRef(false);
   const afterSignUpPath = useInviteAfterSignUpPath(args.postSignUpPath);
-  const navigateToInviteSignUp = useInviteSignUpNavigator(
-    args,
-    afterSignUpPath
-  );
+  const navigateToInviteSignUp = useInviteSignUpNavigator(args, afterSignUpPath);
 
   useOpenInviteSignUpEffect({
     afterSignUpPath,
@@ -693,7 +644,7 @@ function useInviteAcceptRuntime(
       args.toSafeRedirectPath,
       inviteRecoveryError,
       navigateToInviteSignUp,
-    ]
+    ],
   );
 
   return { error, retryInviteSignUp };
@@ -709,17 +660,8 @@ function useInviteAfterSignUpPath(postSignUpPath: string): string {
   }, [postSignUpPath]);
 }
 
-function useInviteSignUpNavigator(
-  args: ConvexAuthAcceptInvitePageProps,
-  afterSignUpPath: string
-) {
-  const {
-    buildSignUpUrl,
-    getInvitationEmail,
-    onRedirected,
-    signUpPath,
-    toSafeRedirectPath,
-  } = args;
+function useInviteSignUpNavigator(args: ConvexAuthAcceptInvitePageProps, afterSignUpPath: string) {
+  const { buildSignUpUrl, getInvitationEmail, onRedirected, signUpPath, toSafeRedirectPath } = args;
 
   return useCallback(
     async (navigationMode: "replace" | "assign"): Promise<boolean> => {
@@ -734,10 +676,7 @@ function useInviteSignUpNavigator(
         fallbackSignUpPath: signUpPath,
         currentOrigin: window.location.origin,
         currentSearch: window.location.search,
-        afterSignUpPath: appendInvitationToken(
-          afterSignUpPath,
-          invitationToken
-        ),
+        afterSignUpPath: appendInvitationToken(afterSignUpPath, invitationToken),
         getInvitationEmail,
         toSafeRedirectPath,
       });
@@ -758,7 +697,7 @@ function useInviteSignUpNavigator(
       onRedirected,
       signUpPath,
       toSafeRedirectPath,
-    ]
+    ],
   );
 }
 
@@ -811,7 +750,7 @@ function useOpenInviteSignUpEffect(args: InviteOpenEffectArgs): void {
         signUpPath,
         toSafeRedirectPath,
       },
-      currentSearch
+      currentSearch,
     );
   }, [
     afterSignUpPath,
@@ -828,10 +767,7 @@ function useOpenInviteSignUpEffect(args: InviteOpenEffectArgs): void {
   ]);
 }
 
-async function openInviteSignUp(
-  args: InviteOpenEffectArgs,
-  currentSearch: string
-): Promise<void> {
+async function openInviteSignUp(args: InviteOpenEffectArgs, currentSearch: string): Promise<void> {
   try {
     const initialResult = await prepareInviteAcceptRedirect({
       fallbackSignUpPath: args.signUpPath,
@@ -861,10 +797,7 @@ async function openInviteSignUp(
   }
 }
 
-function notifyInviteOpened(
-  args: InviteOpenEffectArgs,
-  invitationToken: string
-): void {
+function notifyInviteOpened(args: InviteOpenEffectArgs, invitationToken: string): void {
   if (args.openedRef.current) return;
 
   args.openedRef.current = true;
@@ -877,7 +810,7 @@ function notifyInviteOpened(
 function handleInviteOpenException(
   args: InviteOpenEffectArgs,
   currentSearch: string,
-  error: unknown
+  error: unknown,
 ): void {
   const hasTicket = searchHasInvitationToken(currentSearch);
   args.onFailed?.({
@@ -888,7 +821,7 @@ function handleInviteOpenException(
   args.onException?.({ error, hasTicket, step: "redirect-to-sign-up" });
   args.setError(
     args.inviteOpenFailureError ??
-      "We couldn't open the invitation sign-up page. Please request a new invite or contact support."
+      "We couldn't open the invitation sign-up page. Please request a new invite or contact support.",
   );
 }
 
@@ -920,15 +853,12 @@ async function retryInviteSignUpRedirect(args: {
     args.onException?.({ error, hasTicket: true, step: "retry-sign-up" });
     args.setError(
       args.inviteRetryFailureError ??
-        "We couldn't reopen the invitation sign-up page. Please request a new invite or contact support."
+        "We couldn't reopen the invitation sign-up page. Please request a new invite or contact support.",
     );
   }
 }
 
-function navigateBrowserTo(
-  signUpUrl: string,
-  navigationMode: "replace" | "assign"
-): void {
+function navigateBrowserTo(signUpUrl: string, navigationMode: "replace" | "assign"): void {
   if (navigationMode === "replace") {
     window.location.replace(signUpUrl);
     return;
@@ -959,8 +889,7 @@ function ConvexAuthInviteErrorActions(args: {
 
 export function ConvexAuthPostSignUpPage(args: ConvexAuthPostSignUpPageProps) {
   const title = args.title ?? "Finalizing your workspace";
-  const description =
-    args.description ?? "We're finishing your organization access.";
+  const description = args.description ?? "We're finishing your organization access.";
   const flow = useConvexPostSignUpFlow({
     currentOrganization: args.currentOrganization,
     availableOrganizations: args.availableOrganizations,
@@ -972,17 +901,10 @@ export function ConvexAuthPostSignUpPage(args: ConvexAuthPostSignUpPageProps) {
   });
 
   return (
-    <ConvexAuthSurface
-      title={title}
-      description={description}
-      eyebrow={args.eyebrow}
-    >
+    <ConvexAuthSurface title={title} description={description} eyebrow={args.eyebrow}>
       {flow.hasTimedOut ? (
         <ConvexAuthUnavailableCard
-          title={
-            args.timedOutTitle ??
-            "Workspace setup is taking longer than expected"
-          }
+          title={args.timedOutTitle ?? "Workspace setup is taking longer than expected"}
           description={
             args.timedOutDescription ??
             "Your account exists, but organization access is still syncing. Refresh or open organization setup."
@@ -1022,30 +944,21 @@ export function ConvexAuthPostSignUpPage(args: ConvexAuthPostSignUpPageProps) {
   );
 }
 
-export function ConvexAuthOrganizationChooserPage(
-  args: ConvexAuthOrganizationChooserPageProps
-) {
+export function ConvexAuthOrganizationChooserPage(args: ConvexAuthOrganizationChooserPageProps) {
   const title = args.title ?? "Choose organization";
   const description =
     args.description ??
     `Select the workspace you want to use. Current resolved organization: ${args.currentOrganization?.name ?? "none"}.`;
-  const [selectingOrganizationId, setSelectingOrganizationId] = useState<
-    string | null
-  >(null);
+  const [selectingOrganizationId, setSelectingOrganizationId] = useState<string | null>(null);
   const [selectionFailed, setSelectionFailed] = useState(false);
 
   if (args.organizations === undefined) {
     return (
-      <ConvexAuthSurface
-        title={title}
-        description={description}
-        eyebrow={args.eyebrow}
-      >
+      <ConvexAuthSurface title={title} description={description} eyebrow={args.eyebrow}>
         <ConvexAuthLoadingCard
           title={args.loadingTitle ?? "Loading organizations"}
           description={
-            args.loadingDescription ??
-            "We're loading the workspaces attached to your account."
+            args.loadingDescription ?? "We're loading the workspaces attached to your account."
           }
         />
       </ConvexAuthSurface>
@@ -1054,11 +967,7 @@ export function ConvexAuthOrganizationChooserPage(
 
   if (args.organizations.length === 0) {
     return (
-      <ConvexAuthSurface
-        title={title}
-        description={description}
-        eyebrow={args.eyebrow}
-      >
+      <ConvexAuthSurface title={title} description={description} eyebrow={args.eyebrow}>
         <ConvexAuthUnavailableCard
           title={args.emptyTitle ?? "No organizations available"}
           description={
@@ -1071,11 +980,7 @@ export function ConvexAuthOrganizationChooserPage(
   }
 
   return (
-    <ConvexAuthSurface
-      title={title}
-      description={description}
-      eyebrow={args.eyebrow}
-    >
+    <ConvexAuthSurface title={title} description={description} eyebrow={args.eyebrow}>
       <div className="space-y-3">
         {selectionFailed ? (
           <ConvexAuthUnavailableCard
@@ -1088,11 +993,9 @@ export function ConvexAuthOrganizationChooserPage(
         ) : null}
         <div className="grid gap-3">
           {args.organizations.map((organization) => {
-            const isCurrentOrganization =
-              args.currentOrganization?._id === organization._id;
+            const isCurrentOrganization = args.currentOrganization?._id === organization._id;
             const isSelecting = selectingOrganizationId === organization._id;
-            const isDisabled =
-              !organization.canSelect || selectingOrganizationId !== null;
+            const isDisabled = !organization.canSelect || selectingOrganizationId !== null;
 
             return (
               <button
@@ -1115,9 +1018,7 @@ export function ConvexAuthOrganizationChooserPage(
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 space-y-1">
-                    <p className="text-foreground truncate font-medium">
-                      {organization.name}
-                    </p>
+                    <p className="text-foreground truncate font-medium">{organization.name}</p>
                     {organization.roleTemplate ? (
                       <p className="text-foreground/45 text-xs font-medium">
                         {organization.roleTemplate}
@@ -1143,23 +1044,15 @@ export function ConvexAuthOrganizationChooserPage(
   );
 }
 
-function ConvexAuthSurfaceFeatureItem({
-  feature,
-}: {
-  feature: ConvexAuthSurfaceFeature;
-}) {
+function ConvexAuthSurfaceFeatureItem({ feature }: { feature: ConvexAuthSurfaceFeature }) {
   return (
     <li className="flex items-start gap-3">
       <div className="border-foreground/10 bg-foreground/5 text-foreground/90 flex size-10 items-center justify-center rounded-sm border">
-        {feature.icon ?? (
-          <span className="bg-foreground/70 size-2 rounded-full" />
-        )}
+        {feature.icon ?? <span className="bg-foreground/70 size-2 rounded-full" />}
       </div>
       <div className="space-y-1">
         <p className="text-foreground text-base font-medium">{feature.title}</p>
-        <p className="text-foreground/50 max-w-[32ch] text-sm text-pretty">
-          {feature.body}
-        </p>
+        <p className="text-foreground/50 max-w-[32ch] text-sm text-pretty">{feature.body}</p>
       </div>
     </li>
   );
@@ -1198,13 +1091,9 @@ function ConvexAuthStatusCard({
         </div>
         <div className="space-y-1.5">
           <h2 className="text-xl tracking-tight text-balance">{title}</h2>
-          <p className="text-foreground/60 text-base text-pretty">
-            {description}
-          </p>
+          <p className="text-foreground/60 text-base text-pretty">{description}</p>
         </div>
-        {actions ? (
-          <div className="flex flex-col gap-3 sm:flex-row">{actions}</div>
-        ) : null}
+        {actions ? <div className="flex flex-col gap-3 sm:flex-row">{actions}</div> : null}
       </div>
     </div>
   );
@@ -1221,7 +1110,7 @@ function useOnce(callback: (() => void) | undefined): void {
 
 function useRuntimeUnavailableEffect(
   authClient: ConvexBetterAuthClient | null,
-  callback: (() => void) | undefined
+  callback: (() => void) | undefined,
 ): void {
   const callbackRef = useRef(callback);
   const reportedRef = useRef(false);

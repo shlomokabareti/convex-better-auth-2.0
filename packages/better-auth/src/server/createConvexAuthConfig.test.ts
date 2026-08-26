@@ -2,10 +2,7 @@ import assert from "node:assert/strict";
 
 import { describe, it } from "vitest";
 
-import {
-  createConvexAuthConfig,
-  createPublicBetterAuthJwks,
-} from "./createConvexAuthConfig";
+import { createConvexAuthConfig, createPublicBetterAuthJwks } from "./createConvexAuthConfig";
 
 describe("createConvexAuthConfig", () => {
   it("uses explicit Better Auth URL without reading Convex site env", () => {
@@ -21,10 +18,7 @@ describe("createConvexAuthConfig", () => {
       assert.equal(provider.issuer, "https://auth.veil.test");
       assert.equal(provider.applicationID, "convex");
       assert.equal(provider.algorithm, "RS256");
-      assert.equal(
-        provider.jwks,
-        "https://auth.veil.test/api/auth/convex/jwks"
-      );
+      assert.equal(provider.jwks, "https://auth.veil.test/api/auth/convex/jwks");
     } finally {
       restoreEnv("CONVEX_SITE_URL", previousSiteUrl);
     }
@@ -40,10 +34,7 @@ describe("createConvexAuthConfig", () => {
       assert.equal(provider.type, "customJwt");
       assert.equal(provider.issuer, "https://veil-dev.convex.example.com");
       assert.equal(provider.applicationID, "convex");
-      assert.equal(
-        provider.jwks,
-        "https://veil-dev.convex.example.com/api/auth/convex/jwks"
-      );
+      assert.equal(provider.jwks, "https://veil-dev.convex.example.com/api/auth/convex/jwks");
     } finally {
       restoreEnv("CONVEX_SITE_URL", previousSiteUrl);
     }
@@ -79,13 +70,8 @@ describe("createConvexAuthConfig", () => {
       issuer: "https://auth.veil.test",
       jwks: JSON.stringify(jwks),
     });
-    const encoded = provider.jwks.replace(
-      "data:text/plain;charset=utf-8;base64,",
-      ""
-    );
-    const decoded = JSON.parse(
-      Buffer.from(encoded, "base64").toString("utf8")
-    ) as unknown;
+    const encoded = provider.jwks.replace("data:text/plain;charset=utf-8;base64,", "");
+    const decoded = JSON.parse(Buffer.from(encoded, "base64").toString("utf8")) as unknown;
 
     assert.deepEqual(decoded, createPublicBetterAuthJwks(jwks));
   });

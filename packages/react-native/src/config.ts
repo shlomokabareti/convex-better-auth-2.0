@@ -1,10 +1,4 @@
-export type ExpoPlatformOS =
-  | "android"
-  | "ios"
-  | "web"
-  | "macos"
-  | "windows"
-  | "native";
+export type ExpoPlatformOS = "android" | "ios" | "web" | "macos" | "windows" | "native";
 
 export type ExpoResolvedAuthConfig = {
   convexSiteUrl: string;
@@ -31,15 +25,11 @@ export function resolveExpoAuthConfig(args: {
   platformOS: ExpoPlatformOS;
   scheme?: string | readonly string[] | null;
 }): ExpoResolvedAuthConfig {
-  const convexUrl = requireExpoNonEmpty(
-    "EXPO_PUBLIC_CONVEX_URL",
-    args.convexUrl
-  );
+  const convexUrl = requireExpoNonEmpty("EXPO_PUBLIC_CONVEX_URL", args.convexUrl);
 
   return {
     convexSiteUrl:
-      normalizeOptionalExpoString(args.convexSiteUrl) ??
-      deriveExpoConvexSiteUrl(convexUrl),
+      normalizeOptionalExpoString(args.convexSiteUrl) ?? deriveExpoConvexSiteUrl(convexUrl),
     convexUrl,
     platformOS: args.platformOS,
     scheme: resolveExpoScheme(args.scheme),
@@ -47,23 +37,16 @@ export function resolveExpoAuthConfig(args: {
 }
 
 export function deriveExpoConvexSiteUrl(convexUrl: string): string {
-  const normalized = requireExpoNonEmpty(
-    "EXPO_PUBLIC_CONVEX_URL",
-    convexUrl
-  );
+  const normalized = requireExpoNonEmpty("EXPO_PUBLIC_CONVEX_URL", convexUrl);
   if (normalized.endsWith(".convex.cloud")) {
     return normalized.replace(".convex.cloud", ".convex.site");
   }
   return normalized;
 }
 
-export function resolveExpoScheme(
-  scheme: string | readonly string[] | null | undefined
-): string {
+export function resolveExpoScheme(scheme: string | readonly string[] | null | undefined): string {
   const resolved = Array.isArray(scheme) ? scheme[0] : scheme;
-  return normalizeExpoScheme(
-    requireExpoNonEmpty("Expo scheme", resolved)
-  );
+  return normalizeExpoScheme(requireExpoNonEmpty("Expo scheme", resolved));
 }
 
 export function resolveExpoAuthClientMode(args: {
@@ -72,9 +55,7 @@ export function resolveExpoAuthClientMode(args: {
   storagePrefix?: string;
 }): ExpoAuthClientMode {
   const scheme = normalizeExpoScheme(args.scheme);
-  const storagePrefix = normalizeExpoStoragePrefix(
-    args.storagePrefix ?? scheme
-  );
+  const storagePrefix = normalizeExpoStoragePrefix(args.storagePrefix ?? scheme);
 
   return {
     kind: args.platformOS === "web" ? "web" : "native",
@@ -124,17 +105,12 @@ function normalizeExpoStoragePrefix(storagePrefix: string): string {
   return normalized;
 }
 
-function normalizeOptionalExpoString(
-  value: string | null | undefined
-): string | undefined {
+function normalizeOptionalExpoString(value: string | null | undefined): string | undefined {
   const normalized = value?.trim();
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
-function requireExpoNonEmpty(
-  label: string,
-  value: string | null | undefined
-): string {
+function requireExpoNonEmpty(label: string, value: string | null | undefined): string {
   const normalized = normalizeOptionalExpoString(value);
   if (normalized === undefined) {
     throw new Error(`${label} is required for Convex Auth Expo setup.`);

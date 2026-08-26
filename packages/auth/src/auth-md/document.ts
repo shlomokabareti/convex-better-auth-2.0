@@ -20,15 +20,11 @@ export function createAuthMdDocument(args: CreateAuthMdDocumentArgs): string {
   const authorizationServerMetadataUrl = `${new URL(metadata.issuer).origin}/.well-known/oauth-authorization-server`;
   const scopeLines = metadata.scopes_supported.map((scope) => {
     const descriptionValue = args.scopeDescriptions[scope];
-    const scopeDescription = readMarkdownText(
-      descriptionValue,
-      `scopeDescriptions.${scope}`
-    );
+    const scopeDescription = readMarkdownText(descriptionValue, `scopeDescriptions.${scope}`);
     return `- \`${scope}\` — ${scopeDescription}`;
   });
   const flowLines = metadata.agent_auth.identity_types_supported.map(
-    (identityType) =>
-      `- \`${identityType}\` — ${describeIdentityType(identityType)}`
+    (identityType) => `- \`${identityType}\` — ${describeIdentityType(identityType)}`,
   );
   const policyLines = [
     renderPolicyLink("Pricing", args.pricingUrl),
@@ -61,9 +57,7 @@ export function createAuthMdDocument(args: CreateAuthMdDocumentArgs): string {
     "## Scopes",
     "",
     ...scopeLines,
-    ...(policyLines.length === 0
-      ? []
-      : ["", "## Policies", "", ...policyLines]),
+    ...(policyLines.length === 0 ? [] : ["", "## Policies", "", ...policyLines]),
     "",
     "## Integration contact",
     "",
@@ -89,10 +83,7 @@ function unreachableIdentityType(value: never): never {
   throw new TypeError(`Unsupported auth.md identity type ${String(value)}`);
 }
 
-function renderPolicyLink(
-  label: string,
-  value: string | undefined
-): string | undefined {
+function renderPolicyLink(label: string, value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
   const url = readHttpsUrl(value, label);
   return `- ${label}: ${url}`;
@@ -128,9 +119,7 @@ function readMarkdownText(value: unknown, name: string): string {
 function escapeMarkdownInline(value: string): string {
   let escaped = "";
   for (const character of value) {
-    escaped += MARKDOWN_INLINE_SPECIAL_CHARACTERS.has(character)
-      ? `\\${character}`
-      : character;
+    escaped += MARKDOWN_INLINE_SPECIAL_CHARACTERS.has(character) ? `\\${character}` : character;
   }
   return escaped;
 }

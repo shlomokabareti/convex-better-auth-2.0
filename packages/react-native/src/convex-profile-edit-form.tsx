@@ -78,9 +78,7 @@ export function ConvexProfileEditForm(props: ExpoProfileEditFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
 
-  const { updateProfile, isUpdating } = useExpoAuthUpdateProfile(
-    props.authClient
-  );
+  const { updateProfile, isUpdating } = useExpoAuthUpdateProfile(props.authClient);
   const [name, setName] = useState(props.initialName ?? "");
   const [image, setImage] = useState(props.initialImage ?? "");
   const [success, setSuccess] = useState<string | null>(null);
@@ -95,8 +93,7 @@ export function ConvexProfileEditForm(props: ExpoProfileEditFormProps) {
     const trimmedName = name.trim();
     const trimmedImage = image.trim();
     const args: { name?: string; image?: string } = {};
-    if (trimmedName !== (props.initialName ?? "").trim())
-      args.name = trimmedName;
+    if (trimmedName !== (props.initialName ?? "").trim()) args.name = trimmedName;
     if (showImageField && trimmedImage !== (props.initialImage ?? "").trim()) {
       args.image = trimmedImage;
     }
@@ -117,9 +114,7 @@ export function ConvexProfileEditForm(props: ExpoProfileEditFormProps) {
     <View style={[styles.root, s.root]}>
       <View style={[styles.header, s.header]}>
         <Text style={[styles.title, s.title]}>{copy.title}</Text>
-        <Text style={[styles.description, s.description]}>
-          {copy.description}
-        </Text>
+        <Text style={[styles.description, s.description]}>{copy.description}</Text>
       </View>
       {isAvailable ? (
         <View>
@@ -158,27 +153,18 @@ export function ConvexProfileEditForm(props: ExpoProfileEditFormProps) {
             </Text>
           </Pressable>
           {success !== null ? (
-            <Text
-              className="text-success"
-              style={[styles.successState, s.successState]}
-            >
+            <Text className="text-success" style={[styles.successState, s.successState]}>
               {success}
             </Text>
           ) : null}
           {error !== null ? (
-            <Text
-              className="text-destructive"
-              style={[styles.errorState, s.errorState]}
-            >
+            <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
               {error}
             </Text>
           ) : null}
         </View>
       ) : (
-        <Text
-          className="text-destructive"
-          style={[styles.errorState, s.errorState]}
-        >
+        <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
           {copy.unavailable}
         </Text>
       )}

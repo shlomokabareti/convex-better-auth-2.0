@@ -18,7 +18,7 @@ export type OrganizationInvitationEmailTemplateProps = {
 };
 
 export function OrganizationInvitationEmailTemplate(
-  props: OrganizationInvitationEmailTemplateProps
+  props: OrganizationInvitationEmailTemplateProps,
 ) {
   const expiresAt = new Date(props.expiresAt).toUTCString();
 
@@ -26,8 +26,7 @@ export function OrganizationInvitationEmailTemplate(
     <EmailLayout preview={`You're invited to ${props.organizationName}`}>
       <EmailHeading>You're invited to {props.organizationName}</EmailHeading>
       <EmailText>
-        {props.inviterLabel} invited you to join {props.organizationName} as{" "}
-        {props.roleName}.
+        {props.inviterLabel} invited you to join {props.organizationName} as {props.roleName}.
       </EmailText>
       <Button href={props.acceptUrl}>Accept invitation</Button>
       <EmailText muted>This invitation expires {expiresAt}.</EmailText>
@@ -45,10 +44,7 @@ export async function renderOrganizationInvitationEmailDraft(args: {
   expiresAt: number;
 }): Promise<OrganizationInvitationEmailDraft> {
   const template = <OrganizationInvitationEmailTemplate {...args} />;
-  const [html, text] = await Promise.all([
-    renderEmail(template),
-    renderEmailText(template),
-  ]);
+  const [html, text] = await Promise.all([renderEmail(template), renderEmailText(template)]);
 
   return {
     from: args.from,

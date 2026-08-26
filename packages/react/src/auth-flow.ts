@@ -12,10 +12,7 @@ export type ConvexAuthEventSurface =
   | "choose-organization"
   | "runtime";
 
-export type ConvexAuthPendingFlow =
-  | "sign-in"
-  | "sign-up"
-  | "choose-organization";
+export type ConvexAuthPendingFlow = "sign-in" | "sign-up" | "choose-organization";
 
 export type ConvexAuthPendingFlowState = {
   redirectPath?: string;
@@ -26,7 +23,7 @@ export type ConvexAuthStorageLike = PostSignUpStorageLike &
 
 export type ConvexAuthEventCapture = (
   eventName: string,
-  properties: { surface: ConvexAuthEventSurface } & Record<string, unknown>
+  properties: { surface: ConvexAuthEventSurface } & Record<string, unknown>,
 ) => void;
 
 export type ConvexAuthRoutePaths = {
@@ -39,18 +36,11 @@ export type ConvexAuthRoutePaths = {
 };
 
 export type ConvexAuthFlowStorage = {
-  markPendingAuthFlow: (
-    flow: ConvexAuthPendingFlow,
-    state?: ConvexAuthPendingFlowState
-  ) => void;
-  consumePendingAuthFlow: (
-    flow: ConvexAuthPendingFlow
-  ) => ConvexAuthPendingFlowState | null;
+  markPendingAuthFlow: (flow: ConvexAuthPendingFlow, state?: ConvexAuthPendingFlowState) => void;
+  consumePendingAuthFlow: (flow: ConvexAuthPendingFlow) => ConvexAuthPendingFlowState | null;
   markPendingPostSignUpSync: () => void;
   clearPendingPostSignUpSync: () => void;
-  toSafeRedirectPath: (
-    redirectUrl: string | null | undefined
-  ) => string | undefined;
+  toSafeRedirectPath: (redirectUrl: string | null | undefined) => string | undefined;
 };
 
 export const DEFAULT_AUTH_ROUTE_PATHS = {
@@ -65,7 +55,7 @@ export const DEFAULT_AUTH_ROUTE_PATHS = {
 const DEFAULT_STORAGE_KEY_PREFIX = "convex.auth";
 
 export function createConvexAuthRoutePaths(
-  overrides: Partial<ConvexAuthRoutePaths> = {}
+  overrides: Partial<ConvexAuthRoutePaths> = {},
 ): ConvexAuthRoutePaths {
   return {
     ...DEFAULT_AUTH_ROUTE_PATHS,
@@ -78,7 +68,7 @@ export function createConvexAuthFlowStorage(
     storage?: ConvexAuthStorageLike;
     storageKeyPrefix?: string;
     currentOrigin?: string;
-  } = {}
+  } = {},
 ): ConvexAuthFlowStorage {
   const storageKeyPrefix = args.storageKeyPrefix ?? DEFAULT_STORAGE_KEY_PREFIX;
 
@@ -124,8 +114,8 @@ export function createConvexAuthFlowStorage(
 export function createConvexAuthEventCapture(
   captureEvent: (
     eventName: string,
-    properties: { surface: ConvexAuthEventSurface } & Record<string, unknown>
-  ) => void
+    properties: { surface: ConvexAuthEventSurface } & Record<string, unknown>,
+  ) => void,
 ): ConvexAuthEventCapture {
   return (eventName, properties) => {
     captureEvent(eventName, properties);
@@ -134,7 +124,7 @@ export function createConvexAuthEventCapture(
 
 export function toSafeConvexRedirectPath(
   redirectUrl: string | null | undefined,
-  currentOrigin = getBrowserOrigin()
+  currentOrigin = getBrowserOrigin(),
 ): string | undefined {
   if (!redirectUrl) {
     return undefined;
@@ -170,15 +160,11 @@ export function getConvexPendingAuthFlowStorageKey(args: {
   return `${args.storageKeyPrefix ?? DEFAULT_STORAGE_KEY_PREFIX}.pending.${args.flow}`;
 }
 
-export function getConvexPendingPostSignUpStorageKey(
-  storageKeyPrefix?: string
-): string {
+export function getConvexPendingPostSignUpStorageKey(storageKeyPrefix?: string): string {
   return `${storageKeyPrefix ?? DEFAULT_STORAGE_KEY_PREFIX}.pending-post-sign-up`;
 }
 
-export function getConvexPostSignUpFailureStorageKey(
-  storageKeyPrefix?: string
-): string {
+export function getConvexPostSignUpFailureStorageKey(storageKeyPrefix?: string): string {
   return `${storageKeyPrefix ?? DEFAULT_STORAGE_KEY_PREFIX}.post-sign-up-failure`;
 }
 
@@ -198,7 +184,7 @@ function markConvexPendingAuthFlow(args: {
       flow: args.flow,
       storageKeyPrefix: args.storageKeyPrefix,
     }),
-    JSON.stringify(payload)
+    JSON.stringify(payload),
   );
 }
 

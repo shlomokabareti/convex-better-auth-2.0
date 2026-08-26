@@ -1,10 +1,6 @@
 import assert from "node:assert/strict";
 
-import {
-  getPage,
-  paginator,
-  streamQuery,
-} from "convex-helpers/server/pagination";
+import { getPage, paginator, streamQuery } from "convex-helpers/server/pagination";
 import {
   getAll,
   getAllOrThrow,
@@ -15,11 +11,7 @@ import {
   getOneFromOrThrow,
   getOrThrow,
 } from "convex-helpers/server/relationships";
-import {
-  mergedStream,
-  stream,
-  streamIndexRange,
-} from "convex-helpers/server/stream";
+import { mergedStream, stream, streamIndexRange } from "convex-helpers/server/stream";
 import { ValidationError, parse, validate } from "convex-helpers/validators";
 import { v } from "convex/values";
 import { describe, it } from "vitest";
@@ -75,9 +67,7 @@ describe("convex-auth/convex/helpers", () => {
     });
 
     // The shape a wire boundary actually deals with: JSON.parse returns `any`.
-    const parsed: unknown = JSON.parse(
-      '{"invoiceId":"inv_1","amount":1250,"currency":"USD"}'
-    );
+    const parsed: unknown = JSON.parse('{"invoiceId":"inv_1","amount":1250,"currency":"USD"}');
     const body = helpers.parse(validator, parsed);
     assert.strictEqual(body.invoiceId, "inv_1");
     assert.strictEqual(body.amount, 1250);
@@ -112,10 +102,7 @@ describe("toWritable", () => {
 
     assert.strictEqual(source.processorAccountRefs.length, 1);
     assert.strictEqual(writable.processorAccountRefs.length, 2);
-    assert.notStrictEqual(
-      writable.processorAccountRefs,
-      source.processorAccountRefs
-    );
+    assert.notStrictEqual(writable.processorAccountRefs, source.processorAccountRefs);
   });
 
   it("copies nested arrays, not just the outermost one", () => {
@@ -133,10 +120,7 @@ describe("toWritable", () => {
     writable.associatedIdentities[0]?.identityRoles.push("beneficial_owner");
 
     assert.strictEqual(source.associatedIdentities[0]?.identityRoles.length, 1);
-    assert.strictEqual(
-      writable.associatedIdentities[0]?.identityRoles.length,
-      2
-    );
+    assert.strictEqual(writable.associatedIdentities[0]?.identityRoles.length, 2);
   });
 
   it("preserves the values themselves", () => {

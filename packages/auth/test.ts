@@ -21,13 +21,9 @@ for (const path of Object.keys(modules)) {
 
 export function register(
   test: {
-    registerComponent: (
-      name: string,
-      schema: ComponentSchema,
-      modules: ConvexTestModules
-    ) => void;
+    registerComponent: (name: string, schema: ComponentSchema, modules: ConvexTestModules) => void;
   },
-  name = "convexAuth"
+  name = "convexAuth",
 ) {
   test.registerComponent(name, schema, modules);
 }

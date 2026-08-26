@@ -34,14 +34,12 @@ async function assertionFor(
     expSeconds?: number;
     kid?: string | null;
     jti?: string;
-  } = {}
+  } = {},
 ) {
   const nowSeconds = Math.floor(Date.now() / 1000);
   const jwt = new SignJWT({ jti: claims.jti ?? "assertion-1" })
     .setProtectedHeader(
-      claims.kid === null
-        ? { alg: "ES256" }
-        : { alg: "ES256", kid: claims.kid ?? "k1" }
+      claims.kid === null ? { alg: "ES256" } : { alg: "ES256", kid: claims.kid ?? "k1" },
     )
     .setIssuer(claims.iss ?? CLIENT_ID)
     .setSubject(claims.sub ?? CLIENT_ID)

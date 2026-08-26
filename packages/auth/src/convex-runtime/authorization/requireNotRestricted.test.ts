@@ -25,7 +25,7 @@ describe("requireNotRestricted", () => {
           audience: null,
           scopes: [],
         },
-      })
+      }),
     );
   });
 

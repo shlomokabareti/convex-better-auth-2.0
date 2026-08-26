@@ -1,8 +1,4 @@
-export {
-  mergedStream,
-  stream,
-  streamIndexRange,
-} from "convex-helpers/server/stream";
+export { mergedStream, stream, streamIndexRange } from "convex-helpers/server/stream";
 export {
   getAll,
   getAllOrThrow,
@@ -13,11 +9,7 @@ export {
   getOneFromOrThrow,
   getOrThrow,
 } from "convex-helpers/server/relationships";
-export {
-  getPage,
-  paginator,
-  streamQuery,
-} from "convex-helpers/server/pagination";
+export { getPage, paginator, streamQuery } from "convex-helpers/server/pagination";
 
 // Untrusted-input boundaries. `JSON.parse` returns `any`; casting that result is
 // the single largest source of `no-unsafe-type-assertion` across the fleet. These

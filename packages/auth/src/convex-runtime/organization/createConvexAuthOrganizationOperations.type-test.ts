@@ -73,8 +73,7 @@ const ops = createConvexAuthOrganizationOperations<
     await ctx.db.query("users").collect();
     return null;
   },
-  validateRoleKey: (key): key is TestRole =>
-    key === "owner" || key === "admin" || key === "member",
+  validateRoleKey: (key): key is TestRole => key === "owner" || key === "admin" || key === "member",
   roleCatalog: { owner: ["*"], admin: ["org:read"], member: ["org:read"] },
   // -- write callbacks get the consumer's REAL mutation ctx, no cast --
   loadOrganizationForUpsert: async (ctx, _localOrganizationId) => {
@@ -83,11 +82,7 @@ const ops = createConvexAuthOrganizationOperations<
     await typedWriter.query("organizations").collect();
     return null;
   },
-  backfillOrganizationBridgeId: async (
-    ctx,
-    _localOrganizationId,
-    componentOrganizationId
-  ) => {
+  backfillOrganizationBridgeId: async (ctx, _localOrganizationId, componentOrganizationId) => {
     // writer-only side effect, ctx.db.patch is reachable without a cast.
     void ctx.db;
     void componentOrganizationId;
@@ -100,29 +95,18 @@ const ops = createConvexAuthOrganizationOperations<
 
 // The suite methods accept the consumer's REAL ctx with NO cast (no `asGlueCtx`).
 export type QueryCtxAccepted = Expect<
-  Equal<
-    QueryCtx extends Parameters<typeof ops.reads.resolveMemberships>[0]
-      ? true
-      : false,
-    true
-  >
+  Equal<QueryCtx extends Parameters<typeof ops.reads.resolveMemberships>[0] ? true : false, true>
 >;
 export type MutationCtxAccepted = Expect<
   Equal<
-    MutationCtx extends Parameters<typeof ops.writes.ensureOrganization>[0]
-      ? true
-      : false,
+    MutationCtx extends Parameters<typeof ops.writes.ensureOrganization>[0] ? true : false,
     true
   >
 >;
 
 // Default (no ctx type args) still resolves to GlueCtx — back-compat guard.
 type DefaultOps = ReturnType<
-  typeof createConvexAuthOrganizationOperations<
-    LocalOrgId,
-    LocalUserId,
-    TestRole
-  >
+  typeof createConvexAuthOrganizationOperations<LocalOrgId, LocalUserId, TestRole>
 >;
 type DefaultReadCtx = Parameters<DefaultOps["reads"]["resolveMemberships"]>[0];
 export type DefaultRequiresAuth = Expect<

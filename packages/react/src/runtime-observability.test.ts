@@ -38,7 +38,7 @@ describe("runtime observability", () => {
         providerAuthenticated: true,
         tokenAvailable: true,
         convexAuthenticated: true,
-      })
+      }),
     );
 
     assert.deepEqual(transition, {
@@ -77,9 +77,7 @@ describe("runtime observability", () => {
   });
 });
 
-function createStatus(
-  overrides: Partial<AuthRuntimeStatus>
-): AuthRuntimeStatus {
+function createStatus(overrides: Partial<AuthRuntimeStatus>): AuthRuntimeStatus {
   return {
     state: "signedOut",
     providerAuthenticated: false,

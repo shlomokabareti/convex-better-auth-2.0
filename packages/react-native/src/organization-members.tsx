@@ -94,12 +94,8 @@ export type ExpoOrgMembersProps = {
     email: string;
     roleKey: string;
   }) => Promise<{ ok: boolean; error: string | null }>;
-  onRemoveMember?: (
-    memberId: string
-  ) => Promise<{ ok: boolean; error: string | null }>;
-  onCancelInvitation?: (
-    invitationId: string
-  ) => Promise<{ ok: boolean; error: string | null }>;
+  onRemoveMember?: (memberId: string) => Promise<{ ok: boolean; error: string | null }>;
+  onCancelInvitation?: (invitationId: string) => Promise<{ ok: boolean; error: string | null }>;
 };
 
 const DEFAULT_COPY: Required<ExpoOrgMembersCopy> = {
@@ -147,9 +143,7 @@ export function ConvexOrganizationMembers(props: ExpoOrgMembersProps) {
     <View style={[styles.root, s.root]}>
       <View style={[styles.header, s.header]}>
         <Text style={[styles.title, s.title]}>{copy.title}</Text>
-        <Text style={[styles.description, s.description]}>
-          {copy.description}
-        </Text>
+        <Text style={[styles.description, s.description]}>{copy.description}</Text>
       </View>
 
       <ConvexOrganizationMembersInviteSection
@@ -232,17 +226,12 @@ function ConvexOrganizationMembersInviteSection({
           onPress={() => void onInvite()}
           style={[styles.primaryButton, stylesOverride.primaryButton]}
         >
-          <Text
-            style={[styles.primaryButtonText, stylesOverride.primaryButtonText]}
-          >
+          <Text style={[styles.primaryButtonText, stylesOverride.primaryButtonText]}>
             {inviting ? copy.inviting : copy.invite}
           </Text>
         </Pressable>
         {error !== null ? (
-          <Text
-            className="text-destructive"
-            style={[styles.errorState, stylesOverride.errorState]}
-          >
+          <Text className="text-destructive" style={[styles.errorState, stylesOverride.errorState]}>
             {error}
           </Text>
         ) : null}
@@ -277,12 +266,7 @@ function ConvexOrganizationRolePicker({
               active ? stylesOverride.rolePickerItemActive : undefined,
             ]}
           >
-            <Text
-              style={[
-                styles.rolePickerItemText,
-                stylesOverride.rolePickerItemText,
-              ]}
-            >
+            <Text style={[styles.rolePickerItemText, stylesOverride.rolePickerItemText]}>
               {role.label}
             </Text>
           </Pressable>
@@ -311,9 +295,7 @@ function ConvexOrganizationMembersList({
         {copy.membersSectionTitle}
       </Text>
       {members.length === 0 ? (
-        <Text style={[styles.emptyState, stylesOverride.emptyState]}>
-          {copy.noMembersLabel}
-        </Text>
+        <Text style={[styles.emptyState, stylesOverride.emptyState]}>{copy.noMembersLabel}</Text>
       ) : (
         <FlatList
           data={members}
@@ -360,9 +342,7 @@ function ConvexOrganizationMemberRow({
           {member.name ?? member.email ?? member.userId}
           {member.isViewer === true ? " (you)" : ""}
         </Text>
-        <Text style={[styles.memberMeta, stylesOverride.memberMeta]}>
-          {member.roleKey}
-        </Text>
+        <Text style={[styles.memberMeta, stylesOverride.memberMeta]}>{member.roleKey}</Text>
       </View>
       {onRemoveMember !== undefined && member.isViewer !== true ? (
         <Pressable
@@ -405,10 +385,7 @@ function ConvexOrganizationInvitationsList({
 
   return (
     <View>
-      <View
-        className="bg-border"
-        style={[styles.divider, stylesOverride.divider]}
-      />
+      <View className="bg-border" style={[styles.divider, stylesOverride.divider]} />
       <Text style={[styles.sectionTitle, stylesOverride.sectionTitle]}>
         {copy.invitationsSectionTitle}
       </Text>
@@ -442,12 +419,8 @@ function ConvexOrganizationInvitationRow({
   return (
     <View style={[styles.memberItem, stylesOverride.memberItem]}>
       <View style={{ flex: 1 }}>
-        <Text style={[styles.memberName, stylesOverride.memberName]}>
-          {invitation.email}
-        </Text>
-        <Text style={[styles.memberMeta, stylesOverride.memberMeta]}>
-          {invitation.roleKey}
-        </Text>
+        <Text style={[styles.memberName, stylesOverride.memberName]}>{invitation.email}</Text>
+        <Text style={[styles.memberMeta, stylesOverride.memberMeta]}>{invitation.roleKey}</Text>
       </View>
       {onCancelInvitation !== undefined ? (
         <Pressable

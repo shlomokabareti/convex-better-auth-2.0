@@ -1,10 +1,4 @@
-import {
-  decodeProtectedHeader,
-  importJWK,
-  jwtVerify,
-  SignJWT,
-  type JWTPayload,
-} from "jose";
+import { decodeProtectedHeader, importJWK, jwtVerify, SignJWT, type JWTPayload } from "jose";
 
 export const AUTH_MD_SIGNING_ALGORITHM = "ES256" as const;
 export const AUTH_MD_IDENTITY_ASSERTION_TYPE = "oauth-id-jag+jwt" as const;
@@ -51,7 +45,7 @@ export async function signAuthMdIdentityAssertion(args: {
   const claims = validateIdentityAssertionClaims(args.claims);
   const privateKey = await importJWK(
     parseJwk(args.signingKey.privateJwkJson),
-    AUTH_MD_SIGNING_ALGORITHM
+    AUTH_MD_SIGNING_ALGORITHM,
   );
   return await new SignJWT({
     registration_type: "service_auth",
@@ -85,12 +79,9 @@ export async function verifyAuthMdIdentityAssertion(args: {
   const key = resolveVerificationKey(
     args.assertion,
     args.signingKeys,
-    AUTH_MD_IDENTITY_ASSERTION_TYPE
+    AUTH_MD_IDENTITY_ASSERTION_TYPE,
   );
-  const publicKey = await importJWK(
-    parseJwk(key.publicJwkJson),
-    AUTH_MD_SIGNING_ALGORITHM
-  );
+  const publicKey = await importJWK(parseJwk(key.publicJwkJson), AUTH_MD_SIGNING_ALGORITHM);
   const { payload } = await jwtVerify(args.assertion, publicKey, {
     algorithms: [AUTH_MD_SIGNING_ALGORITHM],
     issuer,
@@ -110,7 +101,7 @@ export async function signAuthMdAccessToken(args: {
   const claims = validateAccessTokenClaims(args.claims);
   const privateKey = await importJWK(
     parseJwk(args.signingKey.privateJwkJson),
-    AUTH_MD_SIGNING_ALGORITHM
+    AUTH_MD_SIGNING_ALGORITHM,
   );
   return await new SignJWT({
     registration_id: claims.registrationId,
@@ -141,15 +132,8 @@ export async function verifyAuthMdAccessToken(args: {
 }): Promise<AuthMdAccessTokenClaims> {
   const issuer = requireHttpsIssuer(args.issuer);
   const resource = requireHttpsResource(args.resource);
-  const key = resolveVerificationKey(
-    args.accessToken,
-    args.signingKeys,
-    AUTH_MD_ACCESS_TOKEN_TYPE
-  );
-  const publicKey = await importJWK(
-    parseJwk(key.publicJwkJson),
-    AUTH_MD_SIGNING_ALGORITHM
-  );
+  const key = resolveVerificationKey(args.accessToken, args.signingKeys, AUTH_MD_ACCESS_TOKEN_TYPE);
+  const publicKey = await importJWK(parseJwk(key.publicJwkJson), AUTH_MD_SIGNING_ALGORITHM);
   const { payload } = await jwtVerify(args.accessToken, publicKey, {
     algorithms: [AUTH_MD_SIGNING_ALGORITHM],
     issuer,
@@ -163,9 +147,7 @@ export async function verifyAuthMdAccessToken(args: {
   return claims;
 }
 
-function parseIdentityAssertionPayload(
-  payload: JWTPayload
-): AuthMdIdentityAssertionClaims {
+function parseIdentityAssertionPayload(payload: JWTPayload): AuthMdIdentityAssertionClaims {
   if (payload.registration_type !== "service_auth") {
     throw new Error("auth.md identity assertion registration type is invalid");
   }
@@ -197,7 +179,7 @@ function parseAccessTokenPayload(payload: JWTPayload): AuthMdAccessTokenClaims {
 }
 
 function validateIdentityAssertionClaims(
-  claims: AuthMdIdentityAssertionClaims
+  claims: AuthMdIdentityAssertionClaims,
 ): AuthMdIdentityAssertionClaims {
   requireIdentifier(claims.assertionId, "assertionId");
   requireIdentifier(claims.registrationId, "registrationId");
@@ -209,14 +191,12 @@ function validateIdentityAssertionClaims(
     claims.issuedAt,
     claims.expiresAt,
     AUTH_MD_MAX_ASSERTION_LIFETIME_SECONDS,
-    "identity assertion"
+    "identity assertion",
   );
   return claims;
 }
 
-function validateAccessTokenClaims(
-  claims: AuthMdAccessTokenClaims
-): AuthMdAccessTokenClaims {
+function validateAccessTokenClaims(claims: AuthMdAccessTokenClaims): AuthMdAccessTokenClaims {
   requireIdentifier(claims.credentialId, "credentialId");
   requireIdentifier(claims.registrationId, "registrationId");
   requireIdentifier(claims.userId, "userId");
@@ -227,7 +207,7 @@ function validateAccessTokenClaims(
     claims.issuedAt,
     claims.expiresAt,
     AUTH_MD_MAX_ACCESS_TOKEN_LIFETIME_SECONDS,
-    "access token"
+    "access token",
   );
   return claims;
 }
@@ -235,7 +215,7 @@ function validateAccessTokenClaims(
 function resolveVerificationKey(
   token: string,
   keys: readonly AuthMdSigningKeyRecord[],
-  expectedType: string
+  expectedType: string,
 ): AuthMdSigningKeyRecord {
   const header = decodeProtectedHeader(token);
   if (
@@ -314,7 +294,7 @@ function requireLifetime(
   issuedAt: number,
   expiresAt: number,
   maximumSeconds: number,
-  label: string
+  label: string,
 ): void {
   if (
     !Number.isSafeInteger(issuedAt) ||

@@ -33,11 +33,7 @@ export type ConvexApiKeyCreateInputResult<Scope extends string = string> =
     }
   | {
       ok: false;
-      reason:
-        | "empty_name"
-        | "empty_scopes"
-        | "request_id_too_long"
-        | "expires_at_not_future";
+      reason: "empty_name" | "empty_scopes" | "request_id_too_long" | "expires_at_not_future";
     };
 
 export type ConvexApiKeyReplayRecord = {
@@ -49,9 +45,9 @@ export type ConvexApiKeyReplayRecord = {
   requestIdExpiresAt?: number;
 };
 
-export function createConvexApiKeyCreateArgsValidator<
-  ScopeValidator extends GenericValidator,
->(scopeValidator: ScopeValidator) {
+export function createConvexApiKeyCreateArgsValidator<ScopeValidator extends GenericValidator>(
+  scopeValidator: ScopeValidator,
+) {
   return {
     name: v.string(),
     scopes: v.array(scopeValidator),
@@ -61,9 +57,9 @@ export function createConvexApiKeyCreateArgsValidator<
   };
 }
 
-export function createConvexApiKeyIdArgsValidator<
-  ApiKeyIdValidator extends GenericValidator,
->(apiKeyIdValidator: ApiKeyIdValidator) {
+export function createConvexApiKeyIdArgsValidator<ApiKeyIdValidator extends GenericValidator>(
+  apiKeyIdValidator: ApiKeyIdValidator,
+) {
   return {
     apiKeyId: apiKeyIdValidator,
   };
@@ -71,7 +67,7 @@ export function createConvexApiKeyIdArgsValidator<
 
 export function resolveApiKeyRequestId(
   requestId: string | undefined,
-  options: { maxLength: number }
+  options: { maxLength: number },
 ): ApiKeyRequestIdResult {
   const normalized = requestId?.trim();
   if (!normalized) {
@@ -126,9 +122,7 @@ export function normalizeConvexApiKeyCreateInput<Scope extends string>(args: {
     input: {
       name,
       scopes: [...args.scopes],
-      allowedIpRanges: normalizeApiKeyAllowedIpRanges(
-        args.allowedIpRanges ?? []
-      ),
+      allowedIpRanges: normalizeApiKeyAllowedIpRanges(args.allowedIpRanges ?? []),
       expiresAt: args.expiresAt,
       requestId: requestIdResult.requestId,
       requestIdExpiresAt,
@@ -144,25 +138,19 @@ export function isConvexApiKeyCreateReplayInputMatch(
   input: Pick<
     ConvexApiKeyNormalizedCreateInput,
     "name" | "expiresAt" | "scopes" | "allowedIpRanges"
-  >
+  >,
 ): boolean {
   return (
     existingApiKey.name === input.name &&
     existingApiKey.expiresAt === input.expiresAt &&
     stringArraysEqual(existingApiKey.scopes, input.scopes) &&
-    stringArraysEqual(
-      existingApiKey.allowedIpRanges ?? [],
-      input.allowedIpRanges
-    )
+    stringArraysEqual(existingApiKey.allowedIpRanges ?? [], input.allowedIpRanges)
   );
 }
 
 export function isConvexApiKeyCreateReplayWindowOpen(
-  existingApiKey: Pick<
-    ConvexApiKeyReplayRecord,
-    "status" | "requestIdExpiresAt"
-  >,
-  now: number
+  existingApiKey: Pick<ConvexApiKeyReplayRecord, "status" | "requestIdExpiresAt">,
+  now: number,
 ): boolean {
   return (
     existingApiKey.status === "active" &&
@@ -171,18 +159,10 @@ export function isConvexApiKeyCreateReplayWindowOpen(
   );
 }
 
-export function stringArraysEqual(
-  left: readonly string[],
-  right: readonly string[]
-): boolean {
-  return (
-    left.length === right.length &&
-    left.every((value, index) => value === right[index])
-  );
+export function stringArraysEqual(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
-function normalizeApiKeyAllowedIpRanges(
-  allowedIpRanges: readonly string[]
-): string[] {
+function normalizeApiKeyAllowedIpRanges(allowedIpRanges: readonly string[]): string[] {
   return allowedIpRanges.map((ipRange) => ipRange.trim()).filter(Boolean);
 }

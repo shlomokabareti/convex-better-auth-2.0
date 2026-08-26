@@ -1,11 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: [
-    "scripts/cli.ts",
-    "scripts/check-consumer-contract.ts",
-    "scripts/preflight.ts",
-  ],
+  entry: ["scripts/cli.ts", "scripts/check-consumer-contract.ts", "scripts/preflight.ts"],
   format: "esm",
   platform: "node",
   target: "node18",

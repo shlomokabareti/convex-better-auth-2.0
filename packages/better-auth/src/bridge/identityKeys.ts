@@ -35,13 +35,13 @@ export function getBetterAuthIdentityProvider(): typeof BETTER_AUTH_IDENTITY_PRO
  * synonym for back-compat and to surface the parameterized variant.
  */
 export function getBetterAuthIdentityIssuer(
-  args: ResolveBetterAuthIdentityIssuerArgs = {}
+  args: ResolveBetterAuthIdentityIssuerArgs = {},
 ): string {
   return resolveBetterAuthIdentityIssuer(args);
 }
 
 export function resolveBetterAuthIdentityIssuer(
-  args: ResolveBetterAuthIdentityIssuerArgs = {}
+  args: ResolveBetterAuthIdentityIssuerArgs = {},
 ): string {
   const explicitIssuer = readNonEmptyString(args.issuer);
   if (explicitIssuer !== null) {
@@ -82,19 +82,16 @@ export function resolveBetterAuthIdentityIssuer(
   // makes single-origin work with zero env in any context.
   const envConvexCloudUrl = readNonEmptyString(env.CONVEX_CLOUD_URL);
   if (envConvexCloudUrl !== null) {
-    return trimTrailingSlash(envConvexCloudUrl).replace(
-      ".convex.cloud",
-      ".convex.site"
-    );
+    return trimTrailingSlash(envConvexCloudUrl).replace(".convex.cloud", ".convex.site");
   }
 
   throw new Error(
-    "Better Auth issuer is not configured. Set BETTER_AUTH_ISSUER, BETTER_AUTH_URL, CONVEX_SITE_URL, or CONVEX_CLOUD_URL."
+    "Better Auth issuer is not configured. Set BETTER_AUTH_ISSUER, BETTER_AUTH_URL, CONVEX_SITE_URL, or CONVEX_CLOUD_URL.",
   );
 }
 
 export function resolveOptionalBetterAuthIdentityIssuer(
-  args: ResolveBetterAuthIdentityIssuerArgs = {}
+  args: ResolveBetterAuthIdentityIssuerArgs = {},
 ): string | null {
   try {
     return resolveBetterAuthIdentityIssuer(args);
@@ -103,17 +100,11 @@ export function resolveOptionalBetterAuthIdentityIssuer(
   }
 }
 
-export function buildBetterAuthIdentityId(
-  betterAuthUserId: string,
-  issuer: string
-): string {
+export function buildBetterAuthIdentityId(betterAuthUserId: string, issuer: string): string {
   return `${BETTER_AUTH_IDENTITY_PROVIDER}|${trimTrailingSlash(issuer)}|${betterAuthUserId}`;
 }
 
-export function buildBetterAuthTokenIdentifier(
-  betterAuthUserId: string,
-  issuer: string
-): string {
+export function buildBetterAuthTokenIdentifier(betterAuthUserId: string, issuer: string): string {
   return `${trimTrailingSlash(issuer)}|${betterAuthUserId}`;
 }
 
@@ -127,21 +118,17 @@ export function isAuthSentinelId(value: string): boolean {
 
 export function isBetterAuthIdentity(
   identity: { issuer?: string | null; tokenIdentifier?: string | null },
-  args: ResolveBetterAuthIdentityIssuerArgs = {}
+  args: ResolveBetterAuthIdentityIssuerArgs = {},
 ): boolean {
   const issuer = readNonEmptyString(identity.issuer);
   if (issuer === null) {
     return false;
   }
 
-  return (
-    trimTrailingSlash(issuer) === resolveOptionalBetterAuthIdentityIssuer(args)
-  );
+  return trimTrailingSlash(issuer) === resolveOptionalBetterAuthIdentityIssuer(args);
 }
 
-export function readRequiredIdentityEmail(
-  identity: BetterAuthIdentityClaims
-): string {
+export function readRequiredIdentityEmail(identity: BetterAuthIdentityClaims): string {
   const email = readOptionalIdentityString(identity, "email");
   if (email !== undefined) {
     return email;
@@ -150,15 +137,11 @@ export function readRequiredIdentityEmail(
   throw new Error("Authenticated Better Auth identity is missing email claim.");
 }
 
-export function readIdentityEmailVerified(
-  identity: BetterAuthIdentityClaims
-): boolean {
+export function readIdentityEmailVerified(identity: BetterAuthIdentityClaims): boolean {
   return identity.emailVerified === true;
 }
 
-export function readIdentitySessionId(
-  identity: BetterAuthIdentityClaims
-): string | null {
+export function readIdentitySessionId(identity: BetterAuthIdentityClaims): string | null {
   const sessionId = readOptionalIdentityString(identity, "sessionId");
   if (sessionId !== undefined) {
     return sessionId;
@@ -170,7 +153,7 @@ export function readIdentitySessionId(
 
 export function readOptionalIdentityString(
   identity: BetterAuthIdentityClaims,
-  key: string
+  key: string,
 ): string | undefined {
   const value = identity[key];
   return typeof value === "string" && value.length > 0 ? value : undefined;
@@ -182,10 +165,7 @@ function readNonEmptyString(value: string | null | undefined): string | null {
 }
 
 function readDefaultEnvironment(): BetterAuthIssuerEnvironment {
-  return (
-    (globalThis as { process?: { env?: BetterAuthIssuerEnvironment } }).process
-      ?.env ?? {}
-  );
+  return (globalThis as { process?: { env?: BetterAuthIssuerEnvironment } }).process?.env ?? {};
 }
 
 function trimTrailingSlash(value: string): string {

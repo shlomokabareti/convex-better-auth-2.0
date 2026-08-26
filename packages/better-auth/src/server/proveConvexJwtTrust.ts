@@ -1,10 +1,4 @@
-import {
-  createRemoteJWKSet,
-  exportJWK,
-  generateKeyPair,
-  jwtVerify,
-  SignJWT,
-} from "jose";
+import { createRemoteJWKSet, exportJWK, generateKeyPair, jwtVerify, SignJWT } from "jose";
 
 import { createConvexAuthConfig } from "./createConvexAuthConfig";
 
@@ -32,8 +26,7 @@ export async function proveConvexJwtTrust(): Promise<ConvexJwtTrustProofResult> 
     }
   ).process.env;
 
-  processEnv.CONVEX_SITE_URL =
-    processEnv.CONVEX_SITE_URL ?? "https://sandbox.example.com";
+  processEnv.CONVEX_SITE_URL = processEnv.CONVEX_SITE_URL ?? "https://sandbox.example.com";
 
   const primary = await createJwksDoc("primary-key");
   const secondary = await createJwksDoc("secondary-key");
@@ -67,7 +60,7 @@ export async function proveConvexJwtTrust(): Promise<ConvexJwtTrustProofResult> 
       issuer: provider.issuer,
       audience: provider.applicationID,
       algorithms: [provider.algorithm],
-    }
+    },
   );
 
   await assertJwtRejected(
@@ -82,7 +75,7 @@ export async function proveConvexJwtTrust(): Promise<ConvexJwtTrustProofResult> 
       issuer: provider.issuer,
       audience: provider.applicationID,
       algorithms: [provider.algorithm],
-    }
+    },
   );
 
   await assertJwtRejected(
@@ -97,7 +90,7 @@ export async function proveConvexJwtTrust(): Promise<ConvexJwtTrustProofResult> 
       issuer: provider.issuer,
       audience: provider.applicationID,
       algorithms: [provider.algorithm],
-    }
+    },
   );
 
   return {
@@ -151,8 +144,8 @@ async function createSignedToken(args: {
           hash: "SHA-256",
         },
         false,
-        ["sign"]
-      )
+        ["sign"],
+      ),
     );
 }
 
@@ -163,7 +156,7 @@ async function assertJwtRejected(
     issuer: string;
     audience: string;
     algorithms: string[];
-  }
+  },
 ) {
   const token = await tokenPromise;
 

@@ -1,9 +1,7 @@
 export const AGENT_AUTH_DEVICE_AUTHORIZATION_GRANT_TYPE =
   "urn:ietf:params:oauth:grant-type:device_code" as const;
-export const AGENT_AUTH_DEVICE_AUTHORIZATION_DEFAULT_EXPIRES_IN_SECONDS =
-  600 as const;
-export const AGENT_AUTH_DEVICE_AUTHORIZATION_DEFAULT_INTERVAL_SECONDS =
-  5 as const;
+export const AGENT_AUTH_DEVICE_AUTHORIZATION_DEFAULT_EXPIRES_IN_SECONDS = 600 as const;
+export const AGENT_AUTH_DEVICE_AUTHORIZATION_DEFAULT_INTERVAL_SECONDS = 5 as const;
 
 const USER_CODE_ALPHABET = "BCDFGHJKLMNPQRSTVWXZ";
 const USER_CODE_LENGTH = 8;
@@ -27,11 +25,8 @@ export async function createAgentAuthDeviceAuthorizationChallenge(options?: {
 }): Promise<AgentAuthDeviceAuthorizationChallenge> {
   const now = options?.now ?? Date.now();
   const expiresIn =
-    options?.expiresIn ??
-    AGENT_AUTH_DEVICE_AUTHORIZATION_DEFAULT_EXPIRES_IN_SECONDS;
-  const interval =
-    options?.interval ??
-    AGENT_AUTH_DEVICE_AUTHORIZATION_DEFAULT_INTERVAL_SECONDS;
+    options?.expiresIn ?? AGENT_AUTH_DEVICE_AUTHORIZATION_DEFAULT_EXPIRES_IN_SECONDS;
+  const interval = options?.interval ?? AGENT_AUTH_DEVICE_AUTHORIZATION_DEFAULT_INTERVAL_SECONDS;
   requireNonnegativeSafeInteger(now, "now");
   requireBoundedPositiveInteger(expiresIn, "expiresIn", 15 * 60);
   requireBoundedPositiveInteger(interval, "interval", 60);
@@ -58,25 +53,17 @@ export async function createAgentAuthDeviceAuthorizationChallenge(options?: {
 
 export function normalizeAgentAuthUserCode(value: string): string {
   const normalized = value.toUpperCase().replaceAll(/[\s-]/gu, "");
-  if (
-    normalized.length !== USER_CODE_LENGTH ||
-    !/^[BCDFGHJKLMNPQRSTVWXZ]{8}$/u.test(normalized)
-  ) {
+  if (normalized.length !== USER_CODE_LENGTH || !/^[BCDFGHJKLMNPQRSTVWXZ]{8}$/u.test(normalized)) {
     throw new TypeError("Agent Auth user code is invalid");
   }
   return normalized;
 }
 
-export async function hashAgentAuthDeviceAuthorizationCode(
-  value: string
-): Promise<string> {
+export async function hashAgentAuthDeviceAuthorizationCode(value: string): Promise<string> {
   if (value.length === 0) {
     throw new TypeError("Device authorization code is required");
   }
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(value)
-  );
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return bytesToBase64Url(new Uint8Array(digest));
 }
 
@@ -110,10 +97,7 @@ function secureRandomBytes(length: number): Uint8Array {
 function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary)
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/u, "");
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
 }
 
 function decodeBase64Url(value: string): Uint8Array {
@@ -128,11 +112,7 @@ function requireNonnegativeSafeInteger(value: number, name: string): void {
   }
 }
 
-function requireBoundedPositiveInteger(
-  value: number,
-  name: string,
-  maximum: number
-): void {
+function requireBoundedPositiveInteger(value: number, name: string, maximum: number): void {
   if (!Number.isSafeInteger(value) || value < 1 || value > maximum) {
     throw new TypeError(`${name} must be an integer between 1 and ${maximum}`);
   }

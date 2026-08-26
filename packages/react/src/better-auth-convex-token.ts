@@ -24,7 +24,7 @@ export type BetterAuthConvexTokenRequest = {
 };
 
 export type BetterAuthConvexTokenSource = (
-  request: BetterAuthConvexTokenRequest
+  request: BetterAuthConvexTokenRequest,
 ) => Promise<string | null>;
 
 export type BetterAuthConvexTokenRefreshFailure = {
@@ -54,7 +54,7 @@ export function decodeJwtExpirationMs(token: string): number | null {
     const normalizedPayload = payload.replaceAll("-", "+").replaceAll("_", "/");
     const paddedPayload = normalizedPayload.padEnd(
       normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
-      "="
+      "=",
     );
     const decodedPayload = decodeBase64(paddedPayload);
     const parsedPayload: unknown = JSON.parse(decodedPayload);
@@ -74,12 +74,9 @@ export function createBetterAuthConvexTokenCache(args: {
   minimumTimeRemainingMs?: number;
   now?: () => number;
   onTokenChange?: (token: string | null, expiresAt: number | null) => void;
-  onTokenRefreshFailure?: (
-    failure: BetterAuthConvexTokenRefreshFailure
-  ) => void;
+  onTokenRefreshFailure?: (failure: BetterAuthConvexTokenRefreshFailure) => void;
 }): BetterAuthConvexTokenCache {
-  const minimumTimeRemainingMs =
-    args.minimumTimeRemainingMs ?? DEFAULT_MIN_TIME_REMAINING_MS;
+  const minimumTimeRemainingMs = args.minimumTimeRemainingMs ?? DEFAULT_MIN_TIME_REMAINING_MS;
   const now = args.now ?? Date.now;
   let cachedToken: string | null = null;
   let cachedExpiresAt: number | null = null;
@@ -166,10 +163,7 @@ export function createBetterAuthConvexTokenCache(args: {
       if (pendingToken !== null) {
         const tokenFromPendingRequest = await pendingToken;
         const cachedUsableToken = getCachedToken();
-        if (
-          tokenFromPendingRequest !== null &&
-          tokenFromPendingRequest !== cachedUsableToken
-        ) {
+        if (tokenFromPendingRequest !== null && tokenFromPendingRequest !== cachedUsableToken) {
           return tokenFromPendingRequest;
         }
       }
@@ -188,9 +182,7 @@ export async function fetchBetterAuthConvexBearerToken(args: {
   forceRefreshToken?: boolean;
 }): Promise<string | null> {
   const pluginToken = await args.authClient?.convex?.token({
-    fetchOptions: buildBetterAuthConvexTokenFetchOptions(
-      args.cachedToken ?? null
-    ),
+    fetchOptions: buildBetterAuthConvexTokenFetchOptions(args.cachedToken ?? null),
   });
   if (typeof pluginToken?.data?.token === "string") {
     return pluginToken.data.token;
@@ -220,7 +212,7 @@ export async function fetchBetterAuthConvexBearerToken(args: {
 }
 
 function buildBetterAuthConvexTokenFetchOptions(
-  cachedToken: string | null
+  cachedToken: string | null,
 ): BetterAuthConvexTokenFetchOptions {
   const fetchOptions: BetterAuthConvexTokenFetchOptions = {
     throw: false,

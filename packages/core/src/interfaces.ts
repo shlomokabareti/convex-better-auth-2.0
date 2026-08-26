@@ -14,23 +14,15 @@ export type ResolvedAuthContext = {
 };
 
 export interface AuthIdentityService {
-  findOrProvisionUser(
-    identity: NormalizedAuthIdentity
-  ): Promise<IdentityLookupResult>;
+  findOrProvisionUser(identity: NormalizedAuthIdentity): Promise<IdentityLookupResult>;
   getUserByIdentity(identity: NormalizedAuthIdentity): Promise<string | null>;
-  linkIdentity(
-    userId: string,
-    identity: NormalizedAuthIdentity
-  ): Promise<string>;
+  linkIdentity(userId: string, identity: NormalizedAuthIdentity): Promise<string>;
 }
 
 export interface OrganizationAccessService {
   getActiveOrganization(userId: string): Promise<string | null>;
   setActiveOrganization(userId: string, organizationId: string): Promise<void>;
-  getEffectivePermissions(
-    userId: string,
-    organizationId: string
-  ): Promise<string[]>;
+  getEffectivePermissions(userId: string, organizationId: string): Promise<string[]>;
 }
 
 export interface InvitationService {
@@ -40,11 +32,7 @@ export interface InvitationService {
     email: string;
     invitedBy: string;
   }): Promise<string>;
-  redeemInvitation(input: {
-    token: string;
-    userId: string;
-    email: string | null;
-  }): Promise<string>;
+  redeemInvitation(input: { token: string; userId: string; email: string | null }): Promise<string>;
 }
 
 export interface PrincipalResolver {

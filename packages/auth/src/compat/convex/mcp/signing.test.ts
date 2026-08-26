@@ -26,13 +26,13 @@ describe("mcp oauth signing helpers", () => {
       typeof publicJwk === "object" && publicJwk !== null
         ? Reflect.get(publicJwk, "kid")
         : undefined,
-      "crm-mcp-key-1"
+      "crm-mcp-key-1",
     );
     assert.equal(
       typeof privateJwk === "object" && privateJwk !== null
         ? Reflect.get(privateJwk, "kid")
         : undefined,
-      "crm-mcp-key-1"
+      "crm-mcp-key-1",
     );
   });
 
@@ -59,10 +59,7 @@ describe("mcp oauth signing helpers", () => {
       expiresInSeconds: 900,
     });
 
-    assert.equal(
-      decodeProtectedHeader(signed.accessToken).kid,
-      "crm-mcp-key-2"
-    );
+    assert.equal(decodeProtectedHeader(signed.accessToken).kid, "crm-mcp-key-2");
     assert.equal(signed.tokenType, "Bearer");
     assert.equal(signed.scope, "crm:organization:read crm:tasks:read");
     assert.equal(signed.expiresIn, 900);
@@ -112,7 +109,7 @@ describe("mcp oauth signing helpers", () => {
         signingKeys: [key],
         issuer: "https://crm.test/oauth/crm-mcp",
         audience: "crm-mcp",
-      })
+      }),
     );
   });
 
@@ -130,7 +127,7 @@ describe("mcp oauth signing helpers", () => {
         key: { status: "active", retiredAt: null },
         now,
       }),
-      true
+      true,
     );
     assert.equal(
       shouldPublishMcpOAuthSigningKey({
@@ -140,7 +137,7 @@ describe("mcp oauth signing helpers", () => {
         },
         now,
       }),
-      true
+      true,
     );
     assert.equal(
       shouldPublishMcpOAuthSigningKey({
@@ -150,7 +147,7 @@ describe("mcp oauth signing helpers", () => {
         },
         now,
       }),
-      false
+      false,
     );
 
     assert.deepEqual(
@@ -165,7 +162,7 @@ describe("mcp oauth signing helpers", () => {
           },
         ],
       }).keys.map((key) => (key as { kid?: string }).kid),
-      ["active-key", "retired-key"]
+      ["active-key", "retired-key"],
     );
   });
 
@@ -183,7 +180,7 @@ describe("mcp oauth signing helpers", () => {
         token_type: "Bearer",
         expires_in: 900,
         scope: "crm:organization:read",
-      }
+      },
     );
   });
 });

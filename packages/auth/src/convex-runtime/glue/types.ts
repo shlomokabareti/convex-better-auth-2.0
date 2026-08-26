@@ -101,10 +101,7 @@ export type ConsumerModeAdapters<TUser extends GlueUserMinimum> = {
    * know either. Returns null if no local row exists yet (glue self-heals
    * via `bootstrapNewUser`).
    */
-  findUserByConvexAuthUserId: (
-    ctx: GlueCtx,
-    convexAuthUserId: string
-  ) => Promise<TUser | null>;
+  findUserByConvexAuthUserId: (ctx: GlueCtx, convexAuthUserId: string) => Promise<TUser | null>;
 };
 
 export type B2BModeAdapters<
@@ -117,7 +114,7 @@ export type B2BModeAdapters<
    */
   findAnchorByConvexAuthOrganizationId: (
     ctx: GlueCtx,
-    convexAuthOrganizationId: string
+    convexAuthOrganizationId: string,
   ) => Promise<TAnchor | null>;
 
   /**
@@ -134,7 +131,7 @@ export type B2BModeAdapters<
       convexAuthOrganizationId: string;
       name: string;
       createdByConvexAuthUserId: string;
-    }
+    },
   ) => Promise<TAnchor>;
 
   /**
@@ -144,7 +141,7 @@ export type B2BModeAdapters<
   setActiveOrganization: (
     ctx: GlueCtx,
     user: TUser,
-    convexAuthOrganizationId: string
+    convexAuthOrganizationId: string,
   ) => Promise<void>;
 
   /**
@@ -185,7 +182,7 @@ export type B2BModeAdapters<
       convexAuthOrganizationId: string;
       convexAuthUserId: string;
       basePermissions: string[];
-    }
+    },
   ) => Promise<{ add: string[]; remove: string[] } | null>;
 
   /**
@@ -203,10 +200,7 @@ export type B2BModeAdapters<
    * Receives BOTH the role key (e.g. "owner") and the raw permissions
    * array so consumers can dispatch either way.
    */
-  expandPermissions?: (
-    roleKey: string,
-    permissions: readonly string[]
-  ) => readonly string[];
+  expandPermissions?: (roleKey: string, permissions: readonly string[]) => readonly string[];
 };
 
 // ----------------------------------------------------------------------------
@@ -245,21 +239,12 @@ export type PickComponentFunctions<TModule, TKeys extends keyof TModule> = {
     infer TReturn,
     infer TComponentPath
   >
-    ? FunctionReference<
-        TType,
-        "public" | "internal",
-        TArgs,
-        TReturn,
-        TComponentPath
-      >
+    ? FunctionReference<TType, "public" | "internal", TArgs, TReturn, TComponentPath>
     : never;
 };
 
 export type ConvexAuthComponentHandle = {
-  identity: PickComponentFunctions<
-    ConvexAuthComponentApi["identity"],
-    "getByIdentity"
-  >;
+  identity: PickComponentFunctions<ConvexAuthComponentApi["identity"], "getByIdentity">;
   organizations: PickComponentFunctions<
     ConvexAuthComponentApi["organizations"],
     | "getMemberByUserOrganization"
@@ -285,10 +270,7 @@ export type ConsumerModeConfig<TUser extends GlueUserMinimum> = {
   identityProvider?: string;
 };
 
-export type B2BModeConfig<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
-> = {
+export type B2BModeConfig<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum> = {
   orgs: "enabled";
   component: ConvexAuthComponentHandle;
   adapters: B2BModeAdapters<TUser, TAnchor>;
@@ -319,10 +301,9 @@ export type B2BModeConfig<
   identityProvider?: string;
 };
 
-export type GlueConfig<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
-> = ConsumerModeConfig<TUser> | B2BModeConfig<TUser, TAnchor>;
+export type GlueConfig<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum> =
+  | ConsumerModeConfig<TUser>
+  | B2BModeConfig<TUser, TAnchor>;
 
 // ----------------------------------------------------------------------------
 // Viewer return types — separate shape per mode so the type system enforces
@@ -351,10 +332,9 @@ export type BaseViewer<TUser extends GlueUserMinimum> = {
   requirePermission: (permission: string) => void;
 };
 
-export type ConsumerViewer<TUser extends GlueUserMinimum> =
-  BaseViewer<TUser> & {
-    mode: "consumer";
-  };
+export type ConsumerViewer<TUser extends GlueUserMinimum> = BaseViewer<TUser> & {
+  mode: "consumer";
+};
 
 export type B2BViewer<
   TUser extends GlueUserMinimum,
@@ -368,10 +348,9 @@ export type B2BViewer<
   requireRole: (...allowedRoleKeys: string[]) => void;
 };
 
-export type Viewer<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
-> = ConsumerViewer<TUser> | B2BViewer<TUser, TAnchor>;
+export type Viewer<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum> =
+  | ConsumerViewer<TUser>
+  | B2BViewer<TUser, TAnchor>;
 
 // ----------------------------------------------------------------------------
 // The factory return type
@@ -394,26 +373,22 @@ export type ConsumerGlue<TUser extends GlueUserMinimum> = {
    */
   bootstrapNewUser: (
     ctx: GlueCtx,
-    args: { convexAuthUserId: string; email: string; name?: string }
+    args: { convexAuthUserId: string; email: string; name?: string },
   ) => Promise<void>;
 };
 
-export type B2BGlue<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
-> = {
+export type B2BGlue<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum> = {
   mode: "b2b";
   resolveViewer: (ctx: GlueCtx) => Promise<B2BViewer<TUser, TAnchor>>;
   bootstrapNewUser: (
     ctx: GlueCtx,
-    args: { convexAuthUserId: string; email: string; name?: string }
+    args: { convexAuthUserId: string; email: string; name?: string },
   ) => Promise<void>;
 };
 
-export type Glue<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
-> = ConsumerGlue<TUser> | B2BGlue<TUser, TAnchor>;
+export type Glue<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum> =
+  | ConsumerGlue<TUser>
+  | B2BGlue<TUser, TAnchor>;
 
 // Re-export error types so consumers only need one import path.
 export type { AuthErrorAuthzCode, AuthErrorCode };

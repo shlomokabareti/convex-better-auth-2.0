@@ -8,9 +8,8 @@ export type ApiKeyScopeDescriptor<Scope extends string = string> = {
   defaultSelected?: boolean;
 };
 
-export type ApiKeyScopeFromDescriptors<
-  Descriptors extends readonly ApiKeyScopeDescriptor[],
-> = Descriptors[number]["scope"];
+export type ApiKeyScopeFromDescriptors<Descriptors extends readonly ApiKeyScopeDescriptor[]> =
+  Descriptors[number]["scope"];
 
 export type ApiKeyScopeRegistry<Scope extends string = string> = {
   descriptors: readonly ApiKeyScopeDescriptor<Scope>[];
@@ -21,17 +20,12 @@ export type ApiKeyScopeRegistry<Scope extends string = string> = {
   normalizeScopes(scopes: readonly string[]): Scope[];
   requireKnownScopes(scopes: readonly string[]): Scope[];
   canUseScope(scope: Scope, permissions: readonly string[]): boolean;
-  filterUsableScopes(
-    scopes: readonly Scope[],
-    permissions: readonly string[]
-  ): Scope[];
+  filterUsableScopes(scopes: readonly Scope[], permissions: readonly string[]): Scope[];
 };
 
 export function createApiKeyScopeRegistry<
   const Descriptors extends readonly ApiKeyScopeDescriptor[],
->(
-  descriptors: Descriptors
-): ApiKeyScopeRegistry<ApiKeyScopeFromDescriptors<Descriptors>> {
+>(descriptors: Descriptors): ApiKeyScopeRegistry<ApiKeyScopeFromDescriptors<Descriptors>> {
   type Scope = ApiKeyScopeFromDescriptors<Descriptors>;
 
   const descriptorMap = new Map<Scope, ApiKeyScopeDescriptor<Scope>>();
@@ -68,9 +62,7 @@ export function createApiKeyScopeRegistry<
     return normalizedDescriptor;
   });
 
-  const scopeSet = new Set<Scope>(
-    normalizedDescriptors.map((descriptor) => descriptor.scope)
-  );
+  const scopeSet = new Set<Scope>(normalizedDescriptors.map((descriptor) => descriptor.scope));
   const scopes = normalizedDescriptors.map((descriptor) => descriptor.scope);
   const defaultScopes = normalizedDescriptors
     .filter((descriptor) => descriptor.defaultSelected === true)
@@ -96,9 +88,7 @@ export function createApiKeyScopeRegistry<
       return true;
     }
 
-    return requiredPermissions.some((permission) =>
-      hasPermission(permissions, permission)
-    );
+    return requiredPermissions.some((permission) => hasPermission(permissions, permission));
   }
 
   return {
@@ -121,7 +111,7 @@ export function createApiKeyScopeRegistry<
 function collectScopes<Scope extends string>(
   inputScopes: readonly string[],
   isKnownScope: (scope: string) => scope is Scope,
-  throwOnUnknown: boolean
+  throwOnUnknown: boolean,
 ): Scope[] {
   const scopes: Scope[] = [];
   const seenScopes = new Set<Scope>();

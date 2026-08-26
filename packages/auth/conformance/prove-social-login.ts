@@ -52,15 +52,10 @@ const bogus = await fetch(`${site}/api/auth/sign-in/social`, {
 });
 const bogusBody = await describeResponse(bogus);
 
-if (
-  bogus.status === 404 &&
-  /no.?t found|no matching|cannot (POST|find)/i.test(bogusBody)
-) {
+if (bogus.status === 404 && /no.?t found|no matching|cannot (POST|find)/i.test(bogusBody)) {
   r.bad(`sign-in/social not mounted (HTTP 404 routing miss): ${bogusBody}`);
 } else if (bogus.status >= 200 && bogus.status < 500) {
-  r.ok(
-    `sign-in/social mounted — bogus provider handled by Better Auth (HTTP ${bogus.status})`
-  );
+  r.ok(`sign-in/social mounted — bogus provider handled by Better Auth (HTTP ${bogus.status})`);
 } else {
   r.bad(`sign-in/social crashed (HTTP ${bogus.status}): ${bogusBody}`);
 }
@@ -75,32 +70,21 @@ const omitted = await fetch(`${site}/api/auth/sign-in/social`, {
 });
 const omittedBody = await describeResponse(omitted);
 
-if (
-  omitted.status === 404 &&
-  /no.?t found|no matching|cannot (POST|find)/i.test(omittedBody)
-) {
-  r.bad(
-    `sign-in/social not mounted on omitted provider (HTTP 404): ${omittedBody}`
-  );
+if (omitted.status === 404 && /no.?t found|no matching|cannot (POST|find)/i.test(omittedBody)) {
+  r.bad(`sign-in/social not mounted on omitted provider (HTTP 404): ${omittedBody}`);
 } else if (omitted.status >= 400 && omitted.status < 500) {
-  r.ok(
-    `sign-in/social validates input — omitted provider rejected (HTTP ${omitted.status})`
-  );
+  r.ok(`sign-in/social validates input — omitted provider rejected (HTTP ${omitted.status})`);
 } else if (omitted.status >= 200 && omitted.status < 400) {
-  r.ok(
-    `sign-in/social reachable on omitted provider (HTTP ${omitted.status}, route mounted)`
-  );
+  r.ok(`sign-in/social reachable on omitted provider (HTTP ${omitted.status}, route mounted)`);
 } else {
-  r.bad(
-    `sign-in/social crashed on omitted provider (HTTP ${omitted.status}): ${omittedBody}`
-  );
+  r.bad(`sign-in/social crashed on omitted provider (HTTP ${omitted.status}): ${omittedBody}`);
 }
 
 console.log(
   "[NOTE] Live Google round trip (consent + /api/auth/callback/google) requires " +
     "a real Google OAuth client and interactive consent; verify it manually per " +
     "docs/social-login-recipe.md. This proof asserts only that the social sign-in " +
-    "handler is mounted and processing requests."
+    "handler is mounted and processing requests.",
 );
 
 r.done("social-login");

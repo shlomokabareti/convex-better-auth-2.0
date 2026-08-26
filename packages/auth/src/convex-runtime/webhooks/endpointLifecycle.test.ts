@@ -18,16 +18,10 @@ describe("webhook endpoint lifecycle", () => {
   it("normalizes webhook endpoint URLs", () => {
     assert.equal(
       normalizeConvexWebhookEndpointUrl(" https://example.com/webhooks "),
-      "https://example.com/webhooks"
+      "https://example.com/webhooks",
     );
-    assert.throws(
-      () => normalizeConvexWebhookEndpointUrl(""),
-      /URL is required/
-    );
-    assert.throws(
-      () => normalizeConvexWebhookEndpointUrl("ftp://example.com"),
-      /must start with/
-    );
+    assert.throws(() => normalizeConvexWebhookEndpointUrl(""), /URL is required/);
+    assert.throws(() => normalizeConvexWebhookEndpointUrl("ftp://example.com"), /must start with/);
   });
 
   it("rejects SSRF targets (metadata, loopback, private, internal)", () => {
@@ -49,32 +43,24 @@ describe("webhook endpoint lifecycle", () => {
       assert.throws(
         () => normalizeConvexWebhookEndpointUrl(url),
         /not allowed|must include a host/,
-        url
+        url,
       );
     }
     // Public hosts and public IP literals still pass.
     assert.equal(
       normalizeConvexWebhookEndpointUrl("https://hooks.example.com/in"),
-      "https://hooks.example.com/in"
+      "https://hooks.example.com/in",
     );
-    assert.equal(
-      normalizeConvexWebhookEndpointUrl("http://8.8.8.8/in"),
-      "http://8.8.8.8/in"
-    );
+    assert.equal(normalizeConvexWebhookEndpointUrl("http://8.8.8.8/in"), "http://8.8.8.8/in");
   });
 
   it("normalizes event types and defaults to wildcard", () => {
     assert.deepEqual(
-      normalizeConvexWebhookEndpointEventTypes([
-        "invoice.created ",
-        " payment.received",
-      ]),
-      ["invoice.created", "payment.received"]
+      normalizeConvexWebhookEndpointEventTypes(["invoice.created ", " payment.received"]),
+      ["invoice.created", "payment.received"],
     );
     assert.deepEqual(normalizeConvexWebhookEndpointEventTypes([]), ["*"]);
-    assert.deepEqual(normalizeConvexWebhookEndpointEventTypes(["  ", ""]), [
-      "*",
-    ]);
+    assert.deepEqual(normalizeConvexWebhookEndpointEventTypes(["  ", ""]), ["*"]);
   });
 
   it("builds endpoint list items without exposing full secrets", () => {
@@ -119,7 +105,7 @@ describe("webhook endpoint lifecycle", () => {
     assert.equal(getConvexWebhookEndpointSecretPreview("short"), "sho...");
     assert.equal(
       getConvexWebhookEndpointSecretPreview("cvxsec_abc123def456"),
-      "cvxsec_abc...def456"
+      "cvxsec_abc...def456",
     );
   });
 
@@ -150,19 +136,16 @@ describe("webhook endpoint lifecycle", () => {
     assert.doesNotThrow(() =>
       requireWebhookEndpointActive({
         endpoint: { _id: "ep-1", status: "active" },
-      })
+      }),
     );
     assert.throws(
       () =>
         requireWebhookEndpointActive({
           endpoint: { _id: "ep-1", status: "disabled" },
         }),
-      /not active/
+      /not active/,
     );
-    assert.throws(
-      () => requireWebhookEndpointActive({ endpoint: null }),
-      /not active/
-    );
+    assert.throws(() => requireWebhookEndpointActive({ endpoint: null }), /not active/);
   });
 
   it("classifies valid and invalid status transitions", () => {
@@ -179,17 +162,12 @@ describe("webhook endpoint lifecycle", () => {
     ];
     for (const v of valid) {
       const decision = classifyWebhookEndpointStatusTransition(v);
-      assert.equal(
-        decision.ok,
-        true,
-        `transition ${v.from} -> ${v.to} should be valid`
-      );
+      assert.equal(decision.ok, true, `transition ${v.from} -> ${v.to} should be valid`);
     }
 
     assert.equal(
-      classifyWebhookEndpointStatusTransition({ from: "active", to: "active" })
-        .ok,
-      true
+      classifyWebhookEndpointStatusTransition({ from: "active", to: "active" }).ok,
+      true,
     );
   });
 });

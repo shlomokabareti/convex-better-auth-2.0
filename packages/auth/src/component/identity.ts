@@ -1,7 +1,4 @@
-import {
-  paginationOptsValidator,
-  paginationResultValidator,
-} from "convex/server";
+import { paginationOptsValidator, paginationResultValidator } from "convex/server";
 import { v } from "convex/values";
 
 import type { Doc } from "./_generated/dataModel.js";
@@ -43,7 +40,7 @@ const identityLookupResultValidator = v.union(
     email: v.optional(v.string()),
     emailVerified: v.boolean(),
   }),
-  v.null()
+  v.null(),
 );
 
 const listedIdentityValidator = v.object({
@@ -63,9 +60,7 @@ export const provisionFromIdentity = mutation({
   returns: provisionResultValidator,
   handler: async (ctx, args) => {
     const now = Date.now();
-    const normalizedEmail = normalizeEmail(
-      args.user.email ?? args.identity.email
-    );
+    const normalizedEmail = normalizeEmail(args.user.email ?? args.identity.email);
     const existingIdentity =
       (await findIdentityByIdentityId(ctx, args.identity.identityId)) ??
       (await findIdentityByProviderIssuerSubject(ctx, {
@@ -118,11 +113,7 @@ export const provisionFromIdentity = mutation({
     };
 
     if (existingIdentity) {
-      await ctx.db.patch(
-        "auth_identities",
-        existingIdentity._id,
-        identityPatch
-      );
+      await ctx.db.patch("auth_identities", existingIdentity._id, identityPatch);
       return {
         userId,
         identityId: existingIdentity._id,
@@ -198,18 +189,13 @@ export const getByTokenIdentifier = query({
   handler: async (ctx, args) => {
     const identity = await ctx.db
       .query("auth_identities")
-      .withIndex("by_token_identifier", (q) =>
-        q.eq("tokenIdentifier", args.tokenIdentifier)
-      )
+      .withIndex("by_token_identifier", (q) => q.eq("tokenIdentifier", args.tokenIdentifier))
       .unique();
     return identity === null ? null : toIdentityLookupResult(identity);
   },
 });
 
-async function findIdentityByIdentityId(
-  ctx: IdentityLookupCtx,
-  identityId: string
-) {
+async function findIdentityByIdentityId(ctx: IdentityLookupCtx, identityId: string) {
   return await ctx.db
     .query("auth_identities")
     .withIndex("by_identity_id", (q) => q.eq("identityId", identityId))
@@ -218,15 +204,12 @@ async function findIdentityByIdentityId(
 
 async function findIdentityByProviderIssuerSubject(
   ctx: IdentityLookupCtx,
-  args: { provider: string; issuer: string; subject: string }
+  args: { provider: string; issuer: string; subject: string },
 ) {
   return await ctx.db
     .query("auth_identities")
     .withIndex("by_provider_issuer_subject", (q) =>
-      q
-        .eq("provider", args.provider)
-        .eq("issuer", args.issuer)
-        .eq("subject", args.subject)
+      q.eq("provider", args.provider).eq("issuer", args.issuer).eq("subject", args.subject),
     )
     .unique();
 }

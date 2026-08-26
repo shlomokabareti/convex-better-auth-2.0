@@ -21,9 +21,7 @@ export type InviteAcceptRedirectResult =
     };
 
 function readParams(currentSearch: string): URLSearchParams {
-  const normalizedSearch = currentSearch.startsWith("?")
-    ? currentSearch.slice(1)
-    : currentSearch;
+  const normalizedSearch = currentSearch.startsWith("?") ? currentSearch.slice(1) : currentSearch;
   return new URLSearchParams(normalizedSearch);
 }
 
@@ -34,9 +32,7 @@ export function getInvitationToken(params: URLSearchParams): string | null {
 export function getAfterSignUpPath(
   currentSearch: string,
   defaultPath: string,
-  currentWindowOrigin = typeof window === "undefined"
-    ? null
-    : window.location.origin
+  currentWindowOrigin = typeof window === "undefined" ? null : window.location.origin,
 ): string {
   const params = readParams(currentSearch);
   const requestedRedirect = params.get("redirect_url");
@@ -76,17 +72,13 @@ export function buildInviteSignUpUrl({
     signUpUrl.searchParams.set("invitation_token", invitationToken);
   }
 
-  const normalizedEmail =
-    emailAddress ?? params.get("email_address") ?? params.get("email");
+  const normalizedEmail = emailAddress ?? params.get("email_address") ?? params.get("email");
   if (normalizedEmail) {
     signUpUrl.searchParams.set("email_address", normalizedEmail);
     signUpUrl.searchParams.set("identifier", normalizedEmail);
   }
 
-  const absoluteAfterSignUp = new URL(
-    afterSignUpPath,
-    currentOrigin
-  ).toString();
+  const absoluteAfterSignUp = new URL(afterSignUpPath, currentOrigin).toString();
   signUpUrl.searchParams.set("redirect_url", absoluteAfterSignUp);
 
   return signUpUrl.toString();
@@ -98,10 +90,7 @@ export async function prepareInviteAcceptRedirect(args: {
   currentOrigin: string;
   currentSearch: string;
   afterSignUpPath: string;
-  getInvitationEmail?: (
-    invitationToken: string,
-    params: URLSearchParams
-  ) => Promise<string | null>;
+  getInvitationEmail?: (invitationToken: string, params: URLSearchParams) => Promise<string | null>;
   toSafeRedirectPath?: (url: string) => string | undefined;
 }): Promise<InviteAcceptRedirectResult> {
   const params = readParams(args.currentSearch);
@@ -115,10 +104,7 @@ export async function prepareInviteAcceptRedirect(args: {
 
   let emailAddress = params.get("email_address") ?? params.get("email") ?? null;
   if (args.getInvitationEmail !== undefined) {
-    const resolvedEmail = await args.getInvitationEmail(
-      invitationToken,
-      params
-    );
+    const resolvedEmail = await args.getInvitationEmail(invitationToken, params);
     if (resolvedEmail === null) {
       return {
         isRedirectable: false,

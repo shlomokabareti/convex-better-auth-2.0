@@ -12,7 +12,7 @@ import type { PrincipalResolutionInput } from "./types";
 
 export function resolvePrincipalContext(
   principal: AuthPrincipal,
-  input: PrincipalResolutionInput
+  input: PrincipalResolutionInput,
 ): ResolvedAuthContext {
   return {
     principal,
@@ -21,7 +21,7 @@ export function resolvePrincipalContext(
 }
 
 export function resolveAnonymousContext(
-  input: Omit<PrincipalResolutionInput, "credentialType">
+  input: Omit<PrincipalResolutionInput, "credentialType">,
 ): ResolvedAuthContext {
   return resolvePrincipalContext(
     {
@@ -31,13 +31,13 @@ export function resolveAnonymousContext(
     {
       credentialType: "anonymous",
       ...input,
-    }
+    },
   );
 }
 
 export function resolveUserContext(
   principal: UserPrincipal,
-  input: Omit<PrincipalResolutionInput, "credentialType">
+  input: Omit<PrincipalResolutionInput, "credentialType">,
 ): ResolvedAuthContext {
   return resolvePrincipalContext(principal, {
     credentialType: "userToken",
@@ -48,7 +48,7 @@ export function resolveUserContext(
 
 export function resolveServiceContext(
   principal: ServicePrincipal,
-  input: Omit<PrincipalResolutionInput, "credentialType">
+  input: Omit<PrincipalResolutionInput, "credentialType">,
 ): ResolvedAuthContext {
   return resolvePrincipalContext(principal, {
     credentialType: "serviceCredential",
@@ -59,7 +59,7 @@ export function resolveServiceContext(
 
 export function resolveAgentContext(
   principal: AgentPrincipal,
-  input: Omit<PrincipalResolutionInput, "credentialType">
+  input: Omit<PrincipalResolutionInput, "credentialType">,
 ): ResolvedAuthContext {
   return resolvePrincipalContext(principal, {
     ...input,
@@ -70,7 +70,7 @@ export function resolveAgentContext(
 
 export function resolveApiKeyContext(
   principal: ApiKeyPrincipal,
-  input: Omit<PrincipalResolutionInput, "credentialType">
+  input: Omit<PrincipalResolutionInput, "credentialType">,
 ): ResolvedAuthContext {
   return resolvePrincipalContext(principal, {
     credentialType: "apiKey",
@@ -81,7 +81,7 @@ export function resolveApiKeyContext(
 
 export function resolveOAuthClientContext(
   principal: OAuthClientPrincipal,
-  input: Omit<PrincipalResolutionInput, "credentialType">
+  input: Omit<PrincipalResolutionInput, "credentialType">,
 ): ResolvedAuthContext {
   return resolvePrincipalContext(principal, {
     credentialType: "oauthToken",

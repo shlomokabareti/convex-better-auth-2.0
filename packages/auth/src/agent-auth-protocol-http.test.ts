@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
 
-import {
-  calculateJwkThumbprint,
-  exportJWK,
-  generateKeyPair,
-  SignJWT,
-} from "jose";
+import { calculateJwkThumbprint, exportJWK, generateKeyPair, SignJWT } from "jose";
 import { describe, it } from "vitest";
 
 import {
@@ -22,23 +17,17 @@ describe("Agent Auth Protocol HTTP server", () => {
     assert.equal(routes.length, 13);
     assert.equal(routes.filter((route) => route.method === "GET").length, 4);
     assert.equal(routes.filter((route) => route.method === "POST").length, 9);
-    assert.equal(
-      new Set(routes.map((route) => route.path)).size,
-      routes.length
-    );
+    assert.equal(new Set(routes.map((route) => route.path)).size, routes.length);
     const mounted: (typeof routes)[number][] = [];
-    fixture.server.registerHttpRoutes(
-      { route: (route) => mounted.push(route) },
-      Symbol("handler")
-    );
+    fixture.server.registerHttpRoutes({ route: (route) => mounted.push(route) }, Symbol("handler"));
     assert.deepEqual(
       mounted.map(({ path, method }) => ({ path, method })),
-      routes
+      routes,
     );
 
     const response = await fixture.server.handleHttpRequest(
       undefined,
-      new Request("https://auth.example.com/.well-known/agent-configuration")
+      new Request("https://auth.example.com/.well-known/agent-configuration"),
     );
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "public, max-age=3600");
@@ -52,7 +41,7 @@ describe("Agent Auth Protocol HTTP server", () => {
     const token = await fixture.signHost(
       AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.register,
       true,
-      "register-once"
+      "register-once",
     );
     const response = await fixture.server.handleHttpRequest(
       undefined,
@@ -65,7 +54,7 @@ describe("Agent Auth Protocol HTTP server", () => {
           permissions: ["errors:read"],
           capabilities: [{ name: "sentry:investigate" }],
         },
-      })
+      }),
     );
     assert.equal(response.status, 201);
     const body: unknown = await response.json();
@@ -74,9 +63,7 @@ describe("Agent Auth Protocol HTTP server", () => {
     const agentId = requireString(body.agent_id);
     const userCode = requireString(body.approval.user_code);
     const deviceCode = requireString(body.approval.device_code);
-    const verificationUriComplete = requireString(
-      body.approval.verification_uri_complete
-    );
+    const verificationUriComplete = requireString(body.approval.verification_uri_complete);
     assert.equal(agentId, "agent-1");
     assert.match(userCode, /^[A-Z]{4}-[A-Z]{4}$/u);
     assert.ok(deviceCode.length >= 40);
@@ -95,17 +82,14 @@ describe("Agent Auth Protocol HTTP server", () => {
           permissions: [],
           capabilities: [],
         },
-      })
+      }),
     );
     assert.equal(replay.status, 401);
   });
 
   it("passes a narrowed live agent principal to product execution", async () => {
     const fixture = await createFixture();
-    const token = await fixture.signAgent(
-      AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.execute,
-      "execute-once"
-    );
+    const token = await fixture.signAgent(AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.execute, "execute-once");
     const response = await fixture.server.handleHttpRequest(
       undefined,
       protocolRequest(AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.execute, {
@@ -115,7 +99,7 @@ describe("Agent Auth Protocol HTTP server", () => {
           capability: "sentry:investigate",
           arguments: { issue: "SENTRY-1" },
         },
-      })
+      }),
     );
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), {
@@ -124,19 +108,16 @@ describe("Agent Auth Protocol HTTP server", () => {
       capability: "sentry:investigate",
     });
     assert.equal(fixture.executions.length, 1);
-    assert.deepEqual(fixture.executions[0]?.principal.permissions, [
-      "errors:read",
-    ]);
+    assert.deepEqual(fixture.executions[0]?.principal.permissions, ["errors:read"]);
   });
 
   it("rejects missing version headers before authentication", async () => {
     const fixture = await createFixture();
     const response = await fixture.server.handleHttpRequest(
       undefined,
-      new Request(
-        `https://auth.example.com${AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.execute}`,
-        { method: "POST" }
-      )
+      new Request(`https://auth.example.com${AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.execute}`, {
+        method: "POST",
+      }),
     );
     assert.equal(response.status, 400);
     assert.deepEqual(await response.json(), {
@@ -150,12 +131,9 @@ describe("Agent Auth Protocol HTTP server", () => {
     const token = await fixture.signHost(
       AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.status,
       false,
-      "cross-organization"
+      "cross-organization",
     );
-    const url = new URL(
-      AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.status,
-      "https://auth.example.com"
-    );
+    const url = new URL(AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.status, "https://auth.example.com");
     url.searchParams.set("organization_id", "org-2");
     url.searchParams.set("agent_id", "agent-1");
     const response = await fixture.server.handleHttpRequest(
@@ -165,7 +143,7 @@ describe("Agent Auth Protocol HTTP server", () => {
           authorization: `Bearer ${token}`,
           "agent-auth-version": "1.0-draft",
         },
-      })
+      }),
     );
     assert.equal(response.status, 403);
     assert.deepEqual(await response.json(), {
@@ -201,8 +179,7 @@ async function createFixture() {
           publicJwkJson: JSON.stringify(hostJwk),
         }),
         consumeRequest: async (input) => {
-          if (hostReplays.has(input.replayIdHash))
-            throw new Error("Agent host request replayed");
+          if (hostReplays.has(input.replayIdHash)) throw new Error("Agent host request replayed");
           hostReplays.add(input.replayIdHash);
           if (
             input.requestedOrganizationId !== undefined &&
@@ -227,8 +204,7 @@ async function createFixture() {
           hostThumbprint,
         }),
         consumeCredential: async (input) => {
-          if (agentReplays.has(input.replayIdHash))
-            throw new Error("Agent credential replayed");
+          if (agentReplays.has(input.replayIdHash)) throw new Error("Agent credential replayed");
           agentReplays.add(input.replayIdHash);
           return {
             kind: "agent" as const,
@@ -337,7 +313,7 @@ async function createFixture() {
 
 function protocolRequest(
   path: string,
-  input: { token: string; body: Record<string, unknown> }
+  input: { token: string; body: Record<string, unknown> },
 ): Request {
   return new Request(`https://auth.example.com${path}`, {
     method: "POST",

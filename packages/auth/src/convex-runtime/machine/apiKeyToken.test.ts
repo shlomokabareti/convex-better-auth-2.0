@@ -18,7 +18,7 @@ describe("api key token utilities", () => {
         tokenPrefix: "crm_live",
         randomUUID: () => "12345678-1234-1234-1234-123456789abc",
       }),
-      "crm_live_1234567812341234"
+      "crm_live_1234567812341234",
     );
   });
 
@@ -27,7 +27,7 @@ describe("api key token utilities", () => {
       createApiKeySecret({
         randomUUID: () => "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
       }),
-      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     );
   });
 
@@ -88,7 +88,7 @@ describe("api key token utilities", () => {
           status: "revoked" as const,
         }),
       }),
-      { ok: false, reason: "invalid_key" }
+      { ok: false, reason: "invalid_key" },
     );
 
     assert.deepEqual(
@@ -100,7 +100,7 @@ describe("api key token utilities", () => {
           status: "active" as const,
         }),
       }),
-      { ok: false, reason: "invalid_secret" }
+      { ok: false, reason: "invalid_secret" },
     );
 
     assert.deepEqual(
@@ -114,7 +114,7 @@ describe("api key token utilities", () => {
           expiresAt: 100,
         }),
       }),
-      { ok: false, reason: "expired" }
+      { ok: false, reason: "expired" },
     );
   });
 });

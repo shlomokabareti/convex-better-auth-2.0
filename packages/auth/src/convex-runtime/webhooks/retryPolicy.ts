@@ -17,7 +17,7 @@ function hashString(value: string): number {
 }
 
 function resolveRetryOptions(
-  options?: ConvexWebhookRetryPolicyOptions
+  options?: ConvexWebhookRetryPolicyOptions,
 ): Required<ConvexWebhookRetryPolicyOptions> {
   return {
     initialBackoffMs: options?.initialBackoffMs ?? defaultInitialRetryBackoffMs,
@@ -28,26 +28,20 @@ function resolveRetryOptions(
 
 export function getConvexWebhookExponentialBackoffMs(
   attemptCount: number,
-  options?: ConvexWebhookRetryPolicyOptions
+  options?: ConvexWebhookRetryPolicyOptions,
 ): number {
   const resolved = resolveRetryOptions(options);
   const retryNumber = Math.max(1, attemptCount);
-  return Math.min(
-    resolved.initialBackoffMs * 2 ** (retryNumber - 1),
-    resolved.maxBackoffMs
-  );
+  return Math.min(resolved.initialBackoffMs * 2 ** (retryNumber - 1), resolved.maxBackoffMs);
 }
 
 export function getConvexWebhookJitteredBackoffMs(
   attemptCount: number,
   deliveryKey: string,
-  options?: ConvexWebhookRetryPolicyOptions
+  options?: ConvexWebhookRetryPolicyOptions,
 ): number {
   const resolved = resolveRetryOptions(options);
-  const baseBackoffMs = getConvexWebhookExponentialBackoffMs(
-    attemptCount,
-    resolved
-  );
+  const baseBackoffMs = getConvexWebhookExponentialBackoffMs(attemptCount, resolved);
   const jitterWindowMs = Math.floor(baseBackoffMs * resolved.jitterWindowRatio);
   if (jitterWindowMs <= 0) {
     return baseBackoffMs;
@@ -65,11 +59,6 @@ export function getConvexWebhookRetryAt(args: {
   options?: ConvexWebhookRetryPolicyOptions;
 }): number {
   return (
-    args.now +
-    getConvexWebhookJitteredBackoffMs(
-      args.attemptCount,
-      args.deliveryKey,
-      args.options
-    )
+    args.now + getConvexWebhookJitteredBackoffMs(args.attemptCount, args.deliveryKey, args.options)
   );
 }

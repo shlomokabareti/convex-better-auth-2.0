@@ -17,20 +17,17 @@ export type AuthMdServiceAuthHttpAuthority<TContext> = {
   authorizeRegistration(ctx: TContext, request: Request): Promise<void>;
   registerServiceAuth(
     ctx: TContext,
-    args: { loginHint: string; scopes: readonly string[] }
+    args: { loginHint: string; scopes: readonly string[] },
   ): Promise<AuthMdServiceAuthRegistrationResponse>;
   pollServiceAuthClaim(
     ctx: TContext,
-    args: { claimToken: string }
+    args: { claimToken: string },
   ): Promise<AuthMdServiceAuthPollResponse>;
   exchangeIdentityAssertion(
     ctx: TContext,
-    args: { assertion: string; resource: string }
+    args: { assertion: string; resource: string },
   ): Promise<AuthMdServiceAuthTokenResponse>;
-  revokeAccessToken(
-    ctx: TContext,
-    args: { accessToken: string }
-  ): Promise<{ ok: true }>;
+  revokeAccessToken(ctx: TContext, args: { accessToken: string }): Promise<{ ok: true }>;
 };
 
 export type CreateAuthMdServiceAuthHttpServerConfig<TContext> = {
@@ -43,15 +40,14 @@ export type AuthMdServiceAuthHttpServer<TContext> = {
 };
 
 export function createAuthMdServiceAuthHttpServer<TContext>(
-  config: CreateAuthMdServiceAuthHttpServerConfig<TContext>
+  config: CreateAuthMdServiceAuthHttpServerConfig<TContext>,
 ): AuthMdServiceAuthHttpServer<TContext> {
   const postClaimScopes = normalizeScopes(config.postClaimScopes);
   return {
     async handleHttpRequest(ctx, request) {
       try {
         const url = new URL(request.url);
-        if (request.method !== "POST")
-          return oauthError(405, "invalid_request");
+        if (request.method !== "POST") return oauthError(405, "invalid_request");
         if (url.pathname === AUTH_MD_SERVICE_AUTH_ENDPOINTS.identity) {
           await config.authority.authorizeRegistration(ctx, request);
           const body = await parseJsonObject(request);
@@ -63,7 +59,7 @@ export function createAuthMdServiceAuthHttpServer<TContext>(
             await config.authority.registerServiceAuth(ctx, {
               loginHint: requireString(body.login_hint, "login_hint"),
               scopes: postClaimScopes,
-            })
+            }),
           );
         }
         if (url.pathname === AUTH_MD_SERVICE_AUTH_ENDPOINTS.token) {
@@ -82,7 +78,7 @@ export function createAuthMdServiceAuthHttpServer<TContext>(
               await config.authority.exchangeIdentityAssertion(ctx, {
                 assertion: requireString(body.get("assertion"), "assertion"),
                 resource: requireString(body.get("resource"), "resource"),
-              })
+              }),
             );
           }
           return oauthError(400, "unsupported_grant_type");
@@ -106,16 +102,14 @@ export function createAuthMdServiceAuthHttpServer<TContext>(
           400,
           "invalid_request",
           undefined,
-          error instanceof Error ? error.message : "Invalid auth.md request"
+          error instanceof Error ? error.message : "Invalid auth.md request",
         );
       }
     },
   };
 }
 
-async function parseJsonObject(
-  request: Request
-): Promise<Record<string, unknown>> {
+async function parseJsonObject(request: Request): Promise<Record<string, unknown>> {
   requireContentType(request, "application/json");
   const raw = await readBoundedBody(request);
   const value: unknown = JSON.parse(raw);
@@ -172,7 +166,7 @@ function oauthError(
   status: number,
   error: string,
   interval?: number,
-  description?: string
+  description?: string,
 ): Response {
   return jsonResponse(status, {
     error,

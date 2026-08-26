@@ -42,9 +42,7 @@ function parseArgs(argv: readonly string[]): {
     } else if (arg === "--legit-anchor-tables") {
       const next = argv[i + 1];
       if (!next) {
-        console.error(
-          "--legit-anchor-tables requires a value (comma-separated)"
-        );
+        console.error("--legit-anchor-tables requires a value (comma-separated)");
         process.exit(2);
       }
       legitAnchorTables = next
@@ -70,18 +68,16 @@ function parseArgs(argv: readonly string[]): {
           "                                bridge columns (default: organizations,users). Override sparingly\n" +
           "                                and only for deliberate per-member override tables.\n" +
           "\n" +
-          "See docs/architecture/consumer-contract.md"
+          "See docs/architecture/consumer-contract.md",
       );
       process.exit(0);
     }
   }
-  return legitAnchorTables === undefined
-    ? { convexDir }
-    : { convexDir, legitAnchorTables };
+  return legitAnchorTables === undefined ? { convexDir } : { convexDir, legitAnchorTables };
 }
 
 function groupByRule(
-  violations: readonly ConsumerContractViolation[]
+  violations: readonly ConsumerContractViolation[],
 ): Map<string, ConsumerContractViolation[]> {
   const out = new Map<string, ConsumerContractViolation[]>();
   for (const v of violations) {
@@ -104,7 +100,7 @@ function main(): void {
   const { ok, violations } = checkConsumerContract(
     legitAnchorTables === undefined
       ? { convexDir: absDir }
-      : { convexDir: absDir, legitAnchorTables }
+      : { convexDir: absDir, legitAnchorTables },
   );
 
   // Codex audit (2026-05-28) hardening: surface bypass risks explicitly
@@ -117,7 +113,7 @@ function main(): void {
       `--legit-anchor-tables whitelist has ${whitelistSize} entries. ` +
         "Legitimate anchors are usually 1-2 tables (organizations + maybe users). " +
         "A long whitelist suggests anti-patterns are being masked. " +
-        "Audit each entry against docs/migration/truth-migration-playbook.md."
+        "Audit each entry against docs/migration/truth-migration-playbook.md.",
     );
   }
 
@@ -128,7 +124,7 @@ function main(): void {
     console.log(
       "Does NOT detect: re-exports through type aliases, .js/.json/.cjs " +
         "shims, generated code (_generated/), or dynamic schema construction. " +
-        "If your consumer uses any of those, supplement with code review."
+        "If your consumer uses any of those, supplement with code review.",
     );
     if (warnings.length > 0) {
       console.log("");
@@ -139,9 +135,7 @@ function main(): void {
     process.exit(0);
   }
 
-  console.error(
-    `convex-auth consumer contract: ${violations.length} violation(s) in ${absDir}\n`
-  );
+  console.error(`convex-auth consumer contract: ${violations.length} violation(s) in ${absDir}\n`);
   const grouped = groupByRule(violations);
   for (const [rule, list] of grouped) {
     console.error(`[${rule}] ${list.length} violation(s)`);
@@ -152,9 +146,7 @@ function main(): void {
     }
     console.error("");
   }
-  console.error(
-    "See docs/architecture/consumer-contract.md for remediation guidance."
-  );
+  console.error("See docs/architecture/consumer-contract.md for remediation guidance.");
   process.exit(1);
 }
 

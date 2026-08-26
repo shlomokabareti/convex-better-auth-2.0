@@ -22,8 +22,7 @@ async function createStore() {
 
   return {
     keys,
-    loadActiveSigningKey: () =>
-      keys.find((key) => key.status === "active") ?? null,
+    loadActiveSigningKey: () => keys.find((key) => key.status === "active") ?? null,
     listSigningKeys: () => keys,
     persistSigningKey: (signingKey: McpOAuthSigningKeyRecord) => {
       keys.push({
@@ -32,13 +31,7 @@ async function createStore() {
         retiredAt: null,
       });
     },
-    retireSigningKey: ({
-      keyId,
-      retiredAt,
-    }: {
-      keyId: string;
-      retiredAt: number;
-    }) => {
+    retireSigningKey: ({ keyId, retiredAt }: { keyId: string; retiredAt: number }) => {
       const key = keys.find((candidate) => candidate.keyId === keyId);
       if (key) {
         key.status = "retired";

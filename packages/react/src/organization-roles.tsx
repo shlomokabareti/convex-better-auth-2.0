@@ -34,15 +34,8 @@ export type ConvexOrganizationCreateRoleArgs = {
   permissions: string[];
 };
 
-export type ConvexOrganizationRoleManagerFunctionReferences<
-  RoleId extends string = string,
-> = {
-  createRole: FunctionReference<
-    "mutation",
-    "public",
-    ConvexOrganizationCreateRoleArgs,
-    RoleId
-  >;
+export type ConvexOrganizationRoleManagerFunctionReferences<RoleId extends string = string> = {
+  createRole: FunctionReference<"mutation", "public", ConvexOrganizationCreateRoleArgs, RoleId>;
   listPermissions: FunctionReference<
     "query",
     "public",
@@ -98,11 +91,9 @@ export type ConvexOrganizationRoleManagerClassNames = {
   stateText?: string;
 };
 
-export type ConvexOrganizationRoleManagerSurfaceProps<
-  RoleId extends string = string,
-> = {
+export type ConvexOrganizationRoleManagerSurfaceProps<RoleId extends string = string> = {
   buildCreateRoleArgs?: (
-    state: ConvexOrganizationRoleFormState
+    state: ConvexOrganizationRoleFormState,
   ) => ConvexOrganizationCreateRoleArgs;
   canCreateRoles?: boolean;
   captureEvent?: (name: string, properties: Record<string, unknown>) => void;
@@ -140,29 +131,25 @@ export function canSubmitConvexOrganizationRoleForm({
   name: string;
   permissions: readonly string[];
 }): boolean {
-  return (
-    !disabled && !creating && name.trim().length > 0 && permissions.length > 0
-  );
+  return !disabled && !creating && name.trim().length > 0 && permissions.length > 0;
 }
 
 export function getConvexOrganizationRoleManagerErrorMessage(
   error: unknown,
-  fallback: string
+  fallback: string,
 ): string {
-  return error instanceof Error && error.message.trim().length > 0
-    ? error.message
-    : fallback;
+  return error instanceof Error && error.message.trim().length > 0 ? error.message : fallback;
 }
 
 export function isConvexOrganizationSystemRole(
-  role: Pick<ConvexOrganizationRoleListItem, "isSystem" | "type">
+  role: Pick<ConvexOrganizationRoleListItem, "isSystem" | "type">,
 ): boolean {
   return role.isSystem === true || role.type === "system";
 }
 
 export function toggleConvexOrganizationRolePermission(
   permissions: readonly string[],
-  permission: string
+  permission: string,
 ): string[] {
   return permissions.includes(permission)
     ? permissions.filter((current) => current !== permission)
@@ -170,7 +157,7 @@ export function toggleConvexOrganizationRolePermission(
 }
 
 export function groupConvexOrganizationPermissions(
-  permissions: readonly ConvexOrganizationPermissionListItem[]
+  permissions: readonly ConvexOrganizationPermissionListItem[],
 ): Array<{
   label: string;
   permissions: ConvexOrganizationPermissionListItem[];
@@ -178,10 +165,7 @@ export function groupConvexOrganizationPermissions(
   const groups = new Map<string, ConvexOrganizationPermissionListItem[]>();
   for (const permission of permissions) {
     const separatorIndex = permission.key.indexOf(":");
-    const label =
-      separatorIndex === -1
-        ? "general"
-        : permission.key.slice(0, separatorIndex);
+    const label = separatorIndex === -1 ? "general" : permission.key.slice(0, separatorIndex);
     groups.set(label, [...(groups.get(label) ?? []), permission]);
   }
   return Array.from(groups.entries()).map(([label, groupedPermissions]) => ({
@@ -190,9 +174,7 @@ export function groupConvexOrganizationPermissions(
   }));
 }
 
-export function ConvexOrganizationRoleManagerSurface<
-  RoleId extends string = string,
->({
+export function ConvexOrganizationRoleManagerSurface<RoleId extends string = string>({
   buildCreateRoleArgs,
   canCreateRoles = true,
   captureEvent,
@@ -229,18 +211,11 @@ export function ConvexOrganizationRoleManagerSurface<
             <ConvexOrganizationRoleActionErrorNotice
               classNames={classNames}
               message={actions.actionError}
-              title={
-                copy?.actionErrorTitle ??
-                defaultRoleManagerCopy.actionErrorTitle
-              }
+              title={copy?.actionErrorTitle ?? defaultRoleManagerCopy.actionErrorTitle}
             />
           ))
         : null}
-      <ConvexOrganizationRoleList
-        classNames={classNames}
-        copy={copy}
-        roles={roles}
-      />
+      <ConvexOrganizationRoleList classNames={classNames} copy={copy} roles={roles} />
     </div>
   );
 }
@@ -278,14 +253,14 @@ export function ConvexOrganizationRoleCreateForm({
     <div
       className={cn(
         "border-foreground/10 bg-background/20 rounded-lg border p-5",
-        classNames?.form
+        classNames?.form,
       )}
     >
       <div className="space-y-4">
         <h3
           className={cn(
             "text-foreground text-base font-medium text-balance",
-            classNames?.sectionTitle
+            classNames?.sectionTitle,
           )}
         >
           {resolvedCopy.createTitle}
@@ -297,7 +272,7 @@ export function ConvexOrganizationRoleCreateForm({
           <input
             className={cn(
               "border-foreground/10 bg-foreground/5 text-foreground placeholder:text-foreground/35 focus:border-foreground/25 h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
-              classNames?.input
+              classNames?.input,
             )}
             disabled={!canCreateRoles || creating}
             onChange={(event) => onNameChange(event.target.value)}
@@ -323,7 +298,7 @@ export function ConvexOrganizationRoleCreateForm({
           className={cn(
             "bg-foreground text-background hover:bg-foreground/90 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
             classNames?.primaryButton,
-            !canSubmit && classNames?.primaryButtonDisabled
+            !canSubmit && classNames?.primaryButtonDisabled,
           )}
           disabled={!canSubmit}
           onClick={onSubmit}
@@ -368,50 +343,38 @@ export function ConvexOrganizationPermissionChecklist({
   }
 
   return (
-    <div
-      className={cn("grid gap-3 md:grid-cols-2", classNames?.permissionGrid)}
-    >
+    <div className={cn("grid gap-3 md:grid-cols-2", classNames?.permissionGrid)}>
       {groupConvexOrganizationPermissions(permissions).map((group) => (
         <div
           className={cn(
             "border-foreground/10 bg-foreground/[0.03] rounded-md border p-3",
-            classNames?.permissionItem
+            classNames?.permissionItem,
           )}
           key={group.label}
         >
-          <p className="text-foreground/45 mb-2 text-xs font-medium uppercase">
-            {group.label}
-          </p>
+          <p className="text-foreground/45 mb-2 text-xs font-medium uppercase">{group.label}</p>
           <div className="space-y-2">
             {group.permissions.map((permission) => (
-              <label
-                className="flex items-start gap-2 text-sm"
-                key={permission.key}
-              >
+              <label className="flex items-start gap-2 text-sm" key={permission.key}>
                 <input
                   checked={selectedPermissions.includes(permission.key)}
                   className={cn(
                     "border-foreground/20 bg-foreground/5 mt-1 size-4 rounded",
-                    classNames?.checkbox
+                    classNames?.checkbox,
                   )}
                   disabled={disabled}
                   onChange={() => onPermissionToggle(permission.key)}
                   type="checkbox"
                 />
                 <span className="min-w-0">
-                  <span
-                    className={cn(
-                      "text-foreground block truncate",
-                      classNames?.permissionKey
-                    )}
-                  >
+                  <span className={cn("text-foreground block truncate", classNames?.permissionKey)}>
                     {permission.key}
                   </span>
                   {permission.description ? (
                     <span
                       className={cn(
                         "text-foreground/45 mt-0.5 block text-xs text-pretty",
-                        classNames?.permissionDescription
+                        classNames?.permissionDescription,
                       )}
                     >
                       {permission.description}
@@ -459,7 +422,7 @@ export function ConvexOrganizationRoleList<RoleId extends string = string>({
       <h3
         className={cn(
           "text-foreground text-base font-medium text-balance",
-          classNames?.sectionTitle
+          classNames?.sectionTitle,
         )}
       >
         {resolvedCopy.roleListTitle}
@@ -470,7 +433,7 @@ export function ConvexOrganizationRoleList<RoleId extends string = string>({
           <article
             className={cn(
               "border-foreground/10 bg-background/20 rounded-lg border",
-              classNames?.listCard
+              classNames?.listCard,
             )}
             data-testid="organization-role-card"
             key={role._id}
@@ -479,16 +442,11 @@ export function ConvexOrganizationRoleList<RoleId extends string = string>({
               <div
                 className={cn(
                   "flex flex-wrap items-start justify-between gap-3",
-                  classNames?.roleHeader
+                  classNames?.roleHeader,
                 )}
               >
                 <div className="min-w-0">
-                  <p
-                    className={cn(
-                      "text-foreground truncate font-medium",
-                      classNames?.roleName
-                    )}
-                  >
+                  <p className={cn("text-foreground truncate font-medium", classNames?.roleName)}>
                     {role.name}
                   </p>
                   {role.description ? (
@@ -500,20 +458,13 @@ export function ConvexOrganizationRoleList<RoleId extends string = string>({
                 <span
                   className={cn(
                     "border-foreground/10 text-foreground/65 inline-flex h-7 items-center rounded-md border px-2 text-xs font-medium",
-                    classNames?.badge
+                    classNames?.badge,
                   )}
                 >
-                  {systemRole
-                    ? resolvedCopy.systemRoleLabel
-                    : resolvedCopy.customRoleLabel}
+                  {systemRole ? resolvedCopy.systemRoleLabel : resolvedCopy.customRoleLabel}
                 </span>
               </div>
-              <div
-                className={cn(
-                  "flex flex-wrap gap-2",
-                  classNames?.rolePermissions
-                )}
-              >
+              <div className={cn("flex flex-wrap gap-2", classNames?.rolePermissions)}>
                 {role.permissions.map((permission) => (
                   <code
                     className="border-foreground/10 bg-foreground/5 text-foreground/65 rounded-md border px-2 py-1 text-xs"
@@ -544,7 +495,7 @@ export function ConvexOrganizationRoleActionErrorNotice({
     <div
       className={cn(
         "border-destructive/25 bg-destructive/10 rounded-lg border p-4",
-        classNames?.error
+        classNames?.error,
       )}
       role="alert"
     >
@@ -554,22 +505,16 @@ export function ConvexOrganizationRoleActionErrorNotice({
   );
 }
 
-function useConvexOrganizationRoleManagerActions<
-  RoleId extends string = string,
->({
+function useConvexOrganizationRoleManagerActions<RoleId extends string = string>({
   buildCreateRoleArgs,
   captureEvent,
   getErrorMessage,
   refs,
 }: {
   buildCreateRoleArgs:
-    | ((
-        state: ConvexOrganizationRoleFormState
-      ) => ConvexOrganizationCreateRoleArgs)
+    | ((state: ConvexOrganizationRoleFormState) => ConvexOrganizationCreateRoleArgs)
     | undefined;
-  captureEvent:
-    | ((name: string, properties: Record<string, unknown>) => void)
-    | undefined;
+  captureEvent: ((name: string, properties: Record<string, unknown>) => void) | undefined;
   getErrorMessage: (error: unknown, fallback: string) => string;
   refs: ConvexOrganizationRoleManagerFunctionReferences<RoleId>;
 }) {
@@ -625,17 +570,14 @@ function useConvexOrganizationRoleManagerActions<
     togglePermission: (permission: string) => {
       setForm((current) => ({
         ...current,
-        permissions: toggleConvexOrganizationRolePermission(
-          current.permissions,
-          permission
-        ),
+        permissions: toggleConvexOrganizationRolePermission(current.permissions, permission),
       }));
     },
   };
 }
 
 function resolveRoleManagerCopy(
-  copy: ConvexOrganizationRoleManagerCopy | undefined
+  copy: ConvexOrganizationRoleManagerCopy | undefined,
 ): Required<ConvexOrganizationRoleManagerCopy> {
   return { ...defaultRoleManagerCopy, ...copy };
 }

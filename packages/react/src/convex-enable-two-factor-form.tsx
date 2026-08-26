@@ -21,12 +21,7 @@
  *     onEnrolled={() => router.push('/settings/security')}
  *   />
  */
-import {
-  useState,
-  type ChangeEvent,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 
 import {
   extractTotpSecret,
@@ -112,16 +107,13 @@ const DEFAULT_COPY: Required<ConvexEnableTwoFactorFormCopy> = {
   backupDescription:
     "Store these somewhere safe. Each code works once if you lose access to your authenticator. They won't be shown again.",
   done: "Done",
-  unavailable:
-    "Two-factor authentication is not available on this auth client.",
+  unavailable: "Two-factor authentication is not available on this auth client.",
 };
 
 type Step = "password" | "verify" | "backup";
 type TwoFactorFormCopy = Required<ConvexEnableTwoFactorFormCopy>;
 
-export function ConvexEnableTwoFactorForm(
-  props: ConvexEnableTwoFactorFormProps
-) {
+export function ConvexEnableTwoFactorForm(props: ConvexEnableTwoFactorFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
@@ -228,10 +220,7 @@ function TwoFactorUnavailable(args: {
 }) {
   return (
     <AuthCard className={args.classNames.root}>
-      <AuthCardHeader
-        title={args.copy.title}
-        description={args.copy.description}
-      />
+      <AuthCardHeader title={args.copy.title} description={args.copy.description} />
       <AuthCardContent>
         <div className={args.classNames.errorState} role="alert">
           {args.copy.unavailable}
@@ -263,18 +252,12 @@ function TwoFactorPasswordStep(args: {
           autoComplete="current-password"
           value={args.password}
           placeholder={copy.passwordPlaceholder}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            args.onPasswordChange(e.target.value)
-          }
+          onChange={(e: ChangeEvent<HTMLInputElement>) => args.onPasswordChange(e.target.value)}
           className={cn.input}
           required
         />
       </AuthField>
-      <AuthButton
-        type="submit"
-        disabled={args.isEnabling}
-        className={cn.submitButton}
-      >
+      <AuthButton type="submit" disabled={args.isEnabling} className={cn.submitButton}>
         {args.isEnabling ? copy.submitting : copy.passwordSubmit}
       </AuthButton>
       <TwoFactorError error={args.error} className={cn.errorState} />
@@ -313,18 +296,12 @@ function TwoFactorVerifyStep(args: {
           autoComplete="one-time-code"
           value={args.code}
           placeholder={copy.codePlaceholder}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            args.onCodeChange(e.target.value)
-          }
+          onChange={(e: ChangeEvent<HTMLInputElement>) => args.onCodeChange(e.target.value)}
           className={cn.input}
           required
         />
       </AuthField>
-      <AuthButton
-        type="submit"
-        disabled={args.isVerifying}
-        className={cn.submitButton}
-      >
+      <AuthButton type="submit" disabled={args.isVerifying} className={cn.submitButton}>
         {args.isVerifying ? copy.submitting : copy.verifySubmit}
       </AuthButton>
       <TwoFactorError error={args.error} className={cn.errorState} />
@@ -339,13 +316,8 @@ function TwoFactorSecret(args: {
 }) {
   return (
     <AuthField className={args.classNames.field}>
-      <AuthLabel className={args.classNames.label}>
-        {args.copy.secretLabel}
-      </AuthLabel>
-      <code
-        className={args.classNames.secret}
-        style={{ wordBreak: "break-all" }}
-      >
+      <AuthLabel className={args.classNames.label}>{args.copy.secretLabel}</AuthLabel>
+      <code className={args.classNames.secret} style={{ wordBreak: "break-all" }}>
         {args.secret}
       </code>
     </AuthField>
@@ -368,11 +340,7 @@ function TwoFactorBackupStep(args: {
           </li>
         ))}
       </ul>
-      <AuthButton
-        type="button"
-        onClick={() => args.onDone?.()}
-        className={cn.submitButton}
-      >
+      <AuthButton type="button" onClick={() => args.onDone?.()} className={cn.submitButton}>
         {args.copy.done}
       </AuthButton>
     </div>

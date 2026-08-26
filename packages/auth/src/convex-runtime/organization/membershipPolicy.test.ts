@@ -15,7 +15,7 @@ describe("wouldRemoveLastActiveOwner", () => {
         nextStatus: "active",
         activeMemberships: [{ roleId: "role_owner", status: "active" }],
       }),
-      true
+      true,
     );
   });
 
@@ -32,7 +32,7 @@ describe("wouldRemoveLastActiveOwner", () => {
           { roleId: "role_owner", status: "active" },
         ],
       }),
-      false
+      false,
     );
   });
 });

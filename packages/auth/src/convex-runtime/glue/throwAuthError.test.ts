@@ -18,19 +18,13 @@ import assert from "node:assert/strict";
 
 import { describe, it } from "vitest";
 
-import {
-  isAuthErrorPayload,
-  throwAuthError,
-  type AuthErrorAuthzCode,
-} from "./throwAuthError";
+import { isAuthErrorPayload, throwAuthError, type AuthErrorAuthzCode } from "./throwAuthError";
 
 function catchThrow(fn: () => unknown): unknown {
   try {
     fn();
   } catch (err) {
-    return typeof err === "object" && err !== null
-      ? Reflect.get(err, "data")
-      : undefined;
+    return typeof err === "object" && err !== null ? Reflect.get(err, "data") : undefined;
   }
   throw new assert.AssertionError({ message: "expected throw" });
 }
@@ -44,9 +38,7 @@ describe("throwAuthError", () => {
   });
 
   it("attaches authzCode when provided", () => {
-    const data = catchThrow(() =>
-      throwAuthError("FORBIDDEN", "PERMISSION_REQUIRED")
-    );
+    const data = catchThrow(() => throwAuthError("FORBIDDEN", "PERMISSION_REQUIRED"));
     assert.ok(isAuthErrorPayload(data));
     assert.equal(data.code, "FORBIDDEN");
     assert.equal(data.authzCode, "PERMISSION_REQUIRED");
@@ -54,7 +46,7 @@ describe("throwAuthError", () => {
 
   it("consumer-supplied message overrides default", () => {
     const data = catchThrow(() =>
-      throwAuthError("UNAUTHORIZED", "AUTHENTICATION_REQUIRED", "custom msg")
+      throwAuthError("UNAUTHORIZED", "AUTHENTICATION_REQUIRED", "custom msg"),
     );
     assert.ok(isAuthErrorPayload(data));
     assert.equal(data.message, "custom msg");
@@ -113,7 +105,7 @@ describe("isAuthErrorPayload", () => {
         authzCode: "AUTHENTICATION_REQUIRED",
         message: "x",
       }),
-      true
+      true,
     );
   });
 

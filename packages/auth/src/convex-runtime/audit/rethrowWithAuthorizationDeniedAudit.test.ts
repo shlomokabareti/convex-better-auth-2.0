@@ -31,7 +31,7 @@ describe("rethrowWithAuthorizationDeniedAudit", () => {
             calls.push(payload);
           },
         }),
-      (thrown) => thrown === error
+      (thrown) => thrown === error,
     );
 
     assert.deepEqual(calls, [
@@ -62,7 +62,7 @@ describe("rethrowWithAuthorizationDeniedAudit", () => {
             calls += 1;
           },
         }),
-      (thrown) => thrown === error
+      (thrown) => thrown === error,
     );
 
     assert.equal(calls, 0);

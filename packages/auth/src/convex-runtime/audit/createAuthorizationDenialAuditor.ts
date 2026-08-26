@@ -50,16 +50,14 @@ export type DeriveAuthorizationDenialContextArgs<TViewer, TCtx> = {
 
 export type CreateAuthorizationDenialAuditorConfig<TViewer, TCtx, TContext> = {
   /** Where to emit a denial audit event (e.g. structured logger write + flush). */
-  emit: (
-    event: AuthorizationDenialAuditEvent<TContext>
-  ) => Promise<void> | void;
+  emit: (event: AuthorizationDenialAuditEvent<TContext>) => Promise<void> | void;
   /**
    * Project the consumer's own context (user/org ids, presence flags, …) off the
    * resolved viewer + ctx. Omit when the package payload is enough; `context`
    * is then `undefined`.
    */
   deriveContext?: (
-    args: DeriveAuthorizationDenialContextArgs<TViewer, TCtx>
+    args: DeriveAuthorizationDenialContextArgs<TViewer, TCtx>,
   ) => TContext | Promise<TContext>;
 };
 
@@ -71,29 +69,22 @@ export type AuthorizationDenialAuditor<TViewer, TCtx> = {
    */
   onAuthorizationDenied: (
     ctx: TCtx,
-    args: AuthorizationDenialAuditorArgs<TViewer>
+    args: AuthorizationDenialAuditorArgs<TViewer>,
   ) => Promise<void>;
   /**
    * The manual path: emit the SAME denial audit, then re-throw the original
    * error. Use in hand-called permission checks so they never drift from the
    * factory hook.
    */
-  auditAndRethrow: (
-    ctx: TCtx,
-    args: AuthorizationDenialAuditorArgs<TViewer>
-  ) => Promise<never>;
+  auditAndRethrow: (ctx: TCtx, args: AuthorizationDenialAuditorArgs<TViewer>) => Promise<never>;
 };
 
-export function createAuthorizationDenialAuditor<
-  TViewer,
-  TCtx,
-  TContext = undefined,
->(
-  config: CreateAuthorizationDenialAuditorConfig<TViewer, TCtx, TContext>
+export function createAuthorizationDenialAuditor<TViewer, TCtx, TContext = undefined>(
+  config: CreateAuthorizationDenialAuditorConfig<TViewer, TCtx, TContext>,
 ): AuthorizationDenialAuditor<TViewer, TCtx> {
   async function emitDenial(
     ctx: TCtx,
-    args: AuthorizationDenialAuditorArgs<TViewer>
+    args: AuthorizationDenialAuditorArgs<TViewer>,
   ): Promise<void> {
     const payload = extractAuthorizationDeniedAuditPayload(args.error);
     const viewer = args.viewer ?? null;

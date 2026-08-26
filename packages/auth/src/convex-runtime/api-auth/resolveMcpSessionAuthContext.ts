@@ -1,8 +1,5 @@
 import type { ApiResolvedAuthContext } from "../coreTypes";
-import {
-  resolveOAuthClientContext,
-  resolveOAuthClientPrincipal,
-} from "../principal";
+import { resolveOAuthClientContext, resolveOAuthClientPrincipal } from "../principal";
 import { ApiAuthError } from "./errors";
 
 export type McpSessionLike = {
@@ -30,21 +27,17 @@ export type ResolveMcpSessionAuthContextArgs = {
 };
 
 export function resolveMcpSessionAuthContext(
-  args: ResolveMcpSessionAuthContextArgs
+  args: ResolveMcpSessionAuthContextArgs,
 ): ApiResolvedAuthContext {
   const session = args.session;
   if (session === null || session === undefined) {
     throw new ApiAuthError("OAUTH_SESSION_INVALID", "MCP session is missing.");
   }
 
-  const clientId = readRequiredString(
-    args.clientId ?? session.clientId,
-    "clientId"
-  );
+  const clientId = readRequiredString(args.clientId ?? session.clientId, "clientId");
   const scopes = normalizeMcpSessionScopes(session.scopes);
   const subjectId = readOptionalString(args.subjectId ?? session.userId);
-  const subjectType =
-    args.subjectType ?? (subjectId === null ? "client" : "user");
+  const subjectType = args.subjectType ?? (subjectId === null ? "client" : "user");
   const permissions = Array.from(args.permissions ?? []);
 
   const principal = resolveOAuthClientPrincipal({
@@ -62,8 +55,7 @@ export function resolveMcpSessionAuthContext(
   if (principal.isRestricted) {
     throw new ApiAuthError(
       "PRINCIPAL_RESTRICTED",
-      principal.restrictedReason ??
-        "Resolved OAuth client principal is restricted."
+      principal.restrictedReason ?? "Resolved OAuth client principal is restricted.",
     );
   }
 
@@ -86,9 +78,7 @@ export function resolveMcpSessionAuthContext(
   };
 }
 
-export function normalizeMcpSessionScopes(
-  scopes: McpSessionLike["scopes"]
-): string[] {
+export function normalizeMcpSessionScopes(scopes: McpSessionLike["scopes"]): string[] {
   if (typeof scopes === "string") {
     return scopes
       .split(/\s+/)
@@ -98,25 +88,17 @@ export function normalizeMcpSessionScopes(
 
   if (Array.isArray(scopes)) {
     return Array.from(
-      new Set(
-        scopes.map((scope) => scope.trim()).filter((scope) => scope.length > 0)
-      )
+      new Set(scopes.map((scope) => scope.trim()).filter((scope) => scope.length > 0)),
     );
   }
 
   return [];
 }
 
-function readRequiredString(
-  value: string | null | undefined,
-  field: string
-): string {
+function readRequiredString(value: string | null | undefined, field: string): string {
   const trimmed = readOptionalString(value);
   if (trimmed === null) {
-    throw new ApiAuthError(
-      "OAUTH_SESSION_INVALID",
-      `MCP session is missing ${field}.`
-    );
+    throw new ApiAuthError("OAUTH_SESSION_INVALID", `MCP session is missing ${field}.`);
   }
 
   return trimmed;

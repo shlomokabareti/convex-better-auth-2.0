@@ -16,7 +16,7 @@ describe("resolveApiScopeAuthorization", () => {
         requiredScope: "crm:organization:read",
         canUserUseScope: () => true,
       }),
-      { allowed: false, reason: "missing_api_key_scope" }
+      { allowed: false, reason: "missing_api_key_scope" },
     );
   });
 
@@ -30,7 +30,7 @@ describe("resolveApiScopeAuthorization", () => {
         requiredScope: "crm:organization:read",
         canUserUseScope: () => true,
       }),
-      { allowed: false, reason: "missing_api_key_scope" }
+      { allowed: false, reason: "missing_api_key_scope" },
     );
 
     assert.deepEqual(
@@ -42,7 +42,7 @@ describe("resolveApiScopeAuthorization", () => {
         requiredScope: "crm:organization:read",
         canUserUseScope: () => false,
       }),
-      { allowed: false, reason: "missing_user_permission" }
+      { allowed: false, reason: "missing_user_permission" },
     );
 
     assert.deepEqual(
@@ -53,10 +53,9 @@ describe("resolveApiScopeAuthorization", () => {
         permissions: ["organization:view"],
         requiredScope: "crm:organization:read",
         canUserUseScope: (permissions, scope) =>
-          scope === "crm:organization:read" &&
-          hasPermission(permissions, "organization:view"),
+          scope === "crm:organization:read" && hasPermission(permissions, "organization:view"),
       }),
-      { allowed: true }
+      { allowed: true },
     );
   });
 
@@ -70,7 +69,7 @@ describe("resolveApiScopeAuthorization", () => {
         requiredScope: "crm:organization:read",
         canUserUseScope: () => false,
       }),
-      { allowed: false, reason: "missing_user_permission" }
+      { allowed: false, reason: "missing_user_permission" },
     );
 
     assert.deepEqual(
@@ -81,10 +80,9 @@ describe("resolveApiScopeAuthorization", () => {
         permissions: ["organization:view"],
         requiredScope: "crm:organization:read",
         canUserUseScope: (permissions, scope) =>
-          scope === "crm:organization:read" &&
-          hasPermission(permissions, "organization:view"),
+          scope === "crm:organization:read" && hasPermission(permissions, "organization:view"),
       }),
-      { allowed: true }
+      { allowed: true },
     );
   });
 
@@ -98,7 +96,7 @@ describe("resolveApiScopeAuthorization", () => {
         requiredScope: "crm:organization:read",
         canUserUseScope: () => false,
       }),
-      { allowed: true }
+      { allowed: true },
     );
   });
 
@@ -111,10 +109,9 @@ describe("resolveApiScopeAuthorization", () => {
         permissions: ["organization:view"],
         requiredScope: "crm:organization:read",
         canUserUseScope: (permissions, scope) =>
-          scope === "crm:organization:read" &&
-          hasPermission(permissions, "organization:view"),
+          scope === "crm:organization:read" && hasPermission(permissions, "organization:view"),
       }),
-      { allowed: true }
+      { allowed: true },
     );
 
     assert.deepEqual(
@@ -126,7 +123,7 @@ describe("resolveApiScopeAuthorization", () => {
         requiredScope: "crm:organization:read",
         canUserUseScope: () => false,
       }),
-      { allowed: false, reason: "missing_user_permission" }
+      { allowed: false, reason: "missing_user_permission" },
     );
   });
 });

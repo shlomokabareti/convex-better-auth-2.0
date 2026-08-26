@@ -100,9 +100,7 @@ export function ConvexCreateOrganization(props: ExpoCreateOrgProps) {
     <View style={[styles.root, s.root]}>
       <View style={[styles.header, s.header]}>
         <Text style={[styles.title, s.title]}>{copy.title}</Text>
-        <Text style={[styles.description, s.description]}>
-          {copy.description}
-        </Text>
+        <Text style={[styles.description, s.description]}>{copy.description}</Text>
       </View>
       <View style={[styles.field, s.field]}>
         <Text style={[styles.label, s.label]}>{copy.nameLabel}</Text>
@@ -135,10 +133,7 @@ export function ConvexCreateOrganization(props: ExpoCreateOrgProps) {
         </Text>
       </Pressable>
       {error !== null ? (
-        <Text
-          className="text-destructive"
-          style={[styles.errorState, s.errorState]}
-        >
+        <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
           {error}
         </Text>
       ) : null}

@@ -85,24 +85,20 @@ const DEFAULT_COPY: Required<ConvexVerifyTwoFactorFormCopy> = {
   useBackupCode: "Use a backup code",
   useAuthenticator: "Use authenticator app",
   trustDeviceLabel: "Trust this device for 60 days",
-  unavailable:
-    "Two-factor authentication is not available on this auth client.",
+  unavailable: "Two-factor authentication is not available on this auth client.",
 };
 
 type Mode = "totp" | "backup";
 
-export function ConvexVerifyTwoFactorForm(
-  props: ConvexVerifyTwoFactorFormProps
-) {
+export function ConvexVerifyTwoFactorForm(props: ConvexVerifyTwoFactorFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
   const showTrustDevice = props.showTrustDevice ?? true;
 
-  const { verifyTotp, isVerifying: isVerifyingTotp } = useConvexAuthVerifyTotp(
-    props.authClient
+  const { verifyTotp, isVerifying: isVerifyingTotp } = useConvexAuthVerifyTotp(props.authClient);
+  const { verifyBackupCode, isVerifying: isVerifyingBackup } = useConvexAuthVerifyBackupCode(
+    props.authClient,
   );
-  const { verifyBackupCode, isVerifying: isVerifyingBackup } =
-    useConvexAuthVerifyBackupCode(props.authClient);
 
   const [mode, setMode] = useState<Mode>("totp");
   const [code, setCode] = useState("");
@@ -161,14 +157,8 @@ export function ConvexVerifyTwoFactorForm(
               inputMode={mode === "totp" ? "numeric" : "text"}
               autoComplete="one-time-code"
               value={code}
-              placeholder={
-                mode === "totp"
-                  ? copy.codePlaceholder
-                  : copy.backupCodePlaceholder
-              }
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setCode(e.target.value)
-              }
+              placeholder={mode === "totp" ? copy.codePlaceholder : copy.backupCodePlaceholder}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setCode(e.target.value)}
               className={cn.input}
               required
             />
@@ -179,19 +169,13 @@ export function ConvexVerifyTwoFactorForm(
               <input
                 type="checkbox"
                 checked={trustDevice}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setTrustDevice(e.target.checked)
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setTrustDevice(e.target.checked)}
               />{" "}
               {copy.trustDeviceLabel}
             </label>
           ) : null}
 
-          <AuthButton
-            type="submit"
-            disabled={isVerifying}
-            className={cn.submitButton}
-          >
+          <AuthButton type="submit" disabled={isVerifying} className={cn.submitButton}>
             {isVerifying ? copy.submitting : copy.submit}
           </AuthButton>
 

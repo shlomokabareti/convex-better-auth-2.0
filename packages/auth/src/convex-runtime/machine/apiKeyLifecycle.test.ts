@@ -58,7 +58,7 @@ describe("api key lifecycle helpers", () => {
           requestId: "req_123",
           requestIdExpiresAt: 1_500,
         },
-      }
+      },
     );
   });
 
@@ -68,15 +68,12 @@ describe("api key lifecycle helpers", () => {
         name: " ",
         scopes: ["organization:read"],
       }),
-      { ok: false, reason: "empty_name" }
+      { ok: false, reason: "empty_name" },
     );
-    assert.deepEqual(
-      normalizeConvexApiKeyCreateInput({ name: "Production", scopes: [] }),
-      {
-        ok: false,
-        reason: "empty_scopes",
-      }
-    );
+    assert.deepEqual(normalizeConvexApiKeyCreateInput({ name: "Production", scopes: [] }), {
+      ok: false,
+      reason: "empty_scopes",
+    });
     assert.deepEqual(
       normalizeConvexApiKeyCreateInput({
         name: "Production",
@@ -84,7 +81,7 @@ describe("api key lifecycle helpers", () => {
         requestId: "too-long",
         maxRequestIdLength: 3,
       }),
-      { ok: false, reason: "request_id_too_long" }
+      { ok: false, reason: "request_id_too_long" },
     );
     assert.deepEqual(
       normalizeConvexApiKeyCreateInput({
@@ -93,7 +90,7 @@ describe("api key lifecycle helpers", () => {
         expiresAt: 1_000,
         now: 1_000,
       }),
-      { ok: false, reason: "expires_at_not_future" }
+      { ok: false, reason: "expires_at_not_future" },
     );
   });
 
@@ -107,32 +104,20 @@ describe("api key lifecycle helpers", () => {
 
     assert.equal(isConvexApiKeyCreateReplayInputMatch(input, input), true);
     assert.equal(
-      isConvexApiKeyCreateReplayInputMatch(
-        { ...input, allowedIpRanges: ["198.51.100.10"] },
-        input
-      ),
-      false
+      isConvexApiKeyCreateReplayInputMatch({ ...input, allowedIpRanges: ["198.51.100.10"] }, input),
+      false,
     );
     assert.equal(
-      isConvexApiKeyCreateReplayWindowOpen(
-        { status: "active", requestIdExpiresAt: 2_000 },
-        1_999
-      ),
-      true
+      isConvexApiKeyCreateReplayWindowOpen({ status: "active", requestIdExpiresAt: 2_000 }, 1_999),
+      true,
     );
     assert.equal(
-      isConvexApiKeyCreateReplayWindowOpen(
-        { status: "active", requestIdExpiresAt: 2_000 },
-        2_000
-      ),
-      false
+      isConvexApiKeyCreateReplayWindowOpen({ status: "active", requestIdExpiresAt: 2_000 }, 2_000),
+      false,
     );
     assert.equal(
-      isConvexApiKeyCreateReplayWindowOpen(
-        { status: "revoked", requestIdExpiresAt: 2_000 },
-        1_000
-      ),
-      false
+      isConvexApiKeyCreateReplayWindowOpen({ status: "revoked", requestIdExpiresAt: 2_000 }, 1_000),
+      false,
     );
   });
 

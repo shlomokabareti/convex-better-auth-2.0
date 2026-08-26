@@ -1,19 +1,14 @@
-import {
-  ConvexBetterAuthProvider,
-  type AuthClient,
-} from "@convex-dev/better-auth/react";
+import { ConvexBetterAuthProvider, type AuthClient } from "@convex-dev/better-auth/react";
 import { ConvexReactClient } from "convex/react";
 import type { ReactNode } from "react";
 
-export type ExpoConvexClientOptions = ConstructorParameters<
-  typeof ConvexReactClient
->[1];
+export type ExpoConvexClientOptions = ConstructorParameters<typeof ConvexReactClient>[1];
 
 export type ExpoConvexReactClient = ConvexReactClient;
 
 export function createExpoConvexReactClient(
   convexUrl: string,
-  options: ExpoConvexClientOptions = {}
+  options: ExpoConvexClientOptions = {},
 ): ExpoConvexReactClient {
   const url = convexUrl.trim();
   if (!url) {

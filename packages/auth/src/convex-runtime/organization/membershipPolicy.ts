@@ -10,18 +10,15 @@ export function wouldRemoveLastActiveOwner(args: {
   }>;
 }): boolean {
   const isCurrentlyActiveOwner =
-    args.membershipRoleId === args.ownerRoleId &&
-    args.membershipStatus === "active";
-  const remainsActiveOwner =
-    args.nextRoleId === args.ownerRoleId && args.nextStatus === "active";
+    args.membershipRoleId === args.ownerRoleId && args.membershipStatus === "active";
+  const remainsActiveOwner = args.nextRoleId === args.ownerRoleId && args.nextStatus === "active";
 
   if (!isCurrentlyActiveOwner || remainsActiveOwner) {
     return false;
   }
 
   const ownerCount = args.activeMemberships.filter(
-    (membership) =>
-      membership.roleId === args.ownerRoleId && membership.status === "active"
+    (membership) => membership.roleId === args.ownerRoleId && membership.status === "active",
   ).length;
 
   return ownerCount <= 1;

@@ -1,70 +1,47 @@
 import { expoClient } from "@better-auth/expo/client";
-import {
-  convexClient,
-  crossDomainClient,
-} from "@convex-dev/better-auth/client/plugins";
+import { convexClient, crossDomainClient } from "@convex-dev/better-auth/client/plugins";
 import type { BetterAuthClientPlugin } from "better-auth/client";
 import { twoFactorClient } from "better-auth/client/plugins";
 import { createAuthClient, type ReactAuthClient } from "better-auth/react";
 
-import {
-  resolveExpoAuthClientMode,
-  type ExpoPlatformOS,
-} from "./config";
+import { resolveExpoAuthClientMode, type ExpoPlatformOS } from "./config";
 
 export type ExpoBetterAuthClientFactoryOptions = NonNullable<
   Parameters<typeof createAuthClient>[0]
 >;
 
-type ExpoRuntimePlugin<
-  PlatformOS extends ExpoPlatformOS | undefined,
-> = PlatformOS extends "web"
+type ExpoRuntimePlugin<PlatformOS extends ExpoPlatformOS | undefined> = PlatformOS extends "web"
   ? ReturnType<typeof crossDomainClient>
   : ReturnType<typeof expoClient>;
 
-type ExpoBuiltInPlugin<
-  PlatformOS extends ExpoPlatformOS | undefined,
-> =
+type ExpoBuiltInPlugin<PlatformOS extends ExpoPlatformOS | undefined> =
   | ExpoRuntimePlugin<PlatformOS>
   | ReturnType<typeof convexClient>
   | ReturnType<typeof twoFactorClient>;
 
-type ExpoConcreteCustomPlugin<
-  Plugins extends readonly BetterAuthClientPlugin[],
-> = BetterAuthClientPlugin extends Plugins[number] ? never : Plugins[number];
+type ExpoConcreteCustomPlugin<Plugins extends readonly BetterAuthClientPlugin[]> =
+  BetterAuthClientPlugin extends Plugins[number] ? never : Plugins[number];
 
 type ExpoBetterAuthClientConfig<
   PlatformOS extends ExpoPlatformOS | undefined,
   Plugins extends readonly BetterAuthClientPlugin[],
 > = Omit<ExpoBetterAuthClientFactoryOptions, "plugins"> & {
-  plugins: Array<
-    | ExpoBuiltInPlugin<PlatformOS>
-    | ExpoConcreteCustomPlugin<Plugins>
-  >;
+  plugins: Array<ExpoBuiltInPlugin<PlatformOS> | ExpoConcreteCustomPlugin<Plugins>>;
 };
 
 export type ExpoBetterAuthClient<
-  PlatformOS extends ExpoPlatformOS | undefined =
-    | ExpoPlatformOS
-    | undefined,
+  PlatformOS extends ExpoPlatformOS | undefined = ExpoPlatformOS | undefined,
   Plugins extends readonly BetterAuthClientPlugin[] = readonly [],
 > = PlatformOS extends ExpoPlatformOS | undefined
   ? ReactAuthClient<ExpoBetterAuthClientConfig<PlatformOS, Plugins>>
   : never;
 
-export type ExpoSecureStorage = Parameters<
-  typeof expoClient
->[0]["storage"];
-export type ExpoCookiePrefix = Parameters<
-  typeof expoClient
->[0]["cookiePrefix"];
-export type ExpoWebBrowserOptions = Parameters<
-  typeof expoClient
->[0]["webBrowserOptions"];
+export type ExpoSecureStorage = Parameters<typeof expoClient>[0]["storage"];
+export type ExpoCookiePrefix = Parameters<typeof expoClient>[0]["cookiePrefix"];
+export type ExpoWebBrowserOptions = Parameters<typeof expoClient>[0]["webBrowserOptions"];
 
 export type ExpoBetterAuthClientOptions<
-  Plugins extends readonly BetterAuthClientPlugin[] =
-    readonly BetterAuthClientPlugin[],
+  Plugins extends readonly BetterAuthClientPlugin[] = readonly BetterAuthClientPlugin[],
 > = Omit<ExpoBetterAuthClientFactoryOptions, "plugins"> & {
   cookiePrefix?: ExpoCookiePrefix;
   disableCache?: boolean;
@@ -79,33 +56,29 @@ export type ExpoBetterAuthClientOptions<
 export function createExpoBetterAuthClient<
   const Plugins extends readonly BetterAuthClientPlugin[] = readonly [],
 >(
-  options: ExpoBetterAuthClientOptions<Plugins> & { platformOS: "web" }
+  options: ExpoBetterAuthClientOptions<Plugins> & { platformOS: "web" },
 ): ExpoBetterAuthClient<"web", Plugins>;
 export function createExpoBetterAuthClient<
   const Plugins extends readonly BetterAuthClientPlugin[] = readonly [],
 >(
   options: ExpoBetterAuthClientOptions<Plugins> & {
     platformOS?: Exclude<ExpoPlatformOS, "web">;
-  }
+  },
 ): ExpoBetterAuthClient<undefined, Plugins>;
 export function createExpoBetterAuthClient<
   const Plugins extends readonly BetterAuthClientPlugin[] = readonly [],
 >(
-  options: ExpoBetterAuthClientOptions<Plugins>
+  options: ExpoBetterAuthClientOptions<Plugins>,
 ): ExpoBetterAuthClient<ExpoPlatformOS | undefined, Plugins>;
 export function createExpoBetterAuthClient<
   const Plugins extends readonly BetterAuthClientPlugin[] = readonly [],
 >(options: ExpoBetterAuthClientOptions<Plugins>) {
-  const { pluginOptions, clientOptions } =
-    splitExpoBetterAuthClientOptions(options);
+  const { pluginOptions, clientOptions } = splitExpoBetterAuthClientOptions(options);
   const mode = resolveExpoAuthClientMode(pluginOptions);
   const suppliedPlugins = options.plugins ?? [];
 
   if (mode.kind === "web") {
-    const plugins = addExpoBuiltInPlugins(
-      suppliedPlugins,
-      crossDomainClient()
-    );
+    const plugins = addExpoBuiltInPlugins(suppliedPlugins, crossDomainClient());
     return createAuthClient({
       ...clientOptions,
       plugins,
@@ -118,12 +91,10 @@ export function createExpoBetterAuthClient<
       cookiePrefix: pluginOptions.cookiePrefix,
       disableCache: pluginOptions.disableCache,
       scheme: mode.scheme,
-      storage: createDurableCookieFilteredStorage(
-        requireExpoSecureStorage(pluginOptions.storage)
-      ),
+      storage: createDurableCookieFilteredStorage(requireExpoSecureStorage(pluginOptions.storage)),
       storagePrefix: mode.storagePrefix,
       webBrowserOptions: pluginOptions.webBrowserOptions,
-    })
+    }),
   );
   return createAuthClient({
     ...clientOptions,
@@ -151,9 +122,7 @@ function addExpoBuiltInPlugins<
   });
 }
 
-function splitExpoBetterAuthClientOptions(
-  options: ExpoBetterAuthClientOptions
-) {
+function splitExpoBetterAuthClientOptions(options: ExpoBetterAuthClientOptions) {
   const {
     cookiePrefix,
     disableCache,
@@ -206,9 +175,7 @@ function isDurableCookieName(cookieName: string): boolean {
   return DURABLE_COOKIE_SUFFIXES.some((suffix) => cookieName.endsWith(suffix));
 }
 
-function createDurableCookieFilteredStorage(
-  storage: ExpoSecureStorage
-): ExpoSecureStorage {
+function createDurableCookieFilteredStorage(storage: ExpoSecureStorage): ExpoSecureStorage {
   return {
     getItem: (name: string) => storage.getItem(name),
     getItemAsync: (name: string) => Promise.resolve(storage.getItem(name)),
@@ -225,17 +192,11 @@ function createDurableCookieFilteredStorage(
         // Unparseable — pass through rather than silently dropping it.
         return storage.setItem(name, value);
       }
-      if (
-        typeof parsed !== "object" ||
-        parsed === null ||
-        Array.isArray(parsed)
-      ) {
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
         return storage.setItem(name, value);
       }
       const filtered = Object.fromEntries(
-        Object.entries(parsed).filter(([cookieName]) =>
-          isDurableCookieName(cookieName)
-        )
+        Object.entries(parsed).filter(([cookieName]) => isDurableCookieName(cookieName)),
       );
       return storage.setItem(name, JSON.stringify(filtered));
     },
@@ -246,12 +207,10 @@ function createDurableCookieFilteredStorage(
   };
 }
 
-function requireExpoSecureStorage(
-  storage: ExpoSecureStorage | undefined
-): ExpoSecureStorage {
+function requireExpoSecureStorage(storage: ExpoSecureStorage | undefined): ExpoSecureStorage {
   if (storage === undefined) {
     throw new Error(
-      "Expo SecureStore storage is required on native. Pass the expo-secure-store module as storage."
+      "Expo SecureStore storage is required on native. Pass the expo-secure-store module as storage.",
     );
   }
   return storage;

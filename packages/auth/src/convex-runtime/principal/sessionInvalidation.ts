@@ -1,8 +1,4 @@
-import type {
-  FunctionReference,
-  GenericDataModel,
-  GenericQueryCtx,
-} from "convex/server";
+import type { FunctionReference, GenericDataModel, GenericQueryCtx } from "convex/server";
 import { ConvexError } from "convex/values";
 
 import { sessionRequiredDecision } from "../authorization";
@@ -18,7 +14,7 @@ import type { ConvexUserIdentity } from "../principal/resolveConvexUserContext";
  */
 export function requireLocalSessionValid(
   identity: ConvexUserIdentity,
-  localIdentity: { sessionId: string | null }
+  localIdentity: { sessionId: string | null },
 ): void {
   const sessionId = sessionIdFromConvexIdentity(identity);
 
@@ -44,7 +40,7 @@ export function requireLocalSessionValid(
 export async function requireActiveSession(
   identity: ConvexUserIdentity,
   localIdentity: { sessionId: string | null },
-  lookupActiveSession: () => Promise<boolean>
+  lookupActiveSession: () => Promise<boolean>,
 ): Promise<void> {
   requireLocalSessionValid(identity, localIdentity);
   const isActive = await lookupActiveSession();
@@ -94,17 +90,14 @@ export function buildBetterAuthSessionLookup(args: {
       return false;
     }
 
-    const session = await args.ctx.runQuery(
-      args.components.betterAuth.adapter.findOne,
-      {
-        model: "session",
-        where: [
-          { field: "_id", value: sessionId },
-          { field: "userId", value: args.identity.subject },
-          { field: "expiresAt", operator: "gt", value: Date.now() },
-        ],
-      }
-    );
+    const session = await args.ctx.runQuery(args.components.betterAuth.adapter.findOne, {
+      model: "session",
+      where: [
+        { field: "_id", value: sessionId },
+        { field: "userId", value: args.identity.subject },
+        { field: "expiresAt", operator: "gt", value: Date.now() },
+      ],
+    });
 
     if (session === null) {
       return false;

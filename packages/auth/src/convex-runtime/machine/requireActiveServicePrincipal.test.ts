@@ -9,7 +9,7 @@ describe("requireActiveServicePrincipal", () => {
     assert.doesNotThrow(() =>
       requireActiveServicePrincipal({
         status: "active",
-      })
+      }),
     );
   });
 
@@ -19,7 +19,7 @@ describe("requireActiveServicePrincipal", () => {
         requireActiveServicePrincipal({
           status: "disabled",
         }),
-      /Service principal is not active: disabled/
+      /Service principal is not active: disabled/,
     );
   });
 });

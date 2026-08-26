@@ -1,8 +1,6 @@
 import type { AuthPrincipal, ResolvedAuthContext } from "../coreTypes";
 
-export function principalIdForAuthPrincipal(
-  principal: AuthPrincipal
-): string | null {
+export function principalIdForAuthPrincipal(principal: AuthPrincipal): string | null {
   switch (principal.kind) {
     case "anonymous":
       return null;
@@ -21,8 +19,6 @@ export function principalIdForAuthPrincipal(
   }
 }
 
-export function principalIdForAuditContext(
-  context: ResolvedAuthContext
-): string | null {
+export function principalIdForAuditContext(context: ResolvedAuthContext): string | null {
   return principalIdForAuthPrincipal(context.principal);
 }

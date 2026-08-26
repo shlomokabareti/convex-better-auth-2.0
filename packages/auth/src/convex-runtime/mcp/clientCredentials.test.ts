@@ -25,10 +25,7 @@ const ASSERTION_CLIENT: McpOAuthClient = {
 /** Stands in for the caller's secret check; verification is its job. */
 const acceptSecret = () => true;
 
-function tokenRequest(
-  body: Record<string, string>,
-  headers?: Record<string, string>
-) {
+function tokenRequest(body: Record<string, string>, headers?: Record<string, string>) {
   return new Request("https://auth.example.com/oauth/crm-mcp/token", {
     method: "POST",
     headers: {
@@ -93,10 +90,7 @@ describe("validateMcpOAuthClientCredentialsTokenExchange", () => {
     assert.equal(result.ok, false);
     if (result.ok) return;
     assert.equal(result.body.error, "invalid_scope");
-    assert.match(
-      result.body.error_description ?? "",
-      /crm:opportunities:write/u
-    );
+    assert.match(result.body.error_description ?? "", /crm:opportunities:write/u);
   });
 
   it("refuses a client that did not register for the grant", async () => {
@@ -161,8 +155,7 @@ describe("validateMcpOAuthClientCredentialsTokenExchange", () => {
         grant_type: "client_credentials",
         client_id: "svc-hermes",
         client_assertion: "eyJhbGciOiJFUzI1NiJ9.e30.sig",
-        client_assertion_type:
-          "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+        client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
       }),
       resolveClient: () => ASSERTION_CLIENT,
       supportedMethods: ["private_key_jwt"],
@@ -180,8 +173,7 @@ describe("validateMcpOAuthClientCredentialsTokenExchange", () => {
         grant_type: "client_credentials",
         client_id: "svc-hermes",
         client_assertion: "eyJhbGciOiJFUzI1NiJ9.e30.sig",
-        client_assertion_type:
-          "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+        client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
       }),
       resolveClient: () => ASSERTION_CLIENT,
       supportedMethods: ["private_key_jwt"],
@@ -204,8 +196,7 @@ describe("validateMcpOAuthClientCredentialsTokenExchange", () => {
         grant_type: "client_credentials",
         client_id: "svc-hermes",
         client_assertion: "eyJhbGciOiJFUzI1NiJ9.e30.sig",
-        client_assertion_type:
-          "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+        client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
         scope: "crm:growth:read",
       }),
       resolveClient: () => ASSERTION_CLIENT,
@@ -268,7 +259,7 @@ describe("validateMcpOAuthClientCredentialsTokenExchange", () => {
           grant_type: "client_credentials",
           client_id: "svc-hermes",
         },
-        { authorization: "Basic c3ZjOnMzY3JldA==" }
+        { authorization: "Basic c3ZjOnMzY3JldA==" },
       ),
       resolveClient: () => MACHINE_CLIENT, // registered client_secret_post
       supportedMethods: ["client_secret_post", "client_secret_basic"],
@@ -278,10 +269,7 @@ describe("validateMcpOAuthClientCredentialsTokenExchange", () => {
     assert.equal(result.ok, false);
     if (result.ok) return;
     assert.equal(result.status, 401);
-    assert.match(
-      result.body.error_description ?? "",
-      /registered for client_secret_post/u
-    );
+    assert.match(result.body.error_description ?? "", /registered for client_secret_post/u);
   });
 
   it("refuses a confidential client that presents no credential", async () => {
@@ -300,10 +288,7 @@ describe("validateMcpOAuthClientCredentialsTokenExchange", () => {
     assert.equal(result.ok, false);
     if (result.ok) return;
     assert.equal(result.status, 401);
-    assert.match(
-      result.body.error_description ?? "",
-      /must authenticate with client_secret_post/u
-    );
+    assert.match(result.body.error_description ?? "", /must authenticate with client_secret_post/u);
   });
 
   it("refuses a no-credential request even when the deployment allows none", async () => {

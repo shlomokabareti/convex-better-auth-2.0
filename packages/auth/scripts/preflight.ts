@@ -42,15 +42,11 @@ function printHelp(): void {
       "Examples:\n" +
       "  pnpm dlx convex-auth preflight\n" +
       "  pnpm dlx convex-auth preflight --repo-root . --convex-dir ./apps/backend/convex\n" +
-      "  pnpm dlx convex-auth preflight -- pnpm run test:e2e:prod-smoke\n"
+      "  pnpm dlx convex-auth preflight -- pnpm run test:e2e:prod-smoke\n",
   );
 }
 
-function readValue(
-  argv: readonly string[],
-  index: number,
-  flag: string
-): string {
+function readValue(argv: readonly string[], index: number, flag: string): string {
   const value = argv[index + 1];
   if (value === undefined || value.startsWith("--")) {
     throw new Error(`${flag} requires a value`);
@@ -58,9 +54,7 @@ function readValue(
   return value;
 }
 
-function backendSetupFromConvexDir(
-  convexDir: string
-): ConvexAuthPreflightBackendSetupOptions {
+function backendSetupFromConvexDir(convexDir: string): ConvexAuthPreflightBackendSetupOptions {
   const base = convexDir.replace(/\/+$/, "");
   return {
     authConfigPath: `${base}/auth.config.ts`,
@@ -131,9 +125,7 @@ function parseArgs(argv: readonly string[]): Args {
   }
 
   return {
-    backendSetup: skipBackendSetup
-      ? false
-      : backendSetupFromConvexDir(convexDir),
+    backendSetup: skipBackendSetup ? false : backendSetupFromConvexDir(convexDir),
     commandArgs,
     installedPackageJsonPath,
     packageName,
@@ -160,7 +152,7 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   process.stderr.write(
-    `convex-auth preflight: ${error instanceof Error ? error.message : String(error)}\n`
+    `convex-auth preflight: ${error instanceof Error ? error.message : String(error)}\n`,
   );
   process.exit(2);
 });

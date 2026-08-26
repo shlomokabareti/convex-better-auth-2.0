@@ -106,10 +106,7 @@ describe("resolveConvexUserContext", () => {
     });
 
     assert.equal(context.principal.kind, "user");
-    assert.equal(
-      context.principal.identityId,
-      "https://auth.example.com|user_123"
-    );
+    assert.equal(context.principal.identityId, "https://auth.example.com|user_123");
     assert.equal(context.principal.sessionId, "session_123");
     assert.deepStrictEqual(context.execution, {
       organizationId: "org_123",

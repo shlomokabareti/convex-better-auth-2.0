@@ -94,11 +94,7 @@ export type ComponentMemberStatus = "active" | "invited" | "suspended";
 export type OperationsMemberStatus = "active" | "pending" | "suspended";
 
 /** Component invitation status enum (mirrors the component schema). */
-export type ComponentInvitationStatus =
-  | "pending"
-  | "accepted"
-  | "revoked"
-  | "expired";
+export type ComponentInvitationStatus = "pending" | "accepted" | "revoked" | "expired";
 
 /** Component invitation email-delivery status enum (mirrors the component). */
 export type ComponentInvitationEmailDeliveryStatus =
@@ -113,9 +109,7 @@ export type ComponentInvitationEmailDeliveryStatus =
 /** Component apiKey status enum (mirrors the component schema). */
 export type ComponentApiKeyStatus = "active" | "revoked";
 
-function mapMemberStatus(
-  status: ComponentMemberStatus
-): OperationsMemberStatus {
+function mapMemberStatus(status: ComponentMemberStatus): OperationsMemberStatus {
   switch (status) {
     case "active":
       return "active";
@@ -138,10 +132,7 @@ function mapMemberStatus(
 type OperationsComponentApi = ConvexAuthGeneratedComponentApi;
 
 type OperationsGlueComponentHandle = {
-  identity: PickComponentFunctions<
-    OperationsComponentApi["identity"],
-    "getByIdentity"
-  >;
+  identity: PickComponentFunctions<OperationsComponentApi["identity"], "getByIdentity">;
   organizations: PickComponentFunctions<
     OperationsComponentApi["organizations"],
     | "getMemberByUserOrganization"
@@ -156,17 +147,13 @@ type OperationsGlueComponentHandle = {
 };
 
 type ComponentMember = NonNullable<
-  FunctionReturnType<
-    OperationsComponentApi["organizations"]["getMemberByIdForSystem"]
-  >
+  FunctionReturnType<OperationsComponentApi["organizations"]["getMemberByIdForSystem"]>
 >;
 type ComponentApiKey = NonNullable<
   FunctionReturnType<OperationsComponentApi["apiKeys"]["getApiKey"]>
 >;
 type ComponentInvitation = NonNullable<
-  FunctionReturnType<
-    OperationsComponentApi["organizations"]["getInvitationByTokenHash"]
-  >
+  FunctionReturnType<OperationsComponentApi["organizations"]["getInvitationByTokenHash"]>
 >;
 
 // ----------------------------------------------------------------------------
@@ -193,10 +180,7 @@ export type ResolvedComponentMembership<TOrgId, TRole extends string> = {
  * member-list readers build. `userId` is `null` when the component user has no
  * local anchor (callers needing a concrete user skip these).
  */
-export type ResolvedComponentOrganizationMember<
-  TUserId,
-  TRole extends string,
-> = {
+export type ResolvedComponentOrganizationMember<TUserId, TRole extends string> = {
   memberId: Id<"organization_members">;
   userId: TUserId | null;
   roleTemplate: TRole;
@@ -210,11 +194,7 @@ export type ResolvedComponentOrganizationMember<
  * `null` when the role key is not a consumer template (callers must treat that
  * as "no role").
  */
-export type ResolvedComponentMemberById<
-  TOrgId,
-  TUserId,
-  TRole extends string,
-> = {
+export type ResolvedComponentMemberById<TOrgId, TUserId, TRole extends string> = {
   memberId: Id<"organization_members">;
   organizationId: TOrgId | null;
   userId: TUserId | null;
@@ -273,11 +253,7 @@ export type ResolvedComponentApiKey<TOrgId, TUserId> = {
  * Dropped (the reader returns `null` / omits it) when it cannot be safely
  * mapped: missing local anchor org, unknown role key, or unmapped inviter.
  */
-export type ResolvedComponentInvitation<
-  TOrgId,
-  TUserId,
-  TRole extends string,
-> = {
+export type ResolvedComponentInvitation<TOrgId, TUserId, TRole extends string> = {
   _id: Id<"organization_invitations">;
   organizationId: TOrgId;
   email: string;
@@ -321,33 +297,32 @@ export type OrganizationUpsertFields = {
  * already exposes every op below at runtime, so a consumer passing
  * `components.convexAuth` satisfies both handles with no changes.
  */
-export type ConvexAuthOrganizationOperationsComponentHandle =
-  OperationsGlueComponentHandle & {
-    organizations: PickComponentFunctions<
-      OperationsComponentApi["organizations"],
-      | "getMember"
-      | "getMemberByIdForSystem"
-      | "listRolesByOrganization"
-      | "ensureRole"
-      | "upsertInvitation"
-      | "setInvitationStatus"
-      | "recordInvitationEmailDelivery"
-      | "getInvitationByTokenHash"
-      | "getInvitationByEmailId"
-      | "listInvitationsByOrganization"
-    >;
-    apiKeys: PickComponentFunctions<
-      OperationsComponentApi["apiKeys"],
-      | "getApiKey"
-      | "getApiKeyByPrefix"
-      | "getApiKeyByRequestId"
-      | "listApiKeysByOrganization"
-      | "upsertApiKey"
-      | "rotateApiKey"
-      | "revokeApiKey"
-      | "touchApiKeyLastUsed"
-    >;
-  };
+export type ConvexAuthOrganizationOperationsComponentHandle = OperationsGlueComponentHandle & {
+  organizations: PickComponentFunctions<
+    OperationsComponentApi["organizations"],
+    | "getMember"
+    | "getMemberByIdForSystem"
+    | "listRolesByOrganization"
+    | "ensureRole"
+    | "upsertInvitation"
+    | "setInvitationStatus"
+    | "recordInvitationEmailDelivery"
+    | "getInvitationByTokenHash"
+    | "getInvitationByEmailId"
+    | "listInvitationsByOrganization"
+  >;
+  apiKeys: PickComponentFunctions<
+    OperationsComponentApi["apiKeys"],
+    | "getApiKey"
+    | "getApiKeyByPrefix"
+    | "getApiKeyByRequestId"
+    | "listApiKeysByOrganization"
+    | "upsertApiKey"
+    | "rotateApiKey"
+    | "revokeApiKey"
+    | "touchApiKeyLastUsed"
+  >;
+};
 
 // ----------------------------------------------------------------------------
 // Errors
@@ -403,9 +378,7 @@ export class ConvexAuthOrganizationOperationsError extends Error {
   }
 }
 
-function defaultCreateOperationsError(
-  args: ConvexAuthOrganizationOperationsErrorInput
-): Error {
+function defaultCreateOperationsError(args: ConvexAuthOrganizationOperationsErrorInput): Error {
   return new ConvexAuthOrganizationOperationsError(args);
 }
 
@@ -421,12 +394,9 @@ export type ConvexAuthOrganizationOperationsConfig<
   // -- bridge: component id → local id (the glue's anchor adapters) --
   resolveLocalOrganizationId: (
     ctx: TReadCtx,
-    componentOrganizationId: Id<"organizations">
+    componentOrganizationId: Id<"organizations">,
   ) => Promise<TOrgId | null>;
-  resolveLocalUserId: (
-    ctx: TReadCtx,
-    componentUserId: Id<"users">
-  ) => Promise<TUserId | null>;
+  resolveLocalUserId: (ctx: TReadCtx, componentUserId: Id<"users">) => Promise<TUserId | null>;
 
   // -- domain --
   validateRoleKey: (key: string) => key is TRole;
@@ -435,17 +405,14 @@ export type ConvexAuthOrganizationOperationsConfig<
   // -- writer-only: the only places the package touches a local row --
   loadOrganizationForUpsert: (
     ctx: TWriteCtx,
-    localOrganizationId: TOrgId
+    localOrganizationId: TOrgId,
   ) => Promise<OrganizationUpsertFields | null>;
   backfillOrganizationBridgeId: (
     ctx: TWriteCtx,
     localOrganizationId: TOrgId,
-    componentOrganizationId: Id<"organizations">
+    componentOrganizationId: Id<"organizations">,
   ) => Promise<void>;
-  loadUserBridgeId: (
-    ctx: TWriteCtx,
-    localUserId: TUserId
-  ) => Promise<Id<"users"> | null>;
+  loadUserBridgeId: (ctx: TWriteCtx, localUserId: TUserId) => Promise<Id<"users"> | null>;
 
   // -- error policy: map an invariant violation to the consumer's own error --
   // Optional. Defaults to throwing a typed `ConvexAuthOrganizationOperationsError`.
@@ -462,7 +429,7 @@ export type ConvexAuthOrganizationReads<
 > = {
   resolveMemberships: (
     ctx: TReadCtx,
-    convexAuthUserId: Id<"users"> | undefined | null
+    convexAuthUserId: Id<"users"> | undefined | null,
   ) => Promise<ResolvedComponentMembership<TOrgId, TRole>[]>;
   resolveMembershipForOrganization: (
     ctx: TReadCtx,
@@ -470,30 +437,30 @@ export type ConvexAuthOrganizationReads<
       convexAuthUserId: Id<"users"> | undefined | null;
       convexAuthOrganizationId: Id<"organizations"> | undefined | null;
       knownLocalOrganizationId?: TOrgId;
-    }
+    },
   ) => Promise<ResolvedComponentMembership<TOrgId, TRole> | null>;
   listMembersByOrganization: (
     ctx: TReadCtx,
     convexAuthOrganizationId: Id<"organizations"> | undefined | null,
-    options?: { status?: ComponentMemberStatus; limit?: number }
+    options?: { status?: ComponentMemberStatus; limit?: number },
   ) => Promise<ResolvedComponentOrganizationMember<TUserId, TRole>[]>;
   getMemberById: (
     ctx: TReadCtx,
-    componentMemberId: Id<"organization_members">
+    componentMemberId: Id<"organization_members">,
   ) => Promise<ResolvedComponentMemberById<TOrgId, TUserId, TRole> | null>;
   getMemberRefForUserOrganization: (
     ctx: TReadCtx,
     args: {
       convexAuthUserId: Id<"users"> | undefined | null;
       convexAuthOrganizationId: Id<"organizations"> | undefined | null;
-    }
+    },
   ) => Promise<ComponentMemberRef | null>;
   listRolesByOrganization: (
     ctx: TReadCtx,
     args: {
       convexAuthOrganizationId: Id<"organizations"> | undefined | null;
       localOrganizationId?: TOrgId;
-    }
+    },
   ) => Promise<ResolvedComponentRole<TOrgId>[]>;
   getRoleByKey: (
     ctx: TReadCtx,
@@ -501,42 +468,42 @@ export type ConvexAuthOrganizationReads<
       convexAuthOrganizationId: Id<"organizations"> | undefined | null;
       localOrganizationId?: TOrgId;
       key: string;
-    }
+    },
   ) => Promise<ResolvedComponentRole<TOrgId> | null>;
   getApiKeyByPrefix: (
     ctx: TReadCtx,
-    keyPrefix: string
+    keyPrefix: string,
   ) => Promise<ResolvedComponentApiKey<TOrgId, TUserId> | null>;
   getApiKeyById: (
     ctx: TReadCtx,
-    apiKeyId: Id<"api_keys">
+    apiKeyId: Id<"api_keys">,
   ) => Promise<ResolvedComponentApiKey<TOrgId, TUserId> | null>;
   getApiKeyByRequestId: (
     ctx: TReadCtx,
     args: {
       convexAuthOrganizationId: Id<"organizations"> | undefined | null;
       requestId: string;
-    }
+    },
   ) => Promise<ResolvedComponentApiKey<TOrgId, TUserId> | null>;
   listApiKeysByOrganization: (
     ctx: TReadCtx,
     convexAuthOrganizationId: Id<"organizations"> | undefined | null,
-    options?: { status?: ComponentApiKeyStatus; limit?: number }
+    options?: { status?: ComponentApiKeyStatus; limit?: number },
   ) => Promise<ResolvedComponentApiKey<TOrgId, TUserId>[]>;
   getInvitationByTokenHash: (
     ctx: TReadCtx,
-    tokenHash: string
+    tokenHash: string,
   ) => Promise<ResolvedComponentInvitation<TOrgId, TUserId, TRole> | null>;
   getInvitationByEmailId: (
     ctx: TReadCtx,
-    emailId: string
+    emailId: string,
   ) => Promise<ResolvedComponentInvitation<TOrgId, TUserId, TRole> | null>;
   listInvitationsByOrganization: (
     ctx: TReadCtx,
     args: {
       convexAuthOrganizationId: Id<"organizations"> | undefined | null;
       status?: ComponentInvitationStatus;
-    }
+    },
   ) => Promise<ResolvedComponentInvitation<TOrgId, TUserId, TRole>[]>;
 };
 
@@ -549,17 +516,17 @@ export type ConvexAuthOrganizationWrites<
   ensureOrganization: (
     ctx: TWriteCtx,
     localOrganizationId: TOrgId,
-    createdByConvexAuthUserId?: Id<"users">
+    createdByConvexAuthUserId?: Id<"users">,
   ) => Promise<Id<"organizations">>;
   ensureSystemRoles: (
     ctx: TWriteCtx,
     localOrganizationId: TOrgId,
-    createdByConvexAuthUserId?: Id<"users">
+    createdByConvexAuthUserId?: Id<"users">,
   ) => Promise<Id<"organizations">>;
   ensureRoleForTemplate: (
     ctx: TWriteCtx,
     localOrganizationId: TOrgId,
-    roleTemplate: TRole
+    roleTemplate: TRole,
   ) => Promise<Id<"organization_roles">>;
   upsertMember: (
     ctx: TWriteCtx,
@@ -571,7 +538,7 @@ export type ConvexAuthOrganizationWrites<
       invitedBy?: TUserId;
       assignedBy?: TUserId;
       acceptedAt?: number;
-    }
+    },
   ) => Promise<Id<"organization_members">>;
   createInvitation: (
     ctx: TWriteCtx,
@@ -583,7 +550,7 @@ export type ConvexAuthOrganizationWrites<
       status: ComponentInvitationStatus;
       invitedBy: TUserId;
       expiresAt: number;
-    }
+    },
   ) => Promise<Id<"organization_invitations">>;
   setInvitationStatus: (
     ctx: TWriteCtx,
@@ -593,7 +560,7 @@ export type ConvexAuthOrganizationWrites<
       status: ComponentInvitationStatus;
       acceptedByUserId?: TUserId;
       acceptedAt?: number;
-    }
+    },
   ) => Promise<void>;
   recordInvitationEmailDelivery: (
     ctx: TWriteCtx,
@@ -609,7 +576,7 @@ export type ConvexAuthOrganizationWrites<
       emailDeliveryStatus: ComponentInvitationEmailDeliveryStatus;
       emailDeliveryEvent?: string | null;
       emailDeliveryError?: string | null;
-    }
+    },
   ) => Promise<void>;
   createApiKey: (
     ctx: TWriteCtx,
@@ -625,7 +592,7 @@ export type ConvexAuthOrganizationWrites<
       requestId?: string;
       requestIdExpiresAt?: number;
       status?: ComponentApiKeyStatus;
-    }
+    },
   ) => Promise<Id<"api_keys">>;
   rotateApiKey: (
     ctx: TWriteCtx,
@@ -634,14 +601,14 @@ export type ConvexAuthOrganizationWrites<
       convexAuthOrganizationId: Id<"organizations">;
       keyPrefix: string;
       keyHash: string;
-    }
+    },
   ) => Promise<void>;
   revokeApiKey: (
     ctx: TWriteCtx,
     args: {
       apiKeyId: Id<"api_keys">;
       convexAuthOrganizationId: Id<"organizations">;
-    }
+    },
   ) => Promise<void>;
   touchApiKeyLastUsed: (
     ctx: TWriteCtx,
@@ -649,7 +616,7 @@ export type ConvexAuthOrganizationWrites<
       apiKeyId: Id<"api_keys">;
       convexAuthOrganizationId: Id<"organizations">;
       ip?: string | null;
-    }
+    },
   ) => Promise<void>;
 };
 
@@ -674,18 +641,10 @@ type ConvexAuthOrganizationOperationsRuntime<
   TRole extends string,
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
-> = ConvexAuthOrganizationOperationsConfig<
-  TOrgId,
-  TUserId,
-  TRole,
-  TReadCtx,
-  TWriteCtx
-> & {
+> = ConvexAuthOrganizationOperationsConfig<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx> & {
   orgOps: ConvexAuthOrganizationOperationsComponentHandle["organizations"];
   apiKeyOps: ConvexAuthOrganizationOperationsComponentHandle["apiKeys"];
-  createOperationsError: (
-    args: ConvexAuthOrganizationOperationsErrorInput
-  ) => Error;
+  createOperationsError: (args: ConvexAuthOrganizationOperationsErrorInput) => Error;
 };
 
 function createOperationsRuntime<
@@ -695,20 +654,8 @@ function createOperationsRuntime<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  config: ConvexAuthOrganizationOperationsConfig<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
-): ConvexAuthOrganizationOperationsRuntime<
-  TOrgId,
-  TUserId,
-  TRole,
-  TReadCtx,
-  TWriteCtx
-> {
+  config: ConvexAuthOrganizationOperationsConfig<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
+): ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx> {
   return {
     ...config,
     orgOps: config.component.organizations,
@@ -724,14 +671,8 @@ function failOperations<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >,
-  args: ConvexAuthOrganizationOperationsErrorInput
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
+  args: ConvexAuthOrganizationOperationsErrorInput,
 ): never {
   throw runtime.createOperationsError(args);
 }
@@ -743,14 +684,8 @@ function requireRunMutation<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >,
-  ctx: TWriteCtx
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
+  ctx: TWriteCtx,
 ): NonNullable<TWriteCtx["runMutation"]> {
   if (typeof ctx.runMutation !== "function") {
     failOperations(runtime, {
@@ -769,16 +704,10 @@ async function resolveRoleTemplate<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >,
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
   ctx: TReadCtx,
   roleId: Id<"organization_roles">,
-  organizationId: Id<"organizations">
+  organizationId: Id<"organizations">,
 ): Promise<TRole | null> {
   const role = await ctx.runQuery(runtime.orgOps.getRole, {
     roleId,
@@ -797,16 +726,10 @@ async function mapMembership<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >,
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
   ctx: TReadCtx,
   member: ComponentMember,
-  knownLocalOrganizationId?: TOrgId
+  knownLocalOrganizationId?: TOrgId,
 ): Promise<ResolvedComponentMembership<TOrgId, TRole> | null> {
   const organizationId =
     knownLocalOrganizationId ??
@@ -818,7 +741,7 @@ async function mapMembership<
     runtime,
     ctx,
     member.roleId,
-    member.organizationId
+    member.organizationId,
   );
   if (roleTemplate === null) {
     return null;
@@ -838,23 +761,14 @@ async function mapApiKey<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >,
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
   ctx: TReadCtx,
-  apiKey: ComponentApiKey
+  apiKey: ComponentApiKey,
 ): Promise<ResolvedComponentApiKey<TOrgId, TUserId> | null> {
   if (apiKey.organizationId === undefined || apiKey.userId === undefined) {
     return null;
   }
-  const organizationId = await runtime.resolveLocalOrganizationId(
-    ctx,
-    apiKey.organizationId
-  );
+  const organizationId = await runtime.resolveLocalOrganizationId(ctx, apiKey.organizationId);
   if (organizationId === null) {
     return null;
   }
@@ -889,26 +803,17 @@ async function mapInvitation<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >,
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
   ctx: TReadCtx,
-  invitation: ComponentInvitation
+  invitation: ComponentInvitation,
 ): Promise<ResolvedComponentInvitation<TOrgId, TUserId, TRole> | null> {
-  const organizationId = await runtime.resolveLocalOrganizationId(
-    ctx,
-    invitation.organizationId
-  );
+  const organizationId = await runtime.resolveLocalOrganizationId(ctx, invitation.organizationId);
   if (organizationId === null) return null;
   const roleTemplate = await resolveRoleTemplate(
     runtime,
     ctx,
     invitation.roleId,
-    invitation.organizationId
+    invitation.organizationId,
   );
   if (roleTemplate === null) return null;
   const invitedBy = await runtime.resolveLocalUserId(ctx, invitation.invitedBy);
@@ -916,8 +821,7 @@ async function mapInvitation<
   const acceptedByUserId =
     invitation.acceptedByUserId === undefined
       ? undefined
-      : ((await runtime.resolveLocalUserId(ctx, invitation.acceptedByUserId)) ??
-        undefined);
+      : ((await runtime.resolveLocalUserId(ctx, invitation.acceptedByUserId)) ?? undefined);
 
   return {
     _id: invitation._id,
@@ -949,20 +853,8 @@ export function createConvexAuthOrganizationOperations<
   TReadCtx extends ConvexAuthOperationsReadCtx = GlueCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx = GlueCtx,
 >(
-  config: ConvexAuthOrganizationOperationsConfig<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
-): ConvexAuthOrganizationOperations<
-  TOrgId,
-  TUserId,
-  TRole,
-  TReadCtx,
-  TWriteCtx
-> {
+  config: ConvexAuthOrganizationOperationsConfig<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
+): ConvexAuthOrganizationOperations<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx> {
   const runtime = createOperationsRuntime(config);
   return {
     reads: createConvexAuthOrganizationReads(runtime),
@@ -977,13 +869,7 @@ function createConvexAuthOrganizationReads<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): ConvexAuthOrganizationReads<TOrgId, TUserId, TRole, TReadCtx> {
   return {
     ...createMembershipReads(runtime),
@@ -1001,18 +887,10 @@ function createMembershipReads<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): Pick<
   ConvexAuthOrganizationReads<TOrgId, TUserId, TRole, TReadCtx>,
-  | "resolveMemberships"
-  | "resolveMembershipForOrganization"
-  | "listMembersByOrganization"
+  "resolveMemberships" | "resolveMembershipForOrganization" | "listMembersByOrganization"
 > {
   return {
     async resolveMemberships(ctx, convexAuthUserId) {
@@ -1023,59 +901,39 @@ function createMembershipReads<
         userId: convexAuthUserId,
       });
       const resolved = await Promise.all(
-        members.map((member) => mapMembership(runtime, ctx, member))
+        members.map((member) => mapMembership(runtime, ctx, member)),
       );
       return resolved.filter((membership) => membership !== null);
     },
 
     async resolveMembershipForOrganization(ctx, args) {
-      const {
-        convexAuthUserId,
-        convexAuthOrganizationId,
-        knownLocalOrganizationId,
-      } = args;
+      const { convexAuthUserId, convexAuthOrganizationId, knownLocalOrganizationId } = args;
       if (!convexAuthUserId || !convexAuthOrganizationId) {
         return null;
       }
-      const member = await ctx.runQuery(
-        runtime.orgOps.getMemberByUserOrganization,
-        {
-          userId: convexAuthUserId,
-          organizationId: convexAuthOrganizationId,
-        }
-      );
+      const member = await ctx.runQuery(runtime.orgOps.getMemberByUserOrganization, {
+        userId: convexAuthUserId,
+        organizationId: convexAuthOrganizationId,
+      });
       if (member === null) {
         return null;
       }
-      return await mapMembership(
-        runtime,
-        ctx,
-        member,
-        knownLocalOrganizationId
-      );
+      return await mapMembership(runtime, ctx, member, knownLocalOrganizationId);
     },
 
     async listMembersByOrganization(ctx, convexAuthOrganizationId, options) {
       if (!convexAuthOrganizationId) {
         return [];
       }
-      const members = await ctx.runQuery(
-        runtime.orgOps.listMembersByOrganization,
-        {
-          organizationId: convexAuthOrganizationId,
-          status: options?.status,
-          limit: options?.limit,
-        }
-      );
+      const members = await ctx.runQuery(runtime.orgOps.listMembersByOrganization, {
+        organizationId: convexAuthOrganizationId,
+        status: options?.status,
+        limit: options?.limit,
+      });
       const resolved = await Promise.all(
         members.map(async (member) => {
           const [roleTemplate, userId] = await Promise.all([
-            resolveRoleTemplate(
-              runtime,
-              ctx,
-              member.roleId,
-              member.organizationId
-            ),
+            resolveRoleTemplate(runtime, ctx, member.roleId, member.organizationId),
             member.userId === undefined || member.userId === null
               ? Promise.resolve(null)
               : runtime.resolveLocalUserId(ctx, member.userId),
@@ -1090,7 +948,7 @@ function createMembershipReads<
                 createdAt: member.createdAt,
                 updatedAt: member.updatedAt,
               };
-        })
+        }),
       );
       return resolved.filter((member) => member !== null);
     },
@@ -1104,13 +962,7 @@ function createMemberLookupReads<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): Pick<
   ConvexAuthOrganizationReads<TOrgId, TUserId, TRole, TReadCtx>,
   "getMemberById" | "getMemberRefForUserOrganization"
@@ -1123,10 +975,7 @@ function createMemberLookupReads<
       if (member === null) {
         return null;
       }
-      const organizationId = await runtime.resolveLocalOrganizationId(
-        ctx,
-        member.organizationId
-      );
+      const organizationId = await runtime.resolveLocalOrganizationId(ctx, member.organizationId);
       const userId =
         member.userId === undefined || member.userId === null
           ? null
@@ -1135,7 +984,7 @@ function createMemberLookupReads<
         runtime,
         ctx,
         member.roleId,
-        member.organizationId
+        member.organizationId,
       );
       return {
         memberId: member._id,
@@ -1154,13 +1003,10 @@ function createMemberLookupReads<
       if (!convexAuthUserId || !convexAuthOrganizationId) {
         return null;
       }
-      const member = await ctx.runQuery(
-        runtime.orgOps.getMemberByUserOrganization,
-        {
-          userId: convexAuthUserId,
-          organizationId: convexAuthOrganizationId,
-        }
-      );
+      const member = await ctx.runQuery(runtime.orgOps.getMemberByUserOrganization, {
+        userId: convexAuthUserId,
+        organizationId: convexAuthOrganizationId,
+      });
       if (member === null) {
         return null;
       }
@@ -1176,13 +1022,7 @@ function createRoleReads<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): Pick<
   ConvexAuthOrganizationReads<TOrgId, TUserId, TRole, TReadCtx>,
   "listRolesByOrganization" | "getRoleByKey"
@@ -1198,10 +1038,7 @@ function createRoleReads<
       });
       const organizationId =
         localOrganizationId ??
-        (await runtime.resolveLocalOrganizationId(
-          ctx,
-          convexAuthOrganizationId
-        ));
+        (await runtime.resolveLocalOrganizationId(ctx, convexAuthOrganizationId));
       return roles.map((role) => ({
         roleId: role._id,
         organizationId: organizationId ?? null,
@@ -1227,10 +1064,7 @@ function createRoleReads<
       }
       const organizationId =
         localOrganizationId ??
-        (await runtime.resolveLocalOrganizationId(
-          ctx,
-          convexAuthOrganizationId
-        ));
+        (await runtime.resolveLocalOrganizationId(ctx, convexAuthOrganizationId));
       return {
         roleId: role._id,
         organizationId: organizationId ?? null,
@@ -1251,19 +1085,10 @@ function createApiKeyReads<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): Pick<
   ConvexAuthOrganizationReads<TOrgId, TUserId, TRole, TReadCtx>,
-  | "getApiKeyByPrefix"
-  | "getApiKeyById"
-  | "getApiKeyByRequestId"
-  | "listApiKeysByOrganization"
+  "getApiKeyByPrefix" | "getApiKeyById" | "getApiKeyByRequestId" | "listApiKeysByOrganization"
 > {
   return {
     async getApiKeyByPrefix(ctx, keyPrefix) {
@@ -1291,13 +1116,10 @@ function createApiKeyReads<
       if (!convexAuthOrganizationId) {
         return null;
       }
-      const apiKey = await ctx.runQuery(
-        runtime.apiKeyOps.getApiKeyByRequestId,
-        {
-          organizationId: convexAuthOrganizationId,
-          requestId,
-        }
-      );
+      const apiKey = await ctx.runQuery(runtime.apiKeyOps.getApiKeyByRequestId, {
+        organizationId: convexAuthOrganizationId,
+        requestId,
+      });
       if (apiKey === null) {
         return null;
       }
@@ -1308,17 +1130,12 @@ function createApiKeyReads<
       if (!convexAuthOrganizationId) {
         return [];
       }
-      const apiKeys = await ctx.runQuery(
-        runtime.apiKeyOps.listApiKeysByOrganization,
-        {
-          organizationId: convexAuthOrganizationId,
-          status: options?.status,
-          limit: options?.limit,
-        }
-      );
-      const resolved = await Promise.all(
-        apiKeys.map((apiKey) => mapApiKey(runtime, ctx, apiKey))
-      );
+      const apiKeys = await ctx.runQuery(runtime.apiKeyOps.listApiKeysByOrganization, {
+        organizationId: convexAuthOrganizationId,
+        status: options?.status,
+        limit: options?.limit,
+      });
+      const resolved = await Promise.all(apiKeys.map((apiKey) => mapApiKey(runtime, ctx, apiKey)));
       return resolved.filter((apiKey) => apiKey !== null);
     },
   };
@@ -1331,27 +1148,16 @@ function createInvitationReads<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): Pick<
   ConvexAuthOrganizationReads<TOrgId, TUserId, TRole, TReadCtx>,
-  | "getInvitationByTokenHash"
-  | "getInvitationByEmailId"
-  | "listInvitationsByOrganization"
+  "getInvitationByTokenHash" | "getInvitationByEmailId" | "listInvitationsByOrganization"
 > {
   return {
     async getInvitationByTokenHash(ctx, tokenHash) {
-      const invitation = await ctx.runQuery(
-        runtime.orgOps.getInvitationByTokenHash,
-        {
-          tokenHash,
-        }
-      );
+      const invitation = await ctx.runQuery(runtime.orgOps.getInvitationByTokenHash, {
+        tokenHash,
+      });
       if (invitation === null) {
         return null;
       }
@@ -1359,12 +1165,9 @@ function createInvitationReads<
     },
 
     async getInvitationByEmailId(ctx, emailId) {
-      const invitation = await ctx.runQuery(
-        runtime.orgOps.getInvitationByEmailId,
-        {
-          emailId,
-        }
-      );
+      const invitation = await ctx.runQuery(runtime.orgOps.getInvitationByEmailId, {
+        emailId,
+      });
       if (invitation === null) {
         return null;
       }
@@ -1376,15 +1179,12 @@ function createInvitationReads<
       if (!convexAuthOrganizationId) {
         return [];
       }
-      const invitations = await ctx.runQuery(
-        runtime.orgOps.listInvitationsByOrganization,
-        {
-          organizationId: convexAuthOrganizationId,
-          status,
-        }
-      );
+      const invitations = await ctx.runQuery(runtime.orgOps.listInvitationsByOrganization, {
+        organizationId: convexAuthOrganizationId,
+        status,
+      });
       const resolved = await Promise.all(
-        invitations.map((invitation) => mapInvitation(runtime, ctx, invitation))
+        invitations.map((invitation) => mapInvitation(runtime, ctx, invitation)),
       );
       return resolved.filter((invitation) => invitation !== null);
     },
@@ -1398,22 +1198,13 @@ async function ensureOrganization<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >,
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
   ctx: TWriteCtx,
   localOrganizationId: TOrgId,
-  createdByConvexAuthUserId?: Id<"users">
+  createdByConvexAuthUserId?: Id<"users">,
 ): Promise<Id<"organizations">> {
   const runMutation = requireRunMutation(runtime, ctx);
-  const organization = await runtime.loadOrganizationForUpsert(
-    ctx,
-    localOrganizationId
-  );
+  const organization = await runtime.loadOrganizationForUpsert(ctx, localOrganizationId);
   if (organization === null) {
     failOperations(runtime, {
       code: "organization_not_found",
@@ -1433,11 +1224,7 @@ async function ensureOrganization<
   });
 
   if (organization.convexAuthOrganizationId !== result.organizationId) {
-    await runtime.backfillOrganizationBridgeId(
-      ctx,
-      localOrganizationId,
-      result.organizationId
-    );
+    await runtime.backfillOrganizationBridgeId(ctx, localOrganizationId, result.organizationId);
   }
   return result.organizationId;
 }
@@ -1449,23 +1236,13 @@ async function ensureRoleForTemplate<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >,
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
   ctx: TWriteCtx,
   localOrganizationId: TOrgId,
-  roleTemplate: TRole
+  roleTemplate: TRole,
 ): Promise<Id<"organization_roles">> {
   const runMutation = requireRunMutation(runtime, ctx);
-  const convexAuthOrganizationId = await ensureOrganization(
-    runtime,
-    ctx,
-    localOrganizationId
-  );
+  const convexAuthOrganizationId = await ensureOrganization(runtime, ctx, localOrganizationId);
   const result = await runMutation(runtime.orgOps.ensureRole, {
     organizationId: convexAuthOrganizationId,
     key: roleTemplate,
@@ -1483,13 +1260,7 @@ function createConvexAuthOrganizationWrites<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): ConvexAuthOrganizationWrites<TOrgId, TUserId, TRole, TWriteCtx> {
   return {
     ...createOrganizationRoleWrites(runtime),
@@ -1506,60 +1277,41 @@ function createOrganizationRoleWrites<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): Pick<
   ConvexAuthOrganizationWrites<TOrgId, TUserId, TRole, TWriteCtx>,
   "ensureOrganization" | "ensureRoleForTemplate" | "ensureSystemRoles"
 > {
   return {
     ensureOrganization: (ctx, localOrganizationId, createdByConvexAuthUserId) =>
-      ensureOrganization(
-        runtime,
-        ctx,
-        localOrganizationId,
-        createdByConvexAuthUserId
-      ),
+      ensureOrganization(runtime, ctx, localOrganizationId, createdByConvexAuthUserId),
     ensureRoleForTemplate: (ctx, localOrganizationId, roleTemplate) =>
       ensureRoleForTemplate(runtime, ctx, localOrganizationId, roleTemplate),
 
-    async ensureSystemRoles(
-      ctx,
-      localOrganizationId,
-      createdByConvexAuthUserId
-    ) {
+    async ensureSystemRoles(ctx, localOrganizationId, createdByConvexAuthUserId) {
       const runMutation = requireRunMutation(runtime, ctx);
       const convexAuthOrganizationId = await ensureOrganization(
         runtime,
         ctx,
         localOrganizationId,
-        createdByConvexAuthUserId
+        createdByConvexAuthUserId,
       );
       await runMutation(runtime.orgOps.seedDefaultRoles, {
         organizationId: convexAuthOrganizationId,
-        catalog: Object.entries(runtime.roleCatalog).map(
-          ([name, permissions]) => {
-            if (
-              !Array.isArray(permissions) ||
-              !permissions.every((permission) => typeof permission === "string")
-            ) {
-              throw new TypeError(
-                `Invalid permission catalog for role ${name}`
-              );
-            }
-            return {
-              key: name,
-              name,
-              permissions,
-              isSystem: true,
-            };
+        catalog: Object.entries(runtime.roleCatalog).map(([name, permissions]) => {
+          if (
+            !Array.isArray(permissions) ||
+            !permissions.every((permission) => typeof permission === "string")
+          ) {
+            throw new TypeError(`Invalid permission catalog for role ${name}`);
           }
-        ),
+          return {
+            key: name,
+            name,
+            permissions,
+            isSystem: true,
+          };
+        }),
       });
       return convexAuthOrganizationId;
     },
@@ -1573,24 +1325,12 @@ function createMemberWrites<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
-): Pick<
-  ConvexAuthOrganizationWrites<TOrgId, TUserId, TRole, TWriteCtx>,
-  "upsertMember"
-> {
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
+): Pick<ConvexAuthOrganizationWrites<TOrgId, TUserId, TRole, TWriteCtx>, "upsertMember"> {
   return {
     async upsertMember(ctx, args) {
       const runMutation = requireRunMutation(runtime, ctx);
-      const userBridgeId = await runtime.loadUserBridgeId(
-        ctx,
-        args.localUserId
-      );
+      const userBridgeId = await runtime.loadUserBridgeId(ctx, args.localUserId);
       if (userBridgeId === null) {
         failOperations(runtime, {
           code: "user_bridge_id_missing",
@@ -1603,13 +1343,13 @@ function createMemberWrites<
         runtime,
         ctx,
         args.localOrganizationId,
-        userBridgeId
+        userBridgeId,
       );
       const roleId = await ensureRoleForTemplate(
         runtime,
         ctx,
         args.localOrganizationId,
-        args.roleTemplate
+        args.roleTemplate,
       );
       const result = await runMutation(runtime.orgOps.upsertMember, {
         organizationId: convexAuthOrganizationId,
@@ -1619,13 +1359,11 @@ function createMemberWrites<
         invitedBy:
           args.invitedBy === undefined
             ? undefined
-            : ((await runtime.loadUserBridgeId(ctx, args.invitedBy)) ??
-              undefined),
+            : ((await runtime.loadUserBridgeId(ctx, args.invitedBy)) ?? undefined),
         assignedBy:
           args.assignedBy === undefined
             ? undefined
-            : ((await runtime.loadUserBridgeId(ctx, args.assignedBy)) ??
-              undefined),
+            : ((await runtime.loadUserBridgeId(ctx, args.assignedBy)) ?? undefined),
         acceptedAt: args.acceptedAt,
       });
       return result.memberId;
@@ -1640,13 +1378,7 @@ function createInvitationWrites<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): Pick<
   ConvexAuthOrganizationWrites<TOrgId, TUserId, TRole, TWriteCtx>,
   "createInvitation" | "setInvitationStatus" | "recordInvitationEmailDelivery"
@@ -1654,10 +1386,7 @@ function createInvitationWrites<
   return {
     async createInvitation(ctx, args) {
       const runMutation = requireRunMutation(runtime, ctx);
-      const invitedByBridgeId = await runtime.loadUserBridgeId(
-        ctx,
-        args.invitedBy
-      );
+      const invitedByBridgeId = await runtime.loadUserBridgeId(ctx, args.invitedBy);
       if (invitedByBridgeId === null) {
         failOperations(runtime, {
           code: "user_bridge_id_missing",
@@ -1673,13 +1402,13 @@ function createInvitationWrites<
         runtime,
         ctx,
         args.localOrganizationId,
-        invitedByBridgeId
+        invitedByBridgeId,
       );
       const roleId = await ensureRoleForTemplate(
         runtime,
         ctx,
         args.localOrganizationId,
-        args.roleTemplate
+        args.roleTemplate,
       );
       const result = await runMutation(runtime.orgOps.upsertInvitation, {
         organizationId: convexAuthOrganizationId,
@@ -1702,8 +1431,7 @@ function createInvitationWrites<
         acceptedByUserId:
           args.acceptedByUserId === undefined
             ? undefined
-            : ((await runtime.loadUserBridgeId(ctx, args.acceptedByUserId)) ??
-              undefined),
+            : ((await runtime.loadUserBridgeId(ctx, args.acceptedByUserId)) ?? undefined),
         acceptedAt: args.acceptedAt,
       });
     },
@@ -1729,13 +1457,7 @@ function createApiKeyWrites<
   TReadCtx extends ConvexAuthOperationsReadCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx,
 >(
-  runtime: ConvexAuthOrganizationOperationsRuntime<
-    TOrgId,
-    TUserId,
-    TRole,
-    TReadCtx,
-    TWriteCtx
-  >
+  runtime: ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): Pick<
   ConvexAuthOrganizationWrites<TOrgId, TUserId, TRole, TWriteCtx>,
   "createApiKey" | "rotateApiKey" | "revokeApiKey" | "touchApiKeyLastUsed"
@@ -1743,10 +1465,7 @@ function createApiKeyWrites<
   return {
     async createApiKey(ctx, args) {
       const runMutation = requireRunMutation(runtime, ctx);
-      const userBridgeId = await runtime.loadUserBridgeId(
-        ctx,
-        args.localUserId
-      );
+      const userBridgeId = await runtime.loadUserBridgeId(ctx, args.localUserId);
       if (userBridgeId === null) {
         failOperations(runtime, {
           code: "user_bridge_id_missing",
@@ -1762,7 +1481,7 @@ function createApiKeyWrites<
         runtime,
         ctx,
         args.localOrganizationId,
-        userBridgeId
+        userBridgeId,
       );
       const result = await runMutation(runtime.apiKeyOps.upsertApiKey, {
         organizationId: convexAuthOrganizationId,
@@ -1773,9 +1492,7 @@ function createApiKeyWrites<
         requestId: args.requestId ?? null,
         requestIdExpiresAt: args.requestIdExpiresAt ?? null,
         scopes: [...args.scopes],
-        allowedIpRanges: args.allowedIpRanges
-          ? [...args.allowedIpRanges]
-          : null,
+        allowedIpRanges: args.allowedIpRanges ? [...args.allowedIpRanges] : null,
         expiresAt: args.expiresAt ?? null,
         status: args.status ?? "active",
       });

@@ -1,8 +1,4 @@
-import {
-  customCtx,
-  customMutation,
-  customQuery,
-} from "convex-helpers/server/customFunctions";
+import { customCtx, customMutation, customQuery } from "convex-helpers/server/customFunctions";
 import type {
   FunctionVisibility,
   GenericDataModel,
@@ -34,7 +30,7 @@ export type CreateConvexAuthFunctionsOptions<
       permission?: string;
       error: unknown;
       viewer?: B2BViewer<TUser, TAnchor>;
-    }
+    },
   ) => Promise<void> | void;
 };
 
@@ -75,25 +71,14 @@ export function createConvexAuthFunctions<
   DataModel extends GenericDataModel,
   QVisibility extends FunctionVisibility,
   MVisibility extends FunctionVisibility,
->(
-  opts: CreateConvexAuthFunctionsOptions<
-    TUser,
-    TAnchor,
-    DataModel,
-    QVisibility,
-    MVisibility
-  >
-) {
-  const { gate, gateAll, gateAny, gateRole, inject } =
-    createConvexAuthFunctionGates(opts);
+>(opts: CreateConvexAuthFunctionsOptions<TUser, TAnchor, DataModel, QVisibility, MVisibility>) {
+  const { gate, gateAll, gateAny, gateRole, inject } = createConvexAuthFunctionGates(opts);
 
   return {
     authedQuery: customQuery(opts.query, inject),
     authedMutation: customMutation(opts.mutation, inject),
-    permissionQuery: (permission: string) =>
-      customQuery(opts.query, gate(permission)),
-    permissionMutation: (permission: string) =>
-      customMutation(opts.mutation, gate(permission)),
+    permissionQuery: (permission: string) => customQuery(opts.query, gate(permission)),
+    permissionMutation: (permission: string) => customMutation(opts.mutation, gate(permission)),
     permissionAnyQuery: (permissions: readonly string[]) =>
       customQuery(opts.query, gateAny(permissions)),
     permissionAnyMutation: (permissions: readonly string[]) =>
@@ -104,10 +89,8 @@ export function createConvexAuthFunctions<
       customMutation(opts.mutation, gateAll(permissions)),
     adminQuery: customQuery(opts.query, gateRole(["owner", "admin"])),
     adminMutation: customMutation(opts.mutation, gateRole(["owner", "admin"])),
-    roleQuery: (...roleKeys: string[]) =>
-      customQuery(opts.query, gateRole(roleKeys)),
-    roleMutation: (...roleKeys: string[]) =>
-      customMutation(opts.mutation, gateRole(roleKeys)),
+    roleQuery: (...roleKeys: string[]) => customQuery(opts.query, gateRole(roleKeys)),
+    roleMutation: (...roleKeys: string[]) => customMutation(opts.mutation, gateRole(roleKeys)),
   };
 }
 
@@ -117,21 +100,13 @@ function createConvexAuthFunctionGates<
   DataModel extends GenericDataModel,
   QVisibility extends FunctionVisibility,
   MVisibility extends FunctionVisibility,
->(
-  opts: CreateConvexAuthFunctionsOptions<
-    TUser,
-    TAnchor,
-    DataModel,
-    QVisibility,
-    MVisibility
-  >
-) {
+>(opts: CreateConvexAuthFunctionsOptions<TUser, TAnchor, DataModel, QVisibility, MVisibility>) {
   type V = B2BViewer<TUser, TAnchor>;
 
   const guardWith = async (
     ctx: GlueCtx,
     check?: (viewer: V) => void,
-    label?: string
+    label?: string,
   ): Promise<V> => {
     let resolved: V | undefined;
     try {
@@ -153,47 +128,41 @@ function createConvexAuthFunctionGates<
     customCtx(
       async (ctx: GlueCtx): Promise<{ viewer: V }> => ({
         viewer: await guardWith(ctx, check, label),
-      })
+      }),
     );
 
   return {
     inject: customCtxGate(),
     gate: (permission: string) =>
-      customCtxGate(
-        (viewer) => viewer.requirePermission(permission),
-        permission
-      ),
+      customCtxGate((viewer) => viewer.requirePermission(permission), permission),
     gateAny: (permissions: readonly string[]) =>
       customCtxGate(
         (viewer) => requireAnyPermission(viewer, permissions),
-        permissions.join(" OR ")
+        permissions.join(" OR "),
       ),
     gateAll: (permissions: readonly string[]) =>
       customCtxGate(
         (viewer) => requireAllPermissions(viewer, permissions),
-        permissions.join(" AND ")
+        permissions.join(" AND "),
       ),
     gateRole: (roleKeys: readonly string[]) =>
-      customCtxGate(
-        (viewer) => viewer.requireRole(...roleKeys),
-        `role:[${roleKeys.join(",")}]`
-      ),
+      customCtxGate((viewer) => viewer.requireRole(...roleKeys), `role:[${roleKeys.join(",")}]`),
   };
 }
 
-function requireAnyPermission<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
->(viewer: B2BViewer<TUser, TAnchor>, permissions: readonly string[]): void {
+function requireAnyPermission<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum>(
+  viewer: B2BViewer<TUser, TAnchor>,
+  permissions: readonly string[],
+): void {
   if (!permissions.some((permission) => viewer.hasPermission(permission))) {
     viewer.requirePermission(permissions[0] ?? "");
   }
 }
 
-function requireAllPermissions<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
->(viewer: B2BViewer<TUser, TAnchor>, permissions: readonly string[]): void {
+function requireAllPermissions<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum>(
+  viewer: B2BViewer<TUser, TAnchor>,
+  permissions: readonly string[],
+): void {
   for (const permission of permissions) {
     viewer.requirePermission(permission);
   }

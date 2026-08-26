@@ -8,24 +8,22 @@ import { api as componentApi } from "../../component/_generated/api";
 import type { Id } from "../../component/_generated/dataModel";
 import { createConvexAuthGlue } from "./createConvexAuthGlue";
 import { isAuthErrorPayload } from "./throwAuthError";
-import type {
-  B2BModeAdapters,
-  GlueCtx,
-  ConvexAuthComponentHandle,
-} from "./types";
+import type { B2BModeAdapters, GlueCtx, ConvexAuthComponentHandle } from "./types";
 
-function componentId<
-  TableName extends "users" | "organizations" | "organization_members",
->(tableName: TableName, value: string): Id<TableName> {
+function componentId<TableName extends "users" | "organizations" | "organization_members">(
+  tableName: TableName,
+  value: string,
+): Id<TableName> {
   if (!isFixtureId(tableName, value)) {
     throw new TypeError(`invalid ${tableName} fixture id`);
   }
   return value;
 }
 
-function isFixtureId<
-  TableName extends "users" | "organizations" | "organization_members",
->(_tableName: TableName, value: string): value is Id<TableName> {
+function isFixtureId<TableName extends "users" | "organizations" | "organization_members">(
+  _tableName: TableName,
+  value: string,
+): value is Id<TableName> {
   return value.length > 0;
 }
 
@@ -53,10 +51,7 @@ type ComponentState = {
     roleId: string;
     status: "active" | "invited" | "suspended";
   }>;
-  roles: Map<
-    string,
-    { _id: string; organizationId: string; key: string; permissions: string[] }
-  >;
+  roles: Map<string, { _id: string; organizationId: string; key: string; permissions: string[] }>;
   orgs: Map<string, { _id: string; name: string }>;
 };
 
@@ -75,10 +70,8 @@ function makeComponent(): {
   const handle: ConvexAuthComponentHandle = {
     identity: { getByIdentity: componentApi.identity.getByIdentity },
     organizations: {
-      getMemberByUserOrganization:
-        componentApi.organizations.getMemberByUserOrganization,
-      listMembersByOrganization:
-        componentApi.organizations.listMembersByOrganization,
+      getMemberByUserOrganization: componentApi.organizations.getMemberByUserOrganization,
+      listMembersByOrganization: componentApi.organizations.listMembersByOrganization,
       listMembershipsByUser: componentApi.organizations.listMembershipsByUser,
       getRole: componentApi.organizations.getRole,
       getRoleByKey: componentApi.organizations.getRoleByKey,
@@ -100,10 +93,7 @@ function makeCtx(args: {
   component: ComponentState;
 }): GlueCtx {
   const state = args.component;
-  const runQuery: GlueCtx["runQuery"] = async (
-    ref,
-    ...runArgs
-  ): Promise<unknown> => {
+  const runQuery: GlueCtx["runQuery"] = async (ref, ...runArgs): Promise<unknown> => {
     const p = (runArgs[0] ?? {}) as Record<string, unknown>;
     const functionName = getFunctionName(ref);
     switch (functionName) {
@@ -113,15 +103,12 @@ function makeCtx(args: {
       case "organizations:getMemberByUserOrganization": {
         return (
           state.members.find(
-            (m) =>
-              m.organizationId === p.organizationId && m.userId === p.userId
+            (m) => m.organizationId === p.organizationId && m.userId === p.userId,
           ) ?? null
         );
       }
       case "organizations:listMembersByOrganization": {
-        return state.members.filter(
-          (m) => m.organizationId === p.organizationId
-        );
+        return state.members.filter((m) => m.organizationId === p.organizationId);
       }
       case "organizations:listMembershipsByUser": {
         return state.members.filter((m) => m.userId === p.userId);
@@ -172,10 +159,7 @@ function makeCtx(args: {
           organizationId: String(p.organizationId),
           userId: String(p.userId),
           roleId: String(p.roleId),
-          status:
-            p.status === "invited" || p.status === "suspended"
-              ? p.status
-              : "active",
+          status: p.status === "invited" || p.status === "suspended" ? p.status : "active",
         });
         return { memberId };
       }
@@ -241,7 +225,7 @@ function makeAdapters(initialUsers: FakeUser[]): {
 
 async function checkB2BViewerPermission(
   granted: readonly string[],
-  required: string
+  required: string,
 ): Promise<boolean> {
   const { handle, state } = makeComponent();
   state.identities.set("u_1", { userId: "comp_user_1", subject: "u_1" });
@@ -280,23 +264,20 @@ async function checkB2BViewerPermission(
     makeCtx({
       identity: { subject: "u_1", issuer: "https://issuer.test" },
       component: state,
-    })
+    }),
   );
   return viewer.hasPermission(required);
 }
 
 async function expectAuthError(
   fn: () => Promise<unknown>,
-  expected: { code: string; authzCode?: string }
+  expected: { code: string; authzCode?: string },
 ): Promise<void> {
   try {
     await fn();
     assert.fail("expected throwAuthError");
   } catch (err) {
-    const data =
-      typeof err === "object" && err !== null
-        ? Reflect.get(err, "data")
-        : undefined;
+    const data = typeof err === "object" && err !== null ? Reflect.get(err, "data") : undefined;
     if (!isAuthErrorPayload(data)) {
       assert.fail(`not an AuthErrorPayload: ${JSON.stringify(data)}`);
     }
@@ -377,7 +358,7 @@ describe("createConvexAuthGlue — b2b mode (orgs: enabled)", () => {
     it(`permission conformance: ${testCase.name}`, async () => {
       assert.equal(
         await checkB2BViewerPermission(testCase.granted, testCase.required),
-        testCase.expected
+        testCase.expected,
       );
     });
   }
@@ -422,10 +403,7 @@ describe("createConvexAuthGlue — b2b mode (orgs: enabled)", () => {
     assert.equal(viewer.mode, "b2b");
     assert.equal(viewer.convexAuthOrganizationId, orgId);
     assert.equal(viewer.membership.roleKey, "owner");
-    assert.deepEqual(viewer.membership.permissions, [
-      "users:roles",
-      "billing:read",
-    ]);
+    assert.deepEqual(viewer.membership.permissions, ["users:roles", "billing:read"]);
     assert.equal(viewer.hasPermission("users:roles"), true);
     assert.equal(viewer.hasPermission("nope"), false);
     assert.equal(viewer.requireOrganization(), orgId);
@@ -495,10 +473,7 @@ describe("createConvexAuthGlue — b2b mode (orgs: enabled)", () => {
       {
         _id: "u_db_1",
         convexAuthUserId: componentId("users", "comp_user_1"),
-        activeConvexAuthOrganizationId: componentId(
-          "organizations",
-          "org_stale"
-        ),
+        activeConvexAuthOrganizationId: componentId("organizations", "org_stale"),
       },
     ]);
     const ctx = makeCtx({
@@ -565,10 +540,7 @@ describe("createConvexAuthGlue — b2b mode (orgs: enabled)", () => {
     const viewer = await glue.resolveViewer(ctx);
     assert.equal(viewer.membership.roleKey, "owner");
     assert.ok(viewer.convexAuthOrganizationId.startsWith("org_"));
-    assert.equal(
-      users[0]?.activeConvexAuthOrganizationId,
-      viewer.convexAuthOrganizationId
-    );
+    assert.equal(users[0]?.activeConvexAuthOrganizationId, viewer.convexAuthOrganizationId);
     assert.equal(anchors.length, 1);
     // Component now has exactly one org + one member.
     assert.equal(state.orgs.size, 1);
@@ -810,12 +782,7 @@ describe("createConvexAuthGlue — b2b mode (orgs: enabled)", () => {
         resolvePermissionOverride: async (_ctx, args) => {
           // basePermissions param MUST already be the expanded catalog —
           // assert that the contract holds.
-          assert.deepEqual([...args.basePermissions].toSorted(), [
-            "a",
-            "b",
-            "c",
-            "d",
-          ]);
+          assert.deepEqual([...args.basePermissions].toSorted(), ["a", "b", "c", "d"]);
           return { add: ["e"], remove: ["b"] };
         },
       },

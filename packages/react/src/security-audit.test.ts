@@ -22,7 +22,7 @@ describe("security audit helpers", () => {
         actor: { _id: "user_1", name: "Jane", email: "jane@example.com" },
         userName: "Fallback",
       }),
-      "Jane"
+      "Jane",
     );
     assert.equal(
       getConvexSecurityAuditActorLabel({
@@ -30,7 +30,7 @@ describe("security audit helpers", () => {
         userName: "Fallback",
         userEmail: "fallback@example.com",
       }),
-      "Fallback"
+      "Fallback",
     );
     assert.equal(
       getConvexSecurityAuditActorLabel({
@@ -38,25 +38,19 @@ describe("security audit helpers", () => {
         actor: { _id: "user_1", email: "jane@example.com" },
         userEmail: "fallback@example.com",
       }),
-      "jane@example.com"
+      "jane@example.com",
     );
     assert.equal(
       getConvexSecurityAuditActorLabel({
         ...baseLog,
         userEmail: "fallback@example.com",
       }),
-      "fallback@example.com"
+      "fallback@example.com",
     );
-    assert.equal(
-      getConvexSecurityAuditActorLabel({}, "Package system"),
-      "Package system"
-    );
+    assert.equal(getConvexSecurityAuditActorLabel({}, "Package system"), "Package system");
   });
 
   it("formats timestamps with the host locale", () => {
-    assert.equal(
-      typeof formatConvexSecurityAuditCreatedAt(1_700_000_000_000),
-      "string"
-    );
+    assert.equal(typeof formatConvexSecurityAuditCreatedAt(1_700_000_000_000), "string");
   });
 });

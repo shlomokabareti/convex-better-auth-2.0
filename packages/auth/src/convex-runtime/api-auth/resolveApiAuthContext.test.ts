@@ -29,9 +29,7 @@ function createVerifier(): ApiTokenVerifier {
   };
 }
 
-function createUserAdapter(
-  overrides?: Partial<ApiAuthLookupAdapter>
-): ApiAuthLookupAdapter {
+function createUserAdapter(overrides?: Partial<ApiAuthLookupAdapter>): ApiAuthLookupAdapter {
   return {
     async getUserByIdentity() {
       return {
@@ -101,8 +99,7 @@ describe("resolveApiAuthContext", () => {
           }),
         }),
       (error: unknown) =>
-        error instanceof ApiAuthError &&
-        error.code === "USER_IDENTITY_NOT_LINKED"
+        error instanceof ApiAuthError && error.code === "USER_IDENTITY_NOT_LINKED",
     );
   });
 
@@ -121,8 +118,7 @@ describe("resolveApiAuthContext", () => {
           },
           adapter: createUserAdapter(),
         }),
-      (error: unknown) =>
-        error instanceof ApiAuthError && error.code === "API_CREDENTIAL_INVALID"
+      (error: unknown) => error instanceof ApiAuthError && error.code === "API_CREDENTIAL_INVALID",
     );
   });
 
@@ -150,8 +146,7 @@ describe("resolveApiAuthContext", () => {
             },
           }),
         }),
-      (error: unknown) =>
-        error instanceof ApiAuthError && error.code === "PRINCIPAL_RESTRICTED"
+      (error: unknown) => error instanceof ApiAuthError && error.code === "PRINCIPAL_RESTRICTED",
     );
   });
 
@@ -207,8 +202,7 @@ describe("resolveApiAuthContext", () => {
           adapter: createUserAdapter(),
         }),
       (error: unknown) =>
-        error instanceof ApiAuthError &&
-        error.code === "API_CREDENTIAL_UNSUPPORTED"
+        error instanceof ApiAuthError && error.code === "API_CREDENTIAL_UNSUPPORTED",
     );
   });
 });

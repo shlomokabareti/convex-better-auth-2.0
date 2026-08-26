@@ -11,7 +11,7 @@ describe("webhook event lock policy", () => {
         existing: null,
         now: 10_000,
       }),
-      { action: "insert", alreadyProcessed: false, alreadyProcessing: false }
+      { action: "insert", alreadyProcessed: false, alreadyProcessing: false },
     );
   });
 
@@ -21,7 +21,7 @@ describe("webhook event lock policy", () => {
         existing: { status: "processed", claimedAt: 1 },
         now: 10_000,
       }),
-      { action: "processed", alreadyProcessed: true, alreadyProcessing: false }
+      { action: "processed", alreadyProcessed: true, alreadyProcessing: false },
     );
   });
 
@@ -31,7 +31,7 @@ describe("webhook event lock policy", () => {
         existing: { status: "pending", claimedAt: 9_000 },
         now: 10_000,
       }),
-      { action: "inflight", alreadyProcessed: false, alreadyProcessing: true }
+      { action: "inflight", alreadyProcessed: false, alreadyProcessing: true },
     );
   });
 
@@ -42,7 +42,7 @@ describe("webhook event lock policy", () => {
         staleClaimMs: 5_000,
         now: 10_000,
       }),
-      { action: "reclaim", alreadyProcessed: false, alreadyProcessing: false }
+      { action: "reclaim", alreadyProcessed: false, alreadyProcessing: false },
     );
   });
 });

@@ -175,8 +175,7 @@ function isExcluded(relPath: string): boolean {
   const parts = relPath.split(sep);
   if (parts.includes("_generated")) return true;
   if (parts.includes("node_modules")) return true;
-  if (relPath.endsWith(".test.ts") || relPath.endsWith(".test.tsx"))
-    return true;
+  if (relPath.endsWith(".test.ts") || relPath.endsWith(".test.tsx")) return true;
   return false;
 }
 
@@ -216,18 +215,14 @@ function walk(dir: string, base: string, out: string[]): void {
 function checkLocalTruthTable(
   line: string,
   lineNo: number,
-  relPath: string
+  relPath: string,
 ): ConsumerContractViolation[] {
   const found: ConsumerContractViolation[] = [];
   for (const table of FORBIDDEN_TABLES) {
     // Form A: `someName: defineTable(` where someName === table (property declaration in a schema map).
-    const propPattern = new RegExp(
-      `(^|[^A-Za-z0-9_])${table}\\s*:\\s*defineTable\\s*\\(`
-    );
+    const propPattern = new RegExp(`(^|[^A-Za-z0-9_])${table}\\s*:\\s*defineTable\\s*\\(`);
     // Form B: `defineTable("table_name"` — defensive; not idiomatic in convex but possible.
-    const callPattern = new RegExp(
-      `defineTable\\s*\\(\\s*["'\`]${table}["'\`]`
-    );
+    const callPattern = new RegExp(`defineTable\\s*\\(\\s*["'\`]${table}["'\`]`);
     if (propPattern.test(line) || callPattern.test(line)) {
       found.push({
         rule: "local-org-member-truth-table",
@@ -253,10 +248,7 @@ function tableNameFromSchemaPath(relPath: string): string | null {
   return match?.[1] ?? null;
 }
 
-function checkSplitSchemaTruthTable(
-  source: string,
-  relPath: string
-): ConsumerContractViolation[] {
+function checkSplitSchemaTruthTable(source: string, relPath: string): ConsumerContractViolation[] {
   const tableFromPath = tableNameFromSchemaPath(relPath);
   if (
     tableFromPath === null ||
@@ -265,8 +257,7 @@ function checkSplitSchemaTruthTable(
     return [];
   }
 
-  const defineTableExport =
-    /export\s+const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*defineTable\s*\(/g;
+  const defineTableExport = /export\s+const\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*defineTable\s*\(/g;
   const found: ConsumerContractViolation[] = [];
   let match: RegExpExecArray | null;
   while ((match = defineTableExport.exec(source)) !== null) {
@@ -286,12 +277,12 @@ function checkSplitSchemaTruthTable(
 function checkLocalMirrorWrite(
   line: string,
   lineNo: number,
-  relPath: string
+  relPath: string,
 ): ConsumerContractViolation[] {
   const found: ConsumerContractViolation[] = [];
   for (const table of FORBIDDEN_TABLES) {
     const insertPattern = new RegExp(
-      `ctx\\.db\\.(?:insert|replace|patch)\\s*\\(\\s*["'\`]${table}["'\`]`
+      `ctx\\.db\\.(?:insert|replace|patch)\\s*\\(\\s*["'\`]${table}["'\`]`,
     );
     if (insertPattern.test(line)) {
       found.push({
@@ -308,14 +299,14 @@ function checkLocalMirrorWrite(
 function checkBidirectionalMirrorWriter(
   line: string,
   lineNo: number,
-  relPath: string
+  relPath: string,
 ): ConsumerContractViolation[] {
   const found: ConsumerContractViolation[] = [];
   for (const name of FORBIDDEN_MIRROR_WRITERS) {
     // Detect function declaration / arrow assignment / export of the symbol.
     // Allow `ensureConvexAuthOrganization` — that's the sanctioned anchor mapper.
     const decl = new RegExp(
-      `(?:^|[^A-Za-z0-9_])(?:function\\s+|const\\s+|let\\s+|var\\s+|export\\s+(?:async\\s+)?function\\s+|export\\s+const\\s+|export\\s+let\\s+|export\\s+\\{[^}]*\\b)${name}(?:\\b|\\s|\\()`
+      `(?:^|[^A-Za-z0-9_])(?:function\\s+|const\\s+|let\\s+|var\\s+|export\\s+(?:async\\s+)?function\\s+|export\\s+const\\s+|export\\s+let\\s+|export\\s+\\{[^}]*\\b)${name}(?:\\b|\\s|\\()`,
     );
     if (decl.test(line)) {
       found.push({
@@ -367,10 +358,7 @@ function skipBlockComment(source: string, index: number): number {
   return i + 1;
 }
 
-function findMatchingParen(
-  source: string,
-  openParenIdx: number
-): number | null {
+function findMatchingParen(source: string, openParenIdx: number): number | null {
   let i = openParenIdx + 1;
   let depth = 1;
   while (i < source.length && depth > 0) {
@@ -415,9 +403,7 @@ function findDefineTableBlocks(source: string): DefineTableBlock[] {
     }
     const body = source.slice(openParenIdx + 1, closeParenIdx);
     const declLine = source.slice(0, declStart).split(/\r?\n/).length;
-    const bodyStartLine = source
-      .slice(0, openParenIdx + 1)
-      .split(/\r?\n/).length;
+    const bodyStartLine = source.slice(0, openParenIdx + 1).split(/\r?\n/).length;
     blocks.push({ tableName, declLine, body, bodyStartLine });
     re.lastIndex = closeParenIdx + 1;
   }
@@ -426,7 +412,7 @@ function findDefineTableBlocks(source: string): DefineTableBlock[] {
 
 function findBridgeColumns(
   body: string,
-  bodyStartLine: number
+  bodyStartLine: number,
 ): Array<{ name: string; line: number }> {
   const cols: Array<{ name: string; line: number }> = [];
   // `<name>: v.<...>` — convex column declarations. Property-key delimiters
@@ -445,7 +431,7 @@ function findBridgeColumns(
 function checkLocalBridgeMirror(
   source: string,
   relPath: string,
-  anchorTables: ReadonlySet<string>
+  anchorTables: ReadonlySet<string>,
 ): ConsumerContractViolation[] {
   const found: ConsumerContractViolation[] = [];
   for (const block of findDefineTableBlocks(source)) {
@@ -480,11 +466,7 @@ function appendLineCommentReplacement(out: string[], c: string): boolean {
   return true;
 }
 
-function appendBlockCommentReplacement(
-  out: string[],
-  c: string,
-  n: string
-): boolean {
+function appendBlockCommentReplacement(out: string[], c: string, n: string): boolean {
   if (c === "*" && n === "/") {
     out.push("  ");
     return false;
@@ -497,7 +479,7 @@ function appendStringChar(
   out: string[],
   c: string,
   n: string,
-  quote: string
+  quote: string,
 ): { done: boolean; skip: number } {
   out.push(c);
   if (c === "\\") {
@@ -510,7 +492,7 @@ function appendStringChar(
 function startCommentOrString(
   out: string[],
   c: string,
-  n: string
+  n: string,
 ): {
   inBlock: boolean;
   inLine: boolean;
@@ -609,10 +591,7 @@ function skipWhitespace(source: string, index: number): number {
   return i;
 }
 
-function findBalancedCallGroupEnd(
-  source: string,
-  openParenIdx: number
-): number | null {
+function findBalancedCallGroupEnd(source: string, openParenIdx: number): number | null {
   let i = openParenIdx;
   let depth = 0;
   for (; i < source.length; i++) {
@@ -633,10 +612,7 @@ function findBalancedCallGroupEnd(
   return null;
 }
 
-function findConsecutiveCallGroupsEnd(
-  source: string,
-  start: number
-): number | null {
+function findConsecutiveCallGroupsEnd(source: string, start: number): number | null {
   let i = start;
   while (source[i] === "(") {
     const groupEnd = findBalancedCallGroupEnd(source, i);
@@ -689,7 +665,7 @@ function findConvexFunctionBlocks(source: string): ConvexFunctionBlock[] {
  */
 function checkTenantFacingSystemReader(
   source: string,
-  relPath: string
+  relPath: string,
 ): ConsumerContractViolation[] {
   const found: ConsumerContractViolation[] = [];
   for (const block of findConvexFunctionBlocks(source)) {
@@ -701,9 +677,7 @@ function checkTenantFacingSystemReader(
       const offset = block.body.search(ref);
       const line =
         offset >= 0
-          ? block.bodyStartLine +
-            block.body.slice(0, offset).split(/\r?\n/).length -
-            1
+          ? block.bodyStartLine + block.body.slice(0, offset).split(/\r?\n/).length - 1
           : block.declLine;
       found.push({
         rule: "tenant-facing-system-reader",
@@ -723,12 +697,10 @@ function checkTenantFacingSystemReader(
 }
 
 export function checkConsumerContract(
-  options: CheckConsumerContractOptions
+  options: CheckConsumerContractOptions,
 ): ConsumerContractResult {
   const { convexDir, legitAnchorTables } = options;
-  const anchorTables = new Set<string>(
-    legitAnchorTables ?? DEFAULT_ANCHOR_TABLES
-  );
+  const anchorTables = new Set<string>(legitAnchorTables ?? DEFAULT_ANCHOR_TABLES);
   const files: string[] = [];
   walk(convexDir, convexDir, files);
 

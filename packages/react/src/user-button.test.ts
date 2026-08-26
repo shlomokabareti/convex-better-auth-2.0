@@ -32,7 +32,7 @@ function renderUserButton(props: Partial<ConvexUserButtonProps>): string {
       onSignOut: noop,
       onManageAccount: noop,
       ...props,
-    } as ConvexUserButtonProps)
+    } as ConvexUserButtonProps),
   );
 }
 

@@ -8,13 +8,7 @@
  * programmatic / native / MCP caller that cannot present a token.
  * This proof asserts that constraint.
  */
-import {
-  makeReporter,
-  ORIGIN_WEB,
-  requireEnv,
-  strongPassword,
-  uniqueEmail,
-} from "./_shared.js";
+import { makeReporter, ORIGIN_WEB, requireEnv, strongPassword, uniqueEmail } from "./_shared.js";
 
 const { site } = requireEnv();
 const r = makeReporter();
@@ -37,9 +31,7 @@ const pw = strongPassword("cap");
     }),
   });
   if (probe.ok) {
-    console.log(
-      "[SKIP] captcha not enabled on this deployment (sign-up without token succeeded)."
-    );
+    console.log("[SKIP] captcha not enabled on this deployment (sign-up without token succeeded).");
     process.exit(0);
   }
 }
@@ -77,11 +69,7 @@ const pw = strongPassword("cap");
       name: "B",
     }),
   });
-  if (
-    (r2.status >= 200 && r2.status < 300) ||
-    r2.status === 403 ||
-    r2.status === 401
-  ) {
+  if ((r2.status >= 200 && r2.status < 300) || r2.status === 403 || r2.status === 401) {
     r.ok(`sign-up WITH token dispatched to provider (HTTP ${r2.status})`);
   } else {
     r.bad(`sign-up WITH token returned unexpected HTTP ${r2.status}`);
@@ -105,9 +93,7 @@ const pw = strongPassword("cap");
   if (r3.status >= 200 && r3.status < 300) {
     r.ok("sign-in WITHOUT token still works (sign-in deliberately NOT gated)");
   } else {
-    r.bad(
-      `sign-in WITHOUT token was blocked (HTTP ${r3.status}) — scoping regression`
-    );
+    r.bad(`sign-in WITHOUT token was blocked (HTTP ${r3.status}) — scoping regression`);
   }
 }
 

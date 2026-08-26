@@ -61,20 +61,17 @@ describe("getRequestIpFromHeaders", () => {
   it("falls back to x-real-ip", () => {
     assert.equal(
       getRequestIpFromHeaders(new Headers({ "x-real-ip": "198.51.100.10" })),
-      "198.51.100.10"
+      "198.51.100.10",
     );
   });
 });
 
 describe("resolveApiKeyIpAllowlist", () => {
   it("allows missing request IP when no allowlist is configured", () => {
-    assert.deepEqual(
-      resolveApiKeyIpAllowlist({ requestIp: null, allowedIpRanges: [] }),
-      {
-        ok: true,
-        requestIp: null,
-      }
-    );
+    assert.deepEqual(resolveApiKeyIpAllowlist({ requestIp: null, allowedIpRanges: [] }), {
+      ok: true,
+      requestIp: null,
+    });
   });
 
   it("requires request IP when allowlist is configured", () => {
@@ -87,7 +84,7 @@ describe("resolveApiKeyIpAllowlist", () => {
         ok: false,
         reason: "missing_ip",
         requestIp: null,
-      }
+      },
     );
   });
 
@@ -101,7 +98,7 @@ describe("resolveApiKeyIpAllowlist", () => {
         ok: false,
         reason: "ip_not_allowed",
         requestIp: "198.51.100.10",
-      }
+      },
     );
   });
 });

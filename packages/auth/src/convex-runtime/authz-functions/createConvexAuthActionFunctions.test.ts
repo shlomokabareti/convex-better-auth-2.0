@@ -24,10 +24,7 @@ import {
 // spec's `handler` IS the composed gate -> userHandler pipeline.
 const fakeAction = actionGeneric;
 const exec = (registered: unknown) => {
-  if (
-    (typeof registered !== "object" && typeof registered !== "function") ||
-    registered === null
-  ) {
+  if ((typeof registered !== "object" && typeof registered !== "function") || registered === null) {
     throw new TypeError("expected an executable spec");
   }
   const handler = Reflect.get(registered, "_handler");
@@ -43,9 +40,7 @@ const exec = (registered: unknown) => {
 function readAuthzCode(error: unknown): unknown {
   if (typeof error !== "object" || error === null) return undefined;
   const data = Reflect.get(error, "data");
-  return typeof data === "object" && data !== null
-    ? Reflect.get(data, "authzCode")
-    : undefined;
+  return typeof data === "object" && data !== null ? Reflect.get(data, "authzCode") : undefined;
 }
 
 const fakeCtx = {
@@ -53,9 +48,7 @@ const fakeCtx = {
   runQuery: async () => null,
 } as unknown;
 
-function snapshot(
-  overrides: Partial<ActionAuthSnapshot> = {}
-): ActionAuthSnapshot {
+function snapshot(overrides: Partial<ActionAuthSnapshot> = {}): ActionAuthSnapshot {
   return {
     userId: "user_1",
     organizationId: "org_local_1",
@@ -70,7 +63,7 @@ function makeFunctions(
   resolved: ActionAuthSnapshot | null,
   onAuthorizationDenied?: Parameters<
     typeof createConvexAuthActionFunctions
-  >[0]["onAuthorizationDenied"]
+  >[0]["onAuthorizationDenied"],
 ) {
   return createConvexAuthActionFunctions({
     action: fakeAction,
@@ -82,16 +75,13 @@ function makeFunctions(
 describe("createConvexAuthActionFunctions — security contract", () => {
   for (const testCase of permissionMatcherConformanceCases) {
     it(`permission conformance: ${testCase.name}`, async () => {
-      const { authedAction } = makeFunctions(
-        snapshot({ permissions: testCase.granted })
-      );
+      const { authedAction } = makeFunctions(snapshot({ permissions: testCase.granted }));
       const spec = exec(
         authedAction({
           args: {},
-          handler: async (ctx: {
-            viewer: { hasPermission: (permission: string) => boolean };
-          }) => ctx.viewer.hasPermission(testCase.required),
-        })
+          handler: async (ctx: { viewer: { hasPermission: (permission: string) => boolean } }) =>
+            ctx.viewer.hasPermission(testCase.required),
+        }),
       );
       assert.equal(await spec.handler(fakeCtx, {}), testCase.expected);
     });
@@ -104,7 +94,7 @@ describe("createConvexAuthActionFunctions — security contract", () => {
         args: {},
         handler: async (ctx: { viewer: { userId: string; role: string } }) =>
           `${ctx.viewer.userId}:${ctx.viewer.role}`,
-      })
+      }),
     );
     assert.equal(await spec.handler(fakeCtx, {}), "user_1:member");
   });
@@ -112,7 +102,7 @@ describe("createConvexAuthActionFunctions — security contract", () => {
   it("permissionAction RUNS the handler when the viewer has the permission", async () => {
     let ran = false;
     const { permissionAction } = makeFunctions(
-      snapshot({ permissions: ["widgets:view", "widgets:edit"] })
+      snapshot({ permissions: ["widgets:view", "widgets:edit"] }),
     );
     const spec = exec(
       permissionAction("widgets:edit")({
@@ -121,7 +111,7 @@ describe("createConvexAuthActionFunctions — security contract", () => {
           ran = true;
           return "ok";
         },
-      })
+      }),
     );
     assert.equal(await spec.handler(fakeCtx, {}), "ok");
     assert.equal(ran, true);
@@ -129,9 +119,7 @@ describe("createConvexAuthActionFunctions — security contract", () => {
 
   it("permissionAction BLOCKS before the handler when the permission is missing", async () => {
     let ran = false;
-    const { permissionAction } = makeFunctions(
-      snapshot({ permissions: ["widgets:view"] })
-    );
+    const { permissionAction } = makeFunctions(snapshot({ permissions: ["widgets:view"] }));
     const spec = exec(
       permissionAction("widgets:edit")({
         args: {},
@@ -139,20 +127,16 @@ describe("createConvexAuthActionFunctions — security contract", () => {
           ran = true;
           return "leaked";
         },
-      })
+      }),
     );
     await assert.rejects(
       () => spec.handler(fakeCtx, {}),
       (err: { data?: unknown }) => {
         assert.ok(isDenial(err.data), "expected a PERMISSION_REQUIRED denial");
         return true;
-      }
+      },
     );
-    assert.equal(
-      ran,
-      false,
-      "action handler must not run when permission is denied"
-    );
+    assert.equal(ran, false, "action handler must not run when permission is denied");
   });
 
   it("AUTHENTICATION_REQUIRED when the snapshot resolves to null (handler never runs)", async () => {
@@ -165,28 +149,28 @@ describe("createConvexAuthActionFunctions — security contract", () => {
           ran = true;
           return "leaked";
         },
-      })
+      }),
     );
     await assert.rejects(
       () => spec.handler(fakeCtx, {}),
       (err: { data?: { authzCode?: unknown } }) => {
         assert.equal(err.data?.authzCode, "AUTHENTICATION_REQUIRED");
         return true;
-      }
+      },
     );
     assert.equal(ran, false);
   });
 
   it("permissionAnyAction allows on ANY held; permissionAllAction blocks on ANY missing", async () => {
     const { permissionAnyAction, permissionAllAction } = makeFunctions(
-      snapshot({ permissions: ["widgets:view"] })
+      snapshot({ permissions: ["widgets:view"] }),
     );
     // any: holds view → allowed
     const anyOk = exec(
       permissionAnyAction(["widgets:edit", "widgets:view"])({
         args: {},
         handler: async () => "ok",
-      })
+      }),
     );
     assert.equal(await anyOk.handler(fakeCtx, {}), "ok");
     // all: missing edit → blocked
@@ -194,20 +178,16 @@ describe("createConvexAuthActionFunctions — security contract", () => {
       permissionAllAction(["widgets:view", "widgets:edit"])({
         args: {},
         handler: async () => "nope",
-      })
+      }),
     );
     await assert.rejects(() => allBlocked.handler(fakeCtx, {}));
   });
 
   it("roleAction allows the matching role and blocks others", async () => {
     const { roleAction } = makeFunctions(snapshot({ role: "member" }));
-    const ok = exec(
-      roleAction("member", "owner")({ args: {}, handler: async () => "ok" })
-    );
+    const ok = exec(roleAction("member", "owner")({ args: {}, handler: async () => "ok" }));
     assert.equal(await ok.handler(fakeCtx, {}), "ok");
-    const blocked = exec(
-      roleAction("owner")({ args: {}, handler: async () => "nope" })
-    );
+    const blocked = exec(roleAction("owner")({ args: {}, handler: async () => "nope" }));
     await assert.rejects(() => blocked.handler(fakeCtx, {}));
   });
 
@@ -217,18 +197,16 @@ describe("createConvexAuthActionFunctions — security contract", () => {
       snapshot({ permissions: ["widgets:view"] }),
       (_ctx, { permission, error }) => {
         denials.push({ permission, authzCode: readAuthzCode(error) });
-      }
+      },
     );
     const spec = exec(
       permissionAction("widgets:edit")({
         args: {},
         handler: async () => "nope",
-      })
+      }),
     );
     await assert.rejects(() => spec.handler(fakeCtx, {}));
-    assert.deepEqual(denials, [
-      { permission: "widgets:edit", authzCode: "PERMISSION_REQUIRED" },
-    ]);
+    assert.deepEqual(denials, [{ permission: "widgets:edit", authzCode: "PERMISSION_REQUIRED" }]);
   });
 });
 

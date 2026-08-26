@@ -64,7 +64,7 @@ export type ResolveAgentPrincipalInput = {
 
 export async function resolveActiveAgentPrincipal(
   adapter: AgentCredentialAuthorityAdapter,
-  input: ResolveAgentPrincipalInput
+  input: ResolveAgentPrincipalInput,
 ): Promise<AgentPrincipal> {
   const header = decodeProtectedHeader(input.token);
   if (header.alg !== "EdDSA" || header.typ !== "JWT") {
@@ -95,27 +95,16 @@ export async function resolveActiveAgentPrincipal(
   if (issuedAt > nowSeconds + CLOCK_TOLERANCE_SECONDS) {
     throw new Error("Agent credential issued-at time is invalid");
   }
-  if (
-    expiresAt <= issuedAt ||
-    expiresAt - issuedAt > MAX_TOKEN_LIFETIME_SECONDS
-  ) {
+  if (expiresAt <= issuedAt || expiresAt - issuedAt > MAX_TOKEN_LIFETIME_SECONDS) {
     throw new Error("Agent credential lifetime is invalid");
   }
   const replayId = requireClaim(payload.jti, "jti");
-  const permissions = requireStringArrayClaim(
-    payload.permissions,
-    "permissions"
-  );
-  const capabilities = requireStringArrayClaim(
-    payload.capabilities,
-    "capabilities"
-  );
+  const permissions = requireStringArrayClaim(payload.permissions, "permissions");
+  const capabilities = requireStringArrayClaim(payload.capabilities, "capabilities");
   if (input.requestBinding !== undefined) {
     requireRequestBinding(payload, input.requestBinding);
   }
-  const replayIdHash = await sha256Base64Url(
-    `${material.agentId}\u0000${replayId}`
-  );
+  const replayIdHash = await sha256Base64Url(`${material.agentId}\u0000${replayId}`);
   const authority = await adapter.consumeCredential({
     agentId: material.agentId,
     keyGeneration: material.generation,
@@ -142,10 +131,7 @@ export async function resolveActiveAgentPrincipal(
   });
 }
 
-function requireRequestBinding(
-  payload: Record<string, unknown>,
-  expected: AgentRequestBinding
-) {
+function requireRequestBinding(payload: Record<string, unknown>, expected: AgentRequestBinding) {
   if (
     payload.htm !== expected.method.toUpperCase() ||
     payload.htu !== expected.url ||
@@ -173,7 +159,7 @@ function parsePublicEd25519Jwk(value: string) {
 }
 
 function parseConstraints(
-  value: string | undefined
+  value: string | undefined,
 ): Readonly<Record<string, AgentCapabilityConstraint>> | null {
   if (value === undefined) return null;
   const parsed: unknown = JSON.parse(value);
@@ -181,27 +167,19 @@ function parseConstraints(
     throw new TypeError("Agent capability constraints are invalid");
   }
   return Object.fromEntries(
-    Object.entries(parsed).map(([key, constraint]) => [
-      key,
-      parseConstraint(constraint),
-    ])
+    Object.entries(parsed).map(([key, constraint]) => [key, parseConstraint(constraint)]),
   );
 }
 
 function parseConstraint(value: unknown): AgentCapabilityConstraint {
-  if (
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
-  ) {
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
     return value;
   }
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError("Agent capability constraint is invalid");
   }
   const record = Object.fromEntries(Object.entries(value));
-  const parsed: Exclude<AgentCapabilityConstraint, string | number | boolean> =
-    {};
+  const parsed: Exclude<AgentCapabilityConstraint, string | number | boolean> = {};
   if (record.eq !== undefined) parsed.eq = requirePrimitive(record.eq);
   if (record.min !== undefined) parsed.min = requireFiniteNumber(record.min);
   if (record.max !== undefined) parsed.max = requireFiniteNumber(record.max);
@@ -212,21 +190,14 @@ function parseConstraint(value: unknown): AgentCapabilityConstraint {
 }
 
 function requireStringArrayClaim(value: unknown, name: string): string[] {
-  if (
-    !Array.isArray(value) ||
-    !value.every((item) => typeof item === "string")
-  ) {
+  if (!Array.isArray(value) || !value.every((item) => typeof item === "string")) {
     throw new TypeError(`Agent credential ${name} claim is invalid`);
   }
   return [...new Set(value.map((item) => requireClaim(item, name)))].toSorted();
 }
 
 function requirePrimitive(value: unknown) {
-  if (
-    typeof value !== "string" &&
-    typeof value !== "number" &&
-    typeof value !== "boolean"
-  ) {
+  if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") {
     throw new TypeError("Agent capability primitive is invalid");
   }
   return value;
@@ -261,16 +232,10 @@ function requireClaim(value: unknown, name: string) {
 }
 
 async function sha256Base64Url(value: string) {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(value)
-  );
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   let binary = "";
   for (const byte of new Uint8Array(digest)) {
     binary += String.fromCharCode(byte);
   }
-  return btoa(binary)
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/u, "");
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
 }

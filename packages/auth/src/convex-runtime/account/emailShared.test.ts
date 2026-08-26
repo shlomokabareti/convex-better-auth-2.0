@@ -25,25 +25,21 @@ import {
 
 describe("mapResendAccountEmailDelivery", () => {
   it("email.sent → sent", () => {
-    assert.deepEqual(
-      mapResendAccountEmailDelivery({ event: { type: "email.sent" } }),
-      { status: "sent", eventType: "email.sent" }
-    );
+    assert.deepEqual(mapResendAccountEmailDelivery({ event: { type: "email.sent" } }), {
+      status: "sent",
+      eventType: "email.sent",
+    });
   });
 
   it("email.delivered → delivered", () => {
-    assert.deepEqual(
-      mapResendAccountEmailDelivery({ event: { type: "email.delivered" } }),
-      { status: "delivered", eventType: "email.delivered" }
-    );
+    assert.deepEqual(mapResendAccountEmailDelivery({ event: { type: "email.delivered" } }), {
+      status: "delivered",
+      eventType: "email.delivered",
+    });
   });
 
   it("email.opened + email.clicked + email.complained also map to delivered", () => {
-    for (const type of [
-      "email.opened",
-      "email.clicked",
-      "email.complained",
-    ] as const) {
+    for (const type of ["email.opened", "email.clicked", "email.complained"] as const) {
       const result = mapResendAccountEmailDelivery({ event: { type } });
       assert.equal(result.status, "delivered");
       assert.equal(result.eventType, type);
@@ -55,7 +51,7 @@ describe("mapResendAccountEmailDelivery", () => {
       mapResendAccountEmailDelivery({
         event: { type: "email.delivery_delayed" },
       }),
-      { status: "delivery_delayed", eventType: "email.delivery_delayed" }
+      { status: "delivery_delayed", eventType: "email.delivery_delayed" },
     );
   });
 
@@ -147,16 +143,13 @@ describe("buildTokenUrl", () => {
 
 describe("appendToken", () => {
   it("appends ?token=… when no existing query", () => {
-    assert.equal(
-      appendToken("https://app.test", "abc"),
-      "https://app.test?token=abc"
-    );
+    assert.equal(appendToken("https://app.test", "abc"), "https://app.test?token=abc");
   });
 
   it("appends &token=… when query exists", () => {
     assert.equal(
       appendToken("https://app.test?foo=bar", "abc"),
-      "https://app.test?foo=bar&token=abc"
+      "https://app.test?foo=bar&token=abc",
     );
   });
 });
@@ -179,7 +172,7 @@ describe("escapeHtml", () => {
   it("escapes <, >, &, \", ' to entities", () => {
     assert.equal(
       escapeHtml('<a href="x">a&b\'c</a>'),
-      "&lt;a href=&quot;x&quot;&gt;a&amp;b&#39;c&lt;/a&gt;"
+      "&lt;a href=&quot;x&quot;&gt;a&amp;b&#39;c&lt;/a&gt;",
     );
   });
 

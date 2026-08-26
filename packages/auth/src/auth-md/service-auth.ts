@@ -1,6 +1,5 @@
 export const AUTH_MD_SERVICE_AUTH_DEFAULT_EXPIRES_IN_SECONDS = 900 as const;
-export const AUTH_MD_SERVICE_AUTH_DEFAULT_USER_CODE_EXPIRES_IN_SECONDS =
-  600 as const;
+export const AUTH_MD_SERVICE_AUTH_DEFAULT_USER_CODE_EXPIRES_IN_SECONDS = 600 as const;
 export const AUTH_MD_SERVICE_AUTH_DEFAULT_INTERVAL_SECONDS = 5 as const;
 
 const CLAIM_TOKEN_BYTES = 32;
@@ -29,27 +28,24 @@ export async function createAuthMdServiceAuthChallenge(options?: {
   randomBytes?: (length: number) => Uint8Array;
 }): Promise<AuthMdServiceAuthChallenge> {
   const now = options?.now ?? Date.now();
-  const expiresIn =
-    options?.expiresIn ?? AUTH_MD_SERVICE_AUTH_DEFAULT_EXPIRES_IN_SECONDS;
+  const expiresIn = options?.expiresIn ?? AUTH_MD_SERVICE_AUTH_DEFAULT_EXPIRES_IN_SECONDS;
   const userCodeExpiresIn =
-    options?.userCodeExpiresIn ??
-    AUTH_MD_SERVICE_AUTH_DEFAULT_USER_CODE_EXPIRES_IN_SECONDS;
-  const interval =
-    options?.interval ?? AUTH_MD_SERVICE_AUTH_DEFAULT_INTERVAL_SECONDS;
+    options?.userCodeExpiresIn ?? AUTH_MD_SERVICE_AUTH_DEFAULT_USER_CODE_EXPIRES_IN_SECONDS;
+  const interval = options?.interval ?? AUTH_MD_SERVICE_AUTH_DEFAULT_INTERVAL_SECONDS;
   requireNonnegativeSafeInteger(now, "now");
   requireBoundedPositiveInteger(expiresIn, "expiresIn", 15 * 60);
   requireBoundedPositiveInteger(
     userCodeExpiresIn,
     "userCodeExpiresIn",
-    Math.min(expiresIn, 10 * 60)
+    Math.min(expiresIn, 10 * 60),
   );
   requireBoundedPositiveInteger(interval, "interval", 60);
   const randomBytes = options?.randomBytes ?? secureRandomBytes;
   const claimToken = `clm_${bytesToBase64Url(
-    requireEntropy(randomBytes(CLAIM_TOKEN_BYTES), CLAIM_TOKEN_BYTES)
+    requireEntropy(randomBytes(CLAIM_TOKEN_BYTES), CLAIM_TOKEN_BYTES),
   )}`;
   const claimViewToken = `cvt_${bytesToBase64Url(
-    requireEntropy(randomBytes(CLAIM_VIEW_TOKEN_BYTES), CLAIM_VIEW_TOKEN_BYTES)
+    requireEntropy(randomBytes(CLAIM_VIEW_TOKEN_BYTES), CLAIM_VIEW_TOKEN_BYTES),
   )}`;
   const userCode = generateUserCode(randomBytes);
   const [claimTokenHash, claimViewTokenHash, userCodeHash] = await Promise.all([
@@ -74,10 +70,7 @@ export async function createAuthMdServiceAuthChallenge(options?: {
 
 export function normalizeAuthMdLoginHint(value: string): string {
   const normalized = value.trim().toLowerCase();
-  if (
-    normalized.length > 254 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalized)
-  ) {
+  if (normalized.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalized)) {
     throw new TypeError("auth.md service_auth login_hint must be an email");
   }
   return normalized;
@@ -86,9 +79,7 @@ export function normalizeAuthMdLoginHint(value: string): string {
 export function normalizeAuthMdUserCode(value: string): string {
   const normalized = value.replaceAll(/[\s-]/gu, "");
   if (!/^\d{6}$/u.test(normalized)) {
-    throw new TypeError(
-      "auth.md service_auth user_code must contain six digits"
-    );
+    throw new TypeError("auth.md service_auth user_code must contain six digits");
   }
   return normalized;
 }
@@ -105,10 +96,7 @@ export async function hashAuthMdSecret(value: string): Promise<string> {
   if (value.length === 0) {
     throw new TypeError("auth.md secret is required");
   }
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(value)
-  );
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return bytesToBase64Url(new Uint8Array(digest));
 }
 
@@ -144,10 +132,7 @@ function secureRandomBytes(length: number): Uint8Array {
 function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary)
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/u, "");
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
 }
 
 function requireNonnegativeSafeInteger(value: number, name: string): void {
@@ -156,11 +141,7 @@ function requireNonnegativeSafeInteger(value: number, name: string): void {
   }
 }
 
-function requireBoundedPositiveInteger(
-  value: number,
-  name: string,
-  maximum: number
-): void {
+function requireBoundedPositiveInteger(value: number, name: string, maximum: number): void {
   if (!Number.isSafeInteger(value) || value < 1 || value > maximum) {
     throw new TypeError(`${name} must be an integer between 1 and ${maximum}`);
   }

@@ -2,10 +2,7 @@ import assert from "node:assert/strict";
 
 import { describe, it } from "vitest";
 
-import {
-  createApiKeyScopeRegistry,
-  type ApiKeyScopeFromDescriptors,
-} from "./api-key-scopes";
+import { createApiKeyScopeRegistry, type ApiKeyScopeFromDescriptors } from "./api-key-scopes";
 
 const billingApiScopeDescriptors = [
   {
@@ -26,24 +23,15 @@ const billingApiScopeDescriptors = [
   },
 ] as const;
 
-type BillingApiScope = ApiKeyScopeFromDescriptors<
-  typeof billingApiScopeDescriptors
->;
+type BillingApiScope = ApiKeyScopeFromDescriptors<typeof billingApiScopeDescriptors>;
 
-const billingApiScopeRegistry = createApiKeyScopeRegistry(
-  billingApiScopeDescriptors
-);
+const billingApiScopeRegistry = createApiKeyScopeRegistry(billingApiScopeDescriptors);
 
-function normalizeBillingApiScopes(
-  scopes: readonly string[]
-): BillingApiScope[] {
+function normalizeBillingApiScopes(scopes: readonly string[]): BillingApiScope[] {
   return billingApiScopeRegistry.requireKnownScopes(scopes);
 }
 
-function canBillingActorUseScope(
-  permissions: readonly string[],
-  scope: BillingApiScope
-): boolean {
+function canBillingActorUseScope(permissions: readonly string[], scope: BillingApiScope): boolean {
   return billingApiScopeRegistry.canUseScope(scope, permissions);
 }
 
@@ -57,9 +45,7 @@ describe("API key scope registry consumer recipe", () => {
       "billing:invoices:write",
       "billing:webhooks:manage",
     ]);
-    assert.deepEqual(billingApiScopeRegistry.defaultScopes, [
-      "billing:customers:read",
-    ]);
+    assert.deepEqual(billingApiScopeRegistry.defaultScopes, ["billing:customers:read"]);
   });
 
   it("normalizes API key create inputs without accepting unknown scopes", () => {
@@ -69,30 +55,18 @@ describe("API key scope registry consumer recipe", () => {
         "billing:invoices:write",
         "billing:customers:read",
       ]),
-      ["billing:customers:read", "billing:invoices:write"]
+      ["billing:customers:read", "billing:invoices:write"],
     );
     assert.throws(
       () => normalizeBillingApiScopes(["billing:admin:god-mode"]),
-      /Unknown API key scope: billing:admin:god-mode/
+      /Unknown API key scope: billing:admin:god-mode/,
     );
   });
 
   it("maps app-specific scopes back to current owner permissions", () => {
-    assert.equal(
-      canBillingActorUseScope(["customers:view"], "billing:customers:read"),
-      true
-    );
-    assert.equal(
-      canBillingActorUseScope(["invoices:*"], "billing:invoices:write"),
-      true
-    );
-    assert.equal(
-      canBillingActorUseScope(["*"], "billing:webhooks:manage"),
-      true
-    );
-    assert.equal(
-      canBillingActorUseScope(["customers:view"], "billing:invoices:write"),
-      false
-    );
+    assert.equal(canBillingActorUseScope(["customers:view"], "billing:customers:read"), true);
+    assert.equal(canBillingActorUseScope(["invoices:*"], "billing:invoices:write"), true);
+    assert.equal(canBillingActorUseScope(["*"], "billing:webhooks:manage"), true);
+    assert.equal(canBillingActorUseScope(["customers:view"], "billing:invoices:write"), false);
   });
 });

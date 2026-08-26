@@ -30,15 +30,14 @@ export type BetterAuthIdentityProvisionPayload = {
   };
 };
 
-export type CreateBetterAuthIdentityProvisionPayloadArgs =
-  ResolveBetterAuthIdentityIssuerArgs & {
-    betterAuthUserId: string;
-    email: string;
-    emailVerified: boolean;
-    name?: string | null;
-    image?: string | null;
-    sessionId?: string | null;
-  };
+export type CreateBetterAuthIdentityProvisionPayloadArgs = ResolveBetterAuthIdentityIssuerArgs & {
+  betterAuthUserId: string;
+  email: string;
+  emailVerified: boolean;
+  name?: string | null;
+  image?: string | null;
+  sessionId?: string | null;
+};
 
 // Auth-method-agnostic: identity is keyed off `betterAuthUserId` (the Better
 // Auth user id / subject) + issuer, so a Google-created user provisions the
@@ -46,7 +45,7 @@ export type CreateBetterAuthIdentityProvisionPayloadArgs =
 // the issuer; only `email`/`name`/`image` claims are consumed, all of which
 // social providers populate identically.
 export function createBetterAuthIdentityProvisionPayload(
-  args: CreateBetterAuthIdentityProvisionPayloadArgs
+  args: CreateBetterAuthIdentityProvisionPayloadArgs,
 ): BetterAuthIdentityProvisionPayload {
   const issuer = resolveBetterAuthIdentityIssuer(args);
   const email = normalizeRequiredEmail(args.email);
@@ -59,10 +58,7 @@ export function createBetterAuthIdentityProvisionPayload(
       provider: getBetterAuthIdentityProvider(),
       issuer,
       subject: args.betterAuthUserId,
-      tokenIdentifier: buildBetterAuthTokenIdentifier(
-        args.betterAuthUserId,
-        issuer
-      ),
+      tokenIdentifier: buildBetterAuthTokenIdentifier(args.betterAuthUserId, issuer),
       email,
       emailVerified: args.emailVerified,
       sessionId: normalizeOptionalString(args.sessionId) ?? null,
@@ -78,7 +74,7 @@ export function createBetterAuthIdentityProvisionPayload(
 
 export function createBetterAuthIdentityProvisionPayloadFromClaims(
   identity: BetterAuthIdentityClaims,
-  args: ResolveBetterAuthIdentityIssuerArgs = {}
+  args: ResolveBetterAuthIdentityIssuerArgs = {},
 ): BetterAuthIdentityProvisionPayload {
   return createBetterAuthIdentityProvisionPayload({
     ...args,
@@ -102,11 +98,7 @@ function normalizeRequiredEmail(value: string): string {
   return normalized;
 }
 
-function normalizeOptionalString(
-  value: string | null | undefined
-): string | undefined {
+function normalizeOptionalString(value: string | null | undefined): string | undefined {
   const normalized = value?.trim();
-  return normalized === undefined || normalized.length === 0
-    ? undefined
-    : normalized;
+  return normalized === undefined || normalized.length === 0 ? undefined : normalized;
 }

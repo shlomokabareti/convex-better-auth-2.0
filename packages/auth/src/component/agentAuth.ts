@@ -96,7 +96,7 @@ const agentAuthorityIntrospectionValidator = v.union(
     absoluteExpiresAt: v.optional(v.number()),
     permissions: v.array(v.string()),
     capabilityGrants: v.array(grantSnapshotValidator),
-  })
+  }),
 );
 
 const agentHostAuthorityStatusValidator = v.union(
@@ -107,7 +107,7 @@ const agentHostAuthorityStatusValidator = v.union(
     status: agentHostStatusValidator,
     activeKeyGeneration: v.number(),
     cascadeCompletedAt: v.optional(v.number()),
-  })
+  }),
 );
 
 const agentAuthorityStatusValidator = v.union(
@@ -121,7 +121,7 @@ const agentAuthorityStatusValidator = v.union(
     activeKeyGeneration: v.number(),
     expiresAt: v.optional(v.number()),
     absoluteExpiresAt: v.optional(v.number()),
-  })
+  }),
 );
 
 const deviceAuthorizationInputValidator = v.object({
@@ -145,7 +145,7 @@ const deviceAuthorizationDecisionResultValidator = v.union(
     ok: v.literal(false),
     reason: v.union(v.literal("invalid_code"), v.literal("rate_limited")),
     retryAt: v.optional(v.number()),
-  })
+  }),
 );
 
 const deviceAuthorizationPollResultValidator = v.union(
@@ -162,7 +162,7 @@ const deviceAuthorizationPollResultValidator = v.union(
   v.object({
     status: v.literal("approved"),
     agentId: v.string(),
-  })
+  }),
 );
 
 const agentReactivationResultValidator = v.object({
@@ -234,11 +234,7 @@ export const setAgentHostStatus = mutation({
   },
   returns: okValidator,
   handler: async (ctx, args) => {
-    const host = await requireHostInOrganization(
-      ctx,
-      args.hostId,
-      args.organizationId
-    );
+    const host = await requireHostInOrganization(ctx, args.hostId, args.organizationId);
     await requireActiveOperator(ctx, args.organizationId, args.operatorUserId);
     if (host.status === "revoked" || host.status === "rejected") {
       throw new Error("Terminal agent host cannot transition");
@@ -250,41 +246,28 @@ export const setAgentHostStatus = mutation({
     const now = Date.now();
     await ctx.db.patch("agent_hosts", host._id, {
       status: args.status,
-      activatedBy:
-        args.status === "active" ? args.operatorUserId : host.activatedBy,
+      activatedBy: args.status === "active" ? args.operatorUserId : host.activatedBy,
       activatedAt: args.status === "active" ? now : host.activatedAt,
       revokedBy:
         args.status === "revoked" || args.status === "rejected"
           ? args.operatorUserId
           : host.revokedBy,
-      revokedAt:
-        args.status === "revoked" || args.status === "rejected"
-          ? now
-          : host.revokedAt,
-      cascadeCompletedAt:
-        args.status === "revoked" ? undefined : host.cascadeCompletedAt,
+      revokedAt: args.status === "revoked" || args.status === "rejected" ? now : host.revokedAt,
+      cascadeCompletedAt: args.status === "revoked" ? undefined : host.cascadeCompletedAt,
       updatedAt: now,
     });
     if (args.status === "revoked") {
-      const activeKey = await requireHostKey(
-        ctx,
-        host._id,
-        host.activeKeyGeneration
-      );
+      const activeKey = await requireHostKey(ctx, host._id, host.activeKeyGeneration);
       if (activeKey.status === "active") {
         await ctx.db.patch("agent_host_keys", activeKey._id, {
           status: "revoked",
           retiredAt: now,
         });
       }
-      await ctx.scheduler.runAfter(
-        0,
-        internal.agentAuth.cascadeRevokedAgentHost,
-        {
-          hostId: host._id,
-          phase: "pending",
-        }
-      );
+      await ctx.scheduler.runAfter(0, internal.agentAuth.cascadeRevokedAgentHost, {
+        hostId: host._id,
+        phase: "pending",
+      });
     }
     await audit(ctx, {
       organizationId: args.organizationId,
@@ -303,21 +286,13 @@ export const revokeAgentHostAsHost = mutation({
   },
   returns: okValidator,
   handler: async (ctx, args) => {
-    const host = await requireHostInOrganization(
-      ctx,
-      args.hostId,
-      args.organizationId
-    );
+    const host = await requireHostInOrganization(ctx, args.hostId, args.organizationId);
     if (host.status === "revoked") return { ok: true } as const;
     if (host.status !== "active") {
       throw new Error("Only an active agent host can revoke itself");
     }
     const now = Date.now();
-    const activeKey = await requireHostKey(
-      ctx,
-      host._id,
-      host.activeKeyGeneration
-    );
+    const activeKey = await requireHostKey(ctx, host._id, host.activeKeyGeneration);
     await ctx.db.patch("agent_hosts", host._id, {
       status: "revoked",
       revokedAt: now,
@@ -330,14 +305,10 @@ export const revokeAgentHostAsHost = mutation({
         retiredAt: now,
       });
     }
-    await ctx.scheduler.runAfter(
-      0,
-      internal.agentAuth.cascadeRevokedAgentHost,
-      {
-        hostId: host._id,
-        phase: "pending",
-      }
-    );
+    await ctx.scheduler.runAfter(0, internal.agentAuth.cascadeRevokedAgentHost, {
+      hostId: host._id,
+      phase: "pending",
+    });
     await audit(ctx, {
       organizationId: host.organizationId,
       hostId: host._id,
@@ -385,7 +356,7 @@ export const registerAgentWithDeviceAuthorization = mutation({
     await requireUnusedDeviceAuthorizationCodes(
       ctx,
       args.deviceAuthorization.userCodeHash,
-      args.deviceAuthorization.deviceCodeHash
+      args.deviceAuthorization.deviceCodeHash,
     );
     const agentId = await insertPendingAgent(ctx, args);
     const authorizationId = await ctx.db.insert("agent_device_authorizations", {
@@ -393,14 +364,8 @@ export const registerAgentWithDeviceAuthorization = mutation({
       hostId: args.hostId,
       agentId,
       status: "pending",
-      userCodeHash: requireHash(
-        args.deviceAuthorization.userCodeHash,
-        "userCodeHash"
-      ),
-      deviceCodeHash: requireHash(
-        args.deviceAuthorization.deviceCodeHash,
-        "deviceCodeHash"
-      ),
+      userCodeHash: requireHash(args.deviceAuthorization.userCodeHash, "userCodeHash"),
+      deviceCodeHash: requireHash(args.deviceAuthorization.deviceCodeHash, "deviceCodeHash"),
       pollCount: 0,
       pollIntervalSeconds: args.deviceAuthorization.pollIntervalSeconds,
       nextPollAt: now + args.deviceAuthorization.pollIntervalSeconds * 1000,
@@ -430,11 +395,7 @@ export const decideAgentDeviceAuthorization = mutation({
   handler: async (ctx, args) => {
     await requireActiveOperator(ctx, args.organizationId, args.operatorUserId);
     const now = Date.now();
-    const rateLimit = await readDeviceAuthorizationAttemptLimit(
-      ctx,
-      args.operatorUserId,
-      now
-    );
+    const rateLimit = await readDeviceAuthorizationAttemptLimit(ctx, args.operatorUserId, now);
     if (!rateLimit.allowed) {
       return {
         ok: false,
@@ -445,7 +406,7 @@ export const decideAgentDeviceAuthorization = mutation({
     const authorization = await ctx.db
       .query("agent_device_authorizations")
       .withIndex("by_user_code_hash", (q) =>
-        q.eq("userCodeHash", requireHash(args.userCodeHash, "userCodeHash"))
+        q.eq("userCodeHash", requireHash(args.userCodeHash, "userCodeHash")),
       )
       .unique();
     if (
@@ -453,32 +414,18 @@ export const decideAgentDeviceAuthorization = mutation({
       authorization.organizationId !== args.organizationId ||
       authorization.status !== "pending"
     ) {
-      await recordFailedDeviceAuthorizationAttempt(
-        ctx,
-        args.operatorUserId,
-        rateLimit,
-        now
-      );
+      await recordFailedDeviceAuthorizationAttempt(ctx, args.operatorUserId, rateLimit, now);
       return { ok: false, reason: "invalid_code" } as const;
     }
-    const agent = await requireAgentInOrganization(
-      ctx,
-      authorization.agentId,
-      args.organizationId
-    );
+    const agent = await requireAgentInOrganization(ctx, authorization.agentId, args.organizationId);
     if (authorization.expiresAt <= now) {
       await expirePendingDeviceAuthorization(ctx, authorization, agent, now);
-      await recordFailedDeviceAuthorizationAttempt(
-        ctx,
-        args.operatorUserId,
-        rateLimit,
-        now
-      );
+      await recordFailedDeviceAuthorizationAttempt(ctx, args.operatorUserId, rateLimit, now);
       return { ok: false, reason: "invalid_code" } as const;
     }
     requireAgentStatusTransition(
       agent.status,
-      args.decision === "approved" ? "active" : "rejected"
+      args.decision === "approved" ? "active" : "rejected",
     );
     await ctx.db.patch("agent_device_authorizations", authorization._id, {
       status: args.decision,
@@ -513,10 +460,7 @@ export const pollAgentDeviceAuthorization = mutation({
     const authorization = await ctx.db
       .query("agent_device_authorizations")
       .withIndex("by_device_code_hash", (q) =>
-        q.eq(
-          "deviceCodeHash",
-          requireHash(args.deviceCodeHash, "deviceCodeHash")
-        )
+        q.eq("deviceCodeHash", requireHash(args.deviceCodeHash, "deviceCodeHash")),
       )
       .unique();
     if (authorization === null) {
@@ -546,9 +490,8 @@ export const pollAgentDeviceAuthorization = mutation({
     }
     if (now < authorization.nextPollAt) {
       const interval = Math.min(
-        authorization.pollIntervalSeconds +
-          DEVICE_AUTHORIZATION_SLOW_DOWN_SECONDS,
-        MAX_DEVICE_AUTHORIZATION_POLL_INTERVAL_SECONDS
+        authorization.pollIntervalSeconds + DEVICE_AUTHORIZATION_SLOW_DOWN_SECONDS,
+        MAX_DEVICE_AUTHORIZATION_POLL_INTERVAL_SECONDS,
       );
       await ctx.db.patch("agent_device_authorizations", authorization._id, {
         pollCount: authorization.pollCount + 1,
@@ -580,11 +523,7 @@ export const rotateAgentHostKey = mutation({
   },
   returns: v.object({ generation: v.number(), thumbprint: v.string() }),
   handler: async (ctx, args) => {
-    const host = await requireHostInOrganization(
-      ctx,
-      args.hostId,
-      args.organizationId
-    );
+    const host = await requireHostInOrganization(ctx, args.hostId, args.organizationId);
     await requireActiveOperator(ctx, args.organizationId, args.operatorUserId);
     return await rotateHostKey(ctx, host, {
       expectedGeneration: args.expectedGeneration,
@@ -603,11 +542,7 @@ export const rotateAgentHostKeyAsHost = mutation({
   },
   returns: v.object({ generation: v.number(), thumbprint: v.string() }),
   handler: async (ctx, args) => {
-    const host = await requireHostInOrganization(
-      ctx,
-      args.hostId,
-      args.organizationId
-    );
+    const host = await requireHostInOrganization(ctx, args.hostId, args.organizationId);
     return await rotateHostKey(ctx, host, {
       expectedGeneration: args.expectedGeneration,
       publicJwkJson: args.publicJwkJson,
@@ -627,11 +562,7 @@ export const setAgentStatus = mutation({
   },
   returns: okValidator,
   handler: async (ctx, args) => {
-    const agent = await requireAgentInOrganization(
-      ctx,
-      args.agentId,
-      args.organizationId
-    );
+    const agent = await requireAgentInOrganization(ctx, args.agentId, args.organizationId);
     await requireActiveOperator(ctx, args.organizationId, args.operatorUserId);
     if (agent.status === "revoked" || agent.status === "rejected") {
       throw new Error("Terminal agent cannot transition");
@@ -660,11 +591,7 @@ export const setAgentStatus = mutation({
       throw new Error("Agent expiry cannot exceed absolute expiry");
     }
     if (args.status === "active") {
-      const host = await requireHostInOrganization(
-        ctx,
-        agent.hostId,
-        args.organizationId
-      );
+      const host = await requireHostInOrganization(ctx, agent.hostId, args.organizationId);
       if (host.status !== "active") throw new Error("Agent host is not active");
       await requireStoredModeOwner(ctx, agent);
       if (
@@ -682,8 +609,7 @@ export const setAgentStatus = mutation({
     }
     await ctx.db.patch("agents", agent._id, {
       status: args.status,
-      activatedBy:
-        args.status === "active" ? args.operatorUserId : agent.activatedBy,
+      activatedBy: args.status === "active" ? args.operatorUserId : agent.activatedBy,
       activatedAt: args.status === "active" ? now : agent.activatedAt,
       expiresAt,
       absoluteExpiresAt,
@@ -691,10 +617,7 @@ export const setAgentStatus = mutation({
         args.status === "revoked" || args.status === "rejected"
           ? args.operatorUserId
           : agent.revokedBy,
-      revokedAt:
-        args.status === "revoked" || args.status === "rejected"
-          ? now
-          : agent.revokedAt,
+      revokedAt: args.status === "revoked" || args.status === "rejected" ? now : agent.revokedAt,
       updatedAt: now,
     });
     await audit(ctx, {
@@ -751,11 +674,7 @@ export const reactivateAgent = mutation({
   },
   returns: agentReactivationResultValidator,
   handler: async (ctx, args) => {
-    const agent = await requireAgentInOrganization(
-      ctx,
-      args.agentId,
-      args.organizationId
-    );
+    const agent = await requireAgentInOrganization(ctx, args.agentId, args.organizationId);
     await requireActiveOperator(ctx, args.organizationId, args.operatorUserId);
     return await reactivateStoredAgent(ctx, agent, {
       expiresAt: args.expiresAt,
@@ -791,11 +710,7 @@ export const rotateAgentKey = mutation({
   },
   returns: v.object({ generation: v.number(), thumbprint: v.string() }),
   handler: async (ctx, args) => {
-    const agent = await requireAgentInOrganization(
-      ctx,
-      args.agentId,
-      args.organizationId
-    );
+    const agent = await requireAgentInOrganization(ctx, args.agentId, args.organizationId);
     await requireActiveOperator(ctx, args.organizationId, args.operatorUserId);
     return await rotateStoredAgentKey(ctx, agent, {
       expectedGeneration: args.expectedGeneration,
@@ -833,11 +748,7 @@ export const rotateAgentKeyAsAgent = mutation({
   },
   returns: v.object({ generation: v.number(), thumbprint: v.string() }),
   handler: async (ctx, args) => {
-    const agent = await requireAgentInOrganization(
-      ctx,
-      args.agentId,
-      args.organizationId
-    );
+    const agent = await requireAgentInOrganization(ctx, args.agentId, args.organizationId);
     return await rotateStoredAgentKey(ctx, agent, {
       expectedGeneration: args.expectedGeneration,
       publicJwkJson: args.publicJwkJson,
@@ -857,36 +768,26 @@ export const setAgentCapabilityGrantStatus = mutation({
   },
   returns: okValidator,
   handler: async (ctx, args) => {
-    const agent = await requireAgentInOrganization(
-      ctx,
-      args.agentId,
-      args.organizationId
-    );
+    const agent = await requireAgentInOrganization(ctx, args.agentId, args.organizationId);
     await requireActiveOperator(ctx, args.organizationId, args.operatorUserId);
     const capability = requireText(args.capability, "capability");
     const grant = await ctx.db
       .query("agent_capability_grants")
       .withIndex("by_agent_capability", (q) =>
-        q.eq("agentId", agent._id).eq("capability", capability)
+        q.eq("agentId", agent._id).eq("capability", capability),
       )
       .unique();
     if (grant === null) throw new Error("Agent capability grant not found");
     if (args.status === "pending") {
-      throw new Error(
-        "Agent capability grant cannot transition back to pending"
-      );
+      throw new Error("Agent capability grant cannot transition back to pending");
     }
     requireCapabilityStatusTransition(grant.status, args.status);
     const now = Date.now();
     await ctx.db.patch("agent_capability_grants", grant._id, {
       status: args.status,
-      grantedBy:
-        args.status === "active" ? args.operatorUserId : grant.grantedBy,
+      grantedBy: args.status === "active" ? args.operatorUserId : grant.grantedBy,
       deniedBy: args.status === "denied" ? args.operatorUserId : grant.deniedBy,
-      reason:
-        args.reason === undefined
-          ? grant.reason
-          : requireText(args.reason, "reason"),
+      reason: args.reason === undefined ? grant.reason : requireText(args.reason, "reason"),
       updatedAt: now,
     });
     await audit(ctx, {
@@ -907,7 +808,7 @@ export const getAgentVerificationMaterial = query({
     const key = await ctx.db
       .query("agent_keys")
       .withIndex("by_thumbprint", (q) =>
-        q.eq("thumbprint", requireText(args.thumbprint, "thumbprint"))
+        q.eq("thumbprint", requireText(args.thumbprint, "thumbprint")),
       )
       .unique();
     if (key === null) return null;
@@ -973,16 +874,12 @@ export const getAgentHostProtocolVerificationMaterial = query({
     const key = await ctx.db
       .query("agent_host_keys")
       .withIndex("by_thumbprint", (q) =>
-        q.eq("thumbprint", requireText(args.thumbprint, "thumbprint"))
+        q.eq("thumbprint", requireText(args.thumbprint, "thumbprint")),
       )
       .unique();
     if (key === null || key.status !== "active") return null;
     const host = await ctx.db.get("agent_hosts", key.hostId);
-    if (
-      host === null ||
-      host.status !== "active" ||
-      host.activeKeyGeneration !== key.generation
-    ) {
+    if (host === null || host.status !== "active" || host.activeKeyGeneration !== key.generation) {
       return null;
     }
     return {
@@ -1027,11 +924,7 @@ export const consumeAgentHostRequest = mutation({
     ) {
       throw new Error("Agent host organization mismatch");
     }
-    requireExpectedGeneration(
-      args.keyGeneration,
-      host.activeKeyGeneration,
-      "Agent host"
-    );
+    requireExpectedGeneration(args.keyGeneration, host.activeKeyGeneration, "Agent host");
     const key = await requireHostKey(ctx, host._id, args.keyGeneration);
     if (key.status !== "active") {
       throw new Error("Agent host key generation is not active");
@@ -1092,8 +985,7 @@ export const getAgentAuthorityStatus = query({
     const status =
       agent.status === "active" &&
       ((agent.expiresAt !== undefined && agent.expiresAt <= now) ||
-        (agent.absoluteExpiresAt !== undefined &&
-          agent.absoluteExpiresAt <= now))
+        (agent.absoluteExpiresAt !== undefined && agent.absoluteExpiresAt <= now))
         ? "expired"
         : agent.status;
     return {
@@ -1129,15 +1021,13 @@ export const introspectAgentAuthority = query({
     ) {
       return { active: false } as const;
     }
-    const [organization, host, key, delegatedOwner, grants] = await Promise.all(
-      [
-        ctx.db.get("organizations", agent.organizationId),
-        ctx.db.get("agent_hosts", agent.hostId),
-        requireAgentKey(ctx, agent._id, agent.activeKeyGeneration),
-        inspectStoredModeOwner(ctx, agent),
-        readActiveAgentGrants(ctx, agent._id),
-      ]
-    );
+    const [organization, host, key, delegatedOwner, grants] = await Promise.all([
+      ctx.db.get("organizations", agent.organizationId),
+      ctx.db.get("agent_hosts", agent.hostId),
+      requireAgentKey(ctx, agent._id, agent.activeKeyGeneration),
+      inspectStoredModeOwner(ctx, agent),
+      readActiveAgentGrants(ctx, agent._id),
+    ]);
     if (
       organization?.status !== "active" ||
       host?.status !== "active" ||
@@ -1150,19 +1040,12 @@ export const introspectAgentAuthority = query({
     const claimedCapabilities =
       args.claimedCapabilities === undefined
         ? null
-        : new Set(
-            normalizeStringSet(
-              args.claimedCapabilities,
-              "capability",
-              MAX_AGENT_GRANTS
-            )
-          );
+        : new Set(normalizeStringSet(args.claimedCapabilities, "capability", MAX_AGENT_GRANTS));
     const capabilityGrants = grants
       .filter(
         (grant) =>
-          (claimedCapabilities === null ||
-            claimedCapabilities.has(grant.capability)) &&
-          (grant.expiresAt === undefined || grant.expiresAt > now)
+          (claimedCapabilities === null || claimedCapabilities.has(grant.capability)) &&
+          (grant.expiresAt === undefined || grant.expiresAt > now),
       )
       .map(grantSnapshot);
     const claimedEffectivePermissions =
@@ -1170,19 +1053,12 @@ export const introspectAgentAuthority = query({
         ? agent.permissions
         : intersectPermissions(
             agent.permissions,
-            normalizeStringSet(
-              args.claimedPermissions,
-              "permission",
-              MAX_AGENT_PERMISSIONS
-            )
+            normalizeStringSet(args.claimedPermissions, "permission", MAX_AGENT_PERMISSIONS),
           );
     const permissions =
       delegatedOwner.permissions === null
         ? claimedEffectivePermissions
-        : intersectPermissions(
-            delegatedOwner.permissions,
-            claimedEffectivePermissions
-          );
+        : intersectPermissions(delegatedOwner.permissions, claimedEffectivePermissions);
     return {
       active: true,
       agentId: agent._id,
@@ -1218,8 +1094,7 @@ export const consumeAgentCredential = mutation({
     }
     if (
       args.hostKeyGeneration !== undefined &&
-      (!Number.isSafeInteger(args.hostKeyGeneration) ||
-        args.hostKeyGeneration < 1)
+      (!Number.isSafeInteger(args.hostKeyGeneration) || args.hostKeyGeneration < 1)
     ) {
       throw new Error("Agent host key generation is invalid");
     }
@@ -1239,10 +1114,7 @@ export const consumeAgentCredential = mutation({
     ) {
       throw new Error("Agent organization mismatch");
     }
-    const organization = await ctx.db.get(
-      "organizations",
-      agent.organizationId
-    );
+    const organization = await ctx.db.get("organizations", agent.organizationId);
     if (organization === null || organization.status !== "active") {
       throw new Error("Agent organization is not active");
     }
@@ -1267,29 +1139,19 @@ export const consumeAgentCredential = mutation({
     }
     const delegatedOwnerPermissions = await requireStoredModeOwner(ctx, agent);
     const key = await requireAgentKey(ctx, agent._id, args.keyGeneration);
-    if (
-      key.status !== "active" ||
-      args.keyGeneration !== agent.activeKeyGeneration
-    ) {
+    if (key.status !== "active" || args.keyGeneration !== agent.activeKeyGeneration) {
       throw new Error("Agent key generation is not active");
     }
     const grants = await readActiveAgentGrants(ctx, agent._id);
     const claimedCapabilities =
       args.claimedCapabilities === undefined
         ? null
-        : new Set(
-            normalizeStringSet(
-              args.claimedCapabilities,
-              "capability",
-              MAX_AGENT_GRANTS
-            )
-          );
+        : new Set(normalizeStringSet(args.claimedCapabilities, "capability", MAX_AGENT_GRANTS));
     const capabilityGrants = grants
       .filter(
         (grant) =>
-          (claimedCapabilities === null ||
-            claimedCapabilities.has(grant.capability)) &&
-          (grant.expiresAt === undefined || grant.expiresAt > now)
+          (claimedCapabilities === null || claimedCapabilities.has(grant.capability)) &&
+          (grant.expiresAt === undefined || grant.expiresAt > now),
       )
       .map(grantSnapshot);
     const claimedEffectivePermissions =
@@ -1297,19 +1159,12 @@ export const consumeAgentCredential = mutation({
         ? agent.permissions
         : intersectPermissions(
             agent.permissions,
-            normalizeStringSet(
-              args.claimedPermissions,
-              "permission",
-              MAX_AGENT_PERMISSIONS
-            )
+            normalizeStringSet(args.claimedPermissions, "permission", MAX_AGENT_PERMISSIONS),
           );
     const permissions =
       delegatedOwnerPermissions === null
         ? claimedEffectivePermissions
-        : intersectPermissions(
-            delegatedOwnerPermissions,
-            claimedEffectivePermissions
-          );
+        : intersectPermissions(delegatedOwnerPermissions, claimedEffectivePermissions);
     await ctx.db.insert("agent_replay_records", {
       agentId: agent._id,
       replayIdHash: replayHash,
@@ -1355,7 +1210,7 @@ export const cleanupExpiredAgentReplayRecords = mutation({
     await Promise.all(
       expired.map(async (record) => {
         await ctx.db.delete("agent_replay_records", record._id);
-      })
+      }),
     );
     return { deleted: expired.length };
   },
@@ -1375,10 +1230,7 @@ export const cleanupExpiredAgentHostReplayRecords = mutation({
       .withIndex("by_expiry", (q) => q.lte("expiresAt", now))
       .take(limit);
     await Promise.all(
-      expired.map(
-        async (record) =>
-          await ctx.db.delete("agent_host_replay_records", record._id)
-      )
+      expired.map(async (record) => await ctx.db.delete("agent_host_replay_records", record._id)),
     );
     return { deleted: expired.length };
   },
@@ -1386,11 +1238,7 @@ export const cleanupExpiredAgentHostReplayRecords = mutation({
 export const cascadeRevokedAgentHost = internalMutation({
   args: {
     hostId: v.id("agent_hosts"),
-    phase: v.union(
-      v.literal("pending"),
-      v.literal("active"),
-      v.literal("expired")
-    ),
+    phase: v.union(v.literal("pending"), v.literal("active"), v.literal("expired")),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -1398,9 +1246,7 @@ export const cascadeRevokedAgentHost = internalMutation({
     if (host === null || host.status !== "revoked") return null;
     const agents = await ctx.db
       .query("agents")
-      .withIndex("by_host_status", (q) =>
-        q.eq("hostId", host._id).eq("status", args.phase)
-      )
+      .withIndex("by_host_status", (q) => q.eq("hostId", host._id).eq("status", args.phase))
       .take(HOST_REVOCATION_BATCH_SIZE);
     const now = Date.now();
     await Promise.all(
@@ -1421,31 +1267,19 @@ export const cascadeRevokedAgentHost = internalMutation({
           actorType: "system",
           eventType: "agent.revoked_by_host",
         });
-      })
+      }),
     );
     if (agents.length === HOST_REVOCATION_BATCH_SIZE) {
-      await ctx.scheduler.runAfter(
-        0,
-        internal.agentAuth.cascadeRevokedAgentHost,
-        args
-      );
+      await ctx.scheduler.runAfter(0, internal.agentAuth.cascadeRevokedAgentHost, args);
       return null;
     }
     const nextPhase =
-      args.phase === "pending"
-        ? "active"
-        : args.phase === "active"
-          ? "expired"
-          : null;
+      args.phase === "pending" ? "active" : args.phase === "active" ? "expired" : null;
     if (nextPhase !== null) {
-      await ctx.scheduler.runAfter(
-        0,
-        internal.agentAuth.cascadeRevokedAgentHost,
-        {
-          hostId: host._id,
-          phase: nextPhase,
-        }
-      );
+      await ctx.scheduler.runAfter(0, internal.agentAuth.cascadeRevokedAgentHost, {
+        hostId: host._id,
+        phase: nextPhase,
+      });
       return null;
     }
     await ctx.db.patch("agent_hosts", host._id, {
@@ -1458,13 +1292,9 @@ export const cascadeRevokedAgentHost = internalMutation({
 
 async function insertPendingAgent(
   ctx: MutationCtx,
-  args: RegisterAgentArgs
+  args: RegisterAgentArgs,
 ): Promise<Id<"agents">> {
-  const host = await requireHostInOrganization(
-    ctx,
-    args.hostId,
-    args.organizationId
-  );
+  const host = await requireHostInOrganization(ctx, args.hostId, args.organizationId);
   await requireActiveOrganization(ctx, args.organizationId);
   if (host.status !== "active") throw new Error("Agent host is not active");
   await requireModeOwner(ctx, args);
@@ -1481,13 +1311,8 @@ async function insertPendingAgent(
     name: requireText(args.name, "name"),
     mode: args.mode,
     status: "pending",
-    delegatedUserId:
-      args.mode === "delegated" ? args.delegatedUserId : undefined,
-    permissions: normalizeStringSet(
-      args.permissions,
-      "permission",
-      MAX_AGENT_PERMISSIONS
-    ),
+    delegatedUserId: args.mode === "delegated" ? args.delegatedUserId : undefined,
+    permissions: normalizeStringSet(args.permissions, "permission", MAX_AGENT_PERMISSIONS),
     activeKeyGeneration: 1,
     createdAt: now,
     updatedAt: now,
@@ -1512,7 +1337,7 @@ async function insertPendingAgent(
         createdAt: now,
         updatedAt: now,
       });
-    })
+    }),
   );
   await audit(ctx, {
     organizationId: args.organizationId,
@@ -1526,13 +1351,11 @@ async function insertPendingAgent(
 
 async function readActiveAgentGrants(
   ctx: DbCtx,
-  agentId: Id<"agents">
+  agentId: Id<"agents">,
 ): Promise<Array<Doc<"agent_capability_grants">>> {
   const grants = await ctx.db
     .query("agent_capability_grants")
-    .withIndex("by_agent_status", (q) =>
-      q.eq("agentId", agentId).eq("status", "active")
-    )
+    .withIndex("by_agent_status", (q) => q.eq("agentId", agentId).eq("status", "active"))
     .take(MAX_AGENT_GRANTS + 1);
   if (grants.length > MAX_AGENT_GRANTS) {
     throw new Error("Agent capability grant limit exceeded");
@@ -1551,7 +1374,7 @@ function grantSnapshot(grant: Doc<"agent_capability_grants">) {
 async function revokeAgentGrants(
   ctx: MutationCtx,
   agentId: Id<"agents">,
-  input: { now: number; reason: string }
+  input: { now: number; reason: string },
 ): Promise<void> {
   const grants = await ctx.db
     .query("agent_capability_grants")
@@ -1562,49 +1385,40 @@ async function revokeAgentGrants(
   }
   await Promise.all(
     grants
-      .filter(
-        (grant) => grant.status === "pending" || grant.status === "active"
-      )
+      .filter((grant) => grant.status === "pending" || grant.status === "active")
       .map(
         async (grant) =>
           await ctx.db.patch("agent_capability_grants", grant._id, {
             status: "revoked",
             reason: input.reason,
             updatedAt: input.now,
-          })
-      )
+          }),
+      ),
   );
 }
 
 async function revokeAgentDependents(
   ctx: MutationCtx,
   agent: Doc<"agents">,
-  input: { now: number; reason: string }
+  input: { now: number; reason: string },
 ): Promise<void> {
-  const [key, pendingAuthorizations, approvedAuthorizations] =
-    await Promise.all([
-      requireAgentKey(ctx, agent._id, agent.activeKeyGeneration),
-      ctx.db
-        .query("agent_device_authorizations")
-        .withIndex("by_agent_status", (q) =>
-          q.eq("agentId", agent._id).eq("status", "pending")
-        )
-        .take(2),
-      ctx.db
-        .query("agent_device_authorizations")
-        .withIndex("by_agent_status", (q) =>
-          q.eq("agentId", agent._id).eq("status", "approved")
-        )
-        .take(2),
-    ]);
+  const [key, pendingAuthorizations, approvedAuthorizations] = await Promise.all([
+    requireAgentKey(ctx, agent._id, agent.activeKeyGeneration),
+    ctx.db
+      .query("agent_device_authorizations")
+      .withIndex("by_agent_status", (q) => q.eq("agentId", agent._id).eq("status", "pending"))
+      .take(2),
+    ctx.db
+      .query("agent_device_authorizations")
+      .withIndex("by_agent_status", (q) => q.eq("agentId", agent._id).eq("status", "approved"))
+      .take(2),
+  ]);
   if (pendingAuthorizations.length > 1 || approvedAuthorizations.length > 1) {
     throw new Error("Agent has multiple pending device authorizations");
   }
   const authorizations = [
     ...pendingAuthorizations,
-    ...approvedAuthorizations.filter(
-      (authorization) => authorization.consumedAt === undefined
-    ),
+    ...approvedAuthorizations.filter((authorization) => authorization.consumedAt === undefined),
   ];
   await Promise.all([
     key.status === "active"
@@ -1619,7 +1433,7 @@ async function revokeAgentDependents(
           status: "denied",
           deniedAt: input.now,
           updatedAt: input.now,
-        })
+        }),
     ),
     revokeAgentGrants(ctx, agent._id, input),
   ]);
@@ -1632,7 +1446,7 @@ function requireDeviceAuthorizationPolicy(
     expiresAt: number;
     pollIntervalSeconds: number;
   },
-  now: number
+  now: number,
 ): void {
   requireHash(input.userCodeHash, "userCodeHash");
   requireHash(input.deviceCodeHash, "deviceCodeHash");
@@ -1642,17 +1456,16 @@ function requireDeviceAuthorizationPolicy(
     input.expiresAt > now + MAX_DEVICE_AUTHORIZATION_LIFETIME_MS
   ) {
     throw new TypeError(
-      `Device authorization expiresAt must be within ${MAX_DEVICE_AUTHORIZATION_LIFETIME_MS} milliseconds`
+      `Device authorization expiresAt must be within ${MAX_DEVICE_AUTHORIZATION_LIFETIME_MS} milliseconds`,
     );
   }
   if (
     !Number.isSafeInteger(input.pollIntervalSeconds) ||
-    input.pollIntervalSeconds <
-      MIN_DEVICE_AUTHORIZATION_POLL_INTERVAL_SECONDS ||
+    input.pollIntervalSeconds < MIN_DEVICE_AUTHORIZATION_POLL_INTERVAL_SECONDS ||
     input.pollIntervalSeconds > MAX_DEVICE_AUTHORIZATION_POLL_INTERVAL_SECONDS
   ) {
     throw new TypeError(
-      `Device authorization pollIntervalSeconds must be between ${MIN_DEVICE_AUTHORIZATION_POLL_INTERVAL_SECONDS} and ${MAX_DEVICE_AUTHORIZATION_POLL_INTERVAL_SECONDS}`
+      `Device authorization pollIntervalSeconds must be between ${MIN_DEVICE_AUTHORIZATION_POLL_INTERVAL_SECONDS} and ${MAX_DEVICE_AUTHORIZATION_POLL_INTERVAL_SECONDS}`,
     );
   }
 }
@@ -1668,19 +1481,19 @@ function requireHash(value: string, field: string): string {
 async function requireUnusedDeviceAuthorizationCodes(
   ctx: DbCtx,
   userCodeHash: string,
-  deviceCodeHash: string
+  deviceCodeHash: string,
 ): Promise<void> {
   const [byUserCode, byDeviceCode] = await Promise.all([
     ctx.db
       .query("agent_device_authorizations")
       .withIndex("by_user_code_hash", (q) =>
-        q.eq("userCodeHash", requireHash(userCodeHash, "userCodeHash"))
+        q.eq("userCodeHash", requireHash(userCodeHash, "userCodeHash")),
       )
       .unique(),
     ctx.db
       .query("agent_device_authorizations")
       .withIndex("by_device_code_hash", (q) =>
-        q.eq("deviceCodeHash", requireHash(deviceCodeHash, "deviceCodeHash"))
+        q.eq("deviceCodeHash", requireHash(deviceCodeHash, "deviceCodeHash")),
       )
       .unique(),
   ]);
@@ -1700,7 +1513,7 @@ type DeviceAuthorizationAttemptLimit = {
 async function readDeviceAuthorizationAttemptLimit(
   ctx: DbCtx,
   operatorUserId: Id<"users">,
-  now: number
+  now: number,
 ): Promise<DeviceAuthorizationAttemptLimit> {
   const record = await ctx.db
     .query("agent_device_authorization_attempts")
@@ -1741,7 +1554,7 @@ async function recordFailedDeviceAuthorizationAttempt(
   ctx: MutationCtx,
   operatorUserId: Id<"users">,
   current: DeviceAuthorizationAttemptLimit,
-  now: number
+  now: number,
 ): Promise<void> {
   const attempts = current.attempts + 1;
   const blockedUntil =
@@ -1760,17 +1573,13 @@ async function recordFailedDeviceAuthorizationAttempt(
       ...patch,
     });
   } else {
-    await ctx.db.patch(
-      "agent_device_authorization_attempts",
-      current.recordId,
-      patch
-    );
+    await ctx.db.patch("agent_device_authorization_attempts", current.recordId, patch);
   }
 }
 
 async function clearDeviceAuthorizationAttempts(
   ctx: MutationCtx,
-  operatorUserId: Id<"users">
+  operatorUserId: Id<"users">,
 ): Promise<void> {
   const record = await ctx.db
     .query("agent_device_authorization_attempts")
@@ -1785,7 +1594,7 @@ async function expirePendingDeviceAuthorization(
   ctx: MutationCtx,
   authorization: Doc<"agent_device_authorizations">,
   agent: Doc<"agents">,
-  now: number
+  now: number,
 ): Promise<void> {
   if (authorization.status !== "pending") return;
   await ctx.db.patch("agent_device_authorizations", authorization._id, {
@@ -1811,7 +1620,7 @@ async function expirePendingDeviceAuthorization(
 async function requireActiveOperator(
   ctx: DbCtx,
   organizationId: Id<"organizations">,
-  userId: Id<"users">
+  userId: Id<"users">,
 ) {
   await requireActiveOrganization(ctx, organizationId);
   const user = await ctx.db.get("users", userId);
@@ -1819,7 +1628,7 @@ async function requireActiveOperator(
   const membership = await ctx.db
     .query("organization_members")
     .withIndex("by_user_organization", (q) =>
-      q.eq("userId", userId).eq("organizationId", organizationId)
+      q.eq("userId", userId).eq("organizationId", organizationId),
     )
     .unique();
   if (membership === null || membership.status !== "active") {
@@ -1838,7 +1647,7 @@ async function requireModeOwner(
     organizationId: Id<"organizations">;
     mode: "delegated" | "autonomous";
     delegatedUserId?: Id<"users">;
-  }
+  },
 ) {
   if (args.mode === "delegated") {
     if (args.delegatedUserId === undefined) {
@@ -1855,20 +1664,13 @@ async function requireStoredModeOwner(ctx: DbCtx, agent: Doc<"agents">) {
   if (agent.delegatedUserId === undefined) {
     throw new Error("Delegated agents require delegatedUserId");
   }
-  return await requireActiveOperator(
-    ctx,
-    agent.organizationId,
-    agent.delegatedUserId
-  );
+  return await requireActiveOperator(ctx, agent.organizationId, agent.delegatedUserId);
 }
 
 async function inspectStoredModeOwner(
   ctx: DbCtx,
-  agent: Doc<"agents">
-): Promise<
-  | { active: true; permissions: string[] | null }
-  | { active: false; permissions: null }
-> {
+  agent: Doc<"agents">,
+): Promise<{ active: true; permissions: string[] | null } | { active: false; permissions: null }> {
   if (agent.mode === "autonomous") {
     return { active: true, permissions: null };
   }
@@ -1883,7 +1685,7 @@ async function inspectStoredModeOwner(
   const membership = await ctx.db
     .query("organization_members")
     .withIndex("by_user_organization", (q) =>
-      q.eq("userId", delegatedUserId).eq("organizationId", agent.organizationId)
+      q.eq("userId", delegatedUserId).eq("organizationId", agent.organizationId),
     )
     .unique();
   if (membership === null || membership.status !== "active") {
@@ -1896,10 +1698,7 @@ async function inspectStoredModeOwner(
   return { active: true, permissions: role.permissions };
 }
 
-async function requireActiveOrganization(
-  ctx: DbCtx,
-  organizationId: Id<"organizations">
-) {
+async function requireActiveOrganization(ctx: DbCtx, organizationId: Id<"organizations">) {
   const organization = await ctx.db.get("organizations", organizationId);
   if (organization === null || organization.status !== "active") {
     throw new Error("Organization is not active");
@@ -1909,7 +1708,7 @@ async function requireActiveOrganization(
 async function requireHostInOrganization(
   ctx: DbCtx,
   hostId: Id<"agent_hosts">,
-  organizationId: Id<"organizations">
+  organizationId: Id<"organizations">,
 ) {
   const host = await ctx.db.get("agent_hosts", hostId);
   if (host === null || host.organizationId !== organizationId) {
@@ -1921,7 +1720,7 @@ async function requireHostInOrganization(
 async function requireAgentInOrganization(
   ctx: DbCtx,
   agentId: Id<"agents">,
-  organizationId: Id<"organizations">
+  organizationId: Id<"organizations">,
 ) {
   const agent = await ctx.db.get("agents", agentId);
   if (agent === null || agent.organizationId !== organizationId) {
@@ -1930,31 +1729,19 @@ async function requireAgentInOrganization(
   return agent;
 }
 
-async function requireAgentKey(
-  ctx: DbCtx,
-  agentId: Id<"agents">,
-  generation: number
-) {
+async function requireAgentKey(ctx: DbCtx, agentId: Id<"agents">, generation: number) {
   const key = await ctx.db
     .query("agent_keys")
-    .withIndex("by_agent_generation", (q) =>
-      q.eq("agentId", agentId).eq("generation", generation)
-    )
+    .withIndex("by_agent_generation", (q) => q.eq("agentId", agentId).eq("generation", generation))
     .unique();
   if (key === null) throw new Error("Agent key not found");
   return key;
 }
 
-async function requireHostKey(
-  ctx: DbCtx,
-  hostId: Id<"agent_hosts">,
-  generation: number
-) {
+async function requireHostKey(ctx: DbCtx, hostId: Id<"agent_hosts">, generation: number) {
   const key = await ctx.db
     .query("agent_host_keys")
-    .withIndex("by_host_generation", (q) =>
-      q.eq("hostId", hostId).eq("generation", generation)
-    )
+    .withIndex("by_host_generation", (q) => q.eq("hostId", hostId).eq("generation", generation))
     .unique();
   if (key === null) throw new Error("Agent host key not found");
   return key;
@@ -1991,10 +1778,7 @@ async function normalizePublicEd25519Jwk(publicJwkJson: string) {
     throw new TypeError("Only public Ed25519 JWKs are accepted");
   }
   const publicKeyBytes = base64UrlToBytes(record.x);
-  if (
-    publicKeyBytes.length !== 32 ||
-    bytesToBase64Url(publicKeyBytes) !== record.x
-  ) {
+  if (publicKeyBytes.length !== 32 || bytesToBase64Url(publicKeyBytes) !== record.x) {
     throw new TypeError("Ed25519 public key material is invalid");
   }
   const canonical = JSON.stringify({
@@ -2002,10 +1786,7 @@ async function normalizePublicEd25519Jwk(publicJwkJson: string) {
     kty: "OKP",
     x: record.x,
   });
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(canonical)
-  );
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
   return {
     json: canonical,
     thumbprint: bytesToBase64Url(new Uint8Array(digest)),
@@ -2015,10 +1796,7 @@ async function normalizePublicEd25519Jwk(publicJwkJson: string) {
 function bytesToBase64Url(bytes: Uint8Array) {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary)
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/u, "");
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
 }
 
 function base64UrlToBytes(value: string) {
@@ -2041,7 +1819,7 @@ function normalizeGrantInputs(
     capability: string;
     constraintsJson?: string;
     expiresAt?: number;
-  }>
+  }>,
 ) {
   const seen = new Set<string>();
   return inputs.map((input) => {
@@ -2054,19 +1832,13 @@ function normalizeGrantInputs(
     }
     seen.add(capability);
     if (input.constraintsJson !== undefined) {
-      if (
-        input.constraintsJson.length > MAX_CAPABILITY_CONSTRAINTS_JSON_LENGTH
-      ) {
+      if (input.constraintsJson.length > MAX_CAPABILITY_CONSTRAINTS_JSON_LENGTH) {
         throw new TypeError(
-          `Capability constraints exceed ${MAX_CAPABILITY_CONSTRAINTS_JSON_LENGTH} characters`
+          `Capability constraints exceed ${MAX_CAPABILITY_CONSTRAINTS_JSON_LENGTH} characters`,
         );
       }
       const constraints: unknown = JSON.parse(input.constraintsJson);
-      if (
-        typeof constraints !== "object" ||
-        constraints === null ||
-        Array.isArray(constraints)
-      ) {
+      if (typeof constraints !== "object" || constraints === null || Array.isArray(constraints)) {
         throw new TypeError("Capability constraints must be an object");
       }
     }
@@ -2091,7 +1863,7 @@ function normalizeStringSet(values: string[], field: string, limit: number) {
           throw new TypeError(`${field} exceeds 128 characters`);
         }
         return normalized;
-      })
+      }),
     ),
   ].toSorted();
 }
@@ -2104,7 +1876,7 @@ function requireText(value: string, field: string) {
 
 function requireHostStatusTransition(
   current: Doc<"agent_hosts">["status"],
-  next: Doc<"agent_hosts">["status"]
+  next: Doc<"agent_hosts">["status"],
 ) {
   const allowed =
     current === "pending"
@@ -2117,7 +1889,7 @@ function requireHostStatusTransition(
 
 function requireAgentStatusTransition(
   current: Doc<"agents">["status"],
-  next: Doc<"agents">["status"]
+  next: Doc<"agents">["status"],
 ) {
   const allowed =
     current === "pending"
@@ -2132,7 +1904,7 @@ function requireAgentStatusTransition(
 
 function requireCapabilityStatusTransition(
   current: Doc<"agent_capability_grants">["status"],
-  next: Doc<"agent_capability_grants">["status"]
+  next: Doc<"agent_capability_grants">["status"],
 ) {
   const allowed =
     current === "pending"
@@ -2141,9 +1913,7 @@ function requireCapabilityStatusTransition(
         ? new Set(["revoked"])
         : new Set<string>();
   if (!allowed.has(next)) {
-    throw new Error(
-      `Invalid agent capability transition: ${current} -> ${next}`
-    );
+    throw new Error(`Invalid agent capability transition: ${current} -> ${next}`);
   }
 }
 
@@ -2164,22 +1934,12 @@ function requireReplayLifetime(replayExpiresAt: number, now: number): void {
 }
 
 function requireReplayCleanupLimit(limit: number): void {
-  if (
-    !Number.isSafeInteger(limit) ||
-    limit < 1 ||
-    limit > MAX_REPLAY_CLEANUP_BATCH
-  ) {
-    throw new Error(
-      `Agent replay cleanup limit must be between 1 and ${MAX_REPLAY_CLEANUP_BATCH}`
-    );
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > MAX_REPLAY_CLEANUP_BATCH) {
+    throw new Error(`Agent replay cleanup limit must be between 1 and ${MAX_REPLAY_CLEANUP_BATCH}`);
   }
 }
 
-function requireExpectedGeneration(
-  expected: number,
-  current: number,
-  subject: string
-): void {
+function requireExpectedGeneration(expected: number, current: number, subject: string): void {
   if (!Number.isSafeInteger(expected) || expected < 1) {
     throw new TypeError(`${subject} expected generation is invalid`);
   }
@@ -2198,7 +1958,7 @@ async function requireHostOwnedAgent(
     hostId: Id<"agent_hosts">;
     agentId: Id<"agents">;
     organizationId: Id<"organizations">;
-  }
+  },
 ): Promise<Doc<"agents">> {
   const [host, agent] = await Promise.all([
     requireHostInOrganization(ctx, input.hostId, input.organizationId),
@@ -2217,14 +1977,10 @@ async function rotateHostKey(
   input: {
     expectedGeneration: number;
     publicJwkJson: string;
-  } & LifecycleActor
+  } & LifecycleActor,
 ) {
   if (host.status !== "active") throw new Error("Agent host is not active");
-  requireExpectedGeneration(
-    input.expectedGeneration,
-    host.activeKeyGeneration,
-    "Agent host"
-  );
+  requireExpectedGeneration(input.expectedGeneration, host.activeKeyGeneration, "Agent host");
   const publicKey = await normalizePublicEd25519Jwk(input.publicJwkJson);
   await requireUnusedThumbprint(ctx, publicKey.thumbprint);
   const current = await requireHostKey(ctx, host._id, host.activeKeyGeneration);
@@ -2260,16 +2016,12 @@ async function rotateHostKey(
 async function reactivateStoredAgent(
   ctx: MutationCtx,
   agent: Doc<"agents">,
-  input: { expiresAt: number } & LifecycleActor
+  input: { expiresAt: number } & LifecycleActor,
 ) {
   if (agent.status !== "expired") {
     throw new Error("Only expired agents can reactivate");
   }
-  const host = await requireHostInOrganization(
-    ctx,
-    agent.hostId,
-    agent.organizationId
-  );
+  const host = await requireHostInOrganization(ctx, agent.hostId, agent.organizationId);
   if (host.status !== "active") throw new Error("Agent host is not active");
   await requireStoredModeOwner(ctx, agent);
   const now = Date.now();
@@ -2285,9 +2037,7 @@ async function reactivateStoredAgent(
     });
     await ctx.db.patch("agents", agent._id, {
       status: "revoked",
-      ...(input.actorUserId === undefined
-        ? {}
-        : { revokedBy: input.actorUserId }),
+      ...(input.actorUserId === undefined ? {} : { revokedBy: input.actorUserId }),
       revokedAt: now,
       updatedAt: now,
     });
@@ -2302,8 +2052,7 @@ async function reactivateStoredAgent(
   }
   if (
     input.expiresAt <= now ||
-    (agent.absoluteExpiresAt !== undefined &&
-      input.expiresAt > agent.absoluteExpiresAt)
+    (agent.absoluteExpiresAt !== undefined && input.expiresAt > agent.absoluteExpiresAt)
   ) {
     throw new Error("Agent reactivation expiry is invalid");
   }
@@ -2313,9 +2062,7 @@ async function reactivateStoredAgent(
   });
   await ctx.db.patch("agents", agent._id, {
     status: "active",
-    ...(input.actorUserId === undefined
-      ? {}
-      : { activatedBy: input.actorUserId }),
+    ...(input.actorUserId === undefined ? {} : { activatedBy: input.actorUserId }),
     activatedAt: now,
     expiresAt: input.expiresAt,
     updatedAt: now,
@@ -2336,21 +2083,13 @@ async function rotateStoredAgentKey(
   input: {
     expectedGeneration: number;
     publicJwkJson: string;
-  } & LifecycleActor
+  } & LifecycleActor,
 ) {
   if (agent.status !== "active") throw new Error("Agent is not active");
-  requireExpectedGeneration(
-    input.expectedGeneration,
-    agent.activeKeyGeneration,
-    "Agent"
-  );
+  requireExpectedGeneration(input.expectedGeneration, agent.activeKeyGeneration, "Agent");
   const publicKey = await normalizePublicEd25519Jwk(input.publicJwkJson);
   await requireUnusedThumbprint(ctx, publicKey.thumbprint);
-  const current = await requireAgentKey(
-    ctx,
-    agent._id,
-    agent.activeKeyGeneration
-  );
+  const current = await requireAgentKey(ctx, agent._id, agent.activeKeyGeneration);
   const now = Date.now();
   const generation = agent.activeKeyGeneration + 1;
   await ctx.db.patch("agent_keys", current._id, {
@@ -2391,7 +2130,7 @@ async function audit(
     actorUserId?: Id<"users">;
     eventType: string;
     reasonCode?: string;
-  }
+  },
 ) {
   await ctx.db.insert("agent_auth_audit_events", {
     ...input,

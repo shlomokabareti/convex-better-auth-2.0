@@ -51,15 +51,9 @@ const endpoints = [
   { id: "ep_empty", eventTypes: [] as string[] },
 ];
 const matched = endpoints
-  .filter((e) =>
-    convexWebhookEndpointSubscribesTo(e.eventTypes, "user.created")
-  )
+  .filter((e) => convexWebhookEndpointSubscribesTo(e.eventTypes, "user.created"))
   .map((e) => e.id);
-if (
-  matched.length === 2 &&
-  matched.includes("ep_subscribed") &&
-  matched.includes("ep_wildcard")
-) {
+if (matched.length === 2 && matched.includes("ep_subscribed") && matched.includes("ep_wildcard")) {
   r.ok("A firing: enqueues only subscribed + wildcard endpoints");
 } else {
   r.bad(`A firing: unexpected matched endpoints ${JSON.stringify(matched)}`);
@@ -85,9 +79,7 @@ if (sigBuf.length === expBuf.length && timingSafeEqual(sigBuf, expBuf)) {
 } else {
   r.bad("B signing: signature did not match independent HMAC verifier");
 }
-const tampered = createHmac("sha256", SECRET)
-  .update(`${payload} `)
-  .digest("hex");
+const tampered = createHmac("sha256", SECRET).update(`${payload} `).digest("hex");
 if (tampered !== independent) {
   r.ok("B signing: tampered payload produces a different signature (rejected)");
 } else {
@@ -121,10 +113,7 @@ const delivered = await processConvexWebhookDelivery({
   fetch: fetchStatus(200, "ok"),
   now: NOW,
 });
-if (
-  delivered.update.status === "delivered" &&
-  delivered.update.deliveredAt === NOW
-) {
+if (delivered.update.status === "delivered" && delivered.update.deliveredAt === NOW) {
   r.ok("C transition: 2xx -> delivered");
 } else {
   r.bad(`C transition: 2xx expected delivered, got ${delivered.update.status}`);
@@ -137,10 +126,7 @@ const retry = await processConvexWebhookDelivery({
   now: NOW,
   maxAttempts: 4,
 });
-if (
-  retry.update.status === "pending" &&
-  (retry.update.nextAttemptAt ?? 0) > NOW
-) {
+if (retry.update.status === "pending" && (retry.update.nextAttemptAt ?? 0) > NOW) {
   r.ok("C transition: retryable 5xx -> pending with future nextAttemptAt");
 } else {
   r.bad(`C transition: 5xx expected pending retry, got ${retry.update.status}`);
@@ -152,10 +138,7 @@ const clientFail = await processConvexWebhookDelivery({
   fetch: fetchStatus(400, "bad"),
   now: NOW,
 });
-if (
-  clientFail.update.status === "failed" &&
-  clientFail.update.failureKind === "client_error"
-) {
+if (clientFail.update.status === "failed" && clientFail.update.failureKind === "client_error") {
   r.ok("C transition: 4xx -> terminal failed (no retry)");
 } else {
   r.bad(`C transition: 4xx expected failed, got ${clientFail.update.status}`);
@@ -168,15 +151,10 @@ const exhausted = await processConvexWebhookDelivery({
   now: NOW,
   maxAttempts: 4,
 });
-if (
-  exhausted.update.status === "failed" &&
-  exhausted.update.exhaustedAt === NOW
-) {
+if (exhausted.update.status === "failed" && exhausted.update.exhaustedAt === NOW) {
   r.ok("C transition: retryable failure exhausts at max attempts");
 } else {
-  r.bad(
-    `C transition: expected exhausted failed, got ${exhausted.update.status}`
-  );
+  r.bad(`C transition: expected exhausted failed, got ${exhausted.update.status}`);
 }
 
 const network = await processConvexWebhookDelivery({
@@ -188,15 +166,10 @@ const network = await processConvexWebhookDelivery({
   now: NOW,
   maxAttempts: 4,
 });
-if (
-  network.update.status === "pending" &&
-  network.update.failureKind === "network_error"
-) {
+if (network.update.status === "pending" && network.update.failureKind === "network_error") {
   r.ok("C transition: network error -> pending retry");
 } else {
-  r.bad(
-    `C transition: network error expected pending, got ${network.update.status}`
-  );
+  r.bad(`C transition: network error expected pending, got ${network.update.status}`);
 }
 
 let inactiveFetched = false;
@@ -216,7 +189,7 @@ if (!inactiveFetched && inactive.update.failureKind === "endpoint_inactive") {
 }
 
 console.log(
-  "[INFO] live cron-driven HTTP delivery (row -> delivered against a real receiver) requires a deployment that mounts the processor + a request-capture endpoint; see README."
+  "[INFO] live cron-driven HTTP delivery (row -> delivered against a real receiver) requires a deployment that mounts the processor + a request-capture endpoint; see README.",
 );
 
 r.done("webhook firing + delivery conformance");

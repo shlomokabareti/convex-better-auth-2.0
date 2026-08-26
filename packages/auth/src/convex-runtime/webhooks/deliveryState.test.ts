@@ -122,7 +122,7 @@ describe("webhook delivery state updates", () => {
         recoveryCount: 3,
         responseBody: "Recovered stale processing delivery for retry",
         failureKind: undefined,
-      }
+      },
     );
   });
 });

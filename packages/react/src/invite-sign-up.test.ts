@@ -11,34 +11,28 @@ import {
 
 describe("invite sign-up helpers", () => {
   it("reads invitation token from supported query param names", () => {
-    assert.equal(
-      getInvitationToken(new URLSearchParams("invitation_token=abc")),
-      "abc"
-    );
+    assert.equal(getInvitationToken(new URLSearchParams("invitation_token=abc")), "abc");
     assert.equal(getInvitationToken(new URLSearchParams("token=abc")), "abc");
     assert.equal(getInvitationToken(new URLSearchParams("foo=bar")), null);
   });
 
   it("uses only safe after-sign-up paths", () => {
-    assert.equal(
-      getAfterSignUpPath("?redirect_url=/app", "/post-sign-up"),
-      "/app"
-    );
+    assert.equal(getAfterSignUpPath("?redirect_url=/app", "/post-sign-up"), "/app");
     assert.equal(
       getAfterSignUpPath(
         "?redirect_url=https://crm.convex.test/post-sign-up?invitation_token=invite_123",
         "/post-sign-up",
-        "https://crm.convex.test"
+        "https://crm.convex.test",
       ),
-      "/post-sign-up?invitation_token=invite_123"
+      "/post-sign-up?invitation_token=invite_123",
     );
     assert.equal(
       getAfterSignUpPath(
         "?redirect_url=https://evil.com",
         "/post-sign-up",
-        "https://crm.convex.test"
+        "https://crm.convex.test",
       ),
-      "/post-sign-up"
+      "/post-sign-up",
     );
   });
 
@@ -59,7 +53,7 @@ describe("invite sign-up helpers", () => {
     assert.equal(parsed.searchParams.get("identifier"), "USER@Example.COM");
     assert.equal(
       parsed.searchParams.get("redirect_url"),
-      "https://crm.convex.test/post-sign-up?invitation_token=invite_123"
+      "https://crm.convex.test/post-sign-up?invitation_token=invite_123",
     );
   });
 
@@ -83,13 +77,10 @@ describe("invite sign-up helpers", () => {
     const parsed = new URL(result.signUpUrl);
     assert.equal(result.invitationToken, "invite_123");
     assert.equal(result.redirectPath, "/sign-up");
-    assert.equal(
-      parsed.searchParams.get("email_address"),
-      "invited@example.com"
-    );
+    assert.equal(parsed.searchParams.get("email_address"), "invited@example.com");
     assert.equal(
       parsed.searchParams.get("redirect_url"),
-      "https://crm.convex.test/post-sign-up?invitation_token=invite_123"
+      "https://crm.convex.test/post-sign-up?invitation_token=invite_123",
     );
   });
 

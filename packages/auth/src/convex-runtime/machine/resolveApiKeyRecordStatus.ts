@@ -1,11 +1,8 @@
 import type { ApiKeyRecord } from "./types";
 
 export function resolveApiKeyRecordStatus(
-  apiKey: Pick<
-    ApiKeyRecord,
-    "status" | "expiresAt" | "createdAt" | "lastUsedAt" | "maxIdleMs"
-  >,
-  now: number = Date.now()
+  apiKey: Pick<ApiKeyRecord, "status" | "expiresAt" | "createdAt" | "lastUsedAt" | "maxIdleMs">,
+  now: number = Date.now(),
 ): "active" | "revoked" | "expired" | "idle_timeout" {
   if (apiKey.status === "revoked") {
     return "revoked";
@@ -18,11 +15,7 @@ export function resolveApiKeyRecordStatus(
   }
   if (apiKey.maxIdleMs !== null && apiKey.maxIdleMs !== undefined) {
     const idleSince = apiKey.lastUsedAt ?? apiKey.createdAt;
-    if (
-      idleSince !== null &&
-      idleSince !== undefined &&
-      idleSince + apiKey.maxIdleMs <= now
-    ) {
+    if (idleSince !== null && idleSince !== undefined && idleSince + apiKey.maxIdleMs <= now) {
       return "idle_timeout";
     }
   }

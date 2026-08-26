@@ -205,7 +205,7 @@ export async function sendOrganizationInvitationEmail(args: {
   sendEmail: (draft: OrganizationInvitationEmailDraft) => Promise<string>;
   recordQueued: (emailId: string) => Promise<InvitationEmailDeliveryResult>;
   recordNotConfigured: (
-    reason: InvitationEmailNotConfiguredReason
+    reason: InvitationEmailNotConfiguredReason,
   ) => Promise<InvitationEmailDeliveryResult>;
   recordFailed: (reason: string) => Promise<InvitationEmailDeliveryResult>;
   renderEmailDraft?: (args: {
@@ -264,7 +264,7 @@ export async function sendOrganizationInvitationEmail(args: {
     return await args.recordQueued(emailId);
   } catch (error) {
     return await args.recordFailed(
-      error instanceof Error ? error.message : "Unknown email delivery error"
+      error instanceof Error ? error.message : "Unknown email delivery error",
     );
   }
 }

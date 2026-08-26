@@ -3,9 +3,7 @@ import { hasPermission } from "../../compat/permissions";
 import type { AuthPrincipal, ResolvedAuthContext } from "../coreTypes";
 import type { AuthorizationDecision, AuthorizationFailureCode } from "./types";
 
-export function authorizeAuthenticated(
-  context: ResolvedAuthContext
-): AuthorizationDecision {
+export function authorizeAuthenticated(context: ResolvedAuthContext): AuthorizationDecision {
   if (context.principal.kind === "anonymous") {
     return deny("AUTHENTICATION_REQUIRED", "Authentication required");
   }
@@ -17,9 +15,7 @@ export function sessionRequiredDecision(): AuthorizationDecision {
   return deny("SESSION_REQUIRED", "Active session required");
 }
 
-export function authorizeNotRestricted(
-  context: ResolvedAuthContext
-): AuthorizationDecision {
+export function authorizeNotRestricted(context: ResolvedAuthContext): AuthorizationDecision {
   const reason = principalRestrictionReason(context.principal);
   if (reason !== null) {
     return deny("PRINCIPAL_RESTRICTED", reason);
@@ -28,9 +24,7 @@ export function authorizeNotRestricted(
   return allow();
 }
 
-export function authorizeOrganization(
-  context: ResolvedAuthContext
-): AuthorizationDecision {
+export function authorizeOrganization(context: ResolvedAuthContext): AuthorizationDecision {
   if (context.execution.organizationId === null) {
     return deny("ORGANIZATION_REQUIRED", "Organization context required");
   }
@@ -40,7 +34,7 @@ export function authorizeOrganization(
 
 export function authorizePermission(
   context: ResolvedAuthContext,
-  permission: string
+  permission: string,
 ): AuthorizationDecision {
   const restrictionDecision = authorizeNotRestricted(context);
   if (!restrictionDecision.allowed) {
@@ -72,9 +66,7 @@ export function principalPermissions(principal: AuthPrincipal): string[] {
   }
 }
 
-export function principalRestrictionReason(
-  principal: AuthPrincipal
-): string | null {
+export function principalRestrictionReason(principal: AuthPrincipal): string | null {
   switch (principal.kind) {
     case "anonymous":
       return null;
@@ -108,10 +100,7 @@ function allow(): AuthorizationDecision {
   };
 }
 
-function deny(
-  code: AuthorizationFailureCode,
-  reason: string
-): AuthorizationDecision {
+function deny(code: AuthorizationFailureCode, reason: string): AuthorizationDecision {
   return {
     allowed: false,
     reason,

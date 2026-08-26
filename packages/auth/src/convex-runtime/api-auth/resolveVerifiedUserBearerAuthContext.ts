@@ -17,10 +17,9 @@ export type VerifiedUserBearerAuthContextResolution = {
 };
 
 export async function resolveVerifiedUserBearerAuthContext(
-  args: ResolveVerifiedUserBearerAuthContextArgs
+  args: ResolveVerifiedUserBearerAuthContextArgs,
 ): Promise<VerifiedUserBearerAuthContextResolution> {
-  const verifiedToken =
-    args.verifiedToken ?? (await verifyUserBearerToken(args));
+  const verifiedToken = args.verifiedToken ?? (await verifyUserBearerToken(args));
   const context = await resolveApiAuthContext({
     adapter: args.adapter,
     credential: {
@@ -43,17 +42,13 @@ export async function resolveVerifiedUserBearerAuthContext(
 }
 
 async function verifyUserBearerToken(
-  args: Pick<ResolveApiAuthContextArgs, "verifier"> & { token: string }
+  args: Pick<ResolveApiAuthContextArgs, "verifier"> & { token: string },
 ): Promise<VerifiedUserToken> {
   try {
     return await args.verifier.verifyUserBearerToken(args.token);
   } catch (error) {
-    throw new ApiAuthError(
-      "API_CREDENTIAL_INVALID",
-      "User bearer credential is invalid.",
-      {
-        cause: error,
-      }
-    );
+    throw new ApiAuthError("API_CREDENTIAL_INVALID", "User bearer credential is invalid.", {
+      cause: error,
+    });
   }
 }

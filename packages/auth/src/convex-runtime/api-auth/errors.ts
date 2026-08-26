@@ -18,11 +18,7 @@ export type ApiAuthErrorCode =
 export class ApiAuthError extends Error {
   readonly code: ApiAuthErrorCode;
 
-  constructor(
-    code: ApiAuthErrorCode,
-    message: string,
-    options: ErrorOptions = {}
-  ) {
+  constructor(code: ApiAuthErrorCode, message: string, options: ErrorOptions = {}) {
     super(message, options);
     this.name = "ApiAuthError";
     this.code = code;

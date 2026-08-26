@@ -39,9 +39,7 @@ export function resolveConvexUserPrincipal(args: {
   });
 }
 
-function resolvePrincipalAccessFields(
-  principal: ConvexUserPrincipalRecord | null
-) {
+function resolvePrincipalAccessFields(principal: ConvexUserPrincipalRecord | null) {
   return {
     activeOrganizationId: principal?.activeOrganizationId ?? null,
     membershipIds: principal?.membershipIds ?? [],

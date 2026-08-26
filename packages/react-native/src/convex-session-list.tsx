@@ -100,17 +100,16 @@ export function ConvexSessionList(props: ExpoSessionListProps) {
   const s = props.styles ?? {};
   const fmt = props.formatTimestamp ?? defaultFormatTimestamp;
 
-  const { sessions, isLoading, error, refetch } = useExpoAuthSessionList(
-    props.authClient
+  const { sessions, isLoading, error, refetch } = useExpoAuthSessionList(props.authClient);
+  const { revokeSession, revokeOtherSessions, isRevoking } = useExpoAuthRevokeSession(
+    props.authClient,
   );
-  const { revokeSession, revokeOtherSessions, isRevoking } =
-    useExpoAuthRevokeSession(props.authClient);
   const [revokingToken, setRevokingToken] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const showRevokeOthers = props.showRevokeOthersAction ?? true;
   const otherSessionCount = (sessions ?? []).filter(
-    (sess) => sess.token !== props.currentSessionToken
+    (sess) => sess.token !== props.currentSessionToken,
   ).length;
 
   async function handleRevoke(token: string) {
@@ -134,9 +133,7 @@ export function ConvexSessionList(props: ExpoSessionListProps) {
       <View style={[styles.header, s.header]}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.title, s.title]}>{copy.title}</Text>
-          <Text style={[styles.description, s.description]}>
-            {copy.description}
-          </Text>
+          <Text style={[styles.description, s.description]}>{copy.description}</Text>
         </View>
         {showRevokeOthers && otherSessionCount > 0 ? (
           <Pressable
@@ -144,9 +141,7 @@ export function ConvexSessionList(props: ExpoSessionListProps) {
             disabled={isRevoking}
             style={[styles.revokeOthersButton, s.revokeOthersButton]}
           >
-            <Text
-              style={[styles.revokeOthersButtonText, s.revokeOthersButtonText]}
-            >
+            <Text style={[styles.revokeOthersButtonText, s.revokeOthersButtonText]}>
               {isRevoking ? copy.revokingOthersButton : copy.revokeOthersButton}
             </Text>
           </Pressable>
@@ -159,10 +154,7 @@ export function ConvexSessionList(props: ExpoSessionListProps) {
           <Text style={s.itemMeta}>{copy.loading}</Text>
         </View>
       ) : error !== null ? (
-        <Text
-          className="text-destructive"
-          style={[styles.errorState, s.errorState]}
-        >
+        <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
           {error === "Session listing is not available on this auth client"
             ? copy.unavailable
             : error}
@@ -191,10 +183,7 @@ export function ConvexSessionList(props: ExpoSessionListProps) {
         />
       )}
       {localError !== null ? (
-        <Text
-          className="text-destructive"
-          style={[styles.errorState, s.errorState]}
-        >
+        <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
           {localError}
         </Text>
       ) : null}
@@ -211,15 +200,7 @@ function SessionRow(args: {
   onRevoke: () => void;
   formatTimestamp: (value: string | Date) => string;
 }) {
-  const {
-    session,
-    isCurrent,
-    isRevoking,
-    copy,
-    styles: s,
-    onRevoke,
-    formatTimestamp,
-  } = args;
+  const { session, isCurrent, isRevoking, copy, styles: s, onRevoke, formatTimestamp } = args;
   return (
     <View
       style={[

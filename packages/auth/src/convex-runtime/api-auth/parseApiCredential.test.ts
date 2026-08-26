@@ -19,7 +19,7 @@ describe("parseApiCredential", () => {
       {
         credentialType: "userBearer",
         token: "jwt.token.value",
-      }
+      },
     );
   });
 
@@ -32,7 +32,7 @@ describe("parseApiCredential", () => {
       {
         credentialType: "apiKeyBearer",
         token: "crm_live_123.secret",
-      }
+      },
     );
   });
 
@@ -45,7 +45,7 @@ describe("parseApiCredential", () => {
       {
         credentialType: "apiKeyBearer",
         token: "crm_live_123.secret",
-      }
+      },
     );
   });
 
@@ -58,8 +58,7 @@ describe("parseApiCredential", () => {
           apiKeyTokenPrefixes: ["crm_live_"],
         }),
       (error: unknown) =>
-        error instanceof ApiAuthError &&
-        error.code === "API_CREDENTIAL_AMBIGUOUS"
+        error instanceof ApiAuthError && error.code === "API_CREDENTIAL_AMBIGUOUS",
     );
   });
 
@@ -70,8 +69,7 @@ describe("parseApiCredential", () => {
           apiKeyHeader: "other_live_123.secret",
           apiKeyTokenPrefixes: ["crm_live_"],
         }),
-      (error: unknown) =>
-        error instanceof ApiAuthError && error.code === "API_KEY_HEADER_INVALID"
+      (error: unknown) => error instanceof ApiAuthError && error.code === "API_KEY_HEADER_INVALID",
     );
   });
 
@@ -79,8 +77,7 @@ describe("parseApiCredential", () => {
     assert.throws(
       () => parseApiCredential({ apiKeyTokenPrefixes: ["crm_live_"] }),
       (error: unknown) =>
-        error instanceof ApiAuthError &&
-        error.code === "AUTHORIZATION_HEADER_MISSING"
+        error instanceof ApiAuthError && error.code === "AUTHORIZATION_HEADER_MISSING",
     );
   });
 });
@@ -92,14 +89,14 @@ describe("resolveCredentialTypeFromBearerToken", () => {
         token: "crm_live_123.secret",
         apiKeyTokenPrefixes: ["crm_live_"],
       }),
-      "apiKeyBearer"
+      "apiKeyBearer",
     );
     assert.equal(
       resolveCredentialTypeFromBearerToken({
         token: "header.payload.signature",
         apiKeyTokenPrefixes: ["crm_live_"],
       }),
-      "userBearer"
+      "userBearer",
     );
   });
 });
@@ -107,15 +104,9 @@ describe("resolveCredentialTypeFromBearerToken", () => {
 describe("matchesApiKeyTokenPrefix", () => {
   it("trims and deduplicates prefixes before matching", () => {
     assert.equal(
-      matchesApiKeyTokenPrefix("crm_live_123.secret", [
-        " crm_live_ ",
-        "crm_live_",
-      ]),
-      true
+      matchesApiKeyTokenPrefix("crm_live_123.secret", [" crm_live_ ", "crm_live_"]),
+      true,
     );
-    assert.equal(
-      matchesApiKeyTokenPrefix("other_live_123.secret", ["crm_live_"]),
-      false
-    );
+    assert.equal(matchesApiKeyTokenPrefix("other_live_123.secret", ["crm_live_"]), false);
   });
 });

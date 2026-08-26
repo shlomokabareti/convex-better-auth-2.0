@@ -71,17 +71,11 @@ export type ConvexUserProfileProps = {
   isLoading?: boolean;
   errorMessage?: string | null;
   isAdmin?: boolean;
-  onUpdateProfile?: (input: {
-    name: string;
-    imageUrl?: string | null;
-  }) => void | Promise<void>;
+  onUpdateProfile?: (input: { name: string; imageUrl?: string | null }) => void | Promise<void>;
   onDeleteAccount?: () => void | Promise<void>;
   onChangePassword?: () => void | Promise<void>;
   onManageTwoFactor?: () => void | Promise<void>;
-  renderDeleteConfirm?: (args: {
-    onConfirm: () => void;
-    onCancel: () => void;
-  }) => ReactNode;
+  renderDeleteConfirm?: (args: { onConfirm: () => void; onCancel: () => void }) => ReactNode;
 };
 
 // ─── Default copy ──────────────────────────────────────────────────────────
@@ -101,8 +95,7 @@ const defaultCopy: Required<ConvexUserProfileCopy> = {
   editLabel: "Edit",
   deleteAccountLabel: "Delete account",
   confirmDeleteTitle: "Delete account?",
-  confirmDeleteDescription:
-    "This will permanently delete your account and cannot be undone.",
+  confirmDeleteDescription: "This will permanently delete your account and cannot be undone.",
   securityLabel: "Security",
   changePasswordLabel: "Change password",
   twoFactorLabel: "Two-factor authentication",
@@ -110,9 +103,7 @@ const defaultCopy: Required<ConvexUserProfileCopy> = {
   nameRequiredError: "Name is required.",
 };
 
-function resolveCopy(
-  copy: ConvexUserProfileCopy | undefined
-): Required<ConvexUserProfileCopy> {
+function resolveCopy(copy: ConvexUserProfileCopy | undefined): Required<ConvexUserProfileCopy> {
   return { ...defaultCopy, ...copy };
 }
 
@@ -124,9 +115,7 @@ function UserProfileHeader(props: {
 
   return (
     <div className={cn("mb-4 space-y-1", classNames?.header)}>
-      <h3 className={cn("text-base font-semibold", classNames?.title)}>
-        {copy.title}
-      </h3>
+      <h3 className={cn("text-base font-semibold", classNames?.title)}>{copy.title}</h3>
       <p className={cn("text-foreground/60 text-sm", classNames?.description)}>
         {copy.description}
       </p>
@@ -145,7 +134,7 @@ function UserProfileError(props: {
     <div
       className={cn(
         "border-destructive/30 bg-destructive/10 text-destructive mb-4 rounded-md border px-3 py-2 text-sm",
-        classNames?.errorBanner
+        classNames?.errorBanner,
       )}
     >
       {message}
@@ -173,7 +162,7 @@ function UserProfileAvatar(props: {
     <span
       className={cn(
         "bg-foreground/10 inline-flex size-12 items-center justify-center rounded-full text-sm font-medium",
-        classNames?.imagePlaceholder
+        classNames?.imagePlaceholder,
       )}
     >
       {(user.name ?? user.email).slice(0, 1).toUpperCase()}
@@ -191,12 +180,7 @@ function UserProfileSummary(props: {
     <div className={cn("mb-4 flex items-center gap-3", classNames?.body)}>
       <UserProfileAvatar user={user} classNames={classNames} />
       <div className="min-w-0">
-        <p
-          className={cn(
-            "text-foreground text-sm font-medium",
-            classNames?.value
-          )}
-        >
+        <p className={cn("text-foreground text-sm font-medium", classNames?.value)}>
           {user.name ?? user.email}
         </p>
         <p className="text-foreground/40 text-xs">{user.email}</p>
@@ -216,17 +200,8 @@ function NameField(props: {
   onNameChange: (value: string) => void;
   onClearNameError: () => void;
 }) {
-  const {
-    user,
-    editing,
-    name,
-    nameError,
-    busy,
-    classNames,
-    copy,
-    onNameChange,
-    onClearNameError,
-  } = props;
+  const { user, editing, name, nameError, busy, classNames, copy, onNameChange, onClearNameError } =
+    props;
 
   return (
     <div className={cn("space-y-1", classNames?.field)}>
@@ -245,17 +220,13 @@ function NameField(props: {
           className={cn(
             "border-foreground/10 bg-foreground/5 text-foreground focus:border-foreground/25 h-9 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-50",
             classNames?.input,
-            nameError && "border-destructive/40"
+            nameError && "border-destructive/40",
           )}
         />
       ) : (
-        <p className={cn("text-foreground text-sm", classNames?.value)}>
-          {user.name ?? "—"}
-        </p>
+        <p className={cn("text-foreground text-sm", classNames?.value)}>{user.name ?? "—"}</p>
       )}
-      {editing && nameError ? (
-        <p className="text-destructive text-xs">{nameError}</p>
-      ) : null}
+      {editing && nameError ? <p className="text-destructive text-xs">{nameError}</p> : null}
     </div>
   );
 }
@@ -273,15 +244,11 @@ function EmailField(props: {
         {copy.emailLabel}
       </label>
       <div className="flex items-center gap-2">
-        <p className={cn("text-foreground text-sm", classNames?.value)}>
-          {user.email}
-        </p>
+        <p className={cn("text-foreground text-sm", classNames?.value)}>{user.email}</p>
         <span
           className={cn(
             "inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium",
-            user.emailVerified
-              ? "bg-success/15 text-success"
-              : "bg-warning/15 text-warning"
+            user.emailVerified ? "bg-success/15 text-success" : "bg-warning/15 text-warning",
           )}
         >
           {user.emailVerified ? copy.verifiedLabel : copy.notVerifiedLabel}
@@ -315,7 +282,7 @@ function ImageUrlField(props: {
         disabled={busy}
         className={cn(
           "border-foreground/10 bg-foreground/5 text-foreground focus:border-foreground/25 h-9 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-50",
-          classNames?.input
+          classNames?.input,
         )}
       />
     </div>
@@ -332,16 +299,7 @@ function UserProfileFormActions(props: {
   onCancel: () => void;
   onEdit: () => void;
 }) {
-  const {
-    editing,
-    saving,
-    busy,
-    isLoading,
-    classNames,
-    copy,
-    onCancel,
-    onEdit,
-  } = props;
+  const { editing, saving, busy, isLoading, classNames, copy, onCancel, onEdit } = props;
 
   return (
     <div className={cn("flex flex-wrap gap-2 pt-1", classNames?.actions)}>
@@ -352,7 +310,7 @@ function UserProfileFormActions(props: {
             disabled={busy}
             className={cn(
               "bg-foreground text-background hover:bg-foreground/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-              classNames?.primaryButton
+              classNames?.primaryButton,
             )}
           >
             {saving ? copy.savingLabel : copy.saveLabel}
@@ -363,7 +321,7 @@ function UserProfileFormActions(props: {
             onClick={onCancel}
             className={cn(
               "border-foreground/15 text-foreground/70 hover:bg-foreground/5 inline-flex h-9 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-              classNames?.secondaryButton
+              classNames?.secondaryButton,
             )}
           >
             {copy.cancelLabel}
@@ -376,7 +334,7 @@ function UserProfileFormActions(props: {
           onClick={onEdit}
           className={cn(
             "bg-foreground text-background hover:bg-foreground/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-            classNames?.primaryButton
+            classNames?.primaryButton,
           )}
         >
           {copy.editLabel}
@@ -404,24 +362,11 @@ function UserProfileForm(props: {
   onCancel: () => void;
   onEdit: () => void;
 }) {
-  const {
-    user,
-    editing,
-    name,
-    imageUrl,
-    nameError,
-    saving,
-    busy,
-    isLoading,
-    classNames,
-    copy,
-  } = props;
+  const { user, editing, name, imageUrl, nameError, saving, busy, isLoading, classNames, copy } =
+    props;
 
   return (
-    <form
-      onSubmit={props.onSubmit}
-      className={cn("space-y-3", classNames?.body)}
-    >
+    <form onSubmit={props.onSubmit} className={cn("space-y-3", classNames?.body)}>
       <NameField
         user={user}
         editing={editing}
@@ -458,12 +403,7 @@ function UserProfileForm(props: {
 
 function SectionDivider(props: { classNames?: ConvexUserProfileClassNames }) {
   return (
-    <div
-      className={cn(
-        "border-foreground/10 my-4 border-t",
-        props.classNames?.sectionDivider
-      )}
-    />
+    <div className={cn("border-foreground/10 my-4 border-t", props.classNames?.sectionDivider)} />
   );
 }
 
@@ -474,18 +414,12 @@ function SecuritySection(props: {
   onChangePassword?: () => void | Promise<void>;
   onManageTwoFactor?: () => void | Promise<void>;
 }) {
-  const { isLoading, classNames, copy, onChangePassword, onManageTwoFactor } =
-    props;
+  const { isLoading, classNames, copy, onChangePassword, onManageTwoFactor } = props;
 
   return (
     <>
       <SectionDivider classNames={classNames} />
-      <div
-        className={cn(
-          "text-foreground/50 mb-3 text-xs font-medium",
-          classNames?.sectionTitle
-        )}
-      >
+      <div className={cn("text-foreground/50 mb-3 text-xs font-medium", classNames?.sectionTitle)}>
         {copy.securityLabel}
       </div>
       <div className={cn("flex flex-col gap-2", classNames?.sectionBody)}>
@@ -522,7 +456,7 @@ function SecurityButton(props: {
       onClick={onClick}
       className={cn(
         "border-foreground/15 text-foreground/70 hover:bg-foreground/5 inline-flex h-9 w-fit items-center justify-center rounded-md border px-4 text-left text-sm font-medium transition-colors",
-        classNames?.secondaryButton
+        classNames?.secondaryButton,
       )}
     >
       {label}
@@ -541,12 +475,7 @@ function ConnectedAccountsSection(props: {
   return (
     <>
       <SectionDivider classNames={classNames} />
-      <div
-        className={cn(
-          "text-foreground/50 mb-3 text-xs font-medium",
-          classNames?.sectionTitle
-        )}
-      >
+      <div className={cn("text-foreground/50 mb-3 text-xs font-medium", classNames?.sectionTitle)}>
         {copy.connectedAccountsLabel}
       </div>
       <div className={cn("flex flex-col gap-1", classNames?.sectionBody)}>
@@ -558,7 +487,7 @@ function ConnectedAccountsSection(props: {
             <span
               className={cn(
                 "bg-foreground/5 text-foreground/70 rounded-md px-2 py-1 text-xs",
-                classNames?.providerLabel
+                classNames?.providerLabel,
               )}
             >
               {provider.providerName ?? provider.providerId}
@@ -589,7 +518,7 @@ function DeleteAccountAction(props: {
         onClick={onClick}
         className={cn(
           "border-destructive/30 text-destructive hover:bg-destructive/10 inline-flex h-9 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-          classNames?.dangerButton
+          classNames?.dangerButton,
         )}
       >
         {copy.deleteAccountLabel}
@@ -609,12 +538,8 @@ function DefaultDeleteConfirm(props: {
     // convex-allow-color: modal scrim — intentionally dark in both light and dark
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="border-foreground/10 bg-background w-full max-w-sm rounded-lg border p-5 shadow-xl">
-        <h4 className="text-foreground text-base font-semibold">
-          {copy.confirmDeleteTitle}
-        </h4>
-        <p className="text-foreground/60 mt-1 text-sm">
-          {copy.confirmDeleteDescription}
-        </p>
+        <h4 className="text-foreground text-base font-semibold">{copy.confirmDeleteTitle}</h4>
+        <p className="text-foreground/60 mt-1 text-sm">{copy.confirmDeleteDescription}</p>
         <div className="mt-4 flex justify-end gap-2">
           <button
             type="button"
@@ -639,10 +564,7 @@ function DefaultDeleteConfirm(props: {
 function DeleteConfirm(props: {
   open: boolean;
   copy: Required<ConvexUserProfileCopy>;
-  renderDeleteConfirm?: (args: {
-    onConfirm: () => void;
-    onCancel: () => void;
-  }) => ReactNode;
+  renderDeleteConfirm?: (args: { onConfirm: () => void; onCancel: () => void }) => ReactNode;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 }) {
@@ -652,11 +574,7 @@ function DeleteConfirm(props: {
   return renderDeleteConfirm ? (
     renderDeleteConfirm({ onConfirm, onCancel })
   ) : (
-    <DefaultDeleteConfirm
-      copy={copy}
-      onConfirm={onConfirm}
-      onCancel={onCancel}
-    />
+    <DefaultDeleteConfirm copy={copy} onConfirm={onConfirm} onCancel={onCancel} />
   );
 }
 
@@ -717,7 +635,7 @@ export function ConvexUserProfile(props: ConvexUserProfileProps) {
         setSaving(false);
       }
     },
-    [name, imageUrl, onUpdateProfile, resolvedCopy.nameRequiredError]
+    [name, imageUrl, onUpdateProfile, resolvedCopy.nameRequiredError],
   );
 
   const handleDelete = useCallback(async () => {
@@ -735,7 +653,7 @@ export function ConvexUserProfile(props: ConvexUserProfileProps) {
       <div
         className={cn(
           "border-foreground/10 bg-foreground/5 rounded-lg border p-5",
-          classNames?.card
+          classNames?.card,
         )}
       >
         <UserProfileHeader classNames={classNames} copy={resolvedCopy} />

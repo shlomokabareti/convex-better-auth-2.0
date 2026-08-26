@@ -3,14 +3,11 @@
   "version": "0.18.0-alpha.0",
   "description": "Convex + Better Auth server, component, and integration.",
   "license": "Apache-2.0",
-  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/shlomokabareti/convex-better-auth-2.0.git",
     "directory": "packages/auth"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "bin": {
     "convex-auth": "./dist/scripts/cli.js"
   },
@@ -20,6 +17,9 @@
     "scripts",
     "test.ts"
   ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -148,9 +148,9 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "convex": "^1.45.0",
-    "typescript": "^5.7.0",
     "tsup": "^8.5.1",
-    "vitest": "^3.0.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.10"
   },
   "peerDependencies": {
     "@convex-dev/better-auth": ">=0.12.5",

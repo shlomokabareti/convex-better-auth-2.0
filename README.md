@@ -20,12 +20,12 @@ This code was originally built for **Plasma**, then extracted and open-sourced a
 
 ## Packages
 
-| Package | Path | Description |
-|---|---|---|
-| `convex-better-auth` | `packages/better-auth` | Better Auth ↔ Convex bridge |
-| `convex-auth` | `packages/auth` | Convex auth component + control plane |
-| `convex-auth-react` | `packages/react` | React UI and hooks |
-| `convex-auth-react-native` | `packages/react-native` | Expo / React Native client |
+| Package                    | Path                    | Description                           |
+| -------------------------- | ----------------------- | ------------------------------------- |
+| `convex-better-auth`       | `packages/better-auth`  | Better Auth ↔ Convex bridge           |
+| `convex-auth`              | `packages/auth`         | Convex auth component + control plane |
+| `convex-auth-react`        | `packages/react`        | React UI and hooks                    |
+| `convex-auth-react-native` | `packages/react-native` | Expo / React Native client            |
 
 All packages are independently buildable and published under the Apache-2.0 license.
 

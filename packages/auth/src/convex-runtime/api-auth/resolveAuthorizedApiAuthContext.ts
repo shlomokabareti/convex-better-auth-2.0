@@ -6,11 +6,10 @@ import {
 
 export type AuthorizedApiAuthType = "jwt" | "api_key" | "oauth";
 
-export type ResolveAuthorizedApiAuthContextArgs<TRole extends string = string> =
-  {
-    authType: AuthorizedApiAuthType;
-    authSubject: string;
-  } & AuthorizeResolvedUserOrganizationAccessArgs<TRole>;
+export type ResolveAuthorizedApiAuthContextArgs<TRole extends string = string> = {
+  authType: AuthorizedApiAuthType;
+  authSubject: string;
+} & AuthorizeResolvedUserOrganizationAccessArgs<TRole>;
 
 export type AuthorizedApiAuthContext<TRole extends string = string> = {
   auth: ApiResolvedAuthContext;
@@ -23,10 +22,8 @@ export type AuthorizedApiAuthContext<TRole extends string = string> = {
   permissions: string[];
 };
 
-export async function resolveAuthorizedApiAuthContext<
-  TRole extends string = string,
->(
-  args: ResolveAuthorizedApiAuthContextArgs<TRole>
+export async function resolveAuthorizedApiAuthContext<TRole extends string = string>(
+  args: ResolveAuthorizedApiAuthContextArgs<TRole>,
 ): Promise<AuthorizedApiAuthContext<TRole> | null> {
   const access = await resolveAuthorizedUserOrganizationAccess(args);
   if (access === null) {

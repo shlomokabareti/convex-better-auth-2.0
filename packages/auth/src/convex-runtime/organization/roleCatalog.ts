@@ -40,8 +40,7 @@ export function defaultOrganizationRoleCatalog(): OrganizationRoleDefinition[] {
     {
       key: "owner",
       name: "Owner",
-      description:
-        "Full control over the organization, including billing and deletion.",
+      description: "Full control over the organization, including billing and deletion.",
       permissions: ["*"],
       isSystem: true,
     },

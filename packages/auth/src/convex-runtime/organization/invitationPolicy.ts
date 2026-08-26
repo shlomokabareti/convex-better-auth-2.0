@@ -4,23 +4,10 @@ import { wouldRemoveLastActiveOwner } from "./membershipPolicy";
 export const INVITATION_DAY_MS = 24 * 60 * 60 * 1000;
 export const DEFAULT_INVITATION_EXPIRES_IN_DAYS = 7;
 
-export type OrganizationInvitationStatus =
-  | "pending"
-  | "accepted"
-  | "revoked"
-  | "expired";
+export type OrganizationInvitationStatus = "pending" | "accepted" | "revoked" | "expired";
 export type OrganizationMemberLifecycleStatus = "active" | "suspended";
-export type OrganizationMemberPolicyStatus =
-  | "active"
-  | "inactive"
-  | "pending"
-  | "suspended";
-export type OrganizationRoleTemplate =
-  | "owner"
-  | "admin"
-  | "manager"
-  | "member"
-  | "viewer";
+export type OrganizationMemberPolicyStatus = "active" | "inactive" | "pending" | "suspended";
+export type OrganizationRoleTemplate = "owner" | "admin" | "manager" | "member" | "viewer";
 
 export type OrganizationInvitationPolicyErrorCode =
   | "UNAUTHORIZED"
@@ -33,10 +20,7 @@ export type OrganizationInvitationPolicyErrorCode =
 export class OrganizationInvitationPolicyError extends Error {
   code: OrganizationInvitationPolicyErrorCode;
 
-  constructor(args: {
-    code: OrganizationInvitationPolicyErrorCode;
-    message: string;
-  }) {
+  constructor(args: { code: OrganizationInvitationPolicyErrorCode; message: string }) {
     super(args.message);
     this.name = "OrganizationInvitationPolicyError";
     this.code = args.code;
@@ -55,7 +39,7 @@ export function hasDuplicatePendingInvitation(args: {
   return args.invitations.some(
     (invitation) =>
       invitation.status === "pending" &&
-      normalizeInvitationEmail(invitation.email) === normalizedEmail
+      normalizeInvitationEmail(invitation.email) === normalizedEmail,
   );
 }
 
@@ -63,9 +47,7 @@ export function normalizeInvitationEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-export function getInvitationEmailValidationError(
-  email: string
-): string | null {
+export function getInvitationEmailValidationError(email: string): string | null {
   const normalizedEmail = normalizeInvitationEmail(email);
   if (normalizedEmail.length === 0) {
     return "Email required";
@@ -73,14 +55,10 @@ export function getInvitationEmailValidationError(
   return null;
 }
 
-export function computeInvitationExpiresAt(args: {
-  now: number;
-  expiresInDays?: number;
-}): number {
+export function computeInvitationExpiresAt(args: { now: number; expiresInDays?: number }): number {
   return (
     args.now +
-    Math.max(1, args.expiresInDays ?? DEFAULT_INVITATION_EXPIRES_IN_DAYS) *
-      INVITATION_DAY_MS
+    Math.max(1, args.expiresInDays ?? DEFAULT_INVITATION_EXPIRES_IN_DAYS) * INVITATION_DAY_MS
   );
 }
 
@@ -91,12 +69,10 @@ export function findInvitationEmailByToken(
       emailAddress?: string | null;
     }>;
   }>,
-  invitationToken: string
+  invitationToken: string,
 ): string | null {
   for (const organization of organizations) {
-    const invitation = organization.invitations.find(
-      (item) => item.id === invitationToken
-    );
+    const invitation = organization.invitations.find((item) => item.id === invitationToken);
     if (invitation) {
       return invitation.emailAddress ?? null;
     }
@@ -142,10 +118,7 @@ export function assertCanInviteMember<TOrganizationId extends string>(args: {
   activeOrganizationId: TOrganizationId | null;
   requestedOrganizationId: TOrganizationId;
 }): void {
-  if (
-    !args.activeOrganizationId ||
-    args.activeOrganizationId !== args.requestedOrganizationId
-  ) {
+  if (!args.activeOrganizationId || args.activeOrganizationId !== args.requestedOrganizationId) {
     throw new OrganizationInvitationPolicyError({
       code: "FORBIDDEN",
       message: "Organization scope mismatch",
@@ -224,12 +197,7 @@ export async function createOrganizationInvitation<
   TInvitationId extends string,
   TRole extends string = OrganizationRoleTemplate,
 >(
-  args: CreateOrganizationInvitationArgs<
-    TOrganizationId,
-    TUserId,
-    TInvitationId,
-    TRole
-  >
+  args: CreateOrganizationInvitationArgs<TOrganizationId, TUserId, TInvitationId, TRole>,
 ): Promise<CreateOrganizationInvitationResult<TInvitationId>> {
   assertOrganizationScope({
     activeOrganizationId: args.viewer.user.activeOrganizationId,
@@ -238,8 +206,7 @@ export async function createOrganizationInvitation<
   });
 
   const normalizedEmail = normalizeInvitationEmail(args.email);
-  const emailValidationError =
-    getInvitationEmailValidationError(normalizedEmail);
+  const emailValidationError = getInvitationEmailValidationError(normalizedEmail);
   if (emailValidationError !== null) {
     throw new OrganizationInvitationPolicyError({
       code: "INVALID_ARGUMENT",
@@ -304,11 +271,10 @@ export async function createOrganizationInvitation<
   };
 }
 
-export type RedeemOrganizationInvitationResult<TOrganizationId extends string> =
-  {
-    ok: true;
-    organizationId: TOrganizationId;
-  };
+export type RedeemOrganizationInvitationResult<TOrganizationId extends string> = {
+  ok: true;
+  organizationId: TOrganizationId;
+};
 
 export type RedeemOrganizationInvitationRecord<
   TOrganizationId extends string,
@@ -341,7 +307,7 @@ export type RedeemOrganizationInvitationArgs<
   hashToken?: (token: string) => Promise<string>;
   now?: number;
   findInvitationByTokenHash: (
-    tokenHash: string
+    tokenHash: string,
   ) => Promise<RedeemOrganizationInvitationRecord<
     TOrganizationId,
     TUserId,
@@ -360,7 +326,7 @@ export type RedeemOrganizationInvitationArgs<
       invitedBy: TUserId;
       assignedBy: TUserId;
       updatedAt: number;
-    }
+    },
   ) => Promise<void>;
   insertMembership: (input: {
     organizationId: TOrganizationId;
@@ -373,10 +339,7 @@ export type RedeemOrganizationInvitationArgs<
     createdAt: number;
     updatedAt: number;
   }) => Promise<TMembershipId>;
-  markInvitationExpired: (
-    invitationId: TInvitationId,
-    now: number
-  ) => Promise<void>;
+  markInvitationExpired: (invitationId: TInvitationId, now: number) => Promise<void>;
   markInvitationAccepted: (
     invitationId: TInvitationId,
     patch: {
@@ -384,12 +347,12 @@ export type RedeemOrganizationInvitationArgs<
       acceptedByUserId: TUserId;
       acceptedAt: number;
       updatedAt: number;
-    }
+    },
   ) => Promise<void>;
   setActiveOrganization: (
     userId: TUserId,
     organizationId: TOrganizationId,
-    now: number
+    now: number,
   ) => Promise<void>;
   writeAudit: (input: {
     organizationId: TOrganizationId;
@@ -419,7 +382,7 @@ export async function redeemOrganizationInvitation<
     TInvitationId,
     TMembershipId,
     TRole
-  >
+  >,
 ): Promise<RedeemOrganizationInvitationResult<TOrganizationId>> {
   if (args.currentUser === null) {
     throw new OrganizationInvitationPolicyError({
@@ -466,12 +429,7 @@ export async function redeemOrganizationInvitation<
     });
   }
 
-  await activateRedeemedInvitationMembership(
-    args,
-    invitation,
-    args.currentUser._id,
-    now
-  );
+  await activateRedeemedInvitationMembership(args, invitation, args.currentUser._id, now);
 
   await args.markInvitationAccepted(invitation._id, {
     status: "accepted",
@@ -480,11 +438,7 @@ export async function redeemOrganizationInvitation<
     updatedAt: now,
   });
 
-  await args.setActiveOrganization(
-    args.currentUser._id,
-    invitation.organizationId,
-    now
-  );
+  await args.setActiveOrganization(args.currentUser._id, invitation.organizationId, now);
 
   await args.writeAudit({
     organizationId: invitation.organizationId,
@@ -520,14 +474,9 @@ async function activateRedeemedInvitationMembership<
     TMembershipId,
     TRole
   >,
-  invitation: RedeemOrganizationInvitationRecord<
-    TOrganizationId,
-    TUserId,
-    TInvitationId,
-    TRole
-  >,
+  invitation: RedeemOrganizationInvitationRecord<TOrganizationId, TUserId, TInvitationId, TRole>,
   userId: TUserId,
-  now: number
+  now: number,
 ): Promise<void> {
   const existingMembership = await args.findExistingMembership({
     userId,
@@ -581,7 +530,7 @@ export async function setOrganizationMemberRole<
   };
   patchMembership: (
     membershipId: TMembershipId,
-    patch: { roleTemplate: OrganizationRoleTemplate; updatedAt: number }
+    patch: { roleTemplate: OrganizationRoleTemplate; updatedAt: number },
   ) => Promise<void>;
   writeAudit: (input: {
     organizationId: TOrganizationId;
@@ -598,10 +547,7 @@ export async function setOrganizationMemberRole<
   }) => Promise<void>;
   now?: number;
 }): Promise<{ ok: true }> {
-  if (
-    !args.membership ||
-    args.membership.organizationId !== args.authorizedOrganizationId
-  ) {
+  if (!args.membership || args.membership.organizationId !== args.authorizedOrganizationId) {
     throw new OrganizationInvitationPolicyError({
       code: "NOT_FOUND",
       message: "Membership not found",
@@ -659,7 +605,7 @@ export async function setOrganizationMemberStatus<
   };
   patchMembership: (
     membershipId: TMembershipId,
-    patch: { status: OrganizationMemberLifecycleStatus; updatedAt: number }
+    patch: { status: OrganizationMemberLifecycleStatus; updatedAt: number },
   ) => Promise<void>;
   writeAudit: (input: {
     organizationId: TOrganizationId;
@@ -670,19 +616,14 @@ export async function setOrganizationMemberStatus<
     resourceId: TMembershipId;
     resourceType: "organization_member";
     targetUserId: TUserId;
-    description:
-      | "Reactivated organization member"
-      | "Suspended organization member";
+    description: "Reactivated organization member" | "Suspended organization member";
     oldValue: OrganizationMemberPolicyStatus;
     newValue: OrganizationMemberLifecycleStatus;
   }) => Promise<void>;
   now?: number;
   ownerRoleTemplate?: OrganizationRoleTemplate;
 }): Promise<{ ok: true }> {
-  if (
-    !args.membership ||
-    args.membership.organizationId !== args.authorizedOrganizationId
-  ) {
+  if (!args.membership || args.membership.organizationId !== args.authorizedOrganizationId) {
     throw new OrganizationInvitationPolicyError({
       code: "NOT_FOUND",
       message: "Membership not found",
@@ -724,8 +665,7 @@ export async function setOrganizationMemberStatus<
     userId: args.viewer.user._id,
     userName: args.viewer.user.name,
     userEmail: args.viewer.user.email,
-    action:
-      args.status === "active" ? "member.reactivated" : "member.suspended",
+    action: args.status === "active" ? "member.reactivated" : "member.suspended",
     resourceId: args.membershipId,
     resourceType: "organization_member",
     targetUserId: args.membership.userId,

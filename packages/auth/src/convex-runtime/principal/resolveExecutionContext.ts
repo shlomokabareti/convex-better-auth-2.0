@@ -1,9 +1,7 @@
 import type { ExecutionContext } from "../coreTypes";
 import type { PrincipalResolutionInput } from "./types";
 
-export function resolveExecutionContext(
-  input: PrincipalResolutionInput
-): ExecutionContext {
+export function resolveExecutionContext(input: PrincipalResolutionInput): ExecutionContext {
   return {
     organizationId: input.organizationId ?? null,
     resourceType: input.resourceType ?? null,

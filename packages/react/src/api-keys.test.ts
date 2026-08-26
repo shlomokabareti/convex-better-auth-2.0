@@ -12,10 +12,8 @@ import {
 describe("api key helpers", () => {
   it("parses comma and newline separated IP allowlist values", () => {
     assert.deepEqual(
-      parseConvexApiKeyAllowedIpRanges(
-        "203.0.113.10, 203.0.113.0/24\n\n198.51.100.4"
-      ),
-      ["203.0.113.10", "203.0.113.0/24", "198.51.100.4"]
+      parseConvexApiKeyAllowedIpRanges("203.0.113.10, 203.0.113.0/24\n\n198.51.100.4"),
+      ["203.0.113.10", "203.0.113.0/24", "198.51.100.4"],
     );
   });
 
@@ -25,10 +23,7 @@ describe("api key helpers", () => {
     assert.equal(getConvexApiKeyExpiresAt("none", now), undefined);
     assert.equal(getConvexApiKeyExpiresAt("", now), undefined);
     assert.equal(getConvexApiKeyExpiresAt("bad", now), undefined);
-    assert.equal(
-      getConvexApiKeyExpiresAt("7", now),
-      now + 7 * 24 * 60 * 60 * 1000
-    );
+    assert.equal(getConvexApiKeyExpiresAt("7", now), now + 7 * 24 * 60 * 60 * 1000);
   });
 
   it("blocks create submission unless the form has the minimum secure inputs", () => {
@@ -39,7 +34,7 @@ describe("api key helpers", () => {
         name: "Production",
         scopes: ["contacts:read"],
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexApiKeyCreateForm({
@@ -48,7 +43,7 @@ describe("api key helpers", () => {
         name: "Production",
         scopes: ["contacts:read"],
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexApiKeyCreateForm({
@@ -57,7 +52,7 @@ describe("api key helpers", () => {
         name: " ",
         scopes: ["contacts:read"],
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexApiKeyCreateForm({
@@ -66,7 +61,7 @@ describe("api key helpers", () => {
         name: "Production",
         scopes: [],
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexApiKeyCreateForm({
@@ -75,7 +70,7 @@ describe("api key helpers", () => {
         name: "Production",
         scopes: ["contacts:read"],
       }),
-      true
+      true,
     );
   });
 
@@ -84,17 +79,14 @@ describe("api key helpers", () => {
       getConvexApiKeyCreatorLabel({
         createdBy: { _id: "user_1", name: "Jane", email: "jane@example.com" },
       }),
-      "Jane"
+      "Jane",
     );
     assert.equal(
       getConvexApiKeyCreatorLabel({
         createdBy: { _id: "user_1", email: "jane@example.com" },
       }),
-      "jane@example.com"
+      "jane@example.com",
     );
-    assert.equal(
-      getConvexApiKeyCreatorLabel({ createdBy: null }, "Unknown"),
-      "Unknown"
-    );
+    assert.equal(getConvexApiKeyCreatorLabel({ createdBy: null }, "Unknown"), "Unknown");
   });
 });

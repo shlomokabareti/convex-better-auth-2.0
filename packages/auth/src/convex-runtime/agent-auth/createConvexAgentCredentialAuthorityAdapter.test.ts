@@ -42,7 +42,7 @@ describe("createConvexAgentCredentialAuthorityAdapter", () => {
 
     assert.deepEqual(
       await adapter.getVerificationMaterial({ thumbprint: "thumbprint-1" }),
-      material
+      material,
     );
     const consumeInput = {
       agentId: "agent-1",
@@ -54,9 +54,7 @@ describe("createConvexAgentCredentialAuthorityAdapter", () => {
       claimedCapabilities: ["sentry:investigate"],
     };
     assert.deepEqual(await adapter.consumeCredential(consumeInput), authority);
-    assert.deepEqual(runQuery.mock.calls, [
-      [verificationRef, { thumbprint: "thumbprint-1" }],
-    ]);
+    assert.deepEqual(runQuery.mock.calls, [[verificationRef, { thumbprint: "thumbprint-1" }]]);
     assert.deepEqual(runMutation.mock.calls, [[consumptionRef, consumeInput]]);
   });
 });

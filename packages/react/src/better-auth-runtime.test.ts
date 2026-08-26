@@ -2,14 +2,9 @@ import assert from "node:assert/strict";
 
 import { describe, it } from "vitest";
 
-import {
-  getBetterAuthConvexBearerToken,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
+import { getBetterAuthConvexBearerToken, type ConvexBetterAuthClient } from "./better-auth-runtime";
 
-function createAuthClient(
-  token: string | null
-): Pick<ConvexBetterAuthClient, "convex"> {
+function createAuthClient(token: string | null): Pick<ConvexBetterAuthClient, "convex"> {
   return {
     convex: {
       token: async () => ({

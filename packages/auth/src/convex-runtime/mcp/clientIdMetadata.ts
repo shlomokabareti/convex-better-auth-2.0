@@ -1,7 +1,4 @@
-import type {
-  McpOAuthClientIdMetadataResult,
-  McpOAuthClientIdMetadataValidateArgs,
-} from "./types";
+import type { McpOAuthClientIdMetadataResult, McpOAuthClientIdMetadataValidateArgs } from "./types";
 
 /**
  * Client ID Metadata Documents (CIMD).
@@ -59,7 +56,7 @@ const BLOCKED_HOSTNAME_SUFFIXES = [".localhost", ".local", ".internal"];
  * own network.
  */
 export function assertMcpOAuthClientIdMetadataUrl(
-  clientId: string
+  clientId: string,
 ): { ok: true; url: URL } | { ok: false; errorDescription: string } {
   let url: URL;
   try {
@@ -117,9 +114,7 @@ function stripIpv6Brackets(host: string): string {
  * check and connect is the DNS-rebinding hole. Hostnames that are not IP
  * literals pass here and are the runtime's job to resolve.
  */
-export function isMcpOAuthClientIdMetadataAddressAllowed(
-  address: string
-): boolean {
+export function isMcpOAuthClientIdMetadataAddressAllowed(address: string): boolean {
   const ipv4 = parseIpv4(address);
   if (ipv4 !== null) {
     const [a, b] = ipv4;
@@ -144,13 +139,12 @@ export function isMcpOAuthClientIdMetadataAddressAllowed(
     }
 
     // IPv4-mapped (::ffff:a.b.c.d) is judged by the IPv4 address it carries.
-    const isV4Mapped =
-      hextets.slice(0, 5).every((part) => part === 0) && hextets[5] === 0xff_ff;
+    const isV4Mapped = hextets.slice(0, 5).every((part) => part === 0) && hextets[5] === 0xff_ff;
     if (isV4Mapped) {
       const high = hextets[6] ?? 0;
       const low = hextets[7] ?? 0;
       return isMcpOAuthClientIdMetadataAddressAllowed(
-        `${high >> 8}.${high & 0xff}.${low >> 8}.${low & 0xff}`
+        `${high >> 8}.${high & 0xff}.${low >> 8}.${low & 0xff}`,
       );
     }
 
@@ -186,14 +180,10 @@ function parseIpv6(address: string): number[] | null {
   // A dotted-quad tail (::ffff:10.0.0.1) folds into two hextets.
   const dotted = /^(.*:)(\d+\.\d+\.\d+\.\d+)$/u.exec(text);
   if (dotted !== null) {
-    const octets = (dotted[2] ?? "")
-      .split(".")
-      .map((part) => Number.parseInt(part, 10));
+    const octets = (dotted[2] ?? "").split(".").map((part) => Number.parseInt(part, 10));
     if (
       octets.length !== 4 ||
-      octets.some(
-        (octet) => !Number.isInteger(octet) || octet < 0 || octet > 255
-      )
+      octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
     ) {
       return null;
     }
@@ -247,9 +237,7 @@ function parseIpv4(address: string): [number, number] | null {
     return null;
   }
   const octets = parts.map((part) => Number.parseInt(part, 10));
-  if (
-    octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)
-  ) {
+  if (octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)) {
     return null;
   }
   return [octets[0] ?? 0, octets[1] ?? 0];
@@ -265,7 +253,7 @@ function parseIpv4(address: string): [number, number] | null {
  * reported rather than silently trusted, so a consent screen can warn.
  */
 export function validateMcpOAuthClientIdMetadataDocument(
-  args: McpOAuthClientIdMetadataValidateArgs
+  args: McpOAuthClientIdMetadataValidateArgs,
 ): McpOAuthClientIdMetadataResult {
   const urlCheck = assertMcpOAuthClientIdMetadataUrl(args.clientIdUrl);
   if (!urlCheck.ok) {
@@ -273,17 +261,14 @@ export function validateMcpOAuthClientIdMetadataDocument(
   }
 
   if (!isRecord(args.document)) {
-    return metadataFailure(
-      "invalid_client_metadata",
-      "Client metadata must be a JSON object"
-    );
+    return metadataFailure("invalid_client_metadata", "Client metadata must be a JSON object");
   }
   const record = args.document;
 
   if (record.client_id !== args.clientIdUrl) {
     return metadataFailure(
       "invalid_client_metadata",
-      "Client metadata client_id must match the URL it was fetched from"
+      "Client metadata client_id must match the URL it was fetched from",
     );
   }
 
@@ -291,17 +276,14 @@ export function validateMcpOAuthClientIdMetadataDocument(
   if (!Array.isArray(redirectUris) || redirectUris.length === 0) {
     return metadataFailure(
       "invalid_client_metadata",
-      "Client metadata missing required 'redirect_uris' field"
+      "Client metadata missing required 'redirect_uris' field",
     );
   }
 
   const normalizedRedirectUris: string[] = [];
   for (const candidate of redirectUris) {
     if (typeof candidate !== "string") {
-      return metadataFailure(
-        "invalid_client_metadata",
-        "redirect_uris must be strings"
-      );
+      return metadataFailure("invalid_client_metadata", "redirect_uris must be strings");
     }
     const redirectCheck = validateRedirectUri(candidate);
     if (redirectCheck !== null) {
@@ -310,23 +292,18 @@ export function validateMcpOAuthClientIdMetadataDocument(
     normalizedRedirectUris.push(candidate);
   }
 
-  const clientUri =
-    typeof record.client_uri === "string" ? record.client_uri : null;
+  const clientUri = typeof record.client_uri === "string" ? record.client_uri : null;
 
   return {
     ok: true,
     clientId: args.clientIdUrl,
-    clientName:
-      typeof record.client_name === "string"
-        ? record.client_name
-        : args.clientIdUrl,
+    clientName: typeof record.client_name === "string" ? record.client_name : args.clientIdUrl,
     clientUri,
     redirectUris: normalizedRedirectUris,
     scope: typeof record.scope === "string" ? record.scope : null,
     // Surfaced rather than fatal: the document is usable, but a consent screen
     // must be able to tell the user the display identity is unverified.
-    clientUriOriginMismatch:
-      clientUri !== null && !isSameOrigin(clientUri, urlCheck.url),
+    clientUriOriginMismatch: clientUri !== null && !isSameOrigin(clientUri, urlCheck.url),
   };
 }
 
@@ -364,7 +341,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function metadataFailure(
   error: "invalid_client" | "invalid_client_metadata",
-  errorDescription: string
+  errorDescription: string,
 ): McpOAuthClientIdMetadataResult {
   return { ok: false, error, errorDescription };
 }

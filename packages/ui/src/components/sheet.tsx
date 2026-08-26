@@ -23,12 +23,7 @@ export type SheetContentProps = React.ComponentProps<typeof Dialog.Content> & {
   side?: "top" | "right" | "bottom" | "left";
 };
 
-export function SheetContent({
-  side = "right",
-  className,
-  children,
-  ...props
-}: SheetContentProps) {
+export function SheetContent({ side = "right", className, children, ...props }: SheetContentProps) {
   return (
     <Dialog.Portal>
       <Dialog.Overlay className="data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/40" />
@@ -36,7 +31,7 @@ export function SheetContent({
         className={cn(
           "bg-background border-border fixed z-50 flex flex-col gap-0 shadow-lg transition-transform duration-200 ease-out outline-none",
           SIDE[side],
-          className
+          className,
         )}
         {...props}
       >
@@ -50,30 +45,18 @@ export function SheetContent({
   );
 }
 
-export function SheetHeader({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={cn(
-        "border-border flex flex-col gap-1 border-b px-4 py-3",
-        className
-      )}
+      className={cn("border-border flex flex-col gap-1 border-b px-4 py-3", className)}
       {...props}
     />
   );
 }
 
-export function SheetTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof Dialog.Title>) {
+export function SheetTitle({ className, ...props }: React.ComponentProps<typeof Dialog.Title>) {
   return (
-    <Dialog.Title
-      className={cn("text-foreground text-sm font-medium", className)}
-      {...props}
-    />
+    <Dialog.Title className={cn("text-foreground text-sm font-medium", className)} {...props} />
   );
 }
 
@@ -82,34 +65,20 @@ export function SheetDescription({
   ...props
 }: React.ComponentProps<typeof Dialog.Description>) {
   return (
-    <Dialog.Description
-      className={cn("text-muted-foreground text-xs", className)}
-      {...props}
-    />
+    <Dialog.Description className={cn("text-muted-foreground text-xs", className)} {...props} />
   );
 }
 
-export function SheetBody({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      className={cn("flex-1 overflow-y-auto px-4 py-3", className)}
-      {...props}
-    />
-  );
+export function SheetBody({ className, ...props }: React.ComponentProps<"div">) {
+  return <div className={cn("flex-1 overflow-y-auto px-4 py-3", className)} {...props} />;
 }
 
-export function SheetFooter({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       className={cn(
         "border-border flex items-center justify-end gap-2 border-t px-4 py-3",
-        className
+        className,
       )}
       {...props}
     />

@@ -44,10 +44,7 @@ describe("resolveApiAuthHttpStatus", () => {
 describe("resolveApiAuthHttpErrorResponse", () => {
   it("returns a stable body and authenticate header for ApiAuthError failures", () => {
     const response = resolveApiAuthHttpErrorResponse({
-      error: new ApiAuthError(
-        "AUTHORIZATION_HEADER_MISSING",
-        "Authorization header is required."
-      ),
+      error: new ApiAuthError("AUTHORIZATION_HEADER_MISSING", "Authorization header is required."),
     });
 
     assert.deepEqual(response, {

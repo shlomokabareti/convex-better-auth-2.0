@@ -34,10 +34,7 @@ describe("Better Auth test-utils integration", () => {
   });
 
   it("does not load test-utils from the production Convex auth runtime", () => {
-    const productionRuntime = readFileSync(
-      new URL("./convex.ts", import.meta.url),
-      "utf8"
-    );
+    const productionRuntime = readFileSync(new URL("./convex.ts", import.meta.url), "utf8");
 
     assert.equal(productionRuntime.includes("testUtils"), false);
   });
@@ -98,14 +95,8 @@ describe("Better Auth test-utils integration", () => {
     assert.equal(login.user.email, user.email);
     assert.equal(login.session.userId, user.id);
     assert.ok(login.token.length > 0);
-    assert.ok(
-      login.headers.get("cookie")?.includes("better-auth.session_token")
-    );
-    assert.ok(
-      login.cookies.some(
-        (cookie) => cookie.name === "better-auth.session_token"
-      )
-    );
+    assert.ok(login.headers.get("cookie")?.includes("better-auth.session_token"));
+    assert.ok(login.cookies.some((cookie) => cookie.name === "better-auth.session_token"));
 
     const sessionFromLogin = await auth.api.getSession({
       headers: login.headers,
@@ -125,8 +116,8 @@ describe("Better Auth test-utils integration", () => {
         (cookie) =>
           cookie.name === "better-auth.session_token" &&
           cookie.domain === "auth.test" &&
-          cookie.httpOnly === true
-      )
+          cookie.httpOnly === true,
+      ),
     );
   });
 
@@ -171,7 +162,7 @@ type SessionJson = {
 async function authRequest(
   instance: BetterAuthTestInstance,
   path: string,
-  options: AuthRequestOptions = {}
+  options: AuthRequestOptions = {},
 ): Promise<Response> {
   const headers = new Headers();
   headers.set("origin", BETTER_AUTH_TEST_BASE_URL);
@@ -188,16 +179,13 @@ async function authRequest(
   }
 
   return instance.auth.handler(
-    new Request(
-      `${BETTER_AUTH_TEST_BASE_URL}${BETTER_AUTH_TEST_BASE_PATH}${path}`,
-      init
-    )
+    new Request(`${BETTER_AUTH_TEST_BASE_URL}${BETTER_AUTH_TEST_BASE_PATH}${path}`, init),
   );
 }
 
 async function getSessionJson(
   instance: BetterAuthTestInstance,
-  cookie: string
+  cookie: string,
 ): Promise<SessionJson> {
   const response = await authRequest(instance, "/get-session", { cookie });
   assert.equal(response.status, 200);

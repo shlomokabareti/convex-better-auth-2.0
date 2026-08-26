@@ -9,10 +9,7 @@ export function ScrollArea({
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
   return (
-    <ScrollAreaPrimitive.Root
-      className={cn("relative overflow-hidden", className)}
-      {...props}
-    >
+    <ScrollAreaPrimitive.Root className={cn("relative overflow-hidden", className)} {...props}>
       <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] outline-none">
         {children}
       </ScrollAreaPrimitive.Viewport>
@@ -34,7 +31,7 @@ export function ScrollBar({
         "flex touch-none p-0.5 transition-colors select-none",
         orientation === "vertical" && "h-full w-2",
         orientation === "horizontal" && "h-2 flex-col",
-        className
+        className,
       )}
       {...props}
     >

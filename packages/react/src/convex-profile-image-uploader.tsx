@@ -72,18 +72,13 @@ const DEFAULT_COPY: Required<ConvexProfileImageUploaderCopy> = {
   unavailable: "Image upload is not available on this auth client.",
 };
 
-export function ConvexProfileImageUploader(
-  props: ConvexProfileImageUploaderProps
-) {
+export function ConvexProfileImageUploader(props: ConvexProfileImageUploaderProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { uploadAndSave, isUploading } = useConvexAuthUploadProfileImage(
-    props.authClient,
-    {
-      uploadFile: props.uploadFile,
-    }
-  );
+  const { uploadAndSave, isUploading } = useConvexAuthUploadProfileImage(props.authClient, {
+    uploadFile: props.uploadFile,
+  });
   const [currentImage, setCurrentImage] = useState(props.initialImage ?? null);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -27,7 +27,7 @@ const claimCompletionResultValidator = v.union(
   v.object({
     ok: v.literal(false),
     reason: v.literal("invalid_claim"),
-  })
+  }),
 );
 const claimPollResultValidator = v.union(
   v.object({
@@ -47,7 +47,7 @@ const claimPollResultValidator = v.union(
     scopes: v.array(v.string()),
     issuedAt: v.number(),
     expiresAt: v.number(),
-  })
+  }),
 );
 const credentialAuthorityValidator = v.object({
   credentialId: v.string(),
@@ -70,7 +70,7 @@ const credentialIntrospectionValidator = v.union(
     organizationId: v.string(),
     scopes: v.array(v.string()),
     expiresAt: v.number(),
-  })
+  }),
 );
 const okValidator = v.object({ ok: v.literal(true) });
 
@@ -141,19 +141,13 @@ export const completeServiceAuthClaim = mutation({
     const registration = await ctx.db
       .query("auth_md_registrations")
       .withIndex("by_claim_view_token_hash", (q) =>
-        q.eq(
-          "claimViewTokenHash",
-          requireHash(args.claimViewTokenHash, "claimViewTokenHash")
-        )
+        q.eq("claimViewTokenHash", requireHash(args.claimViewTokenHash, "claimViewTokenHash")),
       )
       .unique();
     if (registration === null || registration.status !== "pending") {
       return invalidClaim();
     }
-    if (
-      registration.expiresAt <= now ||
-      registration.userCodeExpiresAt <= now
-    ) {
+    if (registration.expiresAt <= now || registration.userCodeExpiresAt <= now) {
       await expireRegistration(ctx, registration, now, "ceremony_expired");
       return invalidClaim();
     }
@@ -168,19 +162,12 @@ export const completeServiceAuthClaim = mutation({
       await recordFailedClaim(ctx, registration, now, "account_mismatch");
       return invalidClaim();
     }
-    const authority = await inspectUserOrganizationAuthority(
-      ctx,
-      args.userId,
-      args.organizationId
-    );
+    const authority = await inspectUserOrganizationAuthority(ctx, args.userId, args.organizationId);
     if (!authority.active) {
       await recordFailedClaim(ctx, registration, now, "authority_inactive");
       return invalidClaim();
     }
-    if (
-      requireHash(args.userCodeHash, "userCodeHash") !==
-      registration.userCodeHash
-    ) {
+    if (requireHash(args.userCodeHash, "userCodeHash") !== registration.userCodeHash) {
       await recordFailedClaim(ctx, registration, now, "user_code_invalid");
       return invalidClaim();
     }
@@ -210,10 +197,7 @@ export const pollServiceAuthClaim = mutation({
     const registration = await ctx.db
       .query("auth_md_registrations")
       .withIndex("by_claim_token_hash", (q) =>
-        q.eq(
-          "claimTokenHash",
-          requireHash(args.claimTokenHash, "claimTokenHash")
-        )
+        q.eq("claimTokenHash", requireHash(args.claimTokenHash, "claimTokenHash")),
       )
       .unique();
     if (registration === null) return { status: "expired_token" } as const;
@@ -221,8 +205,7 @@ export const pollServiceAuthClaim = mutation({
     if (
       registration.status === "expired" ||
       registration.expiresAt <= now ||
-      (registration.status === "pending" &&
-        registration.userCodeExpiresAt <= now)
+      (registration.status === "pending" && registration.userCodeExpiresAt <= now)
     ) {
       if (registration.status === "pending") {
         await expireRegistration(ctx, registration, now, "ceremony_expired");
@@ -238,7 +221,7 @@ export const pollServiceAuthClaim = mutation({
     if (now < registration.nextPollAt) {
       const interval = Math.min(
         registration.pollIntervalSeconds + POLL_SLOW_DOWN_SECONDS,
-        MAX_POLL_INTERVAL_SECONDS
+        MAX_POLL_INTERVAL_SECONDS,
       );
       await ctx.db.patch("auth_md_registrations", registration._id, {
         pollCount: registration.pollCount + 1,
@@ -257,12 +240,7 @@ export const pollServiceAuthClaim = mutation({
     }
     const authority = await inspectRegistrationAuthority(ctx, registration);
     if (!authority.active) {
-      await revokeRegistrationAsSystem(
-        ctx,
-        registration,
-        now,
-        "authority_inactive"
-      );
+      await revokeRegistrationAsSystem(ctx, registration, now, "authority_inactive");
       return { status: "access_denied" } as const;
     }
     const expiresAt = now + ASSERTION_LIFETIME_MS;
@@ -314,20 +292,13 @@ export const consumeServiceAuthAssertion = mutation({
     requireBoundedPositiveInteger(
       args.credentialExpiresInSeconds,
       "credentialExpiresInSeconds",
-      MAX_CREDENTIAL_LIFETIME_SECONDS
+      MAX_CREDENTIAL_LIFETIME_SECONDS,
     );
     const assertion = await ctx.db.get("auth_md_assertions", args.assertionId);
-    if (
-      assertion === null ||
-      assertion.status !== "active" ||
-      assertion.expiresAt <= now
-    ) {
+    if (assertion === null || assertion.status !== "active" || assertion.expiresAt <= now) {
       throw new Error("auth.md service assertion is invalid or consumed");
     }
-    const registration = await ctx.db.get(
-      "auth_md_registrations",
-      assertion.registrationId
-    );
+    const registration = await ctx.db.get("auth_md_registrations", assertion.registrationId);
     if (registration === null || registration.status !== "claimed") {
       throw new Error("auth.md service registration is not active");
     }
@@ -388,10 +359,7 @@ export const introspectServiceAuthCredential = query({
   args: { credentialId: v.id("auth_md_credentials") },
   returns: credentialIntrospectionValidator,
   handler: async (ctx, args) => {
-    const credential = await ctx.db.get(
-      "auth_md_credentials",
-      args.credentialId
-    );
+    const credential = await ctx.db.get("auth_md_credentials", args.credentialId);
     if (
       credential === null ||
       credential.status !== "active" ||
@@ -399,10 +367,7 @@ export const introspectServiceAuthCredential = query({
     ) {
       return { active: false } as const;
     }
-    const registration = await ctx.db.get(
-      "auth_md_registrations",
-      credential.registrationId
-    );
+    const registration = await ctx.db.get("auth_md_registrations", credential.registrationId);
     if (registration === null || registration.status !== "claimed") {
       return { active: false } as const;
     }
@@ -450,23 +415,13 @@ export const refreshServiceAuthCredential = mutation({
     requireBoundedPositiveInteger(
       args.credentialExpiresInSeconds,
       "credentialExpiresInSeconds",
-      MAX_CREDENTIAL_LIFETIME_SECONDS
+      MAX_CREDENTIAL_LIFETIME_SECONDS,
     );
-    const credential = await ctx.db.get(
-      "auth_md_credentials",
-      args.credentialId
-    );
-    if (
-      credential === null ||
-      credential.status !== "active" ||
-      credential.expiresAt <= now
-    ) {
+    const credential = await ctx.db.get("auth_md_credentials", args.credentialId);
+    if (credential === null || credential.status !== "active" || credential.expiresAt <= now) {
       throw new Error("auth.md credential is invalid or expired");
     }
-    const registration = await ctx.db.get(
-      "auth_md_registrations",
-      credential.registrationId
-    );
+    const registration = await ctx.db.get("auth_md_registrations", credential.registrationId);
     if (registration === null || registration.status !== "claimed") {
       throw new Error("auth.md service registration is not active");
     }
@@ -525,10 +480,7 @@ export const revokeServiceAuthCredentialAsHolder = mutation({
   args: { credentialId: v.id("auth_md_credentials") },
   returns: okValidator,
   handler: async (ctx, args) => {
-    const credential = await ctx.db.get(
-      "auth_md_credentials",
-      args.credentialId
-    );
+    const credential = await ctx.db.get("auth_md_credentials", args.credentialId);
     if (credential === null || credential.status === "revoked") {
       return { ok: true } as const;
     }
@@ -558,29 +510,20 @@ export const revokeServiceAuthRegistration = mutation({
   },
   returns: okValidator,
   handler: async (ctx, args) => {
-    const registration = await ctx.db.get(
-      "auth_md_registrations",
-      args.registrationId
-    );
+    const registration = await ctx.db.get("auth_md_registrations", args.registrationId);
     if (registration === null || registration.status === "revoked") {
       return { ok: true } as const;
     }
-    if (
-      registration.claimedByUserId === undefined ||
-      registration.organizationId === undefined
-    ) {
+    if (registration.claimedByUserId === undefined || registration.organizationId === undefined) {
       throw new Error("Pending auth.md registrations cannot be user-revoked");
     }
     if (args.actorUserId !== registration.claimedByUserId) {
       const authority = await inspectUserOrganizationAuthority(
         ctx,
         args.actorUserId,
-        registration.organizationId
+        registration.organizationId,
       );
-      if (
-        !authority.active ||
-        !authority.permissions.includes(OPERATOR_PERMISSION)
-      ) {
+      if (!authority.active || !authority.permissions.includes(OPERATOR_PERMISSION)) {
         throw new Error("User cannot revoke this auth.md registration");
       }
     }
@@ -605,7 +548,7 @@ export const revokeServiceAuthRegistration = mutation({
 
 async function inspectRegistrationAuthority(
   ctx: DbCtx,
-  registration: Doc<"auth_md_registrations">
+  registration: Doc<"auth_md_registrations">,
 ): Promise<
   | {
       active: true;
@@ -624,7 +567,7 @@ async function inspectRegistrationAuthority(
   const authority = await inspectUserOrganizationAuthority(
     ctx,
     registration.claimedByUserId,
-    registration.organizationId
+    registration.organizationId,
   );
   if (!authority.active) return { active: false };
   return {
@@ -637,10 +580,8 @@ async function inspectRegistrationAuthority(
 async function inspectUserOrganizationAuthority(
   ctx: DbCtx,
   userId: Id<"users">,
-  organizationId: Id<"organizations">
-): Promise<
-  { active: true; permissions: string[] } | { active: false; permissions: [] }
-> {
+  organizationId: Id<"organizations">,
+): Promise<{ active: true; permissions: string[] } | { active: false; permissions: [] }> {
   const [user, organization] = await Promise.all([
     ctx.db.get("users", userId),
     ctx.db.get("organizations", organizationId),
@@ -656,7 +597,7 @@ async function inspectUserOrganizationAuthority(
   const membership = await ctx.db
     .query("organization_members")
     .withIndex("by_user_organization", (q) =>
-      q.eq("userId", userId).eq("organizationId", organizationId)
+      q.eq("userId", userId).eq("organizationId", organizationId),
     )
     .unique();
   if (membership === null || membership.status !== "active") {
@@ -673,7 +614,7 @@ async function recordFailedClaim(
   ctx: MutationCtx,
   registration: Doc<"auth_md_registrations">,
   now: number,
-  reasonCode: string
+  reasonCode: string,
 ): Promise<void> {
   const failedCodeAttempts = registration.failedCodeAttempts + 1;
   const exhausted = failedCodeAttempts >= MAX_FAILED_CODE_ATTEMPTS;
@@ -696,7 +637,7 @@ async function expireRegistration(
   ctx: MutationCtx,
   registration: Doc<"auth_md_registrations">,
   now: number,
-  reasonCode: string
+  reasonCode: string,
 ): Promise<void> {
   await ctx.db.patch("auth_md_registrations", registration._id, {
     status: "expired",
@@ -714,7 +655,7 @@ async function revokeRegistrationAsSystem(
   ctx: MutationCtx,
   registration: Doc<"auth_md_registrations">,
   now: number,
-  reasonCode: string
+  reasonCode: string,
 ): Promise<void> {
   await ctx.db.patch("auth_md_registrations", registration._id, {
     status: "revoked",
@@ -734,7 +675,7 @@ async function revokeRegistrationAsSystem(
 async function advancePollWindow(
   ctx: MutationCtx,
   registration: Doc<"auth_md_registrations">,
-  now: number
+  now: number,
 ): Promise<void> {
   await ctx.db.patch("auth_md_registrations", registration._id, {
     pollCount: registration.pollCount + 1,
@@ -745,19 +686,17 @@ async function advancePollWindow(
 
 async function requireUnusedCeremonySecrets(
   ctx: DbCtx,
-  input: { claimTokenHash: string; claimViewTokenHash: string }
+  input: { claimTokenHash: string; claimViewTokenHash: string },
 ): Promise<void> {
   const [claimToken, claimViewToken] = await Promise.all([
     ctx.db
       .query("auth_md_registrations")
-      .withIndex("by_claim_token_hash", (q) =>
-        q.eq("claimTokenHash", input.claimTokenHash)
-      )
+      .withIndex("by_claim_token_hash", (q) => q.eq("claimTokenHash", input.claimTokenHash))
       .unique(),
     ctx.db
       .query("auth_md_registrations")
       .withIndex("by_claim_view_token_hash", (q) =>
-        q.eq("claimViewTokenHash", input.claimViewTokenHash)
+        q.eq("claimViewTokenHash", input.claimViewTokenHash),
       )
       .unique(),
   ]);
@@ -772,7 +711,7 @@ function requireRegistrationPolicy(
     userCodeExpiresAt: number;
     pollIntervalSeconds: number;
   },
-  now: number
+  now: number,
 ): void {
   if (
     !Number.isSafeInteger(args.expiresAt) ||
@@ -793,23 +732,17 @@ function requireRegistrationPolicy(
     args.pollIntervalSeconds,
     "pollIntervalSeconds",
     MAX_POLL_INTERVAL_SECONDS,
-    MIN_POLL_INTERVAL_SECONDS
+    MIN_POLL_INTERVAL_SECONDS,
   );
 }
 
 function normalizeScopes(values: string[]): string[] {
   if (values.length < 1 || values.length > MAX_SCOPES) {
-    throw new TypeError(
-      `auth.md scopes must contain between 1 and ${MAX_SCOPES} values`
-    );
+    throw new TypeError(`auth.md scopes must contain between 1 and ${MAX_SCOPES} values`);
   }
   const scopes = values.map((value) => {
     const scope = value.trim();
-    if (
-      scope.length < 1 ||
-      scope.length > MAX_SCOPE_LENGTH ||
-      !isOAuthScopeToken(scope)
-    ) {
+    if (scope.length < 1 || scope.length > MAX_SCOPE_LENGTH || !isOAuthScopeToken(scope)) {
       throw new TypeError("auth.md scope is invalid");
     }
     return scope;
@@ -848,38 +781,23 @@ function requireHash(value: string, field: string): string {
 
 async function hashLoginHint(value: string): Promise<string> {
   const normalized = value.trim().toLowerCase();
-  if (
-    normalized.length > 254 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalized)
-  ) {
+  if (normalized.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalized)) {
     throw new TypeError("Convex user email is invalid");
   }
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(normalized)
-  );
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(normalized));
   return bytesToBase64Url(new Uint8Array(digest));
 }
 
 function bytesToBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary)
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/u, "");
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
 }
 
 function isOAuthScopeToken(value: string): boolean {
   for (const character of value) {
     const code = character.codePointAt(0);
-    if (
-      code === undefined ||
-      code < 0x21 ||
-      code > 0x7e ||
-      code === 0x22 ||
-      code === 0x5c
-    ) {
+    if (code === undefined || code < 0x21 || code > 0x7e || code === 0x22 || code === 0x5c) {
       return false;
     }
   }
@@ -890,12 +808,10 @@ function requireBoundedPositiveInteger(
   value: number,
   name: string,
   maximum: number,
-  minimum = 1
+  minimum = 1,
 ): void {
   if (!Number.isSafeInteger(value) || value < minimum || value > maximum) {
-    throw new TypeError(
-      `${name} must be an integer between ${minimum} and ${maximum}`
-    );
+    throw new TypeError(`${name} must be an integer between ${minimum} and ${maximum}`);
   }
 }
 
@@ -915,7 +831,7 @@ async function audit(
     actorUserId?: Id<"users">;
     eventType: string;
     reasonCode?: string;
-  }
+  },
 ): Promise<void> {
   await ctx.db.insert("auth_md_audit_events", {
     ...input,

@@ -19,18 +19,8 @@
  */
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-import {
-  useConvexAuthForgotPassword,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
-import {
-  AuthCard,
-  AuthCardContent,
-  AuthCardHeader,
-  AuthField,
-  AuthInput,
-  AuthLabel,
-} from "./ui";
+import { useConvexAuthForgotPassword, type ConvexBetterAuthClient } from "./better-auth-runtime";
+import { AuthCard, AuthCardContent, AuthCardHeader, AuthField, AuthInput, AuthLabel } from "./ui";
 
 export type ConvexForgotPasswordFormClassNames = {
   root?: string;
@@ -82,9 +72,7 @@ export function ConvexForgotPasswordForm(props: ConvexForgotPasswordFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { requestReset, isRequesting } = useConvexAuthForgotPassword(
-    props.authClient
-  );
+  const { requestReset, isRequesting } = useConvexAuthForgotPassword(props.authClient);
   const [email, setEmail] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,10 +93,7 @@ export function ConvexForgotPasswordForm(props: ConvexForgotPasswordFormProps) {
       // Even on error, show the generic success message to avoid
       // address enumeration. Only surface a real error if the runtime
       // says recovery is genuinely unavailable.
-      if (
-        result.error ===
-        "Password recovery is not available on this auth client"
-      ) {
+      if (result.error === "Password recovery is not available on this auth client") {
         setError(result.error);
         return;
       }
@@ -132,18 +117,12 @@ export function ConvexForgotPasswordForm(props: ConvexForgotPasswordFormProps) {
                 type="email"
                 value={email}
                 placeholder={copy.emailPlaceholder}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setEmail(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 className={cn.input}
                 required
               />
             </AuthField>
-            <button
-              type="submit"
-              disabled={isRequesting}
-              className={cn.submitButton}
-            >
+            <button type="submit" disabled={isRequesting} className={cn.submitButton}>
               {isRequesting ? copy.submitting : copy.submit}
             </button>
             {success !== null ? (

@@ -41,7 +41,7 @@ export interface AuthErrorPayload {
 export function throwAuthError(
   code: AuthErrorCode,
   authzCode?: AuthErrorAuthzCode,
-  message?: string
+  message?: string,
 ): never {
   const resolvedMessage = message ?? defaultMessage(code, authzCode);
   // Inline literal so TypeScript infers a Value-compatible shape for
@@ -59,10 +59,7 @@ export function throwAuthError(
   });
 }
 
-function defaultMessage(
-  code: AuthErrorCode,
-  authzCode?: AuthErrorAuthzCode
-): string {
+function defaultMessage(code: AuthErrorCode, authzCode?: AuthErrorAuthzCode): string {
   if (authzCode !== undefined) {
     switch (authzCode) {
       case "AUTHENTICATION_REQUIRED":
@@ -103,9 +100,7 @@ export function isAuthErrorPayload(value: unknown): value is AuthErrorPayload {
   if (value === null || typeof value !== "object") return false;
   const v = value as { code?: unknown; message?: unknown };
   return (
-    (v.code === "UNAUTHORIZED" ||
-      v.code === "FORBIDDEN" ||
-      v.code === "NOT_FOUND") &&
+    (v.code === "UNAUTHORIZED" || v.code === "FORBIDDEN" || v.code === "NOT_FOUND") &&
     typeof v.message === "string"
   );
 }

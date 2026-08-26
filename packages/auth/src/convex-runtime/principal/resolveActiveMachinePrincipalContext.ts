@@ -1,8 +1,4 @@
-import type {
-  ApiKeyPrincipal,
-  ResolvedAuthContext,
-  ServicePrincipal,
-} from "../coreTypes";
+import type { ApiKeyPrincipal, ResolvedAuthContext, ServicePrincipal } from "../coreTypes";
 import {
   requireActiveApiKeyRecord,
   requireActiveServicePrincipal,
@@ -75,9 +71,7 @@ export type ActiveServiceOwnedApiKeyContext = ResolvedAuthContext & {
   servicePrincipal: ServicePrincipal;
 };
 
-export function resolveActiveApiKeyContext(
-  args: ActiveApiKeyContextInput
-): ResolvedAuthContext {
+export function resolveActiveApiKeyContext(args: ActiveApiKeyContextInput): ResolvedAuthContext {
   requireActiveApiKeyRecord(args.apiKey, args.now);
 
   const principal = resolveApiKeyPrincipal({
@@ -99,7 +93,7 @@ export function resolveActiveApiKeyContext(
 }
 
 export function resolveActiveServiceContext(
-  args: ActiveServiceContextInput
+  args: ActiveServiceContextInput,
 ): ResolvedAuthContext & { principal: ServicePrincipal } {
   requireActiveServicePrincipal(args.servicePrincipal);
 
@@ -123,7 +117,7 @@ export function resolveActiveServiceContext(
 }
 
 export function resolveActiveServiceOwnedApiKeyContext(
-  args: ActiveServiceOwnedApiKeyContextInput
+  args: ActiveServiceOwnedApiKeyContextInput,
 ): ActiveServiceOwnedApiKeyContext {
   requireActiveApiKeyRecord(args.apiKey, args.now);
   requireActiveServicePrincipal(args.servicePrincipal);

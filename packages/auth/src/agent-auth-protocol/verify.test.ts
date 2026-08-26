@@ -1,12 +1,6 @@
 import assert from "node:assert/strict";
 
-import {
-  calculateJwkThumbprint,
-  exportJWK,
-  generateKeyPair,
-  SignJWT,
-  type JWK,
-} from "jose";
+import { calculateJwkThumbprint, exportJWK, generateKeyPair, SignJWT, type JWK } from "jose";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -41,7 +35,7 @@ describe("Agent Auth Protocol host JWT verification", () => {
       (NOW_SECONDS +
         AGENT_AUTH_PROTOCOL_MAX_JWT_LIFETIME_SECONDS +
         AGENT_AUTH_PROTOCOL_MAX_CLOCK_SKEW_SECONDS) *
-        1000
+        1000,
     );
   });
 
@@ -86,7 +80,7 @@ describe("Agent Auth Protocol host JWT verification", () => {
         expectedAudience: ISSUER,
         registration: true,
         options: { now: NOW },
-      })
+      }),
     ).rejects.toThrow();
 
     const wrongThumbprint = await signHostJwt(host, agent.publicJwk, {
@@ -98,7 +92,7 @@ describe("Agent Auth Protocol host JWT verification", () => {
         expectedAudience: ISSUER,
         registration: true,
         options: { now: NOW },
-      })
+      }),
     ).rejects.toThrow(/thumbprint/);
 
     const wrongAudience = await signHostJwt(host, agent.publicJwk, {
@@ -110,7 +104,7 @@ describe("Agent Auth Protocol host JWT verification", () => {
         expectedAudience: ISSUER,
         registration: true,
         options: { now: NOW },
-      })
+      }),
     ).rejects.toThrow(/audience/);
 
     const confusedType = await signHostJwt(host, agent.publicJwk, {
@@ -122,7 +116,7 @@ describe("Agent Auth Protocol host JWT verification", () => {
         expectedAudience: ISSUER,
         registration: true,
         options: { now: NOW },
-      })
+      }),
     ).rejects.toThrow(/host\+jwt/);
   });
 
@@ -138,7 +132,7 @@ describe("Agent Auth Protocol host JWT verification", () => {
         expectedAudience: ISSUER,
         registration: true,
         options: { now: NOW },
-      })
+      }),
     ).rejects.toThrow(/lifetime/);
 
     const future = await signHostJwt(host, agent.publicJwk, {
@@ -151,7 +145,7 @@ describe("Agent Auth Protocol host JWT verification", () => {
         expectedAudience: ISSUER,
         registration: true,
         options: { now: NOW },
-      })
+      }),
     ).rejects.toThrow(/future/);
 
     const expiredBeyondSkew = await signHostJwt(host, agent.publicJwk, {
@@ -164,7 +158,7 @@ describe("Agent Auth Protocol host JWT verification", () => {
         expectedAudience: ISSUER,
         registration: true,
         options: { now: NOW },
-      })
+      }),
     ).rejects.toThrow(/exp|expired/i);
 
     await expect(
@@ -173,7 +167,7 @@ describe("Agent Auth Protocol host JWT verification", () => {
         expectedAudience: ISSUER,
         registration: true,
         options: { now: NOW, clockSkewSeconds: 31 },
-      })
+      }),
     ).rejects.toThrow(/between 0 and 30/);
   });
 });
@@ -199,7 +193,7 @@ describe("Agent Auth Protocol agent JWT verification", () => {
     assert.equal(
       verified.replayExpiresAt,
       (NOW_SECONDS + 90) * 1000,
-      "replay retention covers the lifetime plus accepted clock skew"
+      "replay retention covers the lifetime plus accepted clock skew",
     );
   });
 
@@ -231,20 +225,12 @@ describe("Agent Auth Protocol agent JWT verification", () => {
         expectedAgentId: "agent-1",
         publicKey: agent.publicJwk,
         options: { now: NOW },
-      })
+      }),
     ).rejects.toThrow();
 
     for (const [token, overrides, expected] of [
-      [
-        await signAgentJwt(agent, "wrong-host"),
-        {},
-        /issuer does not match its host/,
-      ],
-      [
-        await signAgentJwt(agent, host.thumbprint, { subject: "agent-2" }),
-        {},
-        /subject/,
-      ],
+      [await signAgentJwt(agent, "wrong-host"), {}, /issuer does not match its host/],
+      [await signAgentJwt(agent, host.thumbprint, { subject: "agent-2" }), {}, /subject/],
       [
         await signAgentJwt(agent, host.thumbprint, {
           audience: `${ISSUER}/other`,
@@ -252,11 +238,7 @@ describe("Agent Auth Protocol agent JWT verification", () => {
         {},
         /audience/,
       ],
-      [
-        await signAgentJwt(agent, host.thumbprint),
-        { expectedKeyId: "agent-key-2" },
-        /key id/,
-      ],
+      [await signAgentJwt(agent, host.thumbprint), { expectedKeyId: "agent-key-2" }, /key id/],
     ] as const) {
       await expect(
         verifyAgentAuthProtocolAgentJwt({
@@ -267,7 +249,7 @@ describe("Agent Auth Protocol agent JWT verification", () => {
           publicKey: agent.publicJwk,
           options: { now: NOW },
           ...overrides,
-        })
+        }),
       ).rejects.toThrow(expected);
     }
   });
@@ -303,7 +285,7 @@ async function signHostJwt(
     issuedAt?: number;
     issuer?: string;
     typ?: string;
-  }
+  },
 ): Promise<string> {
   const issuedAt = overrides?.issuedAt ?? NOW_SECONDS;
   const claims = {
@@ -333,7 +315,7 @@ async function signAgentJwt(
     audience?: string;
     capabilities?: string[];
     subject?: string;
-  }
+  },
 ): Promise<string> {
   return await new SignJWT({
     iss: hostThumbprint,
@@ -342,16 +324,12 @@ async function signAgentJwt(
     iat: NOW_SECONDS,
     exp: NOW_SECONDS + 60,
     jti: crypto.randomUUID(),
-    ...(overrides?.capabilities === undefined
-      ? {}
-      : { capabilities: overrides.capabilities }),
+    ...(overrides?.capabilities === undefined ? {} : { capabilities: overrides.capabilities }),
   })
     .setProtectedHeader({
       alg: "EdDSA",
       typ: "agent+jwt",
-      ...(agent.publicJwk.kid === undefined
-        ? {}
-        : { kid: agent.publicJwk.kid }),
+      ...(agent.publicJwk.kid === undefined ? {} : { kid: agent.publicJwk.kid }),
     })
     .sign(agent.privateKey);
 }

@@ -14,14 +14,8 @@ describe("api key secret utilities", () => {
     const hash = await hashApiKeySecret("secret");
 
     assert.equal(hash.length, 64);
-    assert.equal(
-      await verifyApiKeySecret({ secret: "secret", expectedHash: hash }),
-      true
-    );
-    assert.equal(
-      await verifyApiKeySecret({ secret: "wrong", expectedHash: hash }),
-      false
-    );
+    assert.equal(await verifyApiKeySecret({ secret: "secret", expectedHash: hash }), true);
+    assert.equal(await verifyApiKeySecret({ secret: "wrong", expectedHash: hash }), false);
   });
 
   it("derives deterministic secrets from request material", async () => {

@@ -59,17 +59,11 @@ type ComponentIdTable = "organization_members" | "organizations" | "users";
  * validate these values with `v.id()` at runtime, so this single boundary
  * conversion restores the component-local brand before an internal call.
  */
-function isComponentId<Table extends ComponentIdTable>(
-  _table: Table,
-  id: string
-): id is Id<Table> {
+function isComponentId<Table extends ComponentIdTable>(_table: Table, id: string): id is Id<Table> {
   return id.length > 0;
 }
 
-function toComponentId<Table extends ComponentIdTable>(
-  table: Table,
-  id: string
-): Id<Table> {
+function toComponentId<Table extends ComponentIdTable>(table: Table, id: string): Id<Table> {
   if (!isComponentId(table, id)) {
     throw new TypeError(`convex-auth glue: empty component ${table} id`);
   }
@@ -87,7 +81,7 @@ function toConsumerId(id: string): string {
 
 // Factory overloads so the returned glue is precisely typed per mode.
 export function createConvexAuthGlue<TUser extends GlueUserMinimum>(
-  config: ConsumerModeConfig<TUser>
+  config: ConsumerModeConfig<TUser>,
 ): ConsumerGlue<TUser>;
 export function createConvexAuthGlue<
   TUser extends GlueUserMinimum,
@@ -126,12 +120,12 @@ function warnConsumerModeRbacDisabledOnce(): void {
     '[convex-auth] createConvexAuthGlue: orgs="disabled" (consumer mode) — ' +
       "RBAC is OFF. hasPermission() is always true and requirePermission() is a " +
       "no-op for every authenticated user. If this app needs permission gating " +
-      '(any multi-tenant / fintech consumer), use orgs: "enabled" (B2B mode).'
+      '(any multi-tenant / fintech consumer), use orgs: "enabled" (B2B mode).',
   );
 }
 
 function createConsumerGlue<TUser extends GlueUserMinimum>(
-  config: ConsumerModeConfig<TUser>
+  config: ConsumerModeConfig<TUser>,
 ): ConsumerGlue<TUser> {
   warnConsumerModeRbacDisabledOnce();
   return {
@@ -146,24 +140,20 @@ function createConsumerGlue<TUser extends GlueUserMinimum>(
         config.component,
         identity.subject,
         identity.issuer,
-        config.identityProvider ?? DEFAULT_IDENTITY_PROVIDER
+        config.identityProvider ?? DEFAULT_IDENTITY_PROVIDER,
       );
       if (convexAuthUserId === null) {
-        throwAuthError(
-          "UNAUTHORIZED",
-          "USER_MISSING",
-          "Component user not found for identity"
-        );
+        throwAuthError("UNAUTHORIZED", "USER_MISSING", "Component user not found for identity");
       }
       const user = await config.adapters.findUserByConvexAuthUserId(
         ctx,
-        toConsumerId(convexAuthUserId)
+        toConsumerId(convexAuthUserId),
       );
       if (user === null) {
         throwAuthError(
           "UNAUTHORIZED",
           "USER_MISSING",
-          "Local user row not found for the authenticated identity"
+          "Local user row not found for the authenticated identity",
         );
       }
       const viewer: ConsumerViewer<TUser> = {
@@ -201,16 +191,13 @@ function createConsumerGlue<TUser extends GlueUserMinimum>(
 // active-org hint + validation, idempotent bootstrap + self-heal.
 // ---------------------------------------------------------------------------
 
-function createB2BGlue<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
->(config: B2BModeConfig<TUser, TAnchor>): B2BGlue<TUser, TAnchor> {
+function createB2BGlue<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum>(
+  config: B2BModeConfig<TUser, TAnchor>,
+): B2BGlue<TUser, TAnchor> {
   const invitedUsersGetPersonalOrg = config.invitedUsersGetPersonalOrg ?? false;
   const identityProvider = config.identityProvider ?? DEFAULT_IDENTITY_PROVIDER;
 
-  const resolveViewer = async (
-    ctx: GlueCtx
-  ): Promise<B2BViewer<TUser, TAnchor>> =>
+  const resolveViewer = async (ctx: GlueCtx): Promise<B2BViewer<TUser, TAnchor>> =>
     resolveB2BViewer({
       ctx,
       config,
@@ -237,10 +224,7 @@ function createB2BGlue<
   };
 }
 
-async function resolveB2BViewer<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
->({
+async function resolveB2BViewer<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum>({
   config,
   ctx,
   identityProvider,
@@ -257,14 +241,10 @@ async function resolveB2BViewer<
     config.component,
     identity.subject,
     identity.issuer,
-    identityProvider
+    identityProvider,
   );
   if (convexAuthUserId === null) {
-    throwAuthError(
-      "UNAUTHORIZED",
-      "USER_MISSING",
-      "Component user not found for identity"
-    );
+    throwAuthError("UNAUTHORIZED", "USER_MISSING", "Component user not found for identity");
   }
   const user = await requireLocalGlueUser(ctx, config, convexAuthUserId);
   const resolved = await resolveViewerMembership({
@@ -276,11 +256,7 @@ async function resolveB2BViewer<
     user,
     convexAuthUserId,
   });
-  const anchor = await requireViewerAnchor(
-    ctx,
-    config,
-    resolved.convexAuthOrganizationId
-  );
+  const anchor = await requireViewerAnchor(ctx, config, resolved.convexAuthOrganizationId);
 
   return buildB2BViewer({
     anchor,
@@ -306,17 +282,17 @@ async function requireLocalGlueUser<
 >(
   ctx: GlueCtx,
   config: B2BModeConfig<TUser, TAnchor>,
-  convexAuthUserId: Id<"users">
+  convexAuthUserId: Id<"users">,
 ): Promise<TUser> {
   const user = await config.adapters.findUserByConvexAuthUserId(
     ctx,
-    toConsumerId(convexAuthUserId)
+    toConsumerId(convexAuthUserId),
   );
   if (user === null) {
     throwAuthError(
       "UNAUTHORIZED",
       "USER_MISSING",
-      "Local user row not found for the authenticated identity"
+      "Local user row not found for the authenticated identity",
     );
   }
   return user;
@@ -354,7 +330,7 @@ async function resolveViewerMembership<
       config.component,
       config.adapters,
       componentOrganizationId,
-      convexAuthUserId
+      convexAuthUserId,
     );
     if (membership !== null) {
       return {
@@ -376,11 +352,7 @@ async function resolveViewerMembership<
     name: typeof identity?.name === "string" ? identity.name : undefined,
   });
   if (healed === null) {
-    throwAuthError(
-      "FORBIDDEN",
-      "MEMBERSHIP_MISSING",
-      "User has no active organization membership"
-    );
+    throwAuthError("FORBIDDEN", "MEMBERSHIP_MISSING", "User has no active organization membership");
   }
   return healed;
 }
@@ -391,26 +363,23 @@ async function requireViewerAnchor<
 >(
   ctx: GlueCtx,
   config: B2BModeConfig<TUser, TAnchor>,
-  convexAuthOrganizationId: Id<"organizations">
+  convexAuthOrganizationId: Id<"organizations">,
 ): Promise<TAnchor> {
   const anchor = await config.adapters.findAnchorByConvexAuthOrganizationId(
     ctx,
-    toConsumerId(convexAuthOrganizationId)
+    toConsumerId(convexAuthOrganizationId),
   );
   if (anchor === null) {
     throwAuthError(
       "NOT_FOUND",
       "ANCHOR_MISSING",
-      "Local organization anchor missing for the active organization"
+      "Local organization anchor missing for the active organization",
     );
   }
   return anchor;
 }
 
-function buildB2BViewer<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
->({
+function buildB2BViewer<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum>({
   anchor,
   identity,
   membership,
@@ -419,9 +388,7 @@ function buildB2BViewer<
   convexAuthUserId,
 }: {
   anchor: TAnchor;
-  identity: NonNullable<
-    Awaited<ReturnType<GlueCtx["auth"]["getUserIdentity"]>>
-  >;
+  identity: NonNullable<Awaited<ReturnType<GlueCtx["auth"]["getUserIdentity"]>>>;
   membership: ResolvedMembership;
   user: TUser;
   convexAuthOrganizationId: Id<"organizations">;
@@ -447,11 +414,7 @@ function buildB2BViewer<
     hasPermission: viewerHasPermission,
     requirePermission: (permission) => {
       if (!viewerHasPermission(permission)) {
-        throwAuthError(
-          "FORBIDDEN",
-          "PERMISSION_REQUIRED",
-          `Permission required: ${permission}`
-        );
+        throwAuthError("FORBIDDEN", "PERMISSION_REQUIRED", `Permission required: ${permission}`);
       }
     },
     requireOrganization: () => convexAuthOrganizationId,
@@ -460,7 +423,7 @@ function buildB2BViewer<
         throwAuthError(
           "FORBIDDEN",
           "PERMISSION_REQUIRED",
-          `Role required: one of [${allowedRoleKeys.join(", ")}]`
+          `Role required: one of [${allowedRoleKeys.join(", ")}]`,
         );
       }
     },
@@ -477,7 +440,7 @@ async function resolveComponentUserId(
   component: ConvexAuthComponentHandle,
   subject: string,
   issuer: string,
-  provider: string
+  provider: string,
 ): Promise<Id<"users"> | null> {
   const found = await ctx.runQuery(component.identity.getByIdentity, {
     provider,
@@ -505,7 +468,7 @@ async function resolveMembershipPermissions<
     organizationId: string;
   },
   role: { key: string; permissions: readonly string[] },
-  convexAuthUserId: string
+  convexAuthUserId: string,
 ): Promise<string[]> {
   const expanded =
     adapters.expandPermissions !== undefined
@@ -527,23 +490,17 @@ async function resolveMembershipPermissions<
   return [...baseSet];
 }
 
-async function fetchMembership<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
->(
+async function fetchMembership<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum>(
   ctx: GlueCtx,
   component: ConvexAuthComponentHandle,
   adapters: B2BModeAdapters<TUser, TAnchor>,
   convexAuthOrganizationId: Id<"organizations">,
-  convexAuthUserId: Id<"users">
+  convexAuthUserId: Id<"users">,
 ): Promise<ResolvedMembership | null> {
-  const member = await ctx.runQuery(
-    component.organizations.getMemberByUserOrganization,
-    {
-      organizationId: convexAuthOrganizationId,
-      userId: convexAuthUserId,
-    }
-  );
+  const member = await ctx.runQuery(component.organizations.getMemberByUserOrganization, {
+    organizationId: convexAuthOrganizationId,
+    userId: convexAuthUserId,
+  });
   if (member === null || member.status !== "active") return null;
 
   const role = await ctx.runQuery(component.organizations.getRole, {
@@ -557,7 +514,7 @@ async function fetchMembership<
     adapters,
     member,
     role,
-    convexAuthUserId
+    convexAuthUserId,
   );
   return {
     convexAuthMemberId: toConsumerId(member._id),
@@ -573,10 +530,7 @@ async function fetchMembership<
 // active organization."
 // ---------------------------------------------------------------------------
 
-async function selfHeal<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
->(args: {
+async function selfHeal<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum>(args: {
   ctx: GlueCtx;
   config: B2BModeConfig<TUser, TAnchor>;
   invitedUsersGetPersonalOrg: boolean;
@@ -623,14 +577,14 @@ async function selfHeal<
     await config.adapters.setActiveOrganization(
       ctx,
       args.user,
-      toConsumerId(bootstrapped.convexAuthOrganizationId)
+      toConsumerId(bootstrapped.convexAuthOrganizationId),
     );
   } catch {
     // Intentional no-op — see comment above.
   }
   const refreshed = await config.adapters.findUserByConvexAuthUserId(
     ctx,
-    toConsumerId(convexAuthUserId)
+    toConsumerId(convexAuthUserId),
   );
   return {
     user: refreshed ?? args.user,
@@ -654,14 +608,7 @@ async function bootstrapMembership<
   convexAuthOrganizationId: Id<"organizations">;
   membership: ResolvedMembership;
 } | null> {
-  const {
-    ctx,
-    config,
-    invitedUsersGetPersonalOrg,
-    convexAuthUserId,
-    email,
-    name,
-  } = args;
+  const { ctx, config, invitedUsersGetPersonalOrg, convexAuthUserId, email, name } = args;
   const identity = await ctx.auth.getUserIdentity();
   if (identity === null) return null;
 
@@ -716,16 +663,11 @@ async function bootstrapExistingMembership<
 }): Promise<BootstrapMembershipResult | null> {
   const existingMemberships = await ctx.runQuery(
     config.component.organizations.listMembershipsByUser,
-    { userId: componentUserId }
+    { userId: componentUserId },
   );
-  const firstActive = existingMemberships.find(
-    (membership) => membership.status === "active"
-  );
+  const firstActive = existingMemberships.find((membership) => membership.status === "active");
   if (firstActive === undefined) return null;
-  const convexAuthOrganizationId = toComponentId(
-    "organizations",
-    firstActive.organizationId
-  );
+  const convexAuthOrganizationId = toComponentId("organizations", firstActive.organizationId);
 
   const role = await ctx.runQuery(config.component.organizations.getRole, {
     roleId: firstActive.roleId,
@@ -733,19 +675,13 @@ async function bootstrapExistingMembership<
   });
   if (role === null) return null;
 
-  await ensureAnchor(
-    ctx,
-    config,
-    convexAuthOrganizationId,
-    convexAuthUserId,
-    name ?? email
-  );
+  await ensureAnchor(ctx, config, convexAuthOrganizationId, convexAuthUserId, name ?? email);
   const permissions = await resolveMembershipPermissions(
     ctx,
     config.adapters,
     firstActive,
     role,
-    convexAuthUserId
+    convexAuthUserId,
   );
   return {
     convexAuthOrganizationId,
@@ -777,57 +713,42 @@ async function bootstrapPersonalOrganization<
   convexAuthUserId: Id<"users">;
 }): Promise<BootstrapMembershipResult | null> {
   const personalName = name ?? email ?? "Personal";
-  const upsertResult = await ctx.runMutation?.(
-    config.component.organizations.upsertOrganization,
-    {
-      name: personalName,
-      slug: `personal-${componentUserId}`,
-      createdBy: componentUserId,
-    }
-  );
+  const upsertResult = await ctx.runMutation?.(config.component.organizations.upsertOrganization, {
+    name: personalName,
+    slug: `personal-${componentUserId}`,
+    createdBy: componentUserId,
+  });
   if (upsertResult === undefined) {
     throw new ConvexError({
       code: "INTERNAL",
       message: "convex-auth glue: ctx.runMutation unavailable in bootstrap",
     });
   }
-  const convexAuthOrganizationId = toComponentId(
-    "organizations",
-    upsertResult.organizationId
-  );
+  const convexAuthOrganizationId = toComponentId("organizations", upsertResult.organizationId);
 
   await ctx.runMutation?.(config.component.organizations.seedDefaultRoles, {
     organizationId: convexAuthOrganizationId,
   });
-  const ownerRole = await ctx.runQuery(
-    config.component.organizations.getRoleByKey,
-    { organizationId: convexAuthOrganizationId, key: "owner" }
-  );
+  const ownerRole = await ctx.runQuery(config.component.organizations.getRoleByKey, {
+    organizationId: convexAuthOrganizationId,
+    key: "owner",
+  });
   if (ownerRole === null) return null;
-  const memberResult = await ctx.runMutation?.(
-    config.component.organizations.upsertMember,
-    {
-      organizationId: convexAuthOrganizationId,
-      userId: componentUserId,
-      roleId: ownerRole._id,
-      status: "active",
-    }
-  );
+  const memberResult = await ctx.runMutation?.(config.component.organizations.upsertMember, {
+    organizationId: convexAuthOrganizationId,
+    userId: componentUserId,
+    roleId: ownerRole._id,
+    status: "active",
+  });
   if (memberResult === undefined) return null;
-  await ensureAnchor(
-    ctx,
-    config,
-    convexAuthOrganizationId,
-    convexAuthUserId,
-    personalName
-  );
+  await ensureAnchor(ctx, config, convexAuthOrganizationId, convexAuthUserId, personalName);
 
   const permissions = await resolveMembershipPermissions(
     ctx,
     config.adapters,
     { _id: memberResult.memberId, organizationId: convexAuthOrganizationId },
     ownerRole,
-    convexAuthUserId
+    convexAuthUserId,
   );
   return {
     convexAuthOrganizationId,
@@ -840,19 +761,16 @@ async function bootstrapPersonalOrganization<
   };
 }
 
-async function ensureAnchor<
-  TUser extends GlueUserMinimum,
-  TAnchor extends GlueAnchorMinimum,
->(
+async function ensureAnchor<TUser extends GlueUserMinimum, TAnchor extends GlueAnchorMinimum>(
   ctx: GlueCtx,
   config: B2BModeConfig<TUser, TAnchor>,
   convexAuthOrganizationId: Id<"organizations">,
   createdByConvexAuthUserId: Id<"users">,
-  name: string
+  name: string,
 ): Promise<void> {
   const existing = await config.adapters.findAnchorByConvexAuthOrganizationId(
     ctx,
-    toConsumerId(convexAuthOrganizationId)
+    toConsumerId(convexAuthOrganizationId),
   );
   if (existing !== null) return;
   // QueryCtx guard: the consumer's `insertAnchor` adapter would throw a
@@ -875,7 +793,7 @@ async function ensureAnchor<
     throwAuthError(
       "NOT_FOUND",
       "ANCHOR_MISSING",
-      "Local organization anchor missing; retry via a mutation context"
+      "Local organization anchor missing; retry via a mutation context",
     );
   }
   await config.adapters.insertAnchor(ctx, {

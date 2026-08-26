@@ -72,9 +72,7 @@ permissionQuery("widgets:view")({
   handler: async (ctx) => {
     type ViewerT = (typeof ctx)["viewer"];
     type _NotAny = Expect<Equal<IsAny<ViewerT>, false>>;
-    type _CtxIsQuery = Expect<
-      Equal<typeof ctx extends GenericQueryCtx<DM> ? true : false, true>
-    >;
+    type _CtxIsQuery = Expect<Equal<typeof ctx extends GenericQueryCtx<DM> ? true : false, true>>;
     return ctx.viewer.hasPermission("widgets:view");
   },
 });

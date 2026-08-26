@@ -50,7 +50,7 @@ describe("checkConsumerContract", () => {
         "  }),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     fixture.write(
       "organizations.ts",
@@ -62,7 +62,7 @@ describe("checkConsumerContract", () => {
         "  handler: async () => null,",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, true);
@@ -86,7 +86,7 @@ describe("checkConsumerContract", () => {
         "  auth_md_registrations: defineTable({}),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, false);
@@ -94,7 +94,7 @@ describe("checkConsumerContract", () => {
     assert.equal(
       result.violations.every((v) => v.rule === "local-org-member-truth-table"),
       true,
-      `expected only local-org-member-truth-table, got: ${rules.join(",")}`
+      `expected only local-org-member-truth-table, got: ${rules.join(",")}`,
     );
     const tables = result.violations.map((v) => v.message);
     for (const t of [
@@ -107,7 +107,7 @@ describe("checkConsumerContract", () => {
       assert.equal(
         tables.some((m) => m.includes(t)),
         true,
-        `expected violation for ${t}`
+        `expected violation for ${t}`,
       );
     }
   });
@@ -124,7 +124,7 @@ describe("checkConsumerContract", () => {
         '  organizationId: v.id("organizations"),',
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     fixture.write(
       "schemas/organization_roles.ts",
@@ -137,25 +137,23 @@ describe("checkConsumerContract", () => {
         "  name: v.string(),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
 
     const result = checkConsumerContract({ convexDir: fixture.dir });
 
     assert.equal(result.ok, false);
     const splitSchemaHits = result.violations.filter(
-      (v) =>
-        v.rule === "local-org-member-truth-table" &&
-        v.message.includes("split-schema")
+      (v) => v.rule === "local-org-member-truth-table" && v.message.includes("split-schema"),
     );
     assert.equal(splitSchemaHits.length, 2, JSON.stringify(result.violations));
     assert.equal(
       splitSchemaHits.some((v) => v.file === "schemas/organization_members.ts"),
-      true
+      true,
     );
     assert.equal(
       splitSchemaHits.some((v) => v.file === "schemas/organization_roles.ts"),
-      true
+      true,
     );
   });
 
@@ -170,7 +168,7 @@ describe("checkConsumerContract", () => {
         '  await ctx.db.insert("organization_invitations", {});',
         "};",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, false);
@@ -191,7 +189,7 @@ describe("checkConsumerContract", () => {
         "const ensureConvexAuthApiKey = async () => {};",
         "export { ensureConvexAuthApiKey };",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, false);
@@ -201,7 +199,7 @@ describe("checkConsumerContract", () => {
         .map((v) => {
           const m = v.message.match(/"([^"]+)"/);
           return m ? m[1] : "";
-        })
+        }),
     );
     assert.equal(writers.has("ensureConvexAuthMember"), true);
     assert.equal(writers.has("ensureConvexAuthRole"), true);
@@ -217,7 +215,7 @@ describe("checkConsumerContract", () => {
         "export async function ensureConvexAuthOrganization() {}",
         "export const ensureConvexAuthOrganization2 = async () => {};",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, true);
@@ -247,7 +245,7 @@ describe("checkConsumerContract", () => {
         "  }),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, true, JSON.stringify(result.violations));
@@ -257,7 +255,7 @@ describe("checkConsumerContract", () => {
     // These would otherwise be violations.
     fixture.write(
       "_generated/server.ts",
-      'export const x = async (ctx: any) => { await ctx.db.insert("organization_members", {}); };\n'
+      'export const x = async (ctx: any) => { await ctx.db.insert("organization_members", {}); };\n',
     );
     fixture.write(
       "things.test.ts",
@@ -265,12 +263,9 @@ describe("checkConsumerContract", () => {
         "export async function ensureConvexAuthMember() {}",
         'const _t = (ctx: any) => ctx.db.insert("api_keys", {});',
         "",
-      ].join("\n")
+      ].join("\n"),
     );
-    fixture.write(
-      "nested/_generated/api.ts",
-      "export async function ensureConvexAuthRole() {}\n"
-    );
+    fixture.write("nested/_generated/api.ts", "export async function ensureConvexAuthRole() {}\n");
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, true, JSON.stringify(result.violations));
   });
@@ -300,13 +295,11 @@ describe("checkConsumerContract", () => {
         '    .index("by_user", ["convexAuthUserId"]),',
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, false, JSON.stringify(result.violations));
-    const bridge = result.violations.filter(
-      (v) => v.rule === "local-bridge-mirror"
-    );
+    const bridge = result.violations.filter((v) => v.rule === "local-bridge-mirror");
     assert.equal(bridge.length, 1, JSON.stringify(result.violations));
     const v = bridge[0];
     assert.ok(v);
@@ -319,9 +312,9 @@ describe("checkConsumerContract", () => {
       result.violations.some(
         (x) =>
           x.rule === "local-bridge-mirror" &&
-          x.message.startsWith('Local defineTable "organizations"')
+          x.message.startsWith('Local defineTable "organizations"'),
       ),
-      false
+      false,
     );
   });
 
@@ -342,7 +335,7 @@ describe("checkConsumerContract", () => {
         "  }),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, true, JSON.stringify(result.violations));
@@ -361,14 +354,14 @@ describe("checkConsumerContract", () => {
         "  }),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     // Default config: tenants is NOT a recognized anchor → flagged.
     const defaultResult = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(defaultResult.ok, false);
     assert.equal(
       defaultResult.violations.some((v) => v.rule === "local-bridge-mirror"),
-      true
+      true,
     );
     // Override: tenants IS an anchor → clean.
     const overridden = checkConsumerContract({
@@ -391,7 +384,7 @@ describe("checkConsumerContract", () => {
         "  convexAuthUserId: v.string(),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, true, JSON.stringify(result.violations));
@@ -407,7 +400,7 @@ describe("checkConsumerContract", () => {
         "  return null;",
         "};",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, true, JSON.stringify(result.violations));
@@ -424,7 +417,7 @@ describe("checkConsumerContract", () => {
         " */",
         "export const helper = async () => null;",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.ok, true, JSON.stringify(result.violations));
@@ -439,17 +432,15 @@ describe("checkConsumerContract", () => {
         '  await ctx.db.insert("organization_members", { x: 1 });',
         "};",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
-    const writeHits = result.violations.filter(
-      (v) => v.rule === "local-mirror-write"
-    );
+    const writeHits = result.violations.filter((v) => v.rule === "local-mirror-write");
     assert.equal(writeHits.length, 1, JSON.stringify(result.violations));
     assert.equal(
       writeHits[0]?.line,
       3,
-      "violation must point at the real code line, not the comment"
+      "violation must point at the real code line, not the comment",
     );
   });
 
@@ -472,7 +463,7 @@ describe("checkConsumerContract", () => {
         '  }).index("by_convex_auth_member", ["convexAuthMemberId"]),',
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     // Default config: flagged.
     const defaultResult = checkConsumerContract({ convexDir: fixture.dir });
@@ -497,12 +488,10 @@ describe("checkConsumerContract", () => {
         "    ctx.runQuery(components.convexAuth.organizations.getInvitationByIdForSystem, {}),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
-    const v = result.violations.find(
-      (x) => x.rule === "tenant-facing-system-reader"
-    );
+    const v = result.violations.find((x) => x.rule === "tenant-facing-system-reader");
     assert.ok(v, "expected a tenant-facing-system-reader violation");
     assert.equal(v.file, "leak.ts");
     assert.equal(v.message.includes("getInvitationByIdForSystem"), true);
@@ -520,7 +509,7 @@ describe("checkConsumerContract", () => {
         "  agent_device_authorization_attempts: defineTable({}),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     fixture.write(
       "agent.ts",
@@ -532,23 +521,19 @@ describe("checkConsumerContract", () => {
         "    ctx.runMutation(components.convexAuth.agentAuth.decideAgentDeviceAuthorization, {}),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
 
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(
-      result.violations.some(
-        (violation) => violation.rule === "local-org-member-truth-table"
-      ),
+      result.violations.some((violation) => violation.rule === "local-org-member-truth-table"),
       true,
-      JSON.stringify(result.violations)
+      JSON.stringify(result.violations),
     );
     assert.equal(
-      result.violations.some(
-        (violation) => violation.rule === "tenant-facing-system-reader"
-      ),
+      result.violations.some((violation) => violation.rule === "tenant-facing-system-reader"),
       true,
-      JSON.stringify(result.violations)
+      JSON.stringify(result.violations),
     );
   });
 
@@ -562,12 +547,12 @@ describe("checkConsumerContract", () => {
         "    ctx.runQuery(components.convexAuth.servicePrincipals.getServicePrincipal, {}),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.ok(
       result.violations.some((x) => x.rule === "tenant-facing-system-reader"),
-      "expected a violation for the curried permissionMutation"
+      "expected a violation for the curried permissionMutation",
     );
   });
 
@@ -582,13 +567,13 @@ describe("checkConsumerContract", () => {
         "    ctx.runQuery(components.convexAuth.organizations.getMemberByIdForSystem, {}),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(
       result.violations.some((x) => x.rule === "tenant-facing-system-reader"),
       false,
-      JSON.stringify(result.violations)
+      JSON.stringify(result.violations),
     );
   });
 
@@ -604,24 +589,20 @@ describe("checkConsumerContract", () => {
         "    }),",
         "});",
         "",
-      ].join("\n")
+      ].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(
       result.violations.some((x) => x.rule === "tenant-facing-system-reader"),
       false,
-      JSON.stringify(result.violations)
+      JSON.stringify(result.violations),
     );
   });
 
   it("reports rule, file, and line number for each violation", () => {
     fixture.write(
       "bad.ts",
-      [
-        "// line 1",
-        "export const ensureConvexAuthMember = async () => {};",
-        "",
-      ].join("\n")
+      ["// line 1", "export const ensureConvexAuthMember = async () => {};", ""].join("\n"),
     );
     const result = checkConsumerContract({ convexDir: fixture.dir });
     assert.equal(result.violations.length, 1);

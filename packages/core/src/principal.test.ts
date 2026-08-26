@@ -2,12 +2,7 @@ import assert from "node:assert/strict";
 
 import { describe, it } from "vitest";
 
-import type {
-  AgentPrincipal,
-  AnonymousPrincipal,
-  AuthPrincipal,
-  UserPrincipal,
-} from "./principal";
+import type { AgentPrincipal, AnonymousPrincipal, AuthPrincipal, UserPrincipal } from "./principal";
 
 describe("principal types", () => {
   it("UserPrincipal has all required fields", () => {

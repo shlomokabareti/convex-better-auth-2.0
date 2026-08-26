@@ -22,20 +22,15 @@ export const WEBHOOK_EVENT_TYPES = [
   "invitation.revoked",
 ] as const;
 
-export type ConvexWebhookEventType =
-  (typeof WEBHOOK_EVENT_TYPES)[number];
+export type ConvexWebhookEventType = (typeof WEBHOOK_EVENT_TYPES)[number];
 
-const convexWebhookEventTypeSet: ReadonlySet<string> = new Set(
-  WEBHOOK_EVENT_TYPES
-);
+const convexWebhookEventTypeSet: ReadonlySet<string> = new Set(WEBHOOK_EVENT_TYPES);
 
 /**
  * Type guard for the canonical Convex auth-domain event catalog. Returns false
  * for consumer-local business events and for the `*` subscribe-all wildcard.
  */
-export function isConvexWebhookEventType(
-  value: string
-): value is ConvexWebhookEventType {
+export function isConvexWebhookEventType(value: string): value is ConvexWebhookEventType {
   return convexWebhookEventTypeSet.has(value);
 }
 
@@ -49,13 +44,10 @@ export const WEBHOOK_SUBSCRIBE_ALL = "*" as const;
  */
 export function convexWebhookEndpointSubscribesTo(
   subscribedEventTypes: readonly string[],
-  eventType: string
+  eventType: string,
 ): boolean {
   for (const subscribed of subscribedEventTypes) {
-    if (
-      subscribed === WEBHOOK_SUBSCRIBE_ALL ||
-      subscribed === eventType
-    ) {
+    if (subscribed === WEBHOOK_SUBSCRIBE_ALL || subscribed === eventType) {
       return true;
     }
   }

@@ -53,10 +53,7 @@ export type ConvexCreateOrganizationProps = {
   defaultImageUrl?: string | null;
   onCreate?: (input: ConvexCreateOrganizationInput) => void | Promise<void>;
   onCancel?: () => void;
-  renderHeader?: (args: {
-    title: ReactNode;
-    description: ReactNode;
-  }) => ReactNode;
+  renderHeader?: (args: { title: ReactNode; description: ReactNode }) => ReactNode;
 };
 
 // ─── Default copy ──────────────────────────────────────────────────────────
@@ -76,12 +73,11 @@ const defaultCopy: Required<ConvexCreateOrganizationCopy> = {
   cancelLabel: "Cancel",
   nameRequiredError: "Name is required.",
   slugRequiredError: "Slug is required.",
-  invalidSlugError:
-    "Slug must contain only lowercase letters, numbers, and hyphens.",
+  invalidSlugError: "Slug must contain only lowercase letters, numbers, and hyphens.",
 };
 
 function resolveCopy(
-  copy: ConvexCreateOrganizationCopy | undefined
+  copy: ConvexCreateOrganizationCopy | undefined,
 ): Required<ConvexCreateOrganizationCopy> {
   return { ...defaultCopy, ...copy };
 }
@@ -96,15 +92,9 @@ function CreateOrganizationHeader(props: {
   renderHeader?: ConvexCreateOrganizationProps["renderHeader"];
 }) {
   const { classNames, copy, renderHeader } = props;
-  const title = (
-    <h3 className={cn("text-base font-semibold", classNames?.title)}>
-      {copy.title}
-    </h3>
-  );
+  const title = <h3 className={cn("text-base font-semibold", classNames?.title)}>{copy.title}</h3>;
   const description = (
-    <p className={cn("text-foreground/60 text-sm", classNames?.description)}>
-      {copy.description}
-    </p>
+    <p className={cn("text-foreground/60 text-sm", classNames?.description)}>{copy.description}</p>
   );
 
   if (renderHeader) {
@@ -131,7 +121,7 @@ function CreateOrganizationErrorBanner(props: {
     <div
       className={cn(
         "border-destructive/30 bg-destructive/10 text-destructive mb-4 rounded-md border px-3 py-2 text-sm",
-        props.classNames?.errorBanner
+        props.classNames?.errorBanner,
       )}
     >
       {props.errorMessage}
@@ -151,9 +141,7 @@ function CreateOrganizationField(props: {
 }) {
   return (
     <div className={cn("space-y-1", props.classNames?.field)}>
-      <label
-        className={cn("text-foreground/70 text-sm", props.classNames?.label)}
-      >
+      <label className={cn("text-foreground/70 text-sm", props.classNames?.label)}>
         {props.label}
       </label>
       <input
@@ -165,18 +153,12 @@ function CreateOrganizationField(props: {
         className={cn(
           "border-foreground/10 bg-foreground/5 text-foreground focus:border-foreground/25 h-9 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-50",
           props.classNames?.input,
-          props.error && "border-destructive/40"
+          props.error && "border-destructive/40",
         )}
       />
-      {props.error ? (
-        <p className="text-destructive text-xs">{props.error}</p>
-      ) : null}
+      {props.error ? <p className="text-destructive text-xs">{props.error}</p> : null}
       {props.helper ? (
-        <p
-          className={cn("text-foreground/40 text-xs", props.classNames?.helper)}
-        >
-          {props.helper}
-        </p>
+        <p className={cn("text-foreground/40 text-xs", props.classNames?.helper)}>{props.helper}</p>
       ) : null}
     </div>
   );
@@ -196,7 +178,7 @@ function CreateOrganizationActions(props: {
         disabled={props.busy || !props.hasCreateHandler}
         className={cn(
           "bg-foreground text-background hover:bg-foreground/90 inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-          props.classNames?.primaryButton
+          props.classNames?.primaryButton,
         )}
       >
         {props.busy ? props.copy.creatingLabel : props.copy.createLabel}
@@ -208,7 +190,7 @@ function CreateOrganizationActions(props: {
           onClick={props.onCancel}
           className={cn(
             "border-foreground/15 text-foreground/70 hover:bg-foreground/5 inline-flex h-9 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-            props.classNames?.secondaryButton
+            props.classNames?.secondaryButton,
           )}
         >
           {props.copy.cancelLabel}
@@ -338,32 +320,23 @@ export function ConvexCreateOrganization({
         setSubmitting(false);
       }
     },
-    [name, slug, imageUrl, onCreate, validate]
+    [name, slug, imageUrl, onCreate, validate],
   );
 
   const busy = isLoading || submitting;
 
   return (
     <div
-      className={cn(
-        "border-foreground/10 bg-foreground/5 rounded-lg border p-5",
-        classNames?.card
-      )}
+      className={cn("border-foreground/10 bg-foreground/5 rounded-lg border p-5", classNames?.card)}
     >
       <CreateOrganizationHeader
         classNames={classNames}
         copy={resolvedCopy}
         renderHeader={renderHeader}
       />
-      <CreateOrganizationErrorBanner
-        classNames={classNames}
-        errorMessage={errorMessage}
-      />
+      <CreateOrganizationErrorBanner classNames={classNames} errorMessage={errorMessage} />
 
-      <form
-        onSubmit={handleSubmit}
-        className={cn("space-y-3", classNames?.body)}
-      >
+      <form onSubmit={handleSubmit} className={cn("space-y-3", classNames?.body)}>
         <CreateOrganizationFields
           busy={busy}
           classNames={classNames}

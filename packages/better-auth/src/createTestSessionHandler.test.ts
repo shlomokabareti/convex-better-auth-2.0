@@ -32,13 +32,10 @@ function fakeCreateAuth() {
         method: request.method,
         body: await request.clone().json(),
       });
-      return new Response(
-        JSON.stringify({ token: "session-token", forwarded: true }),
-        {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        }
-      );
+      return new Response(JSON.stringify({ token: "session-token", forwarded: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
     },
     options: {
       baseURL: "https://app.test",
@@ -51,7 +48,7 @@ function fakeCreateAuth() {
 
 function makeRequest(
   secret: string | null,
-  body: unknown = { email: "a@b.test", password: "pw" }
+  body: unknown = { email: "a@b.test", password: "pw" },
 ): Request {
   const headers: Record<string, string> = {
     "content-type": "application/json",
@@ -78,11 +75,7 @@ describe("createTestSessionHandler — fail-closed contract", () => {
     });
     const res = await handler(ctx, makeRequest(SECRET));
     assert.equal(res.status, 404);
-    assert.equal(
-      calls.length,
-      0,
-      "must not forward to Better-Auth when disabled"
-    );
+    assert.equal(calls.length, 0, "must not forward to Better-Auth when disabled");
   });
 
   it("404 when no secret is configured (even if flag on)", async () => {
@@ -142,7 +135,7 @@ describe("createTestSessionHandler — fail-closed contract", () => {
     });
     const res = await handler(
       ctx,
-      makeRequest(SECRET, { email: "shlomo@pile.nyc", password: "12345678" })
+      makeRequest(SECRET, { email: "shlomo@pile.nyc", password: "12345678" }),
     );
     assert.equal(res.status, 200);
     assert.deepEqual(await res.json(), {
@@ -153,10 +146,7 @@ describe("createTestSessionHandler — fail-closed contract", () => {
     assert.equal(calls.length, 1);
     const call = only(calls, "forwarded sign-in request is missing");
     assert.equal(call.method, "POST");
-    assert.ok(
-      call.url.endsWith("/api/auth/sign-in/email"),
-      `forwarded url: ${call.url}`
-    );
+    assert.ok(call.url.endsWith("/api/auth/sign-in/email"), `forwarded url: ${call.url}`);
     assert.deepEqual(call.body, {
       email: "shlomo@pile.nyc",
       password: "12345678",
@@ -183,9 +173,7 @@ describe("createTestSessionHandler — fail-closed contract", () => {
     const res = await handler(ctx, req);
     assert.equal(res.status, 200);
     assert.ok(
-      only(calls, "forwarded custom-path request is missing").url.endsWith(
-        "/auth/sign-in/email"
-      )
+      only(calls, "forwarded custom-path request is missing").url.endsWith("/auth/sign-in/email"),
     );
   });
 });

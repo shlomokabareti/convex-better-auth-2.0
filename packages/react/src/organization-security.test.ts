@@ -17,10 +17,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 describe("organization security metadata (VOR-183)", () => {
   it("returns undefined for empty / invalid metadata", () => {
-    assert.equal(
-      parseOrganizationSecurityFromMetadataJson(undefined),
-      undefined
-    );
+    assert.equal(parseOrganizationSecurityFromMetadataJson(undefined), undefined);
     assert.equal(parseOrganizationSecurityFromMetadataJson(""), undefined);
     assert.equal(parseOrganizationSecurityFromMetadataJson("{"), undefined);
   });
@@ -34,7 +31,7 @@ describe("organization security metadata (VOR-183)", () => {
           ignored: true,
         },
         other: 1,
-      })
+      }),
     );
     assert.deepEqual(security, {
       requireMfa: true,
@@ -49,19 +46,16 @@ describe("organization security metadata (VOR-183)", () => {
           requireMfa: false,
           sessionTimeoutMinutes: 5,
         },
-      })
+      }),
     );
     assert.deepEqual(security, { requireMfa: false });
   });
 
   it("merges security updates and preserves sibling metadata keys", () => {
-    const next = mergeOrganizationSecurityIntoMetadataJson(
-      JSON.stringify({ keep: true }),
-      {
-        requireMfa: true,
-        sessionTimeoutMinutes: 480,
-      }
-    );
+    const next = mergeOrganizationSecurityIntoMetadataJson(JSON.stringify({ keep: true }), {
+      requireMfa: true,
+      sessionTimeoutMinutes: 480,
+    });
     assert.ok(next);
     const parsed: unknown = JSON.parse(next);
     assert.ok(isRecord(parsed));
@@ -78,7 +72,7 @@ describe("organization security metadata (VOR-183)", () => {
         mergeOrganizationSecurityIntoMetadataJson(undefined, {
           sessionTimeoutMinutes: 10,
         }),
-      /sessionTimeoutMinutes must be between/
+      /sessionTimeoutMinutes must be between/,
     );
   });
 

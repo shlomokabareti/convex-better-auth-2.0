@@ -26,14 +26,8 @@ describe("resolveMcpSessionAuthContext", () => {
     assert.equal(context.credentialType, "oauthToken");
     assert.equal(context.userId, "user_123");
     assert.equal(context.organizationId, "org_123");
-    assert.deepStrictEqual(context.scopes, [
-      "crm:organization:read",
-      "crm:people:write",
-    ]);
-    assert.deepStrictEqual(context.permissions, [
-      "organization:view",
-      "people:write",
-    ]);
+    assert.deepStrictEqual(context.scopes, ["crm:organization:read", "crm:people:write"]);
+    assert.deepStrictEqual(context.permissions, ["organization:view", "people:write"]);
     assert.deepStrictEqual(context.execution, {
       organizationId: "org_123",
       resourceType: "mcp.tool",
@@ -70,8 +64,7 @@ describe("resolveMcpSessionAuthContext", () => {
             userId: "user_123",
           },
         }),
-      (error: unknown) =>
-        error instanceof ApiAuthError && error.code === "OAUTH_SESSION_INVALID"
+      (error: unknown) => error instanceof ApiAuthError && error.code === "OAUTH_SESSION_INVALID",
     );
   });
 
@@ -86,8 +79,7 @@ describe("resolveMcpSessionAuthContext", () => {
           isRestricted: true,
           restrictedReason: "client_disabled",
         }),
-      (error: unknown) =>
-        error instanceof ApiAuthError && error.code === "PRINCIPAL_RESTRICTED"
+      (error: unknown) => error instanceof ApiAuthError && error.code === "PRINCIPAL_RESTRICTED",
     );
   });
 });
@@ -101,9 +93,9 @@ describe("normalizeMcpSessionScopes", () => {
   });
 
   it("normalizes and deduplicates array scopes", () => {
-    assert.deepStrictEqual(
-      normalizeMcpSessionScopes(["read:one", "read:one", " write:two "]),
-      ["read:one", "write:two"]
-    );
+    assert.deepStrictEqual(normalizeMcpSessionScopes(["read:one", "read:one", " write:two "]), [
+      "read:one",
+      "write:two",
+    ]);
   });
 });

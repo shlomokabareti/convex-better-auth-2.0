@@ -15,10 +15,7 @@ describe("normalizeBetterAuthIdentity", () => {
     });
 
     assert.equal(normalized.provider, "better-auth");
-    assert.equal(
-      normalized.tokenIdentifier,
-      "https://auth.example.com|user_123"
-    );
+    assert.equal(normalized.tokenIdentifier, "https://auth.example.com|user_123");
     assert.equal(normalized.sessionId, "session_123");
   });
 });

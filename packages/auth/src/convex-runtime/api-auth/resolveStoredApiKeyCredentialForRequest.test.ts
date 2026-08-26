@@ -32,8 +32,7 @@ describe("resolveStoredApiKeyCredentialForRequest", () => {
           token: "crm_live_123.secret",
           findByKeyPrefix: async () => null,
         }),
-      (error: unknown) =>
-        error instanceof ApiAuthError && error.code === "API_KEY_INVALID"
+      (error: unknown) => error instanceof ApiAuthError && error.code === "API_KEY_INVALID",
     );
   });
 
@@ -51,8 +50,7 @@ describe("resolveStoredApiKeyCredentialForRequest", () => {
             allowedIpRanges: ["203.0.113.0/24"],
           }),
         }),
-      (error: unknown) =>
-        error instanceof ApiAuthError && error.code === "API_KEY_IP_MISSING"
+      (error: unknown) => error instanceof ApiAuthError && error.code === "API_KEY_IP_MISSING",
     );
 
     await assert.rejects(
@@ -67,8 +65,7 @@ describe("resolveStoredApiKeyCredentialForRequest", () => {
             allowedIpRanges: ["203.0.113.0/24"],
           }),
         }),
-      (error: unknown) =>
-        error instanceof ApiAuthError && error.code === "API_KEY_IP_FORBIDDEN"
+      (error: unknown) => error instanceof ApiAuthError && error.code === "API_KEY_IP_FORBIDDEN",
     );
   });
 });

@@ -11,9 +11,7 @@ export type ApiKeyPrincipalInput = Pick<
   restrictedReason?: string | null;
 };
 
-export function resolveApiKeyPrincipal(
-  input: ApiKeyPrincipalInput
-): ApiKeyPrincipal {
+export function resolveApiKeyPrincipal(input: ApiKeyPrincipalInput): ApiKeyPrincipal {
   const inheritedPermissions = [...input.ownerPermissions];
   const effectivePermissions = computeEffectiveApiKeyPermissions({
     ownerPermissions: input.ownerPermissions,

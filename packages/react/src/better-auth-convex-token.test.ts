@@ -89,8 +89,7 @@ describe("better auth convex token cache", () => {
       now: () => 100_000,
       onTokenRefreshFailure: (failure) => {
         failures.push({
-          message:
-            failure.error instanceof Error ? failure.error.message : null,
+          message: failure.error instanceof Error ? failure.error.message : null,
           forceRefreshToken: failure.forceRefreshToken,
           hadCachedToken: failure.hadCachedToken,
           hadFallbackToken: failure.hadFallbackToken,
@@ -98,10 +97,7 @@ describe("better auth convex token cache", () => {
       },
     });
 
-    assert.equal(
-      await failingCache.getToken({ forceRefreshToken: true }),
-      createJwt({ exp: 300 })
-    );
+    assert.equal(await failingCache.getToken({ forceRefreshToken: true }), createJwt({ exp: 300 }));
     assert.deepEqual(failures, [
       {
         message: "network failed",
@@ -124,8 +120,7 @@ describe("better auth convex token cache", () => {
       now: () => 100_000,
       onTokenRefreshFailure: (failure) => {
         failures.push({
-          message:
-            failure.error instanceof Error ? failure.error.message : null,
+          message: failure.error instanceof Error ? failure.error.message : null,
           forceRefreshToken: failure.forceRefreshToken,
           hadCachedToken: failure.hadCachedToken,
           hadFallbackToken: failure.hadFallbackToken,

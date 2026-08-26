@@ -1,12 +1,6 @@
 import { useConvexAuth, useMutation } from "convex/react";
 import type { FunctionReference } from "convex/server";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -28,8 +22,7 @@ import { ConvexVerifyTwoFactorForm } from "./convex-verify-two-factor-form";
 // the native auth flow is automatable. Production never sets this, so
 // the password field stays fully secure. Same prod-safe, env-gated
 // pattern as ENABLE_DEVELOPMENT_TESTING_MUTATIONS.
-const SECURE_TEXT_ENTRY =
-  process.env.EXPO_PUBLIC_E2E_DISABLE_SECURE_ENTRY !== "true";
+const SECURE_TEXT_ENTRY = process.env.EXPO_PUBLIC_E2E_DISABLE_SECURE_ENTRY !== "true";
 
 type HostedCopy = {
   description?: string;
@@ -57,10 +50,7 @@ function HostedAuthError({ error }: { error: string | null }) {
   }
 
   return (
-    <View
-      className="bg-destructive/10 border-destructive/30"
-      style={styles.errorBox}
-    >
+    <View className="bg-destructive/10 border-destructive/30" style={styles.errorBox}>
       <Text className="text-destructive" style={styles.errorText}>
         {error}
       </Text>
@@ -118,9 +108,7 @@ function useHostedInvitationLookup(args: {
   invitationToken: string | null | undefined;
   lookupInvitation: (token: string) => Promise<HostedInvitationLookup | null>;
 }) {
-  const [lookup, setLookup] = useState<
-    HostedInvitationLookup | null | undefined
-  >(undefined);
+  const [lookup, setLookup] = useState<HostedInvitationLookup | null | undefined>(undefined);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const { invitationToken, lookupInvitation } = args;
 
@@ -140,9 +128,7 @@ function useHostedInvitationLookup(args: {
       .catch((error: unknown) => {
         if (!cancelled) {
           setLookup(null);
-          setLookupError(
-            error instanceof Error ? error.message : "Could not load invitation"
-          );
+          setLookupError(error instanceof Error ? error.message : "Could not load invitation");
         }
       });
 
@@ -163,27 +149,16 @@ function useHostedInvitationRedeem(args: {
   redeemInvitation: (token: string) => Promise<{ organizationId: string }>;
 }) {
   const [redeemError, setRedeemError] = useState<string | null>(null);
-  const [redeemState, setRedeemState] = useState<"idle" | "redeeming" | "done">(
-    "idle"
-  );
+  const [redeemState, setRedeemState] = useState<"idle" | "redeeming" | "done">("idle");
   const redeemedTokenRef = useRef<string | null>(null);
-  const {
-    invitationToken,
-    isConvexReady,
-    isLoaded,
-    isSignedIn,
-    onRedeemed,
-    redeemInvitation,
-  } = args;
+  const { invitationToken, isConvexReady, isLoaded, isSignedIn, onRedeemed, redeemInvitation } =
+    args;
 
   useEffect(() => {
     if (!invitationToken || !isLoaded || !isSignedIn || !isConvexReady) {
       return;
     }
-    if (
-      redeemedTokenRef.current === invitationToken ||
-      redeemState === "done"
-    ) {
+    if (redeemedTokenRef.current === invitationToken || redeemState === "done") {
       return;
     }
 
@@ -198,9 +173,7 @@ function useHostedInvitationRedeem(args: {
       .catch((error: unknown) => {
         redeemedTokenRef.current = null;
         setRedeemState("idle");
-        setRedeemError(
-          error instanceof Error ? error.message : "Could not accept invitation"
-        );
+        setRedeemError(error instanceof Error ? error.message : "Could not accept invitation");
       });
   }, [
     invitationToken,
@@ -250,20 +223,16 @@ function HostedInviteAuthStep(props: {
   );
 }
 
-function resolveHostedInviteCopy(
-  customCopy: HostedInviteRedeemScreenProps["copy"]
-) {
+function resolveHostedInviteCopy(customCopy: HostedInviteRedeemScreenProps["copy"]) {
   return {
     description: "Accept your invitation and join the workspace.",
     missingTokenDescription: "This invite link is missing its token.",
     missingTokenTitle: "Invite unavailable",
     redeemingDescription: "Your account is ready. Finalizing workspace access.",
     redeemingTitle: "Accepting invitation",
-    signInDescription:
-      "Already have an account? Sign in to accept this invitation.",
+    signInDescription: "Already have an account? Sign in to accept this invitation.",
     signInTitle: "Sign in to accept invite",
-    signUpDescription:
-      "Create your account, then we’ll attach this invitation.",
+    signUpDescription: "Create your account, then we’ll attach this invitation.",
     signUpTitle: "Accept invite",
     successDescription: "Workspace access granted.",
     successTitle: "Invitation accepted",
@@ -378,10 +347,7 @@ export function HostedSignInScreen(props: {
           ]}
           testID="convex-signin-submit"
         >
-          <Text
-            className="text-primary-foreground"
-            style={styles.primaryButtonText}
-          >
+          <Text className="text-primary-foreground" style={styles.primaryButtonText}>
             {loading ? "Signing in…" : copy.primaryActionLabel}
           </Text>
         </TouchableOpacity>
@@ -490,16 +456,11 @@ export function HostedSignUpScreen(props: {
           className="bg-primary"
           style={[
             styles.primaryButton,
-            loading || !email.trim() || !password || !name.trim()
-              ? styles.disabled
-              : null,
+            loading || !email.trim() || !password || !name.trim() ? styles.disabled : null,
           ]}
           testID="convex-signup-submit"
         >
-          <Text
-            className="text-primary-foreground"
-            style={styles.primaryButtonText}
-          >
+          <Text className="text-primary-foreground" style={styles.primaryButtonText}>
             {loading ? "Creating account…" : copy.primaryActionLabel}
           </Text>
         </TouchableOpacity>
@@ -566,17 +527,12 @@ export function HostedInviteRedeemScreen(props: HostedInviteRedeemScreenProps) {
 
   if (!invitationToken) {
     return (
-      <HostedStatusScreen
-        label={copy.missingTokenTitle}
-        sublabel={copy.missingTokenDescription}
-      />
+      <HostedStatusScreen label={copy.missingTokenTitle} sublabel={copy.missingTokenDescription} />
     );
   }
 
   if (lookup === undefined) {
-    return (
-      <HostedStatusScreen label={copy.title} sublabel="Loading invitation…" />
-    );
+    return <HostedStatusScreen label={copy.title} sublabel="Loading invitation…" />;
   }
 
   if (lookup === null) {
@@ -601,12 +557,7 @@ export function HostedInviteRedeemScreen(props: HostedInviteRedeemScreenProps) {
   }
 
   if (!isConvexReady || redeemState === "redeeming") {
-    return (
-      <HostedStatusScreen
-        label={copy.redeemingTitle}
-        sublabel={copy.redeemingDescription}
-      />
-    );
+    return <HostedStatusScreen label={copy.redeemingTitle} sublabel={copy.redeemingDescription} />;
   }
 
   if (redeemError) {
@@ -614,20 +565,10 @@ export function HostedInviteRedeemScreen(props: HostedInviteRedeemScreenProps) {
   }
 
   if (redeemState === "done") {
-    return (
-      <HostedStatusScreen
-        label={copy.successTitle}
-        sublabel={copy.successDescription}
-      />
-    );
+    return <HostedStatusScreen label={copy.successTitle} sublabel={copy.successDescription} />;
   }
 
-  return (
-    <HostedStatusScreen
-      label={copy.redeemingTitle}
-      sublabel={copy.redeemingDescription}
-    />
-  );
+  return <HostedStatusScreen label={copy.redeemingTitle} sublabel={copy.redeemingDescription} />;
 }
 
 // Higher-level RN provisioner with web API parity. Web's
@@ -664,23 +605,18 @@ export type BetterAuthConvexIdentityProvisionerProps = {
    * for the current Better-Auth identity. Called once per signed-in
    * userId; idempotent.
    */
-  provisionCurrentUser: FunctionReference<
-    "mutation",
-    "public",
-    EmptyArgs,
-    unknown
-  >;
+  provisionCurrentUser: FunctionReference<"mutation", "public", EmptyArgs, unknown>;
 };
 
 export function BetterAuthConvexIdentityProvisioner(
-  props: BetterAuthConvexIdentityProvisionerProps
+  props: BetterAuthConvexIdentityProvisionerProps,
 ) {
   const auth = props.runtime.useAppAuth();
   const convexAuth = useConvexAuth();
   const provisionMutation = useMutation(props.provisionCurrentUser);
   const provisionCurrentUser = useCallback(
     async () => await provisionMutation({}),
-    [provisionMutation]
+    [provisionMutation],
   );
   // Intentionally reference the query type so a future PR can switch
   // the runtime's useAppUser to hydrate from it (issue #2). Today the
@@ -708,9 +644,7 @@ export function HostedIdentityProvisioningSync(props: {
   runtime: ExpoAuthRuntime;
   userId: string | null;
 }) {
-  const sessionRestore = parseExpoSessionRestore(
-    props.runtime.authClient.useSession()
-  );
+  const sessionRestore = parseExpoSessionRestore(props.runtime.authClient.useSession());
   const lastProvisionedUserId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -745,13 +679,7 @@ export function HostedProtectedGate(props: {
   renderSignedOut: ReactNode;
 }) {
   if (!props.isLoaded) {
-    return (
-      <>
-        {props.renderLoading ?? (
-          <HostedStatusScreen label="Restoring session…" />
-        )}
-      </>
-    );
+    return <>{props.renderLoading ?? <HostedStatusScreen label="Restoring session…" />}</>;
   }
   if (!props.isSignedIn) {
     return <>{props.renderSignedOut}</>;
@@ -769,13 +697,7 @@ export function HostedProtectedGate(props: {
     );
   }
   if (props.defaultOrganization === undefined) {
-    return (
-      <>
-        {props.renderLoading ?? (
-          <HostedStatusScreen label="Loading organization…" />
-        )}
-      </>
-    );
+    return <>{props.renderLoading ?? <HostedStatusScreen label="Loading organization…" />}</>;
   }
   if (props.defaultOrganization === null) {
     return <>{props.renderMissingOrganization}</>;
@@ -798,8 +720,7 @@ export function HostedOrganizationChooserScreen(props: {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const copy = {
-    createWorkspaceDescription:
-      "Bootstrap a default workspace for this account.",
+    createWorkspaceDescription: "Bootstrap a default workspace for this account.",
     createWorkspaceLabel: "Create workspace",
     description: "Select your active organization before entering app.",
     emptyTitle: "No workspace yet",
@@ -813,9 +734,7 @@ export function HostedOrganizationChooserScreen(props: {
     try {
       await props.onBootstrap();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not create workspace"
-      );
+      setError(err instanceof Error ? err.message : "Could not create workspace");
     } finally {
       setLoadingId(null);
     }
@@ -827,9 +746,7 @@ export function HostedOrganizationChooserScreen(props: {
     try {
       await props.onSelect(organizationId);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not switch workspace"
-      );
+      setError(err instanceof Error ? err.message : "Could not switch workspace");
     } finally {
       setLoadingId(null);
     }
@@ -861,26 +778,17 @@ export function HostedOrganizationChooserScreen(props: {
         ) : null}
 
         {props.organizations === undefined ? (
-          <View
-            className="bg-card border-border"
-            style={[styles.card, styles.sectionGap]}
-          >
+          <View className="bg-card border-border" style={[styles.card, styles.sectionGap]}>
             <Text className="text-muted-foreground" style={styles.mutedText}>
               Loading organizations…
             </Text>
           </View>
         ) : props.organizations.length === 0 ? (
-          <View
-            className="bg-card border-border"
-            style={[styles.card, styles.sectionGap]}
-          >
+          <View className="bg-card border-border" style={[styles.card, styles.sectionGap]}>
             <Text className="text-foreground" style={styles.cardTitle}>
               {copy.emptyTitle}
             </Text>
-            <Text
-              className="text-muted-foreground"
-              style={[styles.mutedText, styles.topGap]}
-            >
+            <Text className="text-muted-foreground" style={[styles.mutedText, styles.topGap]}>
               {copy.createWorkspaceDescription}
             </Text>
             <TouchableOpacity
@@ -889,13 +797,8 @@ export function HostedOrganizationChooserScreen(props: {
               className="bg-primary"
               style={[styles.primaryButton, styles.topGapLg]}
             >
-              <Text
-                className="text-primary-foreground"
-                style={styles.primaryButtonText}
-              >
-                {loadingId === "bootstrap"
-                  ? "Creating…"
-                  : copy.createWorkspaceLabel}
+              <Text className="text-primary-foreground" style={styles.primaryButtonText}>
+                {loadingId === "bootstrap" ? "Creating…" : copy.createWorkspaceLabel}
               </Text>
             </TouchableOpacity>
           </View>
@@ -904,9 +807,7 @@ export function HostedOrganizationChooserScreen(props: {
             {props.organizations.map((organization) => (
               <TouchableOpacity
                 key={organization._id}
-                disabled={
-                  !organization.canSelect || loadingId === organization._id
-                }
+                disabled={!organization.canSelect || loadingId === organization._id}
                 onPress={async () => handleSelect(organization._id)}
                 className="bg-card border-border"
                 style={styles.card}
@@ -952,10 +853,7 @@ function HostedAuthScaffold(props: { children: ReactNode }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.flex}
     >
-      <ScrollView
-        contentContainerStyle={styles.authContainer}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.authContainer} keyboardShouldPersistTaps="handled">
         {props.children}
       </ScrollView>
     </KeyboardAvoidingView>

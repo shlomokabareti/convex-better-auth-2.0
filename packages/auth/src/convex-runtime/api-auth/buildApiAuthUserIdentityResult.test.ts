@@ -35,7 +35,7 @@ describe("buildApiAuthUserIdentityResult", () => {
         permissions: [],
         isRestricted: false,
         restrictedReason: null,
-      }
+      },
     );
   });
 
@@ -56,7 +56,7 @@ describe("buildApiAuthUserIdentityResult", () => {
         permissions: [],
         isRestricted: true,
         restrictedReason: "suspended",
-      }
+      },
     );
   });
 });

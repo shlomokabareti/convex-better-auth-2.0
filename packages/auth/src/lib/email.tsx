@@ -35,12 +35,8 @@ export function EmailHeading(props: HTMLAttributes<HTMLHeadingElement>) {
 export function EmailLayout(props: { preview?: string; children: ReactNode }) {
   return (
     <html>
-      <head>
-        {props.preview ? <title>{props.preview}</title> : null}
-      </head>
-      <body style={{ fontFamily: "sans-serif", padding: 24 }}>
-        {props.children}
-      </body>
+      <head>{props.preview ? <title>{props.preview}</title> : null}</head>
+      <body style={{ fontFamily: "sans-serif", padding: 24 }}>{props.children}</body>
     </html>
   );
 }

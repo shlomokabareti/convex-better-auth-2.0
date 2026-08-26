@@ -24,8 +24,9 @@ export {
   type ServiceSessionMintAudit,
 } from "./createServiceSessionMinter";
 
-export type BetterAuthComponentApi<DataModel extends GenericDataModel> =
-  Parameters<typeof createClient<DataModel>>[0];
+export type BetterAuthComponentApi<DataModel extends GenericDataModel> = Parameters<
+  typeof createClient<DataModel>
+>[0];
 
 export type BetterAuthConvexUserSyncArgs = {
   betterAuthUserId: string;
@@ -37,8 +38,7 @@ export type BetterAuthConvexUserSyncArgs = {
   sessionId?: string;
 };
 
-export type BetterAuthConvexIdentityProvisionArgs =
-  BetterAuthIdentityProvisionPayload;
+export type BetterAuthConvexIdentityProvisionArgs = BetterAuthIdentityProvisionPayload;
 
 export type BetterAuthConvexRuntimeRefs = {
   upsertUserFromBetterAuth?: FunctionReference<
@@ -89,18 +89,9 @@ export type BetterAuthUserSyncTriggerDoc = {
 };
 export type BetterAuthUserSyncTriggers<DataModel extends GenericDataModel> = {
   user: {
-    onCreate: (
-      ctx: GenericCtx<DataModel>,
-      doc: BetterAuthUserSyncTriggerDoc
-    ) => Promise<void>;
-    onUpdate: (
-      ctx: GenericCtx<DataModel>,
-      newDoc: BetterAuthUserSyncTriggerDoc
-    ) => Promise<void>;
-    onDelete: (
-      ctx: GenericCtx<DataModel>,
-      doc: { _id: string }
-    ) => Promise<void>;
+    onCreate: (ctx: GenericCtx<DataModel>, doc: BetterAuthUserSyncTriggerDoc) => Promise<void>;
+    onUpdate: (ctx: GenericCtx<DataModel>, newDoc: BetterAuthUserSyncTriggerDoc) => Promise<void>;
+    onDelete: (ctx: GenericCtx<DataModel>, doc: { _id: string }) => Promise<void>;
   };
 };
 
@@ -132,11 +123,10 @@ export type BetterAuthSessionConfig = {
   };
 };
 
-type BetterAuthDatabaseHooksFactory<DataModel extends GenericDataModel> =
-  (args: {
-    ctx: GenericCtx<DataModel>;
-    siteUrl: string;
-  }) => BetterAuthOptions["databaseHooks"];
+type BetterAuthDatabaseHooksFactory<DataModel extends GenericDataModel> = (args: {
+  ctx: GenericCtx<DataModel>;
+  siteUrl: string;
+}) => BetterAuthOptions["databaseHooks"];
 
 /**
  * Default session posture: 30-day absolute lifetime with
@@ -157,160 +147,157 @@ const DEFAULT_SESSION_CONFIG: BetterAuthSessionConfig = {
   },
 };
 
-export type BetterAuthConvexRuntimeConfig<DataModel extends GenericDataModel> =
-  {
-    components: {
-      betterAuth: BetterAuthComponentApi<DataModel>;
-    };
-    /**
-     * The authComponent the CONSUMER created via
-     * `createClient(components.betterAuth, { triggers, authFunctions })`.
-     * Passing it here keeps the createClient seam (and its triggersApi /
-     * authFunctions wiring) in the consumer module where Convex codegen
-     * and the component's function-handle dispatch can resolve it. If
-     * omitted, the runtime falls back to a triggerless internal client.
-     *
-     * Typed loosely on purpose: the consumer's `@convex-dev/better-auth`
-     * may be a different installed instance than this package's, so a
-     * nominal `ReturnType<typeof createClient>` would falsely mismatch.
-     */
-    authComponent?: BetterAuthComponentLike<DataModel>;
-    authProvider: BetterAuthConvexAuthProvider;
-    refs?: BetterAuthConvexRuntimeRefs;
-    basePath?: string;
-    cors?: boolean;
-    emailAndPassword?: {
-      enabled: boolean;
-      minPasswordLength?: number;
-      maxPasswordLength?: number;
-    };
-    /** Better Auth account options passed through by consumers that need them. */
-    account?: BetterAuthOptions["account"];
-    /**
-     * Better Auth database hooks. A factory can close over the request's Convex ctx,
-     * matching app-local direct betterAuth(...) wiring without bypassing the shared
-     * route handler.
-     */
-    databaseHooks?:
-      | BetterAuthOptions["databaseHooks"]
-      | BetterAuthDatabaseHooksFactory<DataModel>;
-    /**
-     * Email-verification posture. Wired to Better Auth's
-     * `emailVerification` options + `emailAndPassword.requireEmailVerification`.
-     * Verification/reset emails only actually send when `sendEmail` (below)
-     * is also provided — this block just controls the policy knobs.
-     */
-    emailVerification?: {
-      /** Send a verification email automatically on sign-up. Default false. */
-      sendOnSignUp?: boolean;
-      /**
-       * Block sign-in until the address is verified
-       * (maps to emailAndPassword.requireEmailVerification). Default false.
-       */
-      required?: boolean;
-    };
-    /**
-     * Single email-transport seam. The package owns POLICY (when to send,
-     * what kind, the tokenized action URL Better Auth produced); the
-     * CONSUMER owns TRANSPORT + RENDERING. This mirrors how the invitation
-     * flow splits package-side policy from consumer-side delivery.
-     *
-     * STYLE A (intentional): the runtime hands the consumer
-     * `{kind,to,url,token,userId}` and the consumer decides how to render
-     * — they MAY call the Part-1 `convex-auth/convex` draft
-     * helpers (createPasswordResetEmailDraft / createEmailVerificationEmailDraft)
-     * or use their own template. The runtime never builds the
-     * {from,subject,html,text} draft itself, keeping it decoupled from
-     * rendering. `url` is already fully tokenized by Better Auth; `token`
-     * is provided too for consumers who render their own link.
-     *
-     * When omitted, no reset/verification callbacks are wired — fully
-     * back-compatible (no behavior change).
-     */
-    sendEmail?: (args: {
-      /**
-       * Convex generic ctx the Better-Auth handler is running in. Lets
-       * consumers reach `@convex-dev/resend`, `ctx.scheduler`, or any
-       * other ctx-bound resource at email time without threading it
-       * through a closure they themselves capture. Added so consumers
-       * can use the canonical Convex storage/resend plumbing instead
-       * of fetching the email API directly.
-       */
-      ctx: GenericCtx<DataModel>;
-      kind: "verify-email" | "reset-password";
-      to: string;
-      url: string;
-      token: string;
-      userId?: string;
-    }) => Promise<void>;
-    rateLimit?: BetterAuthRateLimitConfig;
-    /**
-     * Social sign-on providers (Google/Apple/Microsoft/etc.), passed straight
-     * to Better Auth's `socialProviders`. STYLE A (consumer owns secrets): the
-     * consumer supplies each provider's `clientId`/`clientSecret` from their own
-     * env. The package owns the wiring — the OAuth callback routes are mounted by
-     * the Better Auth handler (`/api/auth/callback/<provider>`), and the
-     * cross-domain + expo plugins handle web + native redirects. The provider's
-     * redirect URI must be registered as `<CONVEX_SITE_URL>/api/auth/callback/<provider>`,
-     * and native apps must include their scheme in `trustedOrigins`.
-     * Absent (default) → no social providers; back-compatible.
-     */
-    socialProviders?: BetterAuthOptions["socialProviders"];
-    /**
-     * Breached-password screening (NIST 800-63B requires checking
-     * passwords against known-breached lists). Uses Better Auth's OFFICIAL
-     * `haveIBeenPwned` plugin
-     * (audited; HIBP k-anonymity — only a 5-char SHA-1 prefix leaves the
-     * server, never the password). Runs on sign-up and password
-     * set/change/reset. Default enabled. NOTE: the official plugin fails
-     * CLOSED — if HIBP is unreachable the request is rejected (no custom
-     * fail-open override; this matches Better Auth's own behavior).
-     */
-    breachedPasswordCheck?: {
-      enabled?: boolean;
-      message?: string;
-    };
-    /**
-     * Bot/abuse mitigation via Better Auth's OFFICIAL `captcha` plugin
-     * (Cloudflare Turnstile; stateless — no DB schema). Default DISABLED;
-     * a project opts in by supplying `secretKey`. Deliberately scoped to
-     * sign-up + password-reset (the mass-abuse vectors) and NOT sign-in:
-     * sign-in is already covered by the Convex-native distributed rate
-     * limiter, and gating it would 400 every programmatic/native/MCP
-     * caller that cannot present an `x-captcha-response` token.
-     */
-    captcha?: {
-      enabled?: boolean;
-      secretKey?: string;
-      endpoints?: string[];
-    };
-    session?: BetterAuthSessionConfig;
-    /**
-     * TOTP / backup-code MFA via Better Auth's OFFICIAL `twoFactor`
-     * plugin (audited crypto; the @convex-dev/better-auth component
-     * schema already includes the twoFactor table + twoFactorEnabled
-     * field). Opt-in per project — default off. Email-OTP step-up
-     * remains a separate secondary/recovery factor.
-     */
-    twoFactor?: {
-      enabled?: boolean;
-      issuer?: string;
-    };
-    /**
-     * Request headers to trust for the client IP (rate limiting + session
-     * tracking). Convex routes all traffic through its edge, so
-     * `x-forwarded-for` is the authoritative client IP. Override only if
-     * a different trusted proxy chain is in front.
-     */
-    ipAddressHeaders?: readonly string[];
-    /** Verbose Better Auth logging (default: errors only). */
-    verbose?: boolean;
-    siteUrlEnvNames?: readonly string[];
-    secretEnvName?: string;
-    trustedOriginsEnvName?: string;
-    trustedOrigins?: readonly string[];
-    linkedAccountPageSize?: number;
+export type BetterAuthConvexRuntimeConfig<DataModel extends GenericDataModel> = {
+  components: {
+    betterAuth: BetterAuthComponentApi<DataModel>;
   };
+  /**
+   * The authComponent the CONSUMER created via
+   * `createClient(components.betterAuth, { triggers, authFunctions })`.
+   * Passing it here keeps the createClient seam (and its triggersApi /
+   * authFunctions wiring) in the consumer module where Convex codegen
+   * and the component's function-handle dispatch can resolve it. If
+   * omitted, the runtime falls back to a triggerless internal client.
+   *
+   * Typed loosely on purpose: the consumer's `@convex-dev/better-auth`
+   * may be a different installed instance than this package's, so a
+   * nominal `ReturnType<typeof createClient>` would falsely mismatch.
+   */
+  authComponent?: BetterAuthComponentLike<DataModel>;
+  authProvider: BetterAuthConvexAuthProvider;
+  refs?: BetterAuthConvexRuntimeRefs;
+  basePath?: string;
+  cors?: boolean;
+  emailAndPassword?: {
+    enabled: boolean;
+    minPasswordLength?: number;
+    maxPasswordLength?: number;
+  };
+  /** Better Auth account options passed through by consumers that need them. */
+  account?: BetterAuthOptions["account"];
+  /**
+   * Better Auth database hooks. A factory can close over the request's Convex ctx,
+   * matching app-local direct betterAuth(...) wiring without bypassing the shared
+   * route handler.
+   */
+  databaseHooks?: BetterAuthOptions["databaseHooks"] | BetterAuthDatabaseHooksFactory<DataModel>;
+  /**
+   * Email-verification posture. Wired to Better Auth's
+   * `emailVerification` options + `emailAndPassword.requireEmailVerification`.
+   * Verification/reset emails only actually send when `sendEmail` (below)
+   * is also provided — this block just controls the policy knobs.
+   */
+  emailVerification?: {
+    /** Send a verification email automatically on sign-up. Default false. */
+    sendOnSignUp?: boolean;
+    /**
+     * Block sign-in until the address is verified
+     * (maps to emailAndPassword.requireEmailVerification). Default false.
+     */
+    required?: boolean;
+  };
+  /**
+   * Single email-transport seam. The package owns POLICY (when to send,
+   * what kind, the tokenized action URL Better Auth produced); the
+   * CONSUMER owns TRANSPORT + RENDERING. This mirrors how the invitation
+   * flow splits package-side policy from consumer-side delivery.
+   *
+   * STYLE A (intentional): the runtime hands the consumer
+   * `{kind,to,url,token,userId}` and the consumer decides how to render
+   * — they MAY call the Part-1 `convex-auth/convex` draft
+   * helpers (createPasswordResetEmailDraft / createEmailVerificationEmailDraft)
+   * or use their own template. The runtime never builds the
+   * {from,subject,html,text} draft itself, keeping it decoupled from
+   * rendering. `url` is already fully tokenized by Better Auth; `token`
+   * is provided too for consumers who render their own link.
+   *
+   * When omitted, no reset/verification callbacks are wired — fully
+   * back-compatible (no behavior change).
+   */
+  sendEmail?: (args: {
+    /**
+     * Convex generic ctx the Better-Auth handler is running in. Lets
+     * consumers reach `@convex-dev/resend`, `ctx.scheduler`, or any
+     * other ctx-bound resource at email time without threading it
+     * through a closure they themselves capture. Added so consumers
+     * can use the canonical Convex storage/resend plumbing instead
+     * of fetching the email API directly.
+     */
+    ctx: GenericCtx<DataModel>;
+    kind: "verify-email" | "reset-password";
+    to: string;
+    url: string;
+    token: string;
+    userId?: string;
+  }) => Promise<void>;
+  rateLimit?: BetterAuthRateLimitConfig;
+  /**
+   * Social sign-on providers (Google/Apple/Microsoft/etc.), passed straight
+   * to Better Auth's `socialProviders`. STYLE A (consumer owns secrets): the
+   * consumer supplies each provider's `clientId`/`clientSecret` from their own
+   * env. The package owns the wiring — the OAuth callback routes are mounted by
+   * the Better Auth handler (`/api/auth/callback/<provider>`), and the
+   * cross-domain + expo plugins handle web + native redirects. The provider's
+   * redirect URI must be registered as `<CONVEX_SITE_URL>/api/auth/callback/<provider>`,
+   * and native apps must include their scheme in `trustedOrigins`.
+   * Absent (default) → no social providers; back-compatible.
+   */
+  socialProviders?: BetterAuthOptions["socialProviders"];
+  /**
+   * Breached-password screening (NIST 800-63B requires checking
+   * passwords against known-breached lists). Uses Better Auth's OFFICIAL
+   * `haveIBeenPwned` plugin
+   * (audited; HIBP k-anonymity — only a 5-char SHA-1 prefix leaves the
+   * server, never the password). Runs on sign-up and password
+   * set/change/reset. Default enabled. NOTE: the official plugin fails
+   * CLOSED — if HIBP is unreachable the request is rejected (no custom
+   * fail-open override; this matches Better Auth's own behavior).
+   */
+  breachedPasswordCheck?: {
+    enabled?: boolean;
+    message?: string;
+  };
+  /**
+   * Bot/abuse mitigation via Better Auth's OFFICIAL `captcha` plugin
+   * (Cloudflare Turnstile; stateless — no DB schema). Default DISABLED;
+   * a project opts in by supplying `secretKey`. Deliberately scoped to
+   * sign-up + password-reset (the mass-abuse vectors) and NOT sign-in:
+   * sign-in is already covered by the Convex-native distributed rate
+   * limiter, and gating it would 400 every programmatic/native/MCP
+   * caller that cannot present an `x-captcha-response` token.
+   */
+  captcha?: {
+    enabled?: boolean;
+    secretKey?: string;
+    endpoints?: string[];
+  };
+  session?: BetterAuthSessionConfig;
+  /**
+   * TOTP / backup-code MFA via Better Auth's OFFICIAL `twoFactor`
+   * plugin (audited crypto; the @convex-dev/better-auth component
+   * schema already includes the twoFactor table + twoFactorEnabled
+   * field). Opt-in per project — default off. Email-OTP step-up
+   * remains a separate secondary/recovery factor.
+   */
+  twoFactor?: {
+    enabled?: boolean;
+    issuer?: string;
+  };
+  /**
+   * Request headers to trust for the client IP (rate limiting + session
+   * tracking). Convex routes all traffic through its edge, so
+   * `x-forwarded-for` is the authoritative client IP. Override only if
+   * a different trusted proxy chain is in front.
+   */
+  ipAddressHeaders?: readonly string[];
+  /** Verbose Better Auth logging (default: errors only). */
+  verbose?: boolean;
+  siteUrlEnvNames?: readonly string[];
+  secretEnvName?: string;
+  trustedOriginsEnvName?: string;
+  trustedOrigins?: readonly string[];
+  linkedAccountPageSize?: number;
+};
 
 type BetterAuthComponentLike<DataModel extends GenericDataModel> = Pick<
   ReturnType<typeof createClient<DataModel>>,
@@ -345,7 +332,7 @@ type BetterAuthBackendContext = {
       userId: string,
       dontRememberMe?: boolean,
       override?: Record<string, unknown>,
-      overrideAll?: boolean
+      overrideAll?: boolean,
     ) => Promise<{ token: string; expiresAt?: number | Date }>;
     deleteSession: (token: string) => Promise<unknown>;
     findUserById: (userId: string) => Promise<unknown>;
@@ -355,7 +342,7 @@ type BetterAuthBackendContext = {
      */
     findUserByEmail: (
       email: string,
-      options?: { includeAccounts?: boolean }
+      options?: { includeAccounts?: boolean },
     ) => Promise<{
       user: { id: string; email: string };
       accounts: unknown[];
@@ -365,7 +352,7 @@ type BetterAuthBackendContext = {
       limit?: number,
       offset?: number,
       sortBy?: { field: string; direction: "asc" | "desc" },
-      where?: unknown
+      where?: unknown,
     ) => Promise<unknown[]>;
   };
   options: {
@@ -383,9 +370,7 @@ type LazyBetterAuth = {
   $context: Promise<BetterAuthBackendContext>;
 };
 
-function parseBetterAuthBackendContext(
-  value: unknown
-): BetterAuthBackendContext {
+function parseBetterAuthBackendContext(value: unknown): BetterAuthBackendContext {
   if (typeof value !== "object" || value === null) {
     throw new TypeError("Better Auth returned an invalid backend context");
   }
@@ -397,9 +382,7 @@ function parseBetterAuthBackendContext(
     typeof options !== "object" ||
     options === null
   ) {
-    throw new TypeError(
-      "Better Auth backend context is missing required fields"
-    );
+    throw new TypeError("Better Auth backend context is missing required fields");
   }
   const trustedOrigins = Reflect.get(options, "trustedOrigins");
   if (
@@ -420,54 +403,35 @@ function parseBetterAuthBackendContext(
       createSession: async (...args) => {
         const result: unknown = await call("createSession", args);
         if (typeof result !== "object" || result === null) {
-          throw new TypeError(
-            "Better Auth createSession returned invalid data"
-          );
+          throw new TypeError("Better Auth createSession returned invalid data");
         }
         const token = Reflect.get(result, "token");
         const expiresAt = Reflect.get(result, "expiresAt");
         if (
           typeof token !== "string" ||
-          (expiresAt !== undefined &&
-            typeof expiresAt !== "number" &&
-            !(expiresAt instanceof Date))
+          (expiresAt !== undefined && typeof expiresAt !== "number" && !(expiresAt instanceof Date))
         ) {
-          throw new TypeError(
-            "Better Auth createSession returned invalid data"
-          );
+          throw new TypeError("Better Auth createSession returned invalid data");
         }
         return { token, ...(expiresAt !== undefined ? { expiresAt } : {}) };
       },
       deleteSession: async (token) => await call("deleteSession", [token]),
       findUserById: async (userId) => await call("findUserById", [userId]),
       findUserByEmail: async (email, lookupOptions) => {
-        const result: unknown = await call("findUserByEmail", [
-          email,
-          lookupOptions,
-        ]);
+        const result: unknown = await call("findUserByEmail", [email, lookupOptions]);
         if (result === null) return null;
         if (typeof result !== "object" || Array.isArray(result)) {
-          throw new TypeError(
-            "Better Auth findUserByEmail returned invalid data"
-          );
+          throw new TypeError("Better Auth findUserByEmail returned invalid data");
         }
         const user = Reflect.get(result, "user");
         const accounts = Reflect.get(result, "accounts");
-        if (
-          typeof user !== "object" ||
-          user === null ||
-          !Array.isArray(accounts)
-        ) {
-          throw new TypeError(
-            "Better Auth findUserByEmail returned invalid data"
-          );
+        if (typeof user !== "object" || user === null || !Array.isArray(accounts)) {
+          throw new TypeError("Better Auth findUserByEmail returned invalid data");
         }
         const id = Reflect.get(user, "id");
         const userEmail = Reflect.get(user, "email");
         if (typeof id !== "string" || typeof userEmail !== "string") {
-          throw new TypeError(
-            "Better Auth findUserByEmail returned invalid user"
-          );
+          throw new TypeError("Better Auth findUserByEmail returned invalid user");
         }
         return { user: { id, email: userEmail }, accounts };
       },
@@ -489,10 +453,7 @@ type QueryMutationCtx<DataModel extends GenericDataModel> = Extract<
 >;
 
 const DEFAULT_BASE_PATH = "/api/auth";
-const DEFAULT_SITE_URL_ENV_NAMES = [
-  "CONVEX_SITE_URL",
-  "BETTER_AUTH_URL",
-] as const;
+const DEFAULT_SITE_URL_ENV_NAMES = ["CONVEX_SITE_URL", "BETTER_AUTH_URL"] as const;
 const DEFAULT_SECRET_ENV_NAME = "BETTER_AUTH_SECRET";
 const DEFAULT_TRUSTED_ORIGINS_ENV_NAME = "BETTER_AUTH_TRUSTED_ORIGINS";
 const DEFAULT_LINKED_ACCOUNT_PAGE_SIZE = 50;
@@ -532,10 +493,8 @@ type BuiltBetterAuthInstance = {
 };
 type BetterAuthPlugin = NonNullable<BetterAuthOptions["plugins"]>[number];
 
-export function createBetterAuthConvexRuntime<
-  DataModel extends GenericDataModel,
->(
-  config: BetterAuthConvexRuntimeConfig<DataModel>
+export function createBetterAuthConvexRuntime<DataModel extends GenericDataModel>(
+  config: BetterAuthConvexRuntimeConfig<DataModel>,
 ): BetterAuthConvexRuntime<DataModel> {
   const resolved = resolveBetterAuthRuntimeConfig(config);
   const resolveTrustedOrigins = (siteUrl: string): string[] =>
@@ -565,12 +524,10 @@ export function createBetterAuthConvexRuntime<
 }
 
 function resolveBetterAuthRuntimeConfig<DataModel extends GenericDataModel>(
-  config: BetterAuthConvexRuntimeConfig<DataModel>
+  config: BetterAuthConvexRuntimeConfig<DataModel>,
 ): BetterAuthRuntimeResolvedConfig<DataModel> {
   return {
-    authComponent:
-      config.authComponent ??
-      createClient<DataModel>(config.components.betterAuth),
+    authComponent: config.authComponent ?? createClient<DataModel>(config.components.betterAuth),
     basePath: config.basePath ?? DEFAULT_BASE_PATH,
     breachCheck: {
       enabled: true,
@@ -585,15 +542,12 @@ function resolveBetterAuthRuntimeConfig<DataModel extends GenericDataModel>(
     secretEnvName: config.secretEnvName ?? DEFAULT_SECRET_ENV_NAME,
     session: resolveBetterAuthSessionConfig(config.session),
     siteUrlEnvNames: config.siteUrlEnvNames ?? DEFAULT_SITE_URL_ENV_NAMES,
-    trustedOriginsEnvName:
-      config.trustedOriginsEnvName ?? DEFAULT_TRUSTED_ORIGINS_ENV_NAME,
+    trustedOriginsEnvName: config.trustedOriginsEnvName ?? DEFAULT_TRUSTED_ORIGINS_ENV_NAME,
     verbose: config.verbose ?? false,
   };
 }
 
-function resolveBetterAuthSessionConfig(
-  session: BetterAuthSessionConfig | undefined
-) {
+function resolveBetterAuthSessionConfig(session: BetterAuthSessionConfig | undefined) {
   return {
     ...DEFAULT_SESSION_CONFIG,
     ...session,
@@ -629,9 +583,7 @@ function createLazyBetterAuth<DataModel extends GenericDataModel>(args: {
   return {
     options,
     get $context(): Promise<BetterAuthBackendContext> {
-      return getAuthInstance().then((auth) =>
-        parseBetterAuthBackendContext(auth.$context)
-      );
+      return getAuthInstance().then((auth) => parseBetterAuthBackendContext(auth.$context));
     },
     handler: async (request) =>
       handleBetterAuthRequest({
@@ -645,37 +597,30 @@ function createLazyBetterAuth<DataModel extends GenericDataModel>(args: {
   };
 }
 
-async function buildBetterAuthInstance<
-  DataModel extends GenericDataModel,
->(args: {
+async function buildBetterAuthInstance<DataModel extends GenericDataModel>(args: {
   config: BetterAuthConvexRuntimeConfig<DataModel>;
   ctx: GenericCtx<DataModel>;
   options: BetterAuthRuntimeOptions;
   resolved: BetterAuthRuntimeResolvedConfig<DataModel>;
   siteUrl: string;
 }): Promise<BuiltBetterAuthInstance> {
-  const [
-    { betterAuth },
-    { convex, crossDomain },
-    { twoFactor, haveIBeenPwned, captcha },
-  ] = await Promise.all([
-    import("better-auth/minimal"),
-    import("@convex-dev/better-auth/plugins"),
-    import("better-auth/plugins"),
-  ]);
+  const [{ betterAuth }, { convex, crossDomain }, { twoFactor, haveIBeenPwned, captcha }] =
+    await Promise.all([
+      import("better-auth/minimal"),
+      import("@convex-dev/better-auth/plugins"),
+      import("better-auth/plugins"),
+    ]);
   const emailDelivery = buildBetterAuthEmailDelivery(args.config, args.ctx);
   const databaseHooks = resolveBetterAuthDatabaseHooks(
     args.config.databaseHooks,
     args.ctx,
-    args.siteUrl
+    args.siteUrl,
   );
 
   return betterAuth({
     secret: requireEnv(args.resolved.secretEnvName),
     ...args.options,
-    ...(args.config.account !== undefined
-      ? { account: args.config.account }
-      : {}),
+    ...(args.config.account !== undefined ? { account: args.config.account } : {}),
     emailAndPassword: {
       ...args.resolved.emailAndPassword,
       ...emailDelivery.emailAndPassword,
@@ -693,10 +638,7 @@ async function buildBetterAuthInstance<
     ...(databaseHooks !== undefined ? { databaseHooks } : {}),
     database: args.resolved.authComponent.adapter(args.ctx),
     plugins: [
-      ...buildBetterAuthSecurityPlugins(
-        { captcha, haveIBeenPwned, twoFactor },
-        args
-      ),
+      ...buildBetterAuthSecurityPlugins({ captcha, haveIBeenPwned, twoFactor }, args),
       crossDomain({ siteUrl: args.siteUrl }),
       convex({
         authConfig: { providers: [args.config.authProvider] },
@@ -712,11 +654,9 @@ function resolveBetterAuthDatabaseHooks<DataModel extends GenericDataModel>(
     | BetterAuthDatabaseHooksFactory<DataModel>
     | undefined,
   ctx: GenericCtx<DataModel>,
-  siteUrl: string
+  siteUrl: string,
 ): BetterAuthOptions["databaseHooks"] | undefined {
-  return typeof databaseHooks === "function"
-    ? databaseHooks({ ctx, siteUrl })
-    : databaseHooks;
+  return typeof databaseHooks === "function" ? databaseHooks({ ctx, siteUrl }) : databaseHooks;
 }
 
 function buildBetterAuthAdvancedOptions(ipAddressHeaders: readonly string[]) {
@@ -734,51 +674,38 @@ function buildBetterAuthSecurityPlugins<DataModel extends GenericDataModel>(
       secretKey: string;
       endpoints: string[];
     }) => BetterAuthPlugin;
-    haveIBeenPwned: (options?: {
-      customPasswordCompromisedMessage?: string;
-    }) => BetterAuthPlugin;
+    haveIBeenPwned: (options?: { customPasswordCompromisedMessage?: string }) => BetterAuthPlugin;
     twoFactor: (options?: { issuer?: string }) => BetterAuthPlugin;
   },
   args: {
     config: BetterAuthConvexRuntimeConfig<DataModel>;
     resolved: BetterAuthRuntimeResolvedConfig<DataModel>;
-  }
+  },
 ): BetterAuthPlugin[] {
   return [
     ...buildBetterAuthTwoFactorPlugins(plugins.twoFactor, args.config),
-    ...buildBetterAuthBreachCheckPlugins(
-      plugins.haveIBeenPwned,
-      args.resolved.breachCheck
-    ),
+    ...buildBetterAuthBreachCheckPlugins(plugins.haveIBeenPwned, args.resolved.breachCheck),
     ...buildBetterAuthCaptchaPlugins(plugins.captcha, args.config),
   ];
 }
 
 function buildBetterAuthTwoFactorPlugins<DataModel extends GenericDataModel>(
   twoFactor: (options?: { issuer?: string }) => BetterAuthPlugin,
-  config: BetterAuthConvexRuntimeConfig<DataModel>
+  config: BetterAuthConvexRuntimeConfig<DataModel>,
 ): BetterAuthPlugin[] {
   return config.twoFactor?.enabled === true
-    ? [
-        twoFactor(
-          config.twoFactor.issuer ? { issuer: config.twoFactor.issuer } : {}
-        ),
-      ]
+    ? [twoFactor(config.twoFactor.issuer ? { issuer: config.twoFactor.issuer } : {})]
     : [];
 }
 
 function buildBetterAuthBreachCheckPlugins(
-  haveIBeenPwned: (options?: {
-    customPasswordCompromisedMessage?: string;
-  }) => BetterAuthPlugin,
-  breachCheck: { enabled: boolean; message?: string }
+  haveIBeenPwned: (options?: { customPasswordCompromisedMessage?: string }) => BetterAuthPlugin,
+  breachCheck: { enabled: boolean; message?: string },
 ): BetterAuthPlugin[] {
   return breachCheck.enabled
     ? [
         haveIBeenPwned(
-          breachCheck.message
-            ? { customPasswordCompromisedMessage: breachCheck.message }
-            : {}
+          breachCheck.message ? { customPasswordCompromisedMessage: breachCheck.message } : {},
         ),
       ]
     : [];
@@ -790,7 +717,7 @@ function buildBetterAuthCaptchaPlugins<DataModel extends GenericDataModel>(
     secretKey: string;
     endpoints: string[];
   }) => BetterAuthPlugin,
-  config: BetterAuthConvexRuntimeConfig<DataModel>
+  config: BetterAuthConvexRuntimeConfig<DataModel>,
 ): BetterAuthPlugin[] {
   if (
     config.captcha?.enabled !== true ||
@@ -804,17 +731,12 @@ function buildBetterAuthCaptchaPlugins<DataModel extends GenericDataModel>(
     captcha({
       provider: "cloudflare-turnstile",
       secretKey: config.captcha.secretKey,
-      endpoints: config.captcha.endpoints ?? [
-        "/sign-up/email",
-        "/request-password-reset",
-      ],
+      endpoints: config.captcha.endpoints ?? ["/sign-up/email", "/request-password-reset"],
     }),
   ];
 }
 
-async function handleBetterAuthRequest<
-  DataModel extends GenericDataModel,
->(args: {
+async function handleBetterAuthRequest<DataModel extends GenericDataModel>(args: {
   auth: BuiltBetterAuthInstance;
   config: BetterAuthConvexRuntimeConfig<DataModel>;
   ctx: GenericCtx<DataModel>;
@@ -827,16 +749,10 @@ async function handleBetterAuthRequest<
     return rateLimitResponse;
   }
 
-  return normalizeBetterAuthHandlerResponse(
-    args.auth,
-    args.request,
-    args.verbose
-  );
+  return normalizeBetterAuthHandlerResponse(args.auth, args.request, args.verbose);
 }
 
-async function enforceBetterAuthRateLimit<
-  DataModel extends GenericDataModel,
->(args: {
+async function enforceBetterAuthRateLimit<DataModel extends GenericDataModel>(args: {
   config: BetterAuthConvexRuntimeConfig<DataModel>;
   ctx: GenericCtx<DataModel>;
   ipAddressHeaders: readonly string[];
@@ -853,7 +769,7 @@ async function enforceBetterAuthRateLimit<
 
   const rateLimitRequest = await buildBetterAuthRateLimitRequest(
     args.request,
-    args.ipAddressHeaders
+    args.ipAddressHeaders,
   );
   if (rateLimitRequest === undefined) {
     return undefined;
@@ -863,13 +779,8 @@ async function enforceBetterAuthRateLimit<
   }
 
   try {
-    const verdict = await args.ctx.runMutation(
-      rateLimitRef,
-      rateLimitRequest.input
-    );
-    return verdict.ok
-      ? undefined
-      : createRateLimitedResponse(verdict.retryAfterMs);
+    const verdict = await args.ctx.runMutation(rateLimitRef, rateLimitRequest.input);
+    return verdict.ok ? undefined : createRateLimitedResponse(verdict.retryAfterMs);
   } catch (error) {
     logBetterAuthRateLimitError(error);
     return undefined;
@@ -890,7 +801,7 @@ function logMissingBetterAuthRateLimit(request: Request): void {
   console.error(
     "[convex-auth] SECURITY: no rate limiter wired (config.refs.rateLimitAuthRequest is unset). " +
       "Sign-in/sign-up/2FA/password-reset are UNPROTECTED against brute-force and email bombing on Convex. " +
-      "Wire a distributed limiter (@convex-dev/rate-limiter) for any production deployment."
+      "Wire a distributed limiter (@convex-dev/rate-limiter) for any production deployment.",
   );
 }
 
@@ -898,13 +809,13 @@ function logBetterAuthRateLimitError(error: unknown): void {
   const errorKind = error instanceof Error ? error.name : typeof error;
   console.error(
     "[convex-auth] SECURITY: auth rate limiter errored; failing open for availability. Auth request allowed.",
-    { errorKind }
+    { errorKind },
   );
 }
 
 async function buildBetterAuthRateLimitRequest(
   request: Request,
-  ipAddressHeaders: readonly string[]
+  ipAddressHeaders: readonly string[],
 ): Promise<
   | {
       blocked: false;
@@ -949,11 +860,7 @@ function classifyBetterAuthRateLimitPath(pathname: string) {
   if (/\/(sign-up|sign-in)\//.test(pathname)) {
     return "auth";
   }
-  if (
-    /\/(request-password-reset|forget-password|send-verification-email)/.test(
-      pathname
-    )
-  ) {
+  if (/\/(request-password-reset|forget-password|send-verification-email)/.test(pathname)) {
     return "emailTrigger";
   }
   if (/\/two-factor\/verify-/.test(pathname)) {
@@ -967,31 +874,21 @@ function isRateLimitedAuthPath(pathname: string): boolean {
   return classifyBetterAuthRateLimitPath(pathname) !== "none";
 }
 
-function readBetterAuthRequestIp(
-  request: Request,
-  ipAddressHeaders: readonly string[]
-): string {
+function readBetterAuthRequestIp(request: Request, ipAddressHeaders: readonly string[]): string {
   return (
     ipAddressHeaders
       .map((header) => request.headers.get(header))
-      .find(
-        (value): value is string =>
-          typeof value === "string" && value.length > 0
-      )
+      .find((value): value is string => typeof value === "string" && value.length > 0)
       ?.split(",")[0]
       ?.trim() ?? "unknown"
   );
 }
 
-async function readNormalizedBetterAuthEmail(
-  request: Request
-): Promise<string | undefined> {
+async function readNormalizedBetterAuthEmail(request: Request): Promise<string | undefined> {
   try {
     const body: unknown = await request.clone().json();
     const email =
-      typeof body === "object" && body !== null
-        ? Reflect.get(body, "email")
-        : undefined;
+      typeof body === "object" && body !== null ? Reflect.get(body, "email") : undefined;
     return typeof email === "string" && email.length > 0
       ? email.normalize("NFC").trim().toLowerCase()
       : undefined;
@@ -1001,49 +898,37 @@ async function readNormalizedBetterAuthEmail(
 }
 
 async function resolveBetterAuthTwoFactorSubjectKey(
-  request: Request
+  request: Request,
 ): Promise<{ subjectKey: string | undefined }> {
   const cookieHeader = request.headers.get("cookie") ?? "";
   const pending =
     cookieHeader.match(/better-auth\.two_factor=([^;]+)/) ??
     cookieHeader.match(/better-auth\.session_token=([^;]+)/);
   return {
-    subjectKey: pending?.[1]
-      ? await sha256Hex(decodeURIComponent(pending[1]))
-      : undefined,
+    subjectKey: pending?.[1] ? await sha256Hex(decodeURIComponent(pending[1])) : undefined,
   };
 }
 
 function createRateLimitedResponse(retryAfterMs: number | undefined): Response {
-  return new Response(
-    JSON.stringify({ error: "rate_limited", code: "RATE_LIMITED" }),
-    {
-      status: 429,
-      headers: {
-        "content-type": "application/json",
-        "retry-after": String(Math.ceil((retryAfterMs ?? 60_000) / 1000)),
-      },
-    }
-  );
+  return new Response(JSON.stringify({ error: "rate_limited", code: "RATE_LIMITED" }), {
+    status: 429,
+    headers: {
+      "content-type": "application/json",
+      "retry-after": String(Math.ceil((retryAfterMs ?? 60_000) / 1000)),
+    },
+  });
 }
 
 async function normalizeBetterAuthHandlerResponse(
   auth: BuiltBetterAuthInstance,
   request: Request,
-  verbose: boolean
+  verbose: boolean,
 ): Promise<Response> {
   try {
     const response = await auth.handler(request);
-    if (
-      response.status >= 500 &&
-      response.headers.get("content-type") === null
-    ) {
+    if (response.status >= 500 && response.headers.get("content-type") === null) {
       logBareBetterAuthResponse(response, request, verbose);
-      return createBetterAuthErrorResponse(
-        500,
-        "INTERNAL_ERROR",
-        "internal_error"
-      );
+      return createBetterAuthErrorResponse(500, "INTERNAL_ERROR", "internal_error");
     }
     return response;
   } catch (handlerError) {
@@ -1051,11 +936,7 @@ async function normalizeBetterAuthHandlerResponse(
   }
 }
 
-function logBareBetterAuthResponse(
-  response: Response,
-  request: Request,
-  verbose: boolean
-): void {
+function logBareBetterAuthResponse(response: Response, request: Request, verbose: boolean): void {
   if (!verbose) {
     return;
   }
@@ -1063,38 +944,33 @@ function logBareBetterAuthResponse(
   console.error(
     `[convex-auth] normalizing bare ${response.status} on ${request.method} ${
       new URL(request.url).pathname
-    }`
+    }`,
   );
 }
 
 function normalizeBetterAuthHandlerError(
   handlerError: unknown,
   request: Request,
-  verbose: boolean
+  verbose: boolean,
 ): Response {
-  const message =
-    handlerError instanceof Error ? handlerError.message : String(handlerError);
+  const message = handlerError instanceof Error ? handlerError.message : String(handlerError);
   const isBodyParse =
     handlerError instanceof SyntaxError ||
     /JSON|Unexpected (end of|token)|Unexpected end of input/i.test(message);
   if (verbose) {
     console.error(
-      `[convex-auth] handler threw on ${request.method} ${new URL(request.url).pathname}: ${message}`
+      `[convex-auth] handler threw on ${request.method} ${new URL(request.url).pathname}: ${message}`,
     );
   }
 
   return createBetterAuthErrorResponse(
     isBodyParse ? 400 : 500,
     isBodyParse ? "BAD_REQUEST" : "INTERNAL_ERROR",
-    isBodyParse ? "bad_request" : "internal_error"
+    isBodyParse ? "bad_request" : "internal_error",
   );
 }
 
-function createBetterAuthErrorResponse(
-  status: number,
-  code: string,
-  error: string
-): Response {
+function createBetterAuthErrorResponse(status: number, code: string, error: string): Response {
   return new Response(JSON.stringify({ error, code }), {
     status,
     headers: { "content-type": "application/json" },
@@ -1133,7 +1009,7 @@ type BetterAuthEmailDeliveryConfig<Ctx> = {
  */
 export function buildBetterAuthEmailDelivery<Ctx>(
   config: BetterAuthEmailDeliveryConfig<Ctx>,
-  ctx: Ctx
+  ctx: Ctx,
 ): {
   /** Merge into `emailAndPassword`: reset callback + requireEmailVerification. */
   emailAndPassword: {
@@ -1144,9 +1020,7 @@ export function buildBetterAuthEmailDelivery<Ctx>(
   emailVerification:
     | {
         sendOnSignUp: boolean;
-        sendVerificationEmail: (
-          args: BetterAuthEmailCallbackArgs
-        ) => Promise<void>;
+        sendVerificationEmail: (args: BetterAuthEmailCallbackArgs) => Promise<void>;
       }
     | undefined;
 } {
@@ -1189,13 +1063,11 @@ export function resolveBetterAuthTrustedOrigins(args: {
   envValue?: string;
   origins?: readonly string[];
 }): string[] {
-  const envValue =
-    args.envValue ??
-    process.env[args.envName ?? DEFAULT_TRUSTED_ORIGINS_ENV_NAME];
+  const envValue = args.envValue ?? process.env[args.envName ?? DEFAULT_TRUSTED_ORIGINS_ENV_NAME];
 
-  return Array.from(
-    new Set([...(args.origins ?? []), ...parseTrustedOrigins(envValue)])
-  ).filter((origin) => origin.length > 0);
+  return Array.from(new Set([...(args.origins ?? []), ...parseTrustedOrigins(envValue)])).filter(
+    (origin) => origin.length > 0,
+  );
 }
 
 async function runBestEffortUserSync(run: () => Promise<void>): Promise<void> {
@@ -1205,7 +1077,7 @@ async function runBestEffortUserSync(run: () => Promise<void>): Promise<void> {
     console.warn(
       `[convex-auth] user-sync trigger skipped (will self-heal on first authed request): ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
     );
   }
 }
@@ -1217,21 +1089,18 @@ async function runBestEffortUserSync(run: () => Promise<void>): Promise<void> {
  * re-query — inside the create transaction an adapter.findOne for the
  * just-written user returns null and silently no-ops).
  */
-export function createBetterAuthUserSyncTriggers<
-  DataModel extends GenericDataModel,
->(opts: {
+export function createBetterAuthUserSyncTriggers<DataModel extends GenericDataModel>(opts: {
   betterAuthComponent: BetterAuthComponentApi<DataModel>;
   refs?: BetterAuthConvexRuntimeRefs;
   siteUrlEnvNames?: readonly string[];
   linkedAccountPageSize?: number;
 }): BetterAuthUserSyncTriggers<DataModel> {
   const siteUrlEnvNames = opts.siteUrlEnvNames ?? DEFAULT_SITE_URL_ENV_NAMES;
-  const linkedAccountPageSize =
-    opts.linkedAccountPageSize ?? DEFAULT_LINKED_ACCOUNT_PAGE_SIZE;
+  const linkedAccountPageSize = opts.linkedAccountPageSize ?? DEFAULT_LINKED_ACCOUNT_PAGE_SIZE;
 
   const syncFromDoc = async (
     ctx: GenericCtx<DataModel>,
-    doc: BetterAuthUserSyncTriggerDoc
+    doc: BetterAuthUserSyncTriggerDoc,
   ): Promise<void> => {
     if (!hasQueryMutation(ctx)) {
       return;
@@ -1245,10 +1114,7 @@ export function createBetterAuthUserSyncTriggers<
     // Auth base URL with an `/api/auth` path, which keys the identity
     // row unreachably. resolveOptionalBetterAuthIdentityIssuer
     // canonicalizes to the origin exactly like the runtime fallback.
-    const issuer =
-      resolveOptionalBetterAuthIdentityIssuer() ??
-      readFirstEnv(siteUrlEnvNames) ??
-      "";
+    const issuer = resolveOptionalBetterAuthIdentityIssuer() ?? readFirstEnv(siteUrlEnvNames) ?? "";
     const emailVerified = doc.emailVerified === true;
     const name = typeof doc.name === "string" ? doc.name : undefined;
     const image =
@@ -1292,10 +1158,8 @@ export function createBetterAuthUserSyncTriggers<
   // never fatal to auth.
   return {
     user: {
-      onCreate: (ctx, doc) =>
-        runBestEffortUserSync(() => syncFromDoc(ctx, doc)),
-      onUpdate: (ctx, newDoc) =>
-        runBestEffortUserSync(() => syncFromDoc(ctx, newDoc)),
+      onCreate: (ctx, doc) => runBestEffortUserSync(() => syncFromDoc(ctx, doc)),
+      onUpdate: (ctx, newDoc) => runBestEffortUserSync(() => syncFromDoc(ctx, newDoc)),
       onDelete: async (ctx, doc) => {
         const deleteRef = opts.refs?.deleteUserFromBetterAuth;
         if (deleteRef !== undefined && hasQueryMutation(ctx)) {
@@ -1317,38 +1181,32 @@ async function syncLinkedBetterAuthAccounts<DataModel extends GenericDataModel>(
     linkedAccountPageSize: number;
     activeSessionId: string | undefined;
     refs: BetterAuthConvexRuntimeRefs | undefined;
-  }
+  },
 ): Promise<void> {
-  const provisionIdentityFromIdentity =
-    args.refs?.provisionIdentityFromIdentity;
+  const provisionIdentityFromIdentity = args.refs?.provisionIdentityFromIdentity;
   if (provisionIdentityFromIdentity === undefined) {
     return;
   }
 
-  const linkedAccountsResult = await ctx.runQuery(
-    args.betterAuthComponent.adapter.findMany,
-    {
-      model: "account",
-      paginationOpts: {
-        cursor: null,
-        numItems: args.linkedAccountPageSize,
+  const linkedAccountsResult = await ctx.runQuery(args.betterAuthComponent.adapter.findMany, {
+    model: "account",
+    paginationOpts: {
+      cursor: null,
+      numItems: args.linkedAccountPageSize,
+    },
+    where: [
+      {
+        field: "userId",
+        value: args.betterAuthUserId,
       },
-      where: [
-        {
-          field: "userId",
-          value: args.betterAuthUserId,
-        },
-      ],
-    }
-  );
+    ],
+  });
 
   const linkedAccounts = readPageRecords(linkedAccountsResult);
   const identities = linkedAccounts.flatMap((account) => {
     const accountId = readOptionalString(account, "accountId");
     const providerId = readOptionalString(account, "providerId");
-    return accountId === undefined || providerId === undefined
-      ? []
-      : [{ accountId, providerId }];
+    return accountId === undefined || providerId === undefined ? [] : [{ accountId, providerId }];
   });
   await Promise.all(
     identities.map(({ accountId, providerId }) =>
@@ -1367,23 +1225,20 @@ async function syncLinkedBetterAuthAccounts<DataModel extends GenericDataModel>(
           email: args.email,
           emailVerified: args.emailVerified,
         },
-      })
-    )
+      }),
+    ),
   );
 }
 
 async function sha256Hex(input: string): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(input)
-  );
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
 
 function hasQueryMutation<DataModel extends GenericDataModel>(
-  ctx: GenericCtx<DataModel>
+  ctx: GenericCtx<DataModel>,
 ): ctx is QueryMutationCtx<DataModel> {
   return "runQuery" in ctx && "runMutation" in ctx;
 }
@@ -1436,10 +1291,7 @@ function requireEnv(name: string): string {
   return value;
 }
 
-function readOptionalString(
-  record: Record<string, unknown>,
-  key: string
-): string | undefined {
+function readOptionalString(record: Record<string, unknown>, key: string): string | undefined {
   const value = record[key];
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }

@@ -140,9 +140,7 @@ function isBlockedIpv6(host: string): boolean {
 function isBlockedIpv6SpecialAddress(host: string): boolean {
   if (host === "::" || host === "::1") return true; // unspecified / loopback
   if (host.startsWith("fc") || host.startsWith("fd")) return true; // unique-local fc00::/7
-  return ["fe80", "fe9", "fea", "feb"].some((prefix) =>
-    host.startsWith(prefix)
-  );
+  return ["fe80", "fe9", "fea", "feb"].some((prefix) => host.startsWith(prefix));
 }
 
 function isBlockedIpv4MappedDottedAddress(host: string): boolean {
@@ -184,20 +182,13 @@ function parseIpv4(host: string): [number, number, number, number] | null {
     octets.push(value);
   }
   const [a, b, c, d] = octets;
-  if (
-    a === undefined ||
-    b === undefined ||
-    c === undefined ||
-    d === undefined
-  ) {
+  if (a === undefined || b === undefined || c === undefined || d === undefined) {
     return null;
   }
   return [a, b, c, d];
 }
 
-export function normalizeConvexWebhookEndpointEventTypes(
-  eventTypes: readonly string[]
-): string[] {
+export function normalizeConvexWebhookEndpointEventTypes(eventTypes: readonly string[]): string[] {
   const normalized = eventTypes.map((type) => type.trim()).filter(Boolean);
   return normalized.length > 0 ? normalized : ["*"];
 }

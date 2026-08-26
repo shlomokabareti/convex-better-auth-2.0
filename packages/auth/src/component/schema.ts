@@ -4,20 +4,20 @@ import { v } from "convex/values";
 export const organizationStatusValidator = v.union(
   v.literal("active"),
   v.literal("suspended"),
-  v.literal("deleted")
+  v.literal("deleted"),
 );
 
 export const organizationMemberStatusValidator = v.union(
   v.literal("active"),
   v.literal("invited"),
-  v.literal("suspended")
+  v.literal("suspended"),
 );
 
 export const organizationInvitationStatusValidator = v.union(
   v.literal("pending"),
   v.literal("accepted"),
   v.literal("revoked"),
-  v.literal("expired")
+  v.literal("expired"),
 );
 
 export const invitationEmailDeliveryStatusValidator = v.union(
@@ -27,25 +27,22 @@ export const invitationEmailDeliveryStatusValidator = v.union(
   v.literal("delivered"),
   v.literal("delivery_delayed"),
   v.literal("bounced"),
-  v.literal("failed")
+  v.literal("failed"),
 );
 
 export const emailTwoFactorStatusValidator = v.union(
   v.literal("disabled"),
   v.literal("enabled"),
-  v.literal("reset_required")
+  v.literal("reset_required"),
 );
 
 export const emailTwoFactorResetReasonValidator = v.union(
   v.literal("missing_email"),
   v.literal("email_not_verified"),
-  v.literal("email_changed")
+  v.literal("email_changed"),
 );
 
-export const apiKeyStatusValidator = v.union(
-  v.literal("active"),
-  v.literal("revoked")
-);
+export const apiKeyStatusValidator = v.union(v.literal("active"), v.literal("revoked"));
 /**
  * Sandbox vs production is deliberately a TYPED COLUMN, not a scope string or metadata.
  *
@@ -54,30 +51,21 @@ export const apiKeyStatusValidator = v.union(
  * it must be indexable and impossible to typo. A key issued for sandbox must never
  * authenticate a production request.
  */
-export const apiKeyEnvironmentValidator = v.union(
-  v.literal("sandbox"),
-  v.literal("production")
-);
+export const apiKeyEnvironmentValidator = v.union(v.literal("sandbox"), v.literal("production"));
 export const apiKeyOwnerTypeValidator = v.union(
   v.literal("user"),
   v.literal("organization"),
-  v.literal("service")
+  v.literal("service"),
 );
-export const servicePrincipalStatusValidator = v.union(
-  v.literal("active"),
-  v.literal("disabled")
-);
+export const servicePrincipalStatusValidator = v.union(v.literal("active"), v.literal("disabled"));
 
-export const agentModeValidator = v.union(
-  v.literal("delegated"),
-  v.literal("autonomous")
-);
+export const agentModeValidator = v.union(v.literal("delegated"), v.literal("autonomous"));
 
 export const agentHostStatusValidator = v.union(
   v.literal("pending"),
   v.literal("active"),
   v.literal("revoked"),
-  v.literal("rejected")
+  v.literal("rejected"),
 );
 
 export const agentStatusValidator = v.union(
@@ -85,59 +73,56 @@ export const agentStatusValidator = v.union(
   v.literal("active"),
   v.literal("expired"),
   v.literal("revoked"),
-  v.literal("rejected")
+  v.literal("rejected"),
 );
 
 export const agentKeyStatusValidator = v.union(
   v.literal("active"),
   v.literal("rotated"),
-  v.literal("revoked")
+  v.literal("revoked"),
 );
 
 export const agentCapabilityGrantStatusValidator = v.union(
   v.literal("pending"),
   v.literal("active"),
   v.literal("denied"),
-  v.literal("revoked")
+  v.literal("revoked"),
 );
 
 export const agentDeviceAuthorizationStatusValidator = v.union(
   v.literal("pending"),
   v.literal("approved"),
   v.literal("denied"),
-  v.literal("expired")
+  v.literal("expired"),
 );
 
 export const agentAuthAuditActorTypeValidator = v.union(
   v.literal("user"),
   v.literal("host"),
   v.literal("agent"),
-  v.literal("system")
+  v.literal("system"),
 );
 
 export const authMdRegistrationStatusValidator = v.union(
   v.literal("pending"),
   v.literal("claimed"),
   v.literal("expired"),
-  v.literal("revoked")
+  v.literal("revoked"),
 );
 
 export const authMdAssertionStatusValidator = v.union(
   v.literal("active"),
   v.literal("consumed"),
-  v.literal("revoked")
+  v.literal("revoked"),
 );
 
-export const authMdCredentialStatusValidator = v.union(
-  v.literal("active"),
-  v.literal("revoked")
-);
+export const authMdCredentialStatusValidator = v.union(v.literal("active"), v.literal("revoked"));
 
 export const authMdAuditActorTypeValidator = v.union(
   v.literal("external"),
   v.literal("user"),
   v.literal("credential"),
-  v.literal("system")
+  v.literal("system"),
 );
 
 export const authAuditActorTypeValidator = v.union(
@@ -145,20 +130,20 @@ export const authAuditActorTypeValidator = v.union(
   v.literal("user"),
   v.literal("machine"),
   v.literal("service"),
-  v.literal("system")
+  v.literal("system"),
 );
 
 export const webhookEndpointStatusValidator = v.union(
   v.literal("active"),
   v.literal("disabled"),
-  v.literal("archived")
+  v.literal("archived"),
 );
 
 export const webhookDeliveryStatusValidator = v.union(
   v.literal("pending"),
   v.literal("processing"),
   v.literal("delivered"),
-  v.literal("failed")
+  v.literal("failed"),
 );
 
 export const webhookFailureKindValidator = v.union(
@@ -167,7 +152,7 @@ export const webhookFailureKindValidator = v.union(
   v.literal("rate_limited"),
   v.literal("server_error"),
   v.literal("client_error"),
-  v.literal("unknown_error")
+  v.literal("unknown_error"),
 );
 
 export default defineSchema({
@@ -704,9 +689,6 @@ export default defineSchema({
   mcp_oauth_revoked_families: defineTable({
     familyId: v.string(),
     revokedAt: v.number(),
-    reason: v.union(
-      v.literal("replay_detected"),
-      v.literal("concurrent_conflict")
-    ),
+    reason: v.union(v.literal("replay_detected"), v.literal("concurrent_conflict")),
   }).index("by_family_id", ["familyId"]),
 });

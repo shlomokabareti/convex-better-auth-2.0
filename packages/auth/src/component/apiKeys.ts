@@ -39,10 +39,7 @@ type DbCtx = Pick<MutationCtx | QueryCtx, "db">;
  * `if (principal.type === "agent")` and it is silently dead. Agent gets added
  * here when the credential can actually carry agent identity, and not before.
  */
-const authPrincipalTypeValidator = v.union(
-  v.literal("human"),
-  v.literal("service")
-);
+const authPrincipalTypeValidator = v.union(v.literal("human"), v.literal("service"));
 
 const authPrincipalValidator = v.object({
   type: authPrincipalTypeValidator,
@@ -149,9 +146,7 @@ function okResult() {
   return { ok: true } as const;
 }
 
-function normalizeAllowedIpRanges(
-  value: string[] | null | undefined
-): string[] | undefined {
+function normalizeAllowedIpRanges(value: string[] | null | undefined): string[] | undefined {
   return value === null ? undefined : normalizeStringArray(value ?? []);
 }
 
@@ -162,23 +157,18 @@ function resolveServiceApiKeyPermissions(args: {
   if (args.permissions === undefined) {
     return args.existing?.permissions;
   }
-  return args.permissions === null
-    ? undefined
-    : normalizeStringArray(args.permissions);
+  return args.permissions === null ? undefined : normalizeStringArray(args.permissions);
 }
 
 function assertExistingUserApiKeyOwnership(
   existing: Doc<"api_keys"> | null,
   organizationId: Id<"organizations">,
-  userId: Id<"users">
+  userId: Id<"users">,
 ): void {
   if (existing === null) {
     return;
   }
-  if (
-    existing.organizationId !== organizationId ||
-    existing.userId !== userId
-  ) {
+  if (existing.organizationId !== organizationId || existing.userId !== userId) {
     throw new Error("API key ownership mismatch");
   }
   if ((existing.ownerType ?? "user") !== "user") {
@@ -188,7 +178,7 @@ function assertExistingUserApiKeyOwnership(
 
 function assertExistingServiceApiKeyOwnership(
   existing: Doc<"api_keys"> | null,
-  servicePrincipalId: Id<"service_principals">
+  servicePrincipalId: Id<"service_principals">,
 ): void {
   if (existing === null) {
     return;
@@ -232,11 +222,7 @@ export const upsertApiKey = mutation({
       (args.apiKeyId ? await ctx.db.get("api_keys", args.apiKeyId) : null) ??
       (await findApiKeyByPrefix(ctx, keyPrefix));
 
-    assertExistingUserApiKeyOwnership(
-      existing,
-      args.organizationId,
-      args.userId
-    );
+    assertExistingUserApiKeyOwnership(existing, args.organizationId, args.userId);
     if (existing !== null) {
       await assertApiKeyPrefixAvailable(ctx, keyPrefix, existing._id);
     }
@@ -298,10 +284,7 @@ export const upsertServiceOwnedApiKey = mutation({
   returns: apiKeyResultValidator,
   handler: async (ctx, args) => {
     assertScopesAreIssuable(args.scopes);
-    const servicePrincipal = await requireServicePrincipal(
-      ctx,
-      args.servicePrincipalId
-    );
+    const servicePrincipal = await requireServicePrincipal(ctx, args.servicePrincipalId);
     if (servicePrincipal.status !== "active") {
       throw new Error("Only active service principals can issue API keys");
     }
@@ -322,9 +305,7 @@ export const upsertServiceOwnedApiKey = mutation({
       permissions !== undefined &&
       !isPermissionSubset(permissions, servicePrincipal.permissions)
     ) {
-      throw new Error(
-        "API key permissions exceed service principal permissions"
-      );
+      throw new Error("API key permissions exceed service principal permissions");
     }
 
     assertExistingServiceApiKeyOwnership(existing, servicePrincipal._id);
@@ -399,7 +380,7 @@ export const getApiKeyByRequestId = query({
       .withIndex("by_organization_and_request_id", (q) =>
         q
           .eq("organizationId", organizationId)
-          .eq("requestId", normalizeRequired(requestId, "requestId"))
+          .eq("requestId", normalizeRequired(requestId, "requestId")),
       )
       .first();
   },
@@ -417,13 +398,11 @@ export const listApiKeysByOrganization = query({
       status === undefined
         ? ctx.db
             .query("api_keys")
-            .withIndex("by_organization", (q) =>
-              q.eq("organizationId", organizationId)
-            )
+            .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
         : ctx.db
             .query("api_keys")
             .withIndex("by_org_status", (q) =>
-              q.eq("organizationId", organizationId).eq("status", status)
+              q.eq("organizationId", organizationId).eq("status", status),
             );
     return await queryBuilder.take(resolveListLimit(limit));
   },
@@ -441,16 +420,12 @@ export const listApiKeysByServicePrincipal = query({
     return status === undefined
       ? await ctx.db
           .query("api_keys")
-          .withIndex("by_owner_service", (q) =>
-            q.eq("ownerServicePrincipalId", servicePrincipalId)
-          )
+          .withIndex("by_owner_service", (q) => q.eq("ownerServicePrincipalId", servicePrincipalId))
           .take(resolvedLimit)
       : await ctx.db
           .query("api_keys")
           .withIndex("by_owner_service_status", (q) =>
-            q
-              .eq("ownerServicePrincipalId", servicePrincipalId)
-              .eq("status", status)
+            q.eq("ownerServicePrincipalId", servicePrincipalId).eq("status", status),
           )
           .take(resolvedLimit);
   },
@@ -465,11 +440,7 @@ export const rotateApiKey = mutation({
   },
   returns: okResultValidator,
   handler: async (ctx, { apiKeyId, organizationId, keyPrefix, keyHash }) => {
-    const apiKey = await requireApiKeyInOrganization(
-      ctx,
-      apiKeyId,
-      organizationId
-    );
+    const apiKey = await requireApiKeyInOrganization(ctx, apiKeyId, organizationId);
     if (apiKey.status !== "active") {
       throw new Error("Only active API keys can be rotated");
     }
@@ -498,11 +469,7 @@ export const revokeApiKey = mutation({
   },
   returns: okResultValidator,
   handler: async (ctx, { apiKeyId, organizationId }) => {
-    const apiKey = await requireApiKeyInOrganization(
-      ctx,
-      apiKeyId,
-      organizationId
-    );
+    const apiKey = await requireApiKeyInOrganization(ctx, apiKeyId, organizationId);
     if (apiKey.status === "revoked") {
       return okResult();
     }
@@ -532,10 +499,7 @@ export const touchApiKeyLastUsed = mutation({
   },
 });
 
-async function findApiKeyByPrefix(
-  ctx: DbCtx,
-  keyPrefix: string
-): Promise<Doc<"api_keys"> | null> {
+async function findApiKeyByPrefix(ctx: DbCtx, keyPrefix: string): Promise<Doc<"api_keys"> | null> {
   return await ctx.db
     .query("api_keys")
     .withIndex("by_key_prefix", (q) => q.eq("keyPrefix", keyPrefix))
@@ -545,7 +509,7 @@ async function findApiKeyByPrefix(
 async function assertApiKeyPrefixAvailable(
   ctx: DbCtx,
   keyPrefix: string,
-  currentApiKeyId: Id<"api_keys">
+  currentApiKeyId: Id<"api_keys">,
 ) {
   const prefixOwner = await findApiKeyByPrefix(ctx, keyPrefix);
   if (prefixOwner !== null && prefixOwner._id !== currentApiKeyId) {
@@ -553,10 +517,7 @@ async function assertApiKeyPrefixAvailable(
   }
 }
 
-async function requireApiKey(
-  ctx: DbCtx,
-  apiKeyId: Id<"api_keys">
-): Promise<Doc<"api_keys">> {
+async function requireApiKey(ctx: DbCtx, apiKeyId: Id<"api_keys">): Promise<Doc<"api_keys">> {
   const apiKey = await ctx.db.get("api_keys", apiKeyId);
   if (apiKey === null) {
     throw new Error("API key not found");
@@ -575,7 +536,7 @@ async function requireApiKey(
 async function requireApiKeyInOrganization(
   ctx: DbCtx,
   apiKeyId: Id<"api_keys">,
-  organizationId: Id<"organizations">
+  organizationId: Id<"organizations">,
 ): Promise<Doc<"api_keys">> {
   const apiKey = await requireApiKey(ctx, apiKeyId);
   if (apiKey.organizationId !== organizationId) {
@@ -586,22 +547,16 @@ async function requireApiKeyInOrganization(
 
 async function requireServicePrincipal(
   ctx: DbCtx,
-  servicePrincipalId: Id<"service_principals">
+  servicePrincipalId: Id<"service_principals">,
 ): Promise<Doc<"service_principals">> {
-  const servicePrincipal = await ctx.db.get(
-    "service_principals",
-    servicePrincipalId
-  );
+  const servicePrincipal = await ctx.db.get("service_principals", servicePrincipalId);
   if (servicePrincipal === null) {
     throw new Error("Service principal not found");
   }
   return servicePrincipal;
 }
 
-async function requireOrganization(
-  ctx: DbCtx,
-  organizationId: Id<"organizations">
-) {
+async function requireOrganization(ctx: DbCtx, organizationId: Id<"organizations">) {
   const organization = await ctx.db.get("organizations", organizationId);
   if (organization === null) {
     throw new Error("Organization not found");
@@ -623,9 +578,7 @@ function normalizeRequired(value: string, fieldName: string): string {
   return normalized;
 }
 
-function normalizeOptional(
-  value: string | null | undefined
-): string | undefined {
+function normalizeOptional(value: string | null | undefined): string | undefined {
   const normalized = value?.trim();
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
@@ -636,7 +589,7 @@ function normalizeStringArray(values: readonly string[]): string[] {
 
 function isPermissionSubset(
   permissions: readonly string[],
-  ownerPermissions: readonly string[]
+  ownerPermissions: readonly string[],
 ): boolean {
   const allowedPermissions = new Set(ownerPermissions);
   return permissions.every((permission) => allowedPermissions.has(permission));
@@ -674,7 +627,7 @@ const apiKeyVerificationFailureValidator = v.union(
   v.literal("environment_mismatch"),
   v.literal("scope_missing"),
   v.literal("rate_limited"),
-  v.literal("quota_exhausted")
+  v.literal("quota_exhausted"),
 );
 
 export const verifyApiKey = mutation({
@@ -700,7 +653,7 @@ export const verifyApiKey = mutation({
     v.object({
       valid: v.literal(false),
       reason: apiKeyVerificationFailureValidator,
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const now = args.now ?? Date.now();
@@ -728,10 +681,7 @@ export const verifyApiKey = mutation({
     if (candidate.expiresAt !== undefined && candidate.expiresAt <= now) {
       return { valid: false as const, reason: "expired" as const };
     }
-    if (
-      args.environment !== undefined &&
-      candidate.environment !== args.environment
-    ) {
+    if (args.environment !== undefined && candidate.environment !== args.environment) {
       return { valid: false as const, reason: "environment_mismatch" as const };
     }
     const required = args.requiredScopes ?? [];
@@ -775,7 +725,7 @@ export const verifyApiKey = mutation({
  */
 function evaluateApiKeyLimits(
   key: Doc<"api_keys">,
-  now: number
+  now: number,
 ): {
   readonly rejected: "rate_limited" | "quota_exhausted" | null;
   readonly patch: {
@@ -873,7 +823,7 @@ export const issueApiKey = mutation({
     const { apiKey, keyPrefix } = await generateIssuedApiKeyMaterial(
       ctx,
       args.keyBrand,
-      args.environment
+      args.environment,
     );
 
     const apiKeyId = await ctx.db.insert("api_keys", {
@@ -916,7 +866,7 @@ export const issueApiKey = mutation({
 async function generateIssuedApiKeyMaterial(
   ctx: DbCtx,
   keyBrand: string | undefined,
-  environment: "sandbox" | "production"
+  environment: "sandbox" | "production",
 ): Promise<{ apiKey: string; keyPrefix: string }> {
   const brand = normalizeRequired(keyBrand ?? "vb", "keyBrand");
   const segment = environment === "production" ? "live" : "test";
@@ -972,10 +922,7 @@ export const issueServiceOwnedApiKey = mutation({
   }),
   handler: async (ctx, args) => {
     assertScopesAreIssuable(args.scopes);
-    const servicePrincipal = await requireServicePrincipal(
-      ctx,
-      args.servicePrincipalId
-    );
+    const servicePrincipal = await requireServicePrincipal(ctx, args.servicePrincipalId);
     if (servicePrincipal.status !== "active") {
       throw new Error("Only active service principals can issue API keys");
     }
@@ -987,16 +934,14 @@ export const issueServiceOwnedApiKey = mutation({
       permissions !== undefined &&
       !isPermissionSubset(permissions, servicePrincipal.permissions)
     ) {
-      throw new Error(
-        "API key permissions exceed service principal permissions"
-      );
+      throw new Error("API key permissions exceed service principal permissions");
     }
 
     const now = args.now ?? Date.now();
     const { apiKey, keyPrefix } = await generateIssuedApiKeyMaterial(
       ctx,
       args.keyBrand,
-      args.environment
+      args.environment,
     );
 
     const apiKeyId = await ctx.db.insert("api_keys", {

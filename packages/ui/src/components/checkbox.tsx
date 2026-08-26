@@ -13,7 +13,7 @@ export function Checkbox({
     <CheckboxPrimitive.Root
       className={cn(
         "border-input focus-visible:ring-ring/50 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground size-4 shrink-0 rounded border transition-colors outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
-        className
+        className,
       )}
       {...props}
     >

@@ -15,18 +15,8 @@
  */
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-import {
-  useConvexAuthResetPassword,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
-import {
-  AuthCard,
-  AuthCardContent,
-  AuthCardHeader,
-  AuthField,
-  AuthInput,
-  AuthLabel,
-} from "./ui";
+import { useConvexAuthResetPassword, type ConvexBetterAuthClient } from "./better-auth-runtime";
+import { AuthCard, AuthCardContent, AuthCardHeader, AuthField, AuthInput, AuthLabel } from "./ui";
 
 export type ConvexResetPasswordFormClassNames = {
   root?: string;
@@ -75,8 +65,7 @@ const DEFAULT_COPY: Required<ConvexResetPasswordFormCopy> = {
   confirmPasswordLabel: "Confirm new password",
   submit: "Set new password",
   submitting: "Saving…",
-  successMessage:
-    "Password updated. You can now sign in with your new password.",
+  successMessage: "Password updated. You can now sign in with your new password.",
   unavailable: "Password reset is not available on this auth client.",
   missingTokenMessage:
     "This reset link is missing or invalid. Request a new password reset email and try again.",
@@ -89,9 +78,7 @@ export function ConvexResetPasswordForm(props: ConvexResetPasswordFormProps) {
   const cn = props.classNames ?? {};
   const minLength = props.minPasswordLength ?? 12;
 
-  const { resetPassword, isResetting } = useConvexAuthResetPassword(
-    props.authClient
-  );
+  const { resetPassword, isResetting } = useConvexAuthResetPassword(props.authClient);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
@@ -144,38 +131,27 @@ export function ConvexResetPasswordForm(props: ConvexResetPasswordFormProps) {
                 id="convex-reset-password"
                 type="password"
                 value={password}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setPassword(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 className={cn.input}
                 minLength={minLength}
                 required
               />
             </AuthField>
             <AuthField className={cn.field}>
-              <AuthLabel
-                htmlFor="convex-reset-password-confirm"
-                className={cn.label}
-              >
+              <AuthLabel htmlFor="convex-reset-password-confirm" className={cn.label}>
                 {copy.confirmPasswordLabel}
               </AuthLabel>
               <AuthInput
                 id="convex-reset-password-confirm"
                 type="password"
                 value={confirm}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setConfirm(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirm(e.target.value)}
                 className={cn.input}
                 minLength={minLength}
                 required
               />
             </AuthField>
-            <button
-              type="submit"
-              disabled={isResetting}
-              className={cn.submitButton}
-            >
+            <button type="submit" disabled={isResetting} className={cn.submitButton}>
               {isResetting ? copy.submitting : copy.submit}
             </button>
             {success !== null ? (

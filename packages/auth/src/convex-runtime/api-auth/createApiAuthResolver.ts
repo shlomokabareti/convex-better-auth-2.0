@@ -49,13 +49,10 @@ export type ApiAuthResolverApiKeyConfig<
   /** Look up and validate the stored api-key row for the presented token. */
   resolveRecord: (
     ctx: TCtx,
-    args: { token: string; request: Request }
+    args: { token: string; request: Request },
   ) => Promise<ApiKeyRecordResolution<TUserId, TOrgId>>;
   /** Optional side effect after a key authorizes (e.g. touch last-used). */
-  onResolved?: (
-    ctx: TCtx,
-    args: { apiKeyId: string; requestIp: string | null }
-  ) => Promise<void>;
+  onResolved?: (ctx: TCtx, args: { apiKeyId: string; requestIp: string | null }) => Promise<void>;
 };
 
 export type ApiAuthResolverMcpConfig<TCtx> = {
@@ -78,11 +75,8 @@ export type CreateApiAuthResolverConfig<
   getVerifier: () => ApiTokenVerifier;
   /** Build the identity/organization lookup adapter bound to the runtime ctx. */
   createAdapter: (
-    ctx: TCtx
-  ) => Pick<
-    ApiAuthLookupAdapter,
-    "getUserByIdentity" | "getOrganizationAccess"
-  >;
+    ctx: TCtx,
+  ) => Pick<ApiAuthLookupAdapter, "getUserByIdentity" | "getOrganizationAccess">;
   /**
    * The ONLY authorization decision a consumer owns: given a resolved principal,
    * return the LIVE membership role + permissions for the org, or null to deny.
@@ -94,7 +88,7 @@ export type CreateApiAuthResolverConfig<
       auth: ApiResolvedAuthContext;
       userId: TUserId;
       organizationId: TOrgId;
-    }
+    },
   ) => Promise<{ role: TRole; permissions: string[] } | null>;
   /** Map a permission set to a scope decision (consumer domain rule). */
   canUseScope: (permissions: readonly string[], scope: Scope) => boolean;
@@ -150,15 +144,15 @@ export type ApiAuthResolverInstance<
 > = {
   resolveApiAuth(
     ctx: TCtx,
-    request: Request
+    request: Request,
   ): Promise<ResolvedApiAuthScopeContext<Scope, TRole, TUserId, TOrgId>>;
   resolveMcpAuth(
     ctx: TCtx,
-    args: ApiAuthResolverMcpArgs<TOrgId>
+    args: ApiAuthResolverMcpArgs<TOrgId>,
   ): Promise<ResolvedApiAuthScopeContext<Scope, TRole, TUserId, TOrgId>>;
   requireScope(
     auth: ResolvedApiAuthScopeContext<Scope, TRole, TUserId, TOrgId>,
-    scope: Scope
+    scope: Scope,
   ): void;
 };
 
@@ -180,10 +174,9 @@ export function createApiAuthResolver<
   TUserId extends string = string,
   TOrgId extends string = string,
 >(
-  config: CreateApiAuthResolverConfig<TCtx, Scope, TRole, TUserId, TOrgId>
+  config: CreateApiAuthResolverConfig<TCtx, Scope, TRole, TUserId, TOrgId>,
 ): ApiAuthResolverInstance<TCtx, Scope, TRole, TUserId, TOrgId> {
-  const sessionFullAccessRoles =
-    config.sessionFullAccessRoles ?? DEFAULT_SESSION_FULL_ACCESS_ROLES;
+  const sessionFullAccessRoles = config.sessionFullAccessRoles ?? DEFAULT_SESSION_FULL_ACCESS_ROLES;
 
   return {
     async resolveApiAuth(ctx, request) {
@@ -217,7 +210,7 @@ function toApiScopeContext<
 >(
   resolved: AuthorizedApiAuthContext<TRole>,
   parseUserId: (value: string) => TUserId,
-  parseOrganizationId: (value: string) => TOrgId
+  parseOrganizationId: (value: string) => TOrgId,
 ): ResolvedApiAuthScopeContext<Scope, TRole, TUserId, TOrgId> {
   const scopes = resolved.scopes;
   const permissions = resolved.permissions;
@@ -249,7 +242,7 @@ async function authorizeApiAuthContext<
     authSubject: string;
     userId?: string | null;
     organizationId?: string | null;
-  }
+  },
 ): Promise<ResolvedApiAuthScopeContext<Scope, TRole, TUserId, TOrgId>> {
   const resolved = await resolveAuthorizedApiAuthContext<TRole>({
     auth: args.auth,
@@ -268,15 +261,11 @@ async function authorizeApiAuthContext<
   if (resolved === null) {
     throw new ApiAuthError(
       "ORGANIZATION_ACCESS_DENIED",
-      "No active organization access for the resolved principal."
+      "No active organization access for the resolved principal.",
     );
   }
 
-  return toApiScopeContext(
-    resolved,
-    config.parseUserId,
-    config.parseOrganizationId
-  );
+  return toApiScopeContext(resolved, config.parseUserId, config.parseOrganizationId);
 }
 
 async function resolveJwtAuth<
@@ -288,23 +277,21 @@ async function resolveJwtAuth<
 >(
   config: CreateApiAuthResolverConfig<TCtx, Scope, TRole, TUserId, TOrgId>,
   ctx: TCtx,
-  token: string
+  token: string,
 ): Promise<ResolvedApiAuthScopeContext<Scope, TRole, TUserId, TOrgId>> {
   const requestedOrganizationId =
     config.resolveRequestedOrganizationId === undefined
       ? null
       : await config.resolveRequestedOrganizationId(ctx);
 
-  const { context, verifiedToken } = await resolveVerifiedUserBearerAuthContext(
-    {
-      token,
-      requestedOrganizationId,
-      verifier: config.getVerifier(),
-      adapter: config.createAdapter(ctx),
-      resourceType: config.resourceType,
-      resourceId: config.resourceId,
-    }
-  );
+  const { context, verifiedToken } = await resolveVerifiedUserBearerAuthContext({
+    token,
+    requestedOrganizationId,
+    verifier: config.getVerifier(),
+    adapter: config.createAdapter(ctx),
+    resourceType: config.resourceType,
+    resourceId: config.resourceId,
+  });
 
   return await authorizeApiAuthContext(config, ctx, {
     auth: context,
@@ -323,7 +310,7 @@ async function resolveApiKeyAuth<
   config: CreateApiAuthResolverConfig<TCtx, Scope, TRole, TUserId, TOrgId>,
   ctx: TCtx,
   token: string,
-  request: Request
+  request: Request,
 ): Promise<ResolvedApiAuthScopeContext<Scope, TRole, TUserId, TOrgId>> {
   const apiKeyConfig = requireApiKeyResolverConfig(config);
   const touchState = {
@@ -341,7 +328,7 @@ async function resolveApiKeyAuth<
           request,
           apiKeyConfig,
           apiKeyToken,
-          touchState
+          touchState,
         ),
     },
     resourceType: config.resourceType,
@@ -367,7 +354,7 @@ function requireApiKeyResolverConfig<
   TUserId extends string,
   TOrgId extends string,
 >(
-  config: CreateApiAuthResolverConfig<TCtx, Scope, TRole, TUserId, TOrgId>
+  config: CreateApiAuthResolverConfig<TCtx, Scope, TRole, TUserId, TOrgId>,
 ): ApiAuthResolverApiKeyConfig<TCtx, TUserId, TOrgId> {
   if (config.apiKey !== undefined) {
     return config.apiKey;
@@ -375,7 +362,7 @@ function requireApiKeyResolverConfig<
 
   throw new ApiAuthError(
     "API_CREDENTIAL_UNSUPPORTED",
-    "API key credentials are not configured for this resolver."
+    "API key credentials are not configured for this resolver.",
   );
 }
 
@@ -388,7 +375,7 @@ async function resolvePackageOwnedApiKeyPrincipal<
   request: Request,
   apiKeyConfig: ApiAuthResolverApiKeyConfig<TCtx, TUserId, TOrgId>,
   apiKeyToken: string,
-  touchState: { current: { apiKeyId: string; requestIp: string | null } | null }
+  touchState: { current: { apiKeyId: string; requestIp: string | null } | null },
 ) {
   const record = await apiKeyConfig.resolveRecord(ctx, {
     token: apiKeyToken,
@@ -424,13 +411,11 @@ async function resolveMcpApiAuth<
 >(
   config: CreateApiAuthResolverConfig<TCtx, Scope, TRole, TUserId, TOrgId>,
   ctx: TCtx,
-  args: ApiAuthResolverMcpArgs<TOrgId>
+  args: ApiAuthResolverMcpArgs<TOrgId>,
 ): Promise<ResolvedApiAuthScopeContext<Scope, TRole, TUserId, TOrgId>> {
   const mcpConfig = requireMcpResolverConfig(config);
   const provider =
-    typeof mcpConfig.provider === "function"
-      ? mcpConfig.provider(ctx)
-      : mcpConfig.provider;
+    typeof mcpConfig.provider === "function" ? mcpConfig.provider(ctx) : mcpConfig.provider;
   const resolved = await resolveLinkedBetterAuthMcpSession({
     session: args.session,
     provider,
@@ -459,7 +444,7 @@ function requireMcpResolverConfig<
   TUserId extends string,
   TOrgId extends string,
 >(
-  config: CreateApiAuthResolverConfig<TCtx, Scope, TRole, TUserId, TOrgId>
+  config: CreateApiAuthResolverConfig<TCtx, Scope, TRole, TUserId, TOrgId>,
 ): ApiAuthResolverMcpConfig<TCtx> {
   if (config.mcp !== undefined) {
     return config.mcp;
@@ -467,7 +452,7 @@ function requireMcpResolverConfig<
 
   throw new ApiAuthError(
     "API_CREDENTIAL_UNSUPPORTED",
-    "MCP credentials are not configured for this resolver."
+    "MCP credentials are not configured for this resolver.",
   );
 }
 
@@ -481,7 +466,7 @@ function requireResolvedApiScope<
   config: CreateApiAuthResolverConfig<TCtx, Scope, TRole, TUserId, TOrgId>,
   sessionFullAccessRoles: readonly string[],
   auth: ResolvedApiAuthScopeContext<Scope, TRole, TUserId, TOrgId>,
-  scope: Scope
+  scope: Scope,
 ): void {
   const decision = resolveApiScopeAuthorization<Scope>({
     authType: auth.authType,
@@ -494,9 +479,6 @@ function requireResolvedApiScope<
   });
 
   if (!decision.allowed) {
-    throw new ApiAuthError(
-      "SCOPE_FORBIDDEN",
-      `Missing required scope: ${scope}`
-    );
+    throw new ApiAuthError("SCOPE_FORBIDDEN", `Missing required scope: ${scope}`);
   }
 }

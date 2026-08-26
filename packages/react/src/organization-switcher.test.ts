@@ -35,7 +35,7 @@ function render(props: Partial<ConvexOrgSwitcherProps>): string {
       organizations: [],
       onSelectOrganization: noop,
       ...props,
-    })
+    }),
   );
 }
 

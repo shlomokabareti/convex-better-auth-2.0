@@ -13,7 +13,7 @@ export type OAuthClientPrincipalInput = {
 };
 
 export function resolveOAuthClientPrincipal(
-  input: OAuthClientPrincipalInput
+  input: OAuthClientPrincipalInput,
 ): OAuthClientPrincipal {
   return {
     kind: "oauthClient",

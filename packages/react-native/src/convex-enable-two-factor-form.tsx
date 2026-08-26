@@ -26,11 +26,7 @@ import {
 } from "react-native";
 
 import type { ExpoBetterAuthClient } from "./client";
-import {
-  extractTotpSecret,
-  useExpoAuthEnableTwoFactor,
-  useExpoAuthVerifyTotp,
-} from "./runtime";
+import { extractTotpSecret, useExpoAuthEnableTwoFactor, useExpoAuthVerifyTotp } from "./runtime";
 
 export type ExpoEnableTwoFactorFormStyles = {
   root?: StyleProp<ViewStyle>;
@@ -95,25 +91,18 @@ const DEFAULT_COPY: Required<ExpoEnableTwoFactorFormCopy> = {
   backupDescription:
     "Store these somewhere safe. Each code works once if you lose access to your authenticator. They won't be shown again.",
   done: "Done",
-  unavailable:
-    "Two-factor authentication is not available on this auth client.",
+  unavailable: "Two-factor authentication is not available on this auth client.",
 };
 
 type Step = "password" | "verify" | "backup";
 type TwoFactorFormCopy = Required<ExpoEnableTwoFactorFormCopy>;
 
-export function ConvexEnableTwoFactorForm(
-  props: ExpoEnableTwoFactorFormProps
-) {
+export function ConvexEnableTwoFactorForm(props: ExpoEnableTwoFactorFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
 
-  const { enable, isEnabling } = useExpoAuthEnableTwoFactor(
-    props.authClient
-  );
-  const { verifyTotp, isVerifying } = useExpoAuthVerifyTotp(
-    props.authClient
-  );
+  const { enable, isEnabling } = useExpoAuthEnableTwoFactor(props.authClient);
+  const { verifyTotp, isVerifying } = useExpoAuthVerifyTotp(props.authClient);
 
   const [step, setStep] = useState<Step>("password");
   const [password, setPassword] = useState("");
@@ -159,9 +148,7 @@ export function ConvexEnableTwoFactorForm(
     <View style={[styles.root, s.root]}>
       <View style={[styles.header, s.header]}>
         <Text style={[styles.title, s.title]}>{header.title}</Text>
-        <Text style={[styles.description, s.description]}>
-          {header.description}
-        </Text>
+        <Text style={[styles.description, s.description]}>{header.description}</Text>
       </View>
 
       {step === "password" ? (
@@ -330,22 +317,13 @@ function TwoFactorBackupStep(args: {
     <View>
       <View style={[styles.backupCodes, s.backupCodes]}>
         {args.backupCodes.map((backupCode) => (
-          <Text
-            key={backupCode}
-            selectable
-            style={[styles.backupCode, s.backupCode]}
-          >
+          <Text key={backupCode} selectable style={[styles.backupCode, s.backupCode]}>
             {backupCode}
           </Text>
         ))}
       </View>
-      <Pressable
-        onPress={() => args.onDone?.()}
-        style={[styles.submitButton, s.submitButton]}
-      >
-        <Text style={[styles.submitButtonText, s.submitButtonText]}>
-          {args.copy.done}
-        </Text>
+      <Pressable onPress={() => args.onDone?.()} style={[styles.submitButton, s.submitButton]}>
+        <Text style={[styles.submitButtonText, s.submitButtonText]}>{args.copy.done}</Text>
       </Pressable>
     </View>
   );
@@ -356,10 +334,7 @@ function TwoFactorError(args: {
   stylesOverride: ExpoEnableTwoFactorFormStyles;
 }) {
   return args.error === null ? null : (
-    <Text
-      className="text-destructive"
-      style={[styles.errorState, args.stylesOverride.errorState]}
-    >
+    <Text className="text-destructive" style={[styles.errorState, args.stylesOverride.errorState]}>
       {args.error}
     </Text>
   );

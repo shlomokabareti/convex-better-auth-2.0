@@ -11,7 +11,7 @@ describe("validateTokenEndpointClientAuthentication", () => {
         authorizationHeader: null,
         clientSecret: null,
       }),
-      null
+      null,
     );
   });
 
@@ -25,7 +25,7 @@ describe("validateTokenEndpointClientAuthentication", () => {
         error: "invalid_client",
         error_description:
           "Client authentication is not supported. Supported token endpoint auth methods: none",
-      }
+      },
     );
   });
 
@@ -40,7 +40,7 @@ describe("validateTokenEndpointClientAuthentication", () => {
         clientSecret: "secret",
         supportedMethods: ["none", "client_secret_post"],
       }),
-      null
+      null,
     );
   });
 
@@ -51,7 +51,7 @@ describe("validateTokenEndpointClientAuthentication", () => {
         clientSecret: null,
         supportedMethods: ["client_secret_basic"],
       }),
-      null
+      null,
     );
   });
 
@@ -66,7 +66,7 @@ describe("validateTokenEndpointClientAuthentication", () => {
         error: "invalid_client",
         error_description:
           "Client authentication is not supported. Supported token endpoint auth methods: none, client_secret_post",
-      }
+      },
     );
   });
 
@@ -83,7 +83,7 @@ describe("validateTokenEndpointClientAuthentication", () => {
         error: "invalid_client",
         error_description:
           "Client authentication is required. Supported token endpoint auth methods: client_secret_post",
-      }
+      },
     );
   });
 });

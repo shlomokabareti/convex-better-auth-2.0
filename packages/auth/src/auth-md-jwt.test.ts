@@ -33,7 +33,7 @@ describe("auth.md signed transport", () => {
         issuer: ISSUER,
         now: (NOW + 1) * 1000,
       }),
-      identityClaims()
+      identityClaims(),
     );
 
     const accessToken = await signAuthMdAccessToken({
@@ -49,7 +49,7 @@ describe("auth.md signed transport", () => {
         resource: RESOURCE,
         now: (NOW + 1) * 1000,
       }),
-      accessClaims()
+      accessClaims(),
     );
   });
 
@@ -67,7 +67,7 @@ describe("auth.md signed transport", () => {
         signingKeys: [signingKey],
         issuer: "https://wrong.example.com",
         now: (NOW + 1) * 1000,
-      })
+      }),
     ).rejects.toThrow();
     await expect(
       verifyAuthMdIdentityAssertion({
@@ -75,7 +75,7 @@ describe("auth.md signed transport", () => {
         signingKeys: [otherKey],
         issuer: ISSUER,
         now: (NOW + 1) * 1000,
-      })
+      }),
     ).rejects.toThrow("signing key was not found");
     await expect(
       verifyAuthMdIdentityAssertion({
@@ -83,7 +83,7 @@ describe("auth.md signed transport", () => {
         signingKeys: [signingKey],
         issuer: ISSUER,
         now: (NOW + 1) * 1000,
-      })
+      }),
     ).rejects.toThrow();
 
     const accessToken = await signAuthMdAccessToken({
@@ -98,7 +98,7 @@ describe("auth.md signed transport", () => {
         issuer: ISSUER,
         resource: "https://crm.example.com/",
         now: (NOW + 1) * 1000,
-      })
+      }),
     ).rejects.toThrow();
     await expect(
       verifyAuthMdIdentityAssertion({
@@ -106,7 +106,7 @@ describe("auth.md signed transport", () => {
         signingKeys: [signingKey],
         issuer: ISSUER,
         now: (NOW + 1) * 1000,
-      })
+      }),
     ).rejects.toThrow("protected header is invalid");
   });
 
@@ -126,7 +126,7 @@ describe("auth.md signed transport", () => {
           now: (NOW + 1) * 1000,
         })
       ).assertionId,
-      "assertion-1"
+      "assertion-1",
     );
     await expect(
       verifyAuthMdIdentityAssertion({
@@ -134,14 +134,14 @@ describe("auth.md signed transport", () => {
         signingKeys: [retiredKey],
         issuer: ISSUER,
         now: (NOW + 301) * 1000,
-      })
+      }),
     ).rejects.toThrow();
     await expect(
       signAuthMdAccessToken({
         signingKey: retiredKey,
         issuer: ISSUER,
         claims: { ...accessClaims(), expiresAt: NOW + 3601 },
-      })
+      }),
     ).rejects.toThrow("lifetime is invalid");
   });
 
@@ -176,7 +176,7 @@ describe("auth.md signed transport", () => {
         signingKeys: [signingKey],
         issuer: ISSUER,
         now: (NOW + 1) * 1000,
-      })
+      }),
     ).rejects.toThrow("protected header is invalid");
     assert.notEqual(AUTH_MD_IDENTITY_ASSERTION_TYPE, AUTH_MD_ACCESS_TOKEN_TYPE);
   });
@@ -208,9 +208,7 @@ function accessClaims() {
   };
 }
 
-async function createSigningKey(
-  keyId: string
-): Promise<AuthMdSigningKeyRecord> {
+async function createSigningKey(keyId: string): Promise<AuthMdSigningKeyRecord> {
   const { publicKey, privateKey } = await generateKeyPair("ES256", {
     extractable: true,
   });

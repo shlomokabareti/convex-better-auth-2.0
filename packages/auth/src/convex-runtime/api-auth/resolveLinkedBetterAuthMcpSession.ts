@@ -1,9 +1,6 @@
 import type { ApiResolvedAuthContext } from "../coreTypes";
 import { ApiAuthError } from "./errors";
-import {
-  resolveMcpSessionAuthContext,
-  type McpSessionLike,
-} from "./resolveMcpSessionAuthContext";
+import { resolveMcpSessionAuthContext, type McpSessionLike } from "./resolveMcpSessionAuthContext";
 import type { ApiAuthLookupAdapter } from "./types";
 
 export type ResolveLinkedBetterAuthMcpSessionArgs = {
@@ -11,10 +8,7 @@ export type ResolveLinkedBetterAuthMcpSessionArgs = {
   provider: string;
   issuer: string;
   buildTokenIdentifier: (subject: string, issuer: string) => string;
-  adapter: Pick<
-    ApiAuthLookupAdapter,
-    "getUserByIdentity" | "getOrganizationAccess"
-  >;
+  adapter: Pick<ApiAuthLookupAdapter, "getUserByIdentity" | "getOrganizationAccess">;
   requestedOrganizationId?: string | null;
   organizationHintId?: string | null;
   audience?: string | null;
@@ -32,7 +26,7 @@ export type LinkedBetterAuthMcpSessionResolution = {
 };
 
 export async function resolveLinkedBetterAuthMcpSession(
-  args: ResolveLinkedBetterAuthMcpSessionArgs
+  args: ResolveLinkedBetterAuthMcpSessionArgs,
 ): Promise<LinkedBetterAuthMcpSessionResolution> {
   const provisionalContext = resolveMcpSessionAuthContext({
     session: args.session,
@@ -43,18 +37,12 @@ export async function resolveLinkedBetterAuthMcpSession(
 
   const principal = provisionalContext.principal;
   if (principal.kind !== "oauthClient" || principal.subjectType !== "user") {
-    throw new ApiAuthError(
-      "OAUTH_SESSION_INVALID",
-      "MCP session user is required."
-    );
+    throw new ApiAuthError("OAUTH_SESSION_INVALID", "MCP session user is required.");
   }
 
   const betterAuthUserId = principal.subjectId;
   if (betterAuthUserId === null) {
-    throw new ApiAuthError(
-      "OAUTH_SESSION_INVALID",
-      "MCP session user is required."
-    );
+    throw new ApiAuthError("OAUTH_SESSION_INVALID", "MCP session user is required.");
   }
 
   const linkedUser = await args.adapter.getUserByIdentity({
@@ -64,10 +52,7 @@ export async function resolveLinkedBetterAuthMcpSession(
     tokenIdentifier: args.buildTokenIdentifier(betterAuthUserId, args.issuer),
   });
   if (linkedUser === null) {
-    throw new ApiAuthError(
-      "USER_IDENTITY_NOT_LINKED",
-      "MCP session user is not linked."
-    );
+    throw new ApiAuthError("USER_IDENTITY_NOT_LINKED", "MCP session user is not linked.");
   }
 
   // Fail closed on a suspended/restricted account, mirroring the JWT bearer path
@@ -76,15 +61,14 @@ export async function resolveLinkedBetterAuthMcpSession(
   if (linkedUser.isRestricted) {
     throw new ApiAuthError(
       "PRINCIPAL_RESTRICTED",
-      linkedUser.restrictedReason ?? "Resolved principal is restricted."
+      linkedUser.restrictedReason ?? "Resolved principal is restricted.",
     );
   }
 
   const organizationAccess = await args.adapter.getOrganizationAccess({
     userId: linkedUser.userId,
     requestedOrganizationId: args.requestedOrganizationId ?? null,
-    organizationHintId:
-      args.organizationHintId ?? linkedUser.activeOrganizationId,
+    organizationHintId: args.organizationHintId ?? linkedUser.activeOrganizationId,
   });
 
   return {

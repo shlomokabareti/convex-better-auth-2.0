@@ -22,15 +22,10 @@ describe("Better Auth reset and verification token misuse rejection", () => {
     await signUp(instance, email, TEST_PASSWORD);
 
     const token = await requestCoreResetToken(instance, email);
-    await assertStatus(
-      await resetCorePassword(instance, token, RESET_PASSWORD),
-      200
-    );
+    await assertStatus(await resetCorePassword(instance, token, RESET_PASSWORD), 200);
     assert.equal(await signInStatus(instance, email, RESET_PASSWORD), 200);
 
-    await assertRejected(
-      await resetCorePassword(instance, token, REPLAY_PASSWORD)
-    );
+    await assertRejected(await resetCorePassword(instance, token, REPLAY_PASSWORD));
     assert.notEqual(await signInStatus(instance, email, REPLAY_PASSWORD), 200);
     assert.equal(await signInStatus(instance, email, RESET_PASSWORD), 200);
   });
@@ -42,38 +37,18 @@ describe("Better Auth reset and verification token misuse rejection", () => {
     const expiredEmail = uniqueEmail("core-reset-expired");
     await signUp(expiredInstance, expiredEmail, TEST_PASSWORD);
 
-    const expiredToken = await requestCoreResetToken(
-      expiredInstance,
-      expiredEmail
-    );
-    await assertRejected(
-      await resetCorePassword(expiredInstance, expiredToken, RESET_PASSWORD)
-    );
-    assert.equal(
-      await signInStatus(expiredInstance, expiredEmail, TEST_PASSWORD),
-      200
-    );
-    assert.notEqual(
-      await signInStatus(expiredInstance, expiredEmail, RESET_PASSWORD),
-      200
-    );
+    const expiredToken = await requestCoreResetToken(expiredInstance, expiredEmail);
+    await assertRejected(await resetCorePassword(expiredInstance, expiredToken, RESET_PASSWORD));
+    assert.equal(await signInStatus(expiredInstance, expiredEmail, TEST_PASSWORD), 200);
+    assert.notEqual(await signInStatus(expiredInstance, expiredEmail, RESET_PASSWORD), 200);
 
     const controlInstance = createBetterAuthTestInstance();
     const controlEmail = uniqueEmail("core-reset-expiry-control");
     await signUp(controlInstance, controlEmail, TEST_PASSWORD);
 
-    const controlToken = await requestCoreResetToken(
-      controlInstance,
-      controlEmail
-    );
-    await assertStatus(
-      await resetCorePassword(controlInstance, controlToken, RESET_PASSWORD),
-      200
-    );
-    assert.equal(
-      await signInStatus(controlInstance, controlEmail, RESET_PASSWORD),
-      200
-    );
+    const controlToken = await requestCoreResetToken(controlInstance, controlEmail);
+    await assertStatus(await resetCorePassword(controlInstance, controlToken, RESET_PASSWORD), 200);
+    assert.equal(await signInStatus(controlInstance, controlEmail, RESET_PASSWORD), 200);
   });
 
   it("accepts a fresh reset OTP once and rejects replay without a second reset", async () => {
@@ -82,15 +57,10 @@ describe("Better Auth reset and verification token misuse rejection", () => {
     await signUp(instance, email, TEST_PASSWORD);
 
     const otp = await requestResetOtp(instance, email);
-    await assertStatus(
-      await resetPasswordWithOtp(instance, email, otp, RESET_PASSWORD),
-      200
-    );
+    await assertStatus(await resetPasswordWithOtp(instance, email, otp, RESET_PASSWORD), 200);
     assert.equal(await signInStatus(instance, email, RESET_PASSWORD), 200);
 
-    await assertRejected(
-      await resetPasswordWithOtp(instance, email, otp, REPLAY_PASSWORD)
-    );
+    await assertRejected(await resetPasswordWithOtp(instance, email, otp, REPLAY_PASSWORD));
     assert.notEqual(await signInStatus(instance, email, REPLAY_PASSWORD), 200);
     assert.equal(await signInStatus(instance, email, RESET_PASSWORD), 200);
   });
@@ -104,21 +74,10 @@ describe("Better Auth reset and verification token misuse rejection", () => {
 
     const expiredOtp = await requestResetOtp(expiredInstance, expiredEmail);
     await assertRejected(
-      await resetPasswordWithOtp(
-        expiredInstance,
-        expiredEmail,
-        expiredOtp,
-        RESET_PASSWORD
-      )
+      await resetPasswordWithOtp(expiredInstance, expiredEmail, expiredOtp, RESET_PASSWORD),
     );
-    assert.equal(
-      await signInStatus(expiredInstance, expiredEmail, TEST_PASSWORD),
-      200
-    );
-    assert.notEqual(
-      await signInStatus(expiredInstance, expiredEmail, RESET_PASSWORD),
-      200
-    );
+    assert.equal(await signInStatus(expiredInstance, expiredEmail, TEST_PASSWORD), 200);
+    assert.notEqual(await signInStatus(expiredInstance, expiredEmail, RESET_PASSWORD), 200);
 
     const controlInstance = createBetterAuthTestInstance();
     const controlEmail = uniqueEmail("otp-reset-expiry-control");
@@ -126,18 +85,10 @@ describe("Better Auth reset and verification token misuse rejection", () => {
 
     const controlOtp = await requestResetOtp(controlInstance, controlEmail);
     await assertStatus(
-      await resetPasswordWithOtp(
-        controlInstance,
-        controlEmail,
-        controlOtp,
-        RESET_PASSWORD
-      ),
-      200
+      await resetPasswordWithOtp(controlInstance, controlEmail, controlOtp, RESET_PASSWORD),
+      200,
     );
-    assert.equal(
-      await signInStatus(controlInstance, controlEmail, RESET_PASSWORD),
-      200
-    );
+    assert.equal(await signInStatus(controlInstance, controlEmail, RESET_PASSWORD), 200);
   });
 
   it("rejects a reset OTP issued for account A when submitted for account B", async () => {
@@ -149,16 +100,11 @@ describe("Better Auth reset and verification token misuse rejection", () => {
 
     const otpForA = await requestResetOtp(instance, emailA);
 
-    await assertRejected(
-      await resetPasswordWithOtp(instance, emailB, otpForA, MIXUP_PASSWORD)
-    );
+    await assertRejected(await resetPasswordWithOtp(instance, emailB, otpForA, MIXUP_PASSWORD));
     assert.equal(await signInStatus(instance, emailB, TEST_PASSWORD), 200);
     assert.notEqual(await signInStatus(instance, emailB, MIXUP_PASSWORD), 200);
 
-    await assertStatus(
-      await resetPasswordWithOtp(instance, emailA, otpForA, RESET_PASSWORD),
-      200
-    );
+    await assertStatus(await resetPasswordWithOtp(instance, emailA, otpForA, RESET_PASSWORD), 200);
     assert.equal(await signInStatus(instance, emailA, RESET_PASSWORD), 200);
   });
 
@@ -181,27 +127,16 @@ describe("Better Auth reset and verification token misuse rejection", () => {
     const expiredEmail = uniqueEmail("verification-expired");
     await saveUnverifiedUser(expiredInstance, expiredEmail);
 
-    const expiredOtp = await sendEmailVerificationOtp(
-      expiredInstance,
-      expiredEmail
-    );
-    await assertRejected(
-      await verifyEmailWithOtp(expiredInstance, expiredEmail, expiredOtp)
-    );
+    const expiredOtp = await sendEmailVerificationOtp(expiredInstance, expiredEmail);
+    await assertRejected(await verifyEmailWithOtp(expiredInstance, expiredEmail, expiredOtp));
     assert.equal(await isEmailVerified(expiredInstance, expiredEmail), false);
 
     const controlInstance = createBetterAuthTestInstance();
     const controlEmail = uniqueEmail("verification-expiry-control");
     await saveUnverifiedUser(controlInstance, controlEmail);
 
-    const controlOtp = await sendEmailVerificationOtp(
-      controlInstance,
-      controlEmail
-    );
-    await assertStatus(
-      await verifyEmailWithOtp(controlInstance, controlEmail, controlOtp),
-      200
-    );
+    const controlOtp = await sendEmailVerificationOtp(controlInstance, controlEmail);
+    await assertStatus(await verifyEmailWithOtp(controlInstance, controlEmail, controlOtp), 200);
     assert.equal(await isEmailVerified(controlInstance, controlEmail), true);
   });
 
@@ -217,10 +152,7 @@ describe("Better Auth reset and verification token misuse rejection", () => {
     await assertRejected(await verifyEmailWithOtp(instance, emailB, otpForA));
     assert.equal(await isEmailVerified(instance, emailB), false);
 
-    await assertStatus(
-      await verifyEmailWithOtp(instance, emailA, otpForA),
-      200
-    );
+    await assertStatus(await verifyEmailWithOtp(instance, emailA, otpForA), 200);
     assert.equal(await isEmailVerified(instance, emailA), true);
   });
 });
@@ -234,7 +166,7 @@ type AuthRequestOptions = {
 async function authRequest(
   instance: BetterAuthTestInstance,
   path: string,
-  options: AuthRequestOptions = {}
+  options: AuthRequestOptions = {},
 ): Promise<Response> {
   const headers = new Headers();
   headers.set("origin", BETTER_AUTH_TEST_BASE_URL);
@@ -251,17 +183,14 @@ async function authRequest(
   }
 
   return instance.auth.handler(
-    new Request(
-      `${BETTER_AUTH_TEST_BASE_URL}${BETTER_AUTH_TEST_BASE_PATH}${path}`,
-      init
-    )
+    new Request(`${BETTER_AUTH_TEST_BASE_URL}${BETTER_AUTH_TEST_BASE_PATH}${path}`, init),
   );
 }
 
 async function signUp(
   instance: BetterAuthTestInstance,
   email: string,
-  password: string
+  password: string,
 ): Promise<void> {
   const response = await authRequest(instance, "/sign-up/email", {
     method: "POST",
@@ -277,7 +206,7 @@ async function signUp(
 async function signInStatus(
   instance: BetterAuthTestInstance,
   email: string,
-  password: string
+  password: string,
 ): Promise<number> {
   const response = await authRequest(instance, "/sign-in/email", {
     method: "POST",
@@ -291,7 +220,7 @@ async function signInStatus(
 
 async function requestCoreResetToken(
   instance: BetterAuthTestInstance,
-  email: string
+  email: string,
 ): Promise<string> {
   const before = instance.deliveredPasswordResets.length;
   const response = await authRequest(instance, "/request-password-reset", {
@@ -301,10 +230,7 @@ async function requestCoreResetToken(
   await assertStatus(response, 200);
 
   assert.equal(instance.deliveredPasswordResets.length, before + 1);
-  const delivery =
-    instance.deliveredPasswordResets[
-      instance.deliveredPasswordResets.length - 1
-    ];
+  const delivery = instance.deliveredPasswordResets[instance.deliveredPasswordResets.length - 1];
   assert.ok(delivery);
   assert.equal(delivery.email, email);
   assert.ok(delivery.url.includes(delivery.token));
@@ -314,7 +240,7 @@ async function requestCoreResetToken(
 function resetCorePassword(
   instance: BetterAuthTestInstance,
   token: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<Response> {
   return authRequest(instance, "/reset-password", {
     method: "POST",
@@ -325,19 +251,12 @@ function resetCorePassword(
   });
 }
 
-async function requestResetOtp(
-  instance: BetterAuthTestInstance,
-  email: string
-): Promise<string> {
+async function requestResetOtp(instance: BetterAuthTestInstance, email: string): Promise<string> {
   const before = instance.deliveredOtps.length;
-  const response = await authRequest(
-    instance,
-    "/email-otp/request-password-reset",
-    {
-      method: "POST",
-      body: { email },
-    }
-  );
+  const response = await authRequest(instance, "/email-otp/request-password-reset", {
+    method: "POST",
+    body: { email },
+  });
   await assertStatus(response, 200);
 
   const delivery = requireLatestOtpDelivery(instance, before);
@@ -350,7 +269,7 @@ function resetPasswordWithOtp(
   instance: BetterAuthTestInstance,
   email: string,
   otp: string,
-  password: string
+  password: string,
 ): Promise<Response> {
   return authRequest(instance, "/email-otp/reset-password", {
     method: "POST",
@@ -362,10 +281,7 @@ function resetPasswordWithOtp(
   });
 }
 
-async function saveUnverifiedUser(
-  instance: BetterAuthTestInstance,
-  email: string
-): Promise<void> {
+async function saveUnverifiedUser(instance: BetterAuthTestInstance, email: string): Promise<void> {
   const ctx = await instance.auth.$context;
   const user = ctx.test.createUser({
     email,
@@ -377,20 +293,16 @@ async function saveUnverifiedUser(
 
 async function sendEmailVerificationOtp(
   instance: BetterAuthTestInstance,
-  email: string
+  email: string,
 ): Promise<string> {
   const before = instance.deliveredOtps.length;
-  const response = await authRequest(
-    instance,
-    "/email-otp/send-verification-otp",
-    {
-      method: "POST",
-      body: {
-        email,
-        type: "email-verification",
-      },
-    }
-  );
+  const response = await authRequest(instance, "/email-otp/send-verification-otp", {
+    method: "POST",
+    body: {
+      email,
+      type: "email-verification",
+    },
+  });
   await assertStatus(response, 200);
 
   const delivery = requireLatestOtpDelivery(instance, before);
@@ -402,7 +314,7 @@ async function sendEmailVerificationOtp(
 function verifyEmailWithOtp(
   instance: BetterAuthTestInstance,
   email: string,
-  otp: string
+  otp: string,
 ): Promise<Response> {
   return authRequest(instance, "/email-otp/verify-email", {
     method: "POST",
@@ -413,10 +325,7 @@ function verifyEmailWithOtp(
   });
 }
 
-async function isEmailVerified(
-  instance: BetterAuthTestInstance,
-  email: string
-): Promise<boolean> {
+async function isEmailVerified(instance: BetterAuthTestInstance, email: string): Promise<boolean> {
   const ctx = await instance.auth.$context;
   const found = await ctx.internalAdapter.findUserByEmail(email);
   assert.ok(found);
@@ -425,7 +334,7 @@ async function isEmailVerified(
 
 function requireLatestOtpDelivery(
   instance: BetterAuthTestInstance,
-  previousDeliveryCount: number
+  previousDeliveryCount: number,
 ): BetterAuthTestOtpDelivery {
   assert.equal(instance.deliveredOtps.length, previousDeliveryCount + 1);
   const delivery = instance.deliveredOtps[instance.deliveredOtps.length - 1];
@@ -433,13 +342,10 @@ function requireLatestOtpDelivery(
   return delivery;
 }
 
-async function assertStatus(
-  response: Response,
-  expectedStatus: number
-): Promise<void> {
+async function assertStatus(response: Response, expectedStatus: number): Promise<void> {
   if (response.status !== expectedStatus) {
     assert.fail(
-      `Expected HTTP ${expectedStatus}, got ${response.status}: ${await response.text()}`
+      `Expected HTTP ${expectedStatus}, got ${response.status}: ${await response.text()}`,
     );
   }
 }
@@ -447,7 +353,7 @@ async function assertStatus(
 async function assertRejected(response: Response): Promise<void> {
   if (response.status < 400) {
     assert.fail(
-      `Expected token misuse rejection, got HTTP ${response.status}: ${await response.text()}`
+      `Expected token misuse rejection, got HTTP ${response.status}: ${await response.text()}`,
     );
   }
 }

@@ -7,13 +7,12 @@ import type {
 } from "./types";
 
 export function deriveBetterAuthRuntimeSnapshot(
-  input: BetterAuthRuntimeSnapshotInput
+  input: BetterAuthRuntimeSnapshotInput,
 ): BetterAuthRuntimeSnapshot {
   const providerState = sessionResultToProviderState(input.session);
   const bridgeState = createBetterAuthBridgeState({
     providerState,
-    convexAuthenticated:
-      input.convexAuthenticated && providerState.isAuthenticated,
+    convexAuthenticated: input.convexAuthenticated && providerState.isAuthenticated,
     terminalFailure: input.terminalFailure ?? input.session.error !== null,
     recovering: input.recovering ?? input.session.isRefetching,
   });
@@ -45,8 +44,6 @@ function sessionResultToProviderState(session: BetterAuthClientSessionResult) {
   return {
     isAuthenticated: session.data !== null,
     isLoading: session.isPending,
-    hasToken:
-      session.data?.session.token !== undefined &&
-      session.data?.session.token !== null,
+    hasToken: session.data?.session.token !== undefined && session.data?.session.token !== null,
   };
 }

@@ -9,10 +9,8 @@ import {
 
 export const AGENT_AUTH_PROTOCOL_VERSION = "1.0-draft" as const;
 export const AGENT_AUTH_PROTOCOL_SUPPORTED_MAJOR_VERSION = 1 as const;
-export const AGENT_AUTH_PROTOCOL_DISCOVERY_PATH =
-  "/.well-known/agent-configuration" as const;
-export const AGENT_AUTH_PROTOCOL_DISCOVERY_CACHE_CONTROL =
-  "public, max-age=3600" as const;
+export const AGENT_AUTH_PROTOCOL_DISCOVERY_PATH = "/.well-known/agent-configuration" as const;
+export const AGENT_AUTH_PROTOCOL_DISCOVERY_CACHE_CONTROL = "public, max-age=3600" as const;
 
 export const AGENT_AUTH_PROTOCOL_ENDPOINT_NAMES = [
   "register",
@@ -29,19 +27,12 @@ export const AGENT_AUTH_PROTOCOL_ENDPOINT_NAMES = [
   "introspect",
 ] as const;
 
-export type AgentAuthProtocolEndpointName =
-  (typeof AGENT_AUTH_PROTOCOL_ENDPOINT_NAMES)[number];
+export type AgentAuthProtocolEndpointName = (typeof AGENT_AUTH_PROTOCOL_ENDPOINT_NAMES)[number];
 export type AgentAuthProtocolMode = "delegated" | "autonomous";
 export type AgentAuthProtocolAlgorithm = "Ed25519";
-export type AgentAuthProtocolApprovalMethod =
-  | "device_authorization"
-  | "ciba"
-  | (string & {});
+export type AgentAuthProtocolApprovalMethod = "device_authorization" | "ciba" | (string & {});
 
-export type AgentAuthProtocolEndpoints = Record<
-  AgentAuthProtocolEndpointName,
-  string
->;
+export type AgentAuthProtocolEndpoints = Record<AgentAuthProtocolEndpointName, string>;
 
 export type AgentAuthProtocolDiscoveryDocument = {
   version: typeof AGENT_AUTH_PROTOCOL_VERSION;
@@ -69,9 +60,7 @@ export type ParsedAgentAuthProtocolVersion = {
 };
 
 const VERSION_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)(-draft)?$/;
-export function parseAgentAuthProtocolVersion(
-  value: unknown
-): ParsedAgentAuthProtocolVersion {
+export function parseAgentAuthProtocolVersion(value: unknown): ParsedAgentAuthProtocolVersion {
   if (typeof value !== "string") {
     throw new TypeError("version must be a string");
   }
@@ -93,24 +82,22 @@ export function parseAgentAuthProtocolVersion(
 }
 
 export function assertSupportedAgentAuthProtocolVersion(
-  value: unknown
+  value: unknown,
 ): typeof AGENT_AUTH_PROTOCOL_VERSION {
   const parsed = parseAgentAuthProtocolVersion(value);
   if (parsed.major !== AGENT_AUTH_PROTOCOL_SUPPORTED_MAJOR_VERSION) {
-    throw new RangeError(
-      `Unsupported Agent Auth Protocol major version ${parsed.major}`
-    );
+    throw new RangeError(`Unsupported Agent Auth Protocol major version ${parsed.major}`);
   }
   if (parsed.raw !== AGENT_AUTH_PROTOCOL_VERSION) {
     throw new RangeError(
-      `Unsupported Agent Auth Protocol draft ${parsed.raw}; expected ${AGENT_AUTH_PROTOCOL_VERSION}`
+      `Unsupported Agent Auth Protocol draft ${parsed.raw}; expected ${AGENT_AUTH_PROTOCOL_VERSION}`,
     );
   }
   return AGENT_AUTH_PROTOCOL_VERSION;
 }
 
 export function createAgentAuthProtocolDiscoveryDocument(
-  args: CreateAgentAuthProtocolDiscoveryDocumentArgs
+  args: CreateAgentAuthProtocolDiscoveryDocumentArgs,
 ): AgentAuthProtocolDiscoveryDocument {
   return parseAgentAuthProtocolDiscoveryDocument({
     ...args,
@@ -120,7 +107,7 @@ export function createAgentAuthProtocolDiscoveryDocument(
 }
 
 export function parseAgentAuthProtocolDiscoveryDocument(
-  value: unknown
+  value: unknown,
 ): AgentAuthProtocolDiscoveryDocument {
   const object = readObject(value, "Agent Auth discovery document");
   const version = assertSupportedAgentAuthProtocolVersion(object.version);
@@ -136,10 +123,7 @@ export function parseAgentAuthProtocolDiscoveryDocument(
   const defaultLocation =
     defaultLocationRaw === undefined
       ? undefined
-      : readHttpsUrl(
-          readRequiredString(object, "default_location"),
-          "default_location"
-        );
+      : readHttpsUrl(readRequiredString(object, "default_location"), "default_location");
   const jwksUri =
     jwksUriRaw === undefined
       ? undefined
@@ -150,9 +134,7 @@ export function parseAgentAuthProtocolDiscoveryDocument(
     provider_name: providerName,
     description,
     issuer,
-    ...(defaultLocation === undefined
-      ? {}
-      : { default_location: defaultLocation }),
+    ...(defaultLocation === undefined ? {} : { default_location: defaultLocation }),
     algorithms,
     modes,
     approval_methods: approvalMethods,
@@ -162,7 +144,7 @@ export function parseAgentAuthProtocolDiscoveryDocument(
 }
 
 export function resolveAgentAuthProtocolDefaultLocation(
-  document: AgentAuthProtocolDiscoveryDocument
+  document: AgentAuthProtocolDiscoveryDocument,
 ): string {
   return (
     document.default_location ??
@@ -175,9 +157,7 @@ function readAlgorithms(value: unknown): AgentAuthProtocolAlgorithm[] {
     allowEmpty: false,
   });
   if (algorithms.length !== 1 || algorithms[0] !== "Ed25519") {
-    throw new TypeError(
-      "algorithms must contain only Ed25519 for Agent Auth Protocol v1.0-draft"
-    );
+    throw new TypeError("algorithms must contain only Ed25519 for Agent Auth Protocol v1.0-draft");
   }
   return ["Ed25519"];
 }
@@ -191,15 +171,13 @@ function readModes(value: unknown): AgentAuthProtocolMode[] {
   });
 }
 
-function readApprovalMethods(
-  value: unknown
-): AgentAuthProtocolApprovalMethod[] {
+function readApprovalMethods(value: unknown): AgentAuthProtocolApprovalMethod[] {
   const methods = readStringArray(value, "approval_methods", {
     allowEmpty: false,
   });
   if (!methods.includes("device_authorization")) {
     throw new TypeError(
-      "approval_methods must include device_authorization for the declared v1.0-draft profile"
+      "approval_methods must include device_authorization for the declared v1.0-draft profile",
     );
   }
   return methods;
@@ -225,8 +203,6 @@ function readEndpoints(value: unknown): AgentAuthProtocolEndpoints {
   };
 }
 
-function isAgentAuthProtocolMode(
-  value: string
-): value is AgentAuthProtocolMode {
+function isAgentAuthProtocolMode(value: string): value is AgentAuthProtocolMode {
   return value === "delegated" || value === "autonomous";
 }

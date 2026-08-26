@@ -78,9 +78,7 @@ const DEFAULT_COPY: Required<ExpoChangeEmailFormCopy> = {
 export function ConvexChangeEmailForm(props: ExpoChangeEmailFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { requestChange, isRequesting } = useExpoAuthChangeEmail(
-    props.authClient
-  );
+  const { requestChange, isRequesting } = useExpoAuthChangeEmail(props.authClient);
   const [newEmail, setNewEmail] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -114,25 +112,16 @@ export function ConvexChangeEmailForm(props: ExpoChangeEmailFormProps) {
     <View style={[styles.root, s.root]}>
       <View style={[styles.header, s.header]}>
         <Text style={[styles.title, s.title]}>{copy.title}</Text>
-        <Text style={[styles.description, s.description]}>
-          {copy.description}
-        </Text>
+        <Text style={[styles.description, s.description]}>{copy.description}</Text>
       </View>
       <View>
         {props.currentEmail !== null && props.currentEmail !== undefined ? (
           <View style={[styles.field, s.field]}>
-            <Text style={[styles.label, s.label]}>
-              {copy.currentEmailLabel}
-            </Text>
+            <Text style={[styles.label, s.label]}>{copy.currentEmailLabel}</Text>
             <TextInput
               value={props.currentEmail}
               editable={false}
-              style={[
-                styles.input,
-                styles.readonlyInput,
-                s.input,
-                s.readonlyInput,
-              ]}
+              style={[styles.input, styles.readonlyInput, s.input, s.readonlyInput]}
             />
           </View>
         ) : null}
@@ -161,10 +150,7 @@ export function ConvexChangeEmailForm(props: ExpoChangeEmailFormProps) {
           <Text style={[styles.successState, s.successState]}>{success}</Text>
         ) : null}
         {error !== null ? (
-          <Text
-            className="text-destructive"
-            style={[styles.errorState, s.errorState]}
-          >
+          <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
             {error}
           </Text>
         ) : null}

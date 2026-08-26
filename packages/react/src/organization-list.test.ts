@@ -38,7 +38,7 @@ function render(props: Partial<ConvexOrgListProps>): string {
       organizations: [],
       onSelectOrganization: noop,
       ...props,
-    })
+    }),
   );
 }
 

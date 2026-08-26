@@ -24,10 +24,7 @@ import {
 } from "react-native";
 
 import type { ExpoBetterAuthClient } from "./client";
-import {
-  useExpoAuthVerifyBackupCode,
-  useExpoAuthVerifyTotp,
-} from "./runtime";
+import { useExpoAuthVerifyBackupCode, useExpoAuthVerifyTotp } from "./runtime";
 
 export type ExpoVerifyTwoFactorFormStyles = {
   root?: StyleProp<ViewStyle>;
@@ -81,23 +78,20 @@ const DEFAULT_COPY: Required<ExpoVerifyTwoFactorFormCopy> = {
   useBackupCode: "Use a backup code",
   useAuthenticator: "Use authenticator app",
   trustDeviceLabel: "Trust this device for 60 days",
-  unavailable:
-    "Two-factor authentication is not available on this auth client.",
+  unavailable: "Two-factor authentication is not available on this auth client.",
 };
 
 type Mode = "totp" | "backup";
 
-export function ConvexVerifyTwoFactorForm(
-  props: ExpoVerifyTwoFactorFormProps
-) {
+export function ConvexVerifyTwoFactorForm(props: ExpoVerifyTwoFactorFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const showTrustDevice = props.showTrustDevice ?? true;
 
-  const { verifyTotp, isVerifying: isVerifyingTotp } =
-    useExpoAuthVerifyTotp(props.authClient);
-  const { verifyBackupCode, isVerifying: isVerifyingBackup } =
-    useExpoAuthVerifyBackupCode(props.authClient);
+  const { verifyTotp, isVerifying: isVerifyingTotp } = useExpoAuthVerifyTotp(props.authClient);
+  const { verifyBackupCode, isVerifying: isVerifyingBackup } = useExpoAuthVerifyBackupCode(
+    props.authClient,
+  );
 
   const [mode, setMode] = useState<Mode>("totp");
   const [code, setCode] = useState("");
@@ -131,10 +125,7 @@ export function ConvexVerifyTwoFactorForm(
   if (!isAvailable) {
     return (
       <View style={[styles.root, s.root]}>
-        <Text
-          className="text-destructive"
-          style={[styles.errorState, s.errorState]}
-        >
+        <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
           {copy.unavailable}
         </Text>
       </View>
@@ -145,9 +136,7 @@ export function ConvexVerifyTwoFactorForm(
     <View style={[styles.root, s.root]}>
       <View style={[styles.header, s.header]}>
         <Text style={[styles.title, s.title]}>{copy.title}</Text>
-        <Text style={[styles.description, s.description]}>
-          {copy.description}
-        </Text>
+        <Text style={[styles.description, s.description]}>{copy.description}</Text>
       </View>
 
       <View style={[styles.field, s.field]}>
@@ -157,9 +146,7 @@ export function ConvexVerifyTwoFactorForm(
         <TextInput
           value={code}
           onChangeText={setCode}
-          placeholder={
-            mode === "totp" ? copy.codePlaceholder : copy.backupCodePlaceholder
-          }
+          placeholder={mode === "totp" ? copy.codePlaceholder : copy.backupCodePlaceholder}
           autoCapitalize="none"
           autoComplete="one-time-code"
           keyboardType={mode === "totp" ? "number-pad" : "default"}
@@ -170,9 +157,7 @@ export function ConvexVerifyTwoFactorForm(
       {showTrustDevice ? (
         <View style={[styles.trustToggle, s.trustToggle]}>
           <Switch value={trustDevice} onValueChange={setTrustDevice} />
-          <Text style={[styles.trustToggleLabel, s.trustToggleLabel]}>
-            {copy.trustDeviceLabel}
-          </Text>
+          <Text style={[styles.trustToggleLabel, s.trustToggleLabel]}>{copy.trustDeviceLabel}</Text>
         </View>
       ) : null}
 
@@ -196,10 +181,7 @@ export function ConvexVerifyTwoFactorForm(
       </Pressable>
 
       {error !== null ? (
-        <Text
-          className="text-destructive"
-          style={[styles.errorState, s.errorState]}
-        >
+        <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
           {error}
         </Text>
       ) : null}

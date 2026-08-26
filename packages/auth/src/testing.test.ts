@@ -29,9 +29,7 @@ function requestUrl(input: string | URL | Request): string {
 
 type TestRuntime = {
   __authRuntime?: {
-    getConvexToken?: (args?: {
-      forceRefreshToken?: boolean;
-    }) => Promise<string | null>;
+    getConvexToken?: (args?: { forceRefreshToken?: boolean }) => Promise<string | null>;
   };
   __convexApi?: unknown;
   __convexClient?: unknown;
@@ -40,14 +38,8 @@ type TestRuntime = {
 class RuntimePage implements ConvexAuthTestingPage {
   constructor(private readonly runtime: TestRuntime) {}
 
-  async evaluate<T, TArg>(
-    pageFunction: (arg: TArg) => T | Promise<T>,
-    arg: TArg
-  ): Promise<T> {
-    const hadWindow = Object.prototype.hasOwnProperty.call(
-      globalThis,
-      "window"
-    );
+  async evaluate<T, TArg>(pageFunction: (arg: TArg) => T | Promise<T>, arg: TArg): Promise<T> {
+    const hadWindow = Object.prototype.hasOwnProperty.call(globalThis, "window");
     const previousWindow = Reflect.get(globalThis, "window");
     Object.defineProperty(globalThis, "window", {
       configurable: true,
@@ -72,7 +64,7 @@ class RuntimePage implements ConvexAuthTestingPage {
 class FormLocator implements ConvexAuthTestingLocator {
   constructor(
     private readonly page: SignInPage,
-    private readonly selector: string
+    private readonly selector: string,
   ) {}
 
   first() {
@@ -151,10 +143,7 @@ describe("testing helpers", () => {
       },
     });
 
-    assert.equal(
-      await readConvexAuthToken(page, { forceRefreshToken: true }),
-      "test-token"
-    );
+    assert.equal(await readConvexAuthToken(page, { forceRefreshToken: true }), "test-token");
     assert.equal(receivedForceRefreshToken, true);
   });
 
@@ -201,7 +190,7 @@ describe("testing helpers", () => {
         timeoutMs: 1,
         pollIntervalMs: 1,
       }),
-      /MISSING_CONVEX_URL is required/
+      /MISSING_CONVEX_URL is required/,
     );
   });
 
@@ -217,7 +206,7 @@ describe("testing helpers", () => {
         emailEnvName: "AUTH_EMAIL",
         passwordEnvName: "AUTH_PASSWORD",
       }),
-      true
+      true,
     );
     assert.deepEqual(
       getConvexAuthTestCredentials({
@@ -225,7 +214,7 @@ describe("testing helpers", () => {
         emailEnvName: "AUTH_EMAIL",
         passwordEnvName: "AUTH_PASSWORD",
       }),
-      { email: "person@example.com", password: "secret" }
+      { email: "person@example.com", password: "secret" },
     );
   });
 
@@ -265,15 +254,12 @@ describe("testing helpers", () => {
     });
     await writeFile(
       join(repoRoot, "package.json"),
-      JSON.stringify({ dependencies: { "convex-auth": "0.1.25" } })
+      JSON.stringify({ dependencies: { "convex-auth": "0.1.25" } }),
     );
-    await writeFile(
-      join(repoRoot, "apps/web/package.json"),
-      JSON.stringify({})
-    );
+    await writeFile(join(repoRoot, "apps/web/package.json"), JSON.stringify({}));
     await writeFile(
       join(repoRoot, "node_modules/convex-auth/package.json"),
-      JSON.stringify({ version: "0.1.25" })
+      JSON.stringify({ version: "0.1.25" }),
     );
     await writeFile(
       join(repoRoot, ".test-env"),
@@ -283,23 +269,23 @@ describe("testing helpers", () => {
         "CONVEX_SITE_URL=https://convex-site.example.test",
         "PLAYWRIGHT_TEST_BASE_URL=https://app.example.test",
         "BETTER_AUTH_TRUSTED_ORIGINS=https://app.example.test",
-      ].join("\n")
+      ].join("\n"),
     );
     await writeFile(
       join(repoRoot, "convex/convex.config.ts"),
-      'import convexAuth from "convex-auth/convex.config.js";\napp.use(convexAuth);\n'
+      'import convexAuth from "convex-auth/convex.config.js";\napp.use(convexAuth);\n',
     );
     await writeFile(
       join(repoRoot, "convexconvex-auth.config.ts"),
-      'import { createConvexAuthConfig } from "convex-auth/better-auth/server";\nexport default { providers: [createConvexAuthConfig()] };\n'
+      'import { createConvexAuthConfig } from "convex-auth/better-auth/server";\nexport default { providers: [createConvexAuthConfig()] };\n',
     );
     await writeFile(
       join(repoRoot, "convex/http.ts"),
-      'import { httpRouter } from "convex/server";\nimport { registerAuthRoutes } from "./betterAuth";\nconst http = httpRouter();\nregisterAuthRoutes(http);\n'
+      'import { httpRouter } from "convex/server";\nimport { registerAuthRoutes } from "./betterAuth";\nconst http = httpRouter();\nregisterAuthRoutes(http);\n',
     );
     await writeFile(
       join(repoRoot, "convex/betterAuth.ts"),
-      'import { createBetterAuthConvexRuntime } from "convex-auth/better-auth/convex";\nconst runtime = createBetterAuthConvexRuntime({ components: { betterAuth: components.betterAuth }, refs: { provisionIdentityFromIdentity: components.convexAuth.identity.provisionFromIdentity } });\nexport const registerAuthRoutes = runtime.registerRoutes;\n'
+      'import { createBetterAuthConvexRuntime } from "convex-auth/better-auth/convex";\nconst runtime = createBetterAuthConvexRuntime({ components: { betterAuth: components.betterAuth }, refs: { provisionIdentityFromIdentity: components.convexAuth.identity.provisionFromIdentity } });\nexport const registerAuthRoutes = runtime.registerRoutes;\n',
     );
 
     const lines: string[] = [];
@@ -317,7 +303,7 @@ describe("testing helpers", () => {
         ) {
           return new Response(
             "https:/convex-auth.example.test/apiconvex-auth\nhttps://convex.example.test",
-            { status: 200 }
+            { status: 200 },
           );
         }
         return new Response("ok", { status: 200 });
@@ -325,30 +311,23 @@ describe("testing helpers", () => {
     });
 
     assert.equal(exitCode, 0);
-    assert.equal(
-      env.VITE_BETTER_AUTH_URL,
-      "https:/convex-auth.example.test/apiconvex-auth"
-    );
+    assert.equal(env.VITE_BETTER_AUTH_URL, "https:/convex-auth.example.test/apiconvex-auth");
     assert.equal(
       lines.some((line) => line.includes("Auth preflight passed.")),
-      true
+      true,
     );
     assert.equal(
-      lines.some((line) =>
-        line.includes("[PASS] Convex Auth component registration")
-      ),
-      true
+      lines.some((line) => line.includes("[PASS] Convex Auth component registration")),
+      true,
     );
     assert.equal(
       lines.some((line) => line.includes("[PASS] Better Auth trusted origins")),
-      true
+      true,
     );
   });
 
   it.skip("passes auth preflight command when runtime trusted origins cover the web app", async () => {
-    const repoRoot = await mkdtemp(
-      join(tmpdir(), "convex-auth-preflight-runtime-origins-")
-    );
+    const repoRoot = await mkdtemp(join(tmpdir(), "convex-auth-preflight-runtime-origins-"));
     await mkdir(join(repoRoot, "convex"), { recursive: true });
     await mkdir(join(repoRoot, "apps/web"), { recursive: true });
     await mkdir(join(repoRoot, "node_modules/convex-auth"), {
@@ -356,15 +335,12 @@ describe("testing helpers", () => {
     });
     await writeFile(
       join(repoRoot, "package.json"),
-      JSON.stringify({ dependencies: { "convex-auth": "0.1.25" } })
+      JSON.stringify({ dependencies: { "convex-auth": "0.1.25" } }),
     );
-    await writeFile(
-      join(repoRoot, "apps/web/package.json"),
-      JSON.stringify({})
-    );
+    await writeFile(join(repoRoot, "apps/web/package.json"), JSON.stringify({}));
     await writeFile(
       join(repoRoot, "node_modules/convex-auth/package.json"),
-      JSON.stringify({ version: "0.1.25" })
+      JSON.stringify({ version: "0.1.25" }),
     );
     await writeFile(
       join(repoRoot, ".test-env"),
@@ -373,23 +349,23 @@ describe("testing helpers", () => {
         "VITE_CONVEX_URL=https://convex.example.test",
         "CONVEX_SITE_URL=https://convex-site.example.test",
         "PLAYWRIGHT_TEST_BASE_URL=http://127.0.0.1:4173",
-      ].join("\n")
+      ].join("\n"),
     );
     await writeFile(
       join(repoRoot, "convex/convex.config.ts"),
-      'import convexAuth from "convex-auth/convex.config.js";\napp.use(convexAuth);\n'
+      'import convexAuth from "convex-auth/convex.config.js";\napp.use(convexAuth);\n',
     );
     await writeFile(
       join(repoRoot, "convexconvex-auth.config.ts"),
-      'import { createConvexAuthConfig } from "convex-auth/better-auth/server";\nexport default { providers: [createConvexAuthConfig()] };\n'
+      'import { createConvexAuthConfig } from "convex-auth/better-auth/server";\nexport default { providers: [createConvexAuthConfig()] };\n',
     );
     await writeFile(
       join(repoRoot, "convex/http.ts"),
-      'import { httpRouter } from "convex/server";\nimport { registerAuthRoutes } from "./betterAuth";\nconst http = httpRouter();\nregisterAuthRoutes(http);\n'
+      'import { httpRouter } from "convex/server";\nimport { registerAuthRoutes } from "./betterAuth";\nconst http = httpRouter();\nregisterAuthRoutes(http);\n',
     );
     await writeFile(
       join(repoRoot, "convex/betterAuth.ts"),
-      'import { createBetterAuthConvexRuntime } from "convex-auth/better-auth/convex";\nconst runtime = createBetterAuthConvexRuntime({ trustedOrigins: ["http://127.0.0.1:4173"], components: { betterAuth: components.betterAuth }, refs: { provisionIdentityFromIdentity: components.convexAuth.identity.provisionFromIdentity } });\nexport const registerAuthRoutes = runtime.registerRoutes;\n'
+      'import { createBetterAuthConvexRuntime } from "convex-auth/better-auth/convex";\nconst runtime = createBetterAuthConvexRuntime({ trustedOrigins: ["http://127.0.0.1:4173"], components: { betterAuth: components.betterAuth }, refs: { provisionIdentityFromIdentity: components.convexAuth.identity.provisionFromIdentity } });\nexport const registerAuthRoutes = runtime.registerRoutes;\n',
     );
 
     const lines: string[] = [];
@@ -401,7 +377,7 @@ describe("testing helpers", () => {
         if (requestUrl(input) === "http://127.0.0.1:4173/") {
           return new Response(
             "https:/convex-auth.example.test/apiconvex-auth\nhttps://convex.example.test",
-            { status: 200 }
+            { status: 200 },
           );
         }
         return new Response("ok", { status: 200 });
@@ -412,17 +388,15 @@ describe("testing helpers", () => {
     assert.equal(
       lines.some((line) =>
         line.includes(
-          "[PASS] Better Auth trusted origins: http://127.0.0.1:4173 is allowed by explicit trustedOrigins runtime config."
-        )
+          "[PASS] Better Auth trusted origins: http://127.0.0.1:4173 is allowed by explicit trustedOrigins runtime config.",
+        ),
       ),
-      true
+      true,
     );
   });
 
   it("fails auth preflight command when trusted origins do not cover the web app", async () => {
-    const repoRoot = await mkdtemp(
-      join(tmpdir(), "convex-auth-preflight-origins-")
-    );
+    const repoRoot = await mkdtemp(join(tmpdir(), "convex-auth-preflight-origins-"));
     await mkdir(join(repoRoot, "convex"), { recursive: true });
     await mkdir(join(repoRoot, "apps/web"), { recursive: true });
     await mkdir(join(repoRoot, "node_modules/convex-auth"), {
@@ -430,15 +404,12 @@ describe("testing helpers", () => {
     });
     await writeFile(
       join(repoRoot, "package.json"),
-      JSON.stringify({ dependencies: { "convex-auth": "0.1.25" } })
+      JSON.stringify({ dependencies: { "convex-auth": "0.1.25" } }),
     );
-    await writeFile(
-      join(repoRoot, "apps/web/package.json"),
-      JSON.stringify({})
-    );
+    await writeFile(join(repoRoot, "apps/web/package.json"), JSON.stringify({}));
     await writeFile(
       join(repoRoot, "node_modules/convex-auth/package.json"),
-      JSON.stringify({ version: "0.1.25" })
+      JSON.stringify({ version: "0.1.25" }),
     );
     await writeFile(
       join(repoRoot, ".test-env"),
@@ -447,23 +418,23 @@ describe("testing helpers", () => {
         "VITE_CONVEX_URL=https://convex.example.test",
         "CONVEX_SITE_URL=https://convex-site.example.test",
         "PLAYWRIGHT_TEST_BASE_URL=https://app.example.test",
-      ].join("\n")
+      ].join("\n"),
     );
     await writeFile(
       join(repoRoot, "convex/convex.config.ts"),
-      'import convexAuth from "convex-auth/convex.config.js";\napp.use(convexAuth);\n'
+      'import convexAuth from "convex-auth/convex.config.js";\napp.use(convexAuth);\n',
     );
     await writeFile(
       join(repoRoot, "convexconvex-auth.config.ts"),
-      'import { createConvexAuthConfig } from "convex-auth/better-auth/server";\nexport default { providers: [createConvexAuthConfig()] };\n'
+      'import { createConvexAuthConfig } from "convex-auth/better-auth/server";\nexport default { providers: [createConvexAuthConfig()] };\n',
     );
     await writeFile(
       join(repoRoot, "convex/http.ts"),
-      'import { httpRouter } from "convex/server";\nimport { registerAuthRoutes } from "./betterAuth";\nconst http = httpRouter();\nregisterAuthRoutes(http);\n'
+      'import { httpRouter } from "convex/server";\nimport { registerAuthRoutes } from "./betterAuth";\nconst http = httpRouter();\nregisterAuthRoutes(http);\n',
     );
     await writeFile(
       join(repoRoot, "convex/betterAuth.ts"),
-      'import { createBetterAuthConvexRuntime } from "convex-auth/better-auth/convex";\nconst runtime = createBetterAuthConvexRuntime({ components: { betterAuth: components.betterAuth }, refs: { provisionIdentityFromIdentity: components.convexAuth.identity.provisionFromIdentity } });\nexport const registerAuthRoutes = runtime.registerRoutes;\n'
+      'import { createBetterAuthConvexRuntime } from "convex-auth/better-auth/convex";\nconst runtime = createBetterAuthConvexRuntime({ components: { betterAuth: components.betterAuth }, refs: { provisionIdentityFromIdentity: components.convexAuth.identity.provisionFromIdentity } });\nexport const registerAuthRoutes = runtime.registerRoutes;\n',
     );
 
     const lines: string[] = [];
@@ -475,7 +446,7 @@ describe("testing helpers", () => {
         if (requestUrl(input) === "https://app.example.test/") {
           return new Response(
             "https:/convex-auth.example.test/apiconvex-auth\nhttps://convex.example.test",
-            { status: 200 }
+            { status: 200 },
           );
         }
         return new Response("ok", { status: 200 });
@@ -484,39 +455,32 @@ describe("testing helpers", () => {
 
     assert.equal(exitCode, 1);
     assert.equal(
-      lines.some((line) =>
-        line.includes("[ERROR] Better Auth trusted origins")
-      ),
-      true
+      lines.some((line) => line.includes("[ERROR] Better Auth trusted origins")),
+      true,
     );
   });
 
   it("fails auth preflight command when backend setup is missing", async () => {
-    const repoRoot = await mkdtemp(
-      join(tmpdir(), "convex-auth-preflight-missing-")
-    );
+    const repoRoot = await mkdtemp(join(tmpdir(), "convex-auth-preflight-missing-"));
     await mkdir(join(repoRoot, "apps/web"), { recursive: true });
     await mkdir(join(repoRoot, "node_modules/convex-auth"), {
       recursive: true,
     });
     await writeFile(
       join(repoRoot, "package.json"),
-      JSON.stringify({ dependencies: { "convex-auth": "0.1.25" } })
+      JSON.stringify({ dependencies: { "convex-auth": "0.1.25" } }),
     );
-    await writeFile(
-      join(repoRoot, "apps/web/package.json"),
-      JSON.stringify({})
-    );
+    await writeFile(join(repoRoot, "apps/web/package.json"), JSON.stringify({}));
     await writeFile(
       join(repoRoot, "node_modules/convex-auth/package.json"),
-      JSON.stringify({ version: "0.1.25" })
+      JSON.stringify({ version: "0.1.25" }),
     );
     await writeFile(
       join(repoRoot, ".test-env"),
       [
         "VITE_BETTER_AUTH_URL=https:/convex-auth.example.test/apiconvex-auth",
         "VITE_CONVEX_URL=https://convex.example.test",
-      ].join("\n")
+      ].join("\n"),
     );
 
     const lines: string[] = [];
@@ -529,16 +493,12 @@ describe("testing helpers", () => {
 
     assert.equal(exitCode, 1);
     assert.equal(
-      lines.some((line) =>
-        line.includes("[ERROR] Convex Auth component registration")
-      ),
-      true
+      lines.some((line) => line.includes("[ERROR] Convex Auth component registration")),
+      true,
     );
     assert.equal(
-      lines.some((line) =>
-        line.includes("[ERROR] Backend Better Auth site URL")
-      ),
-      true
+      lines.some((line) => line.includes("[ERROR] Backend Better Auth site URL")),
+      true,
     );
   });
 
@@ -554,10 +514,8 @@ describe("testing helpers", () => {
 
     assert.equal(page.clickedSubmit, true);
     assert.equal(
-      page.values.get(
-        'input[type="email"], input[name="identifier"], input[name="emailAddress"]'
-      ),
-      "person@example.com"
+      page.values.get('input[type="email"], input[name="identifier"], input[name="emailAddress"]'),
+      "person@example.com",
     );
     assert.equal(page.values.get('input[type="password"]'), "secret");
     assert.equal(new URL(page.url()).pathname, "/app");

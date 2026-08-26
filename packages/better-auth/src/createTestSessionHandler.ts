@@ -26,29 +26,25 @@ import type { BetterAuthConvexRuntime } from "./convex";
  * deployment (test/dev); do NOT enable in prod unless a deployment explicitly
  * opts in.
  */
-export type CreateTestSessionHandlerConfig<DataModel extends GenericDataModel> =
-  {
-    /** The runtime's `createAuth` — yields the Better-Auth instance whose `.handler` we forward to. */
-    createAuth: BetterAuthConvexRuntime<DataModel>["createAuth"];
-    /** Master switch. Return `false` (the default posture) and the endpoint is a 404. */
-    isEnabled: () => boolean;
-    /** Server-only shared secret. Absent/empty ⇒ the endpoint is a 404. */
-    getSecret: () => string | undefined;
-    /** Better-Auth base path. Default `"/api/auth"`. */
-    basePath?: string;
-    /** Header the caller presents the secret in. Default `"x-convex-auth-test-secret"`. */
-    secretHeaderName?: string;
-  };
+export type CreateTestSessionHandlerConfig<DataModel extends GenericDataModel> = {
+  /** The runtime's `createAuth` — yields the Better-Auth instance whose `.handler` we forward to. */
+  createAuth: BetterAuthConvexRuntime<DataModel>["createAuth"];
+  /** Master switch. Return `false` (the default posture) and the endpoint is a 404. */
+  isEnabled: () => boolean;
+  /** Server-only shared secret. Absent/empty ⇒ the endpoint is a 404. */
+  getSecret: () => string | undefined;
+  /** Better-Auth base path. Default `"/api/auth"`. */
+  basePath?: string;
+  /** Header the caller presents the secret in. Default `"x-convex-auth-test-secret"`. */
+  secretHeaderName?: string;
+};
 
 export function createTestSessionHandler<TContext>(
-  config: Omit<
-    CreateTestSessionHandlerConfig<GenericDataModel>,
-    "createAuth"
-  > & {
+  config: Omit<CreateTestSessionHandlerConfig<GenericDataModel>, "createAuth"> & {
     createAuth: (ctx: TContext) => {
       handler(request: Request): Promise<Response>;
     };
-  }
+  },
 ): (ctx: TContext, request: Request) => Promise<Response> {
   const basePath = (config.basePath ?? "/api/auth").replace(/\/$/, "");
   const secretHeaderName = config.secretHeaderName ?? "x-convex-auth-test-secret";
@@ -84,14 +80,11 @@ export function createTestSessionHandler<TContext>(
     const email = Reflect.get(body, "email");
     const password = Reflect.get(body, "password");
 
-    const signInRequest = new Request(
-      new URL(`${basePath}/sign-in/email`, request.url),
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      }
-    );
+    const signInRequest = new Request(new URL(`${basePath}/sign-in/email`, request.url), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
     return await config.createAuth(ctx).handler(signInRequest);
   };

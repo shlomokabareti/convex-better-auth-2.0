@@ -30,8 +30,7 @@ function parseJsonObject(text: string): Record<string, unknown> {
 
 function parseBetterAuthJwks(text: string): BetterAuthJwksDocument[] {
   const value: unknown = JSON.parse(text);
-  if (!Array.isArray(value))
-    throw new TypeError("Expected a JWKS document array");
+  if (!Array.isArray(value)) throw new TypeError("Expected a JWKS document array");
   return value.map((entry) => {
     if (typeof entry !== "object" || entry === null) {
       throw new TypeError("Invalid JWKS document");
@@ -153,7 +152,7 @@ function resolveIssuer(args: {
   const convexSiteUrl = process.env.CONVEX_SITE_URL;
   if (convexSiteUrl === undefined) {
     throw new Error(
-      "createConvexAuthConfig requires issuer, baseURL, or CONVEX_SITE_URL to be set."
+      "createConvexAuthConfig requires issuer, baseURL, or CONVEX_SITE_URL to be set.",
     );
   }
 
@@ -169,7 +168,7 @@ function resolveJwks(
     jwksUrl?: string;
     applicationID?: string;
   },
-  issuer: string
+  issuer: string,
 ): string {
   if (args.jwks !== undefined) {
     return serializePublicJwks(parseBetterAuthJwks(args.jwks));
@@ -186,9 +185,7 @@ function resolveJwks(
   return `${issuer}${args.basePath ?? "/api/auth"}/convex/jwks`;
 }
 
-export function createPublicBetterAuthJwks(
-  jwks: BetterAuthJwksDocument[]
-): JsonWebKeySet {
+export function createPublicBetterAuthJwks(jwks: BetterAuthJwksDocument[]): JsonWebKeySet {
   return {
     keys: jwks.map((keySet) => ({
       alg: keySet.alg ?? "EdDSA",
@@ -201,7 +198,7 @@ export function createPublicBetterAuthJwks(
 
 function serializePublicJwks(jwks: BetterAuthJwksDocument[]): string {
   return `data:text/plain;charset=utf-8;base64,${btoa(
-    JSON.stringify(createPublicBetterAuthJwks(jwks))
+    JSON.stringify(createPublicBetterAuthJwks(jwks)),
   )}`;
 }
 
@@ -216,14 +213,11 @@ function resolveRequiredConvexSiteUrl(): string {
   // single-origin works with zero env regardless of context.
   const convexCloudUrl = process.env.CONVEX_CLOUD_URL;
   if (convexCloudUrl !== undefined) {
-    return trimTrailingSlash(convexCloudUrl).replace(
-      ".convex.cloud",
-      ".convex.site"
-    );
+    return trimTrailingSlash(convexCloudUrl).replace(".convex.cloud", ".convex.site");
   }
 
   throw new Error(
-    "createConvexAuthConfig requires issuer, baseURL, CONVEX_SITE_URL, or CONVEX_CLOUD_URL to be set."
+    "createConvexAuthConfig requires issuer, baseURL, CONVEX_SITE_URL, or CONVEX_CLOUD_URL to be set.",
   );
 }
 

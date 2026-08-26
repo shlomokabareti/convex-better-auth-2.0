@@ -29,17 +29,11 @@ export function buildApiAuthUserIdentityResult<
   userId: string;
   linkedIdentityId?: string | null;
   activeOrganizationId?: TOrganizationId | null;
-  memberships: readonly ApiAuthMembershipRecord<
-    TMembershipId,
-    TOrganizationId,
-    TRole
-  >[];
+  memberships: readonly ApiAuthMembershipRecord<TMembershipId, TOrganizationId, TRole>[];
   isRestricted?: boolean;
   restrictedReason?: string | null;
 }): ApiAuthUserIdentityResult {
-  const activeMemberships = args.memberships.filter(
-    (membership) => membership.status === "active"
-  );
+  const activeMemberships = args.memberships.filter((membership) => membership.status === "active");
 
   return {
     userId: args.userId,

@@ -282,9 +282,7 @@ export type McpOAuthAuthorizationCodeTokenExchangeSuccess<
  * from the request intersected with the client's registered ceiling, so a
  * machine client can never widen its own access.
  */
-export type McpOAuthClientCredentialsTokenExchangeSuccess<
-  TClient extends McpOAuthClient,
-> = {
+export type McpOAuthClientCredentialsTokenExchangeSuccess<TClient extends McpOAuthClient> = {
   ok: true;
   client: TClient;
   scopes: readonly string[];
@@ -425,16 +423,9 @@ export type McpOAuthRefreshTokenRotateResult = {
   };
 };
 
-export type McpOAuthRefreshTokenStatus =
-  | "active"
-  | "expired"
-  | "inactive"
-  | "consumed"
-  | "revoked";
+export type McpOAuthRefreshTokenStatus = "active" | "expired" | "inactive" | "consumed" | "revoked";
 
-export type McpOAuthRefreshTokenFamilyRevocationReason =
-  | "replay_detected"
-  | "concurrent_conflict";
+export type McpOAuthRefreshTokenFamilyRevocationReason = "replay_detected" | "concurrent_conflict";
 
 export type McpOAuthRefreshTokenFamilyRevocationRequest = {
   familyId: string;
@@ -467,13 +458,9 @@ export type McpOAuthRefreshTokenStorageAdapter<
     clientId: string;
   }) => Promise<TRecord | null> | TRecord | null;
   rotate: (
-    input: McpOAuthRefreshTokenAtomicRotateInput<TRecord>
-  ) =>
-    | Promise<McpOAuthRefreshTokenAtomicRotateResult>
-    | McpOAuthRefreshTokenAtomicRotateResult;
-  revokeFamily?: (
-    input: McpOAuthRefreshTokenFamilyRevocationRequest
-  ) => Promise<void> | void;
+    input: McpOAuthRefreshTokenAtomicRotateInput<TRecord>,
+  ) => Promise<McpOAuthRefreshTokenAtomicRotateResult> | McpOAuthRefreshTokenAtomicRotateResult;
+  revokeFamily?: (input: McpOAuthRefreshTokenFamilyRevocationRequest) => Promise<void> | void;
 };
 
 export type McpOAuthRefreshTokenGrantFailure = {
@@ -534,9 +521,7 @@ export type McpOAuthRefreshTokenRedeemSuccess<
 
 export type McpOAuthRefreshTokenRedeemResult<
   TRecord extends McpOAuthRefreshTokenRecord = McpOAuthRefreshTokenRecord,
-> =
-  | McpOAuthRefreshTokenRedeemFailure
-  | McpOAuthRefreshTokenRedeemSuccess<TRecord>;
+> = McpOAuthRefreshTokenRedeemFailure | McpOAuthRefreshTokenRedeemSuccess<TRecord>;
 
 export type McpOAuthTokenEndpointClientAuthArgs = {
   authorizationHeader: string | null;

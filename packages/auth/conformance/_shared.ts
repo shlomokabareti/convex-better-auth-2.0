@@ -39,7 +39,7 @@ export function makeReporter(): {
       console.log(
         fails === 0
           ? `\n[SUCCESS] ${label}`
-          : `\n[FAILURE] ${fails} check${fails === 1 ? "" : "s"} failed for ${label}.`
+          : `\n[FAILURE] ${fails} check${fails === 1 ? "" : "s"} failed for ${label}.`,
       );
       process.exit(fails === 0 ? 0 : 1);
     },
@@ -52,9 +52,7 @@ export function mergeCookies(res: Response, prev = ""): string {
     const i = p.indexOf("=");
     jar.set(p.slice(0, i), p.slice(i + 1));
   }
-  for (const [k, v] of parseSetCookieHeader(
-    res.headers.get("set-cookie") ?? ""
-  ).entries()) {
+  for (const [k, v] of parseSetCookieHeader(res.headers.get("set-cookie") ?? "").entries()) {
     jar.set(k, v.value);
   }
   return Array.from(jar.entries())
@@ -62,9 +60,7 @@ export function mergeCookies(res: Response, prev = ""): string {
     .join("; ");
 }
 
-export async function readJsonObject(
-  response: Response
-): Promise<Record<string, unknown>> {
+export async function readJsonObject(response: Response): Promise<Record<string, unknown>> {
   const value: unknown = await response.json();
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new TypeError("Expected a JSON object response");
@@ -75,7 +71,7 @@ export async function readJsonObject(
 export async function getSession(
   site: string,
   cookie: string,
-  headers: Record<string, string> = { origin: ORIGIN_WEB }
+  headers: Record<string, string> = { origin: ORIGIN_WEB },
 ): Promise<{ user?: { email?: string } } | null> {
   const r = await fetch(`${site}/api/auth/get-session`, {
     headers: { ...headers, cookie },
@@ -93,7 +89,7 @@ export async function getSession(
 export async function getConvexToken(
   site: string,
   cookie: string,
-  headers: Record<string, string> = { origin: ORIGIN_WEB }
+  headers: Record<string, string> = { origin: ORIGIN_WEB },
 ): Promise<string | null> {
   const r = await fetch(`${site}/api/auth/convex/token`, {
     headers: { ...headers, cookie },

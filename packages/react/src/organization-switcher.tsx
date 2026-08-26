@@ -1,11 +1,5 @@
 import { cn } from "./lib/ui";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -68,9 +62,7 @@ const defaultCopy: Required<ConvexOrgSwitcherCopy> = {
   noOrganizationsLabel: "No organizations",
 };
 
-function resolveCopy(
-  copy: ConvexOrgSwitcherCopy | undefined
-): Required<ConvexOrgSwitcherCopy> {
+function resolveCopy(copy: ConvexOrgSwitcherCopy | undefined): Required<ConvexOrgSwitcherCopy> {
   return { ...defaultCopy, ...copy };
 }
 
@@ -95,7 +87,7 @@ function OrganizationAvatar(props: {
     <span
       className={cn(
         "bg-foreground/10 inline-flex size-5 items-center justify-center rounded-md text-[10px] font-medium",
-        placeholderClassName
+        placeholderClassName,
       )}
     >
       {organization.name.slice(0, 1).toUpperCase()}
@@ -118,7 +110,7 @@ function OrganizationSwitcherTrigger(props: {
       onClick={onToggle}
       className={cn(
         "border-foreground/10 bg-foreground/5 text-foreground hover:bg-foreground/10 inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors",
-        classNames?.trigger
+        classNames?.trigger,
       )}
       aria-haspopup="menu"
       aria-expanded={open}
@@ -132,12 +124,7 @@ function OrganizationSwitcherTrigger(props: {
       ) : (
         <span className="text-foreground/40">{copy.noOrganizationsLabel}</span>
       )}
-      <span
-        className={cn(
-          "max-w-[12ch] truncate font-medium",
-          classNames?.triggerName
-        )}
-      >
+      <span className={cn("max-w-[12ch] truncate font-medium", classNames?.triggerName)}>
         {currentOrg?.name ?? copy.noOrganizationsLabel}
       </span>
       <svg
@@ -145,10 +132,7 @@ function OrganizationSwitcherTrigger(props: {
         height="12"
         viewBox="0 0 12 12"
         fill="none"
-        className={cn(
-          "text-foreground/60 transition-transform",
-          open && "rotate-180"
-        )}
+        className={cn("text-foreground/60 transition-transform", open && "rotate-180")}
       >
         <path
           d="M2.5 4.5L6 8L9.5 4.5"
@@ -162,25 +146,15 @@ function OrganizationSwitcherTrigger(props: {
 }
 
 function DropdownDivider(props: { classNames?: ConvexOrgSwitcherClassNames }) {
-  return (
-    <div
-      className={cn(
-        "border-foreground/10 border-t",
-        props.classNames?.dropdownDivider
-      )}
-    />
-  );
+  return <div className={cn("border-foreground/10 border-t", props.classNames?.dropdownDivider)} />;
 }
 
-function DropdownTitle(props: {
-  children: ReactNode;
-  classNames?: ConvexOrgSwitcherClassNames;
-}) {
+function DropdownTitle(props: { children: ReactNode; classNames?: ConvexOrgSwitcherClassNames }) {
   return (
     <div
       className={cn(
         "text-foreground/50 px-3 py-1.5 text-xs font-medium",
-        props.classNames?.dropdownSectionTitle
+        props.classNames?.dropdownSectionTitle,
       )}
     >
       {props.children}
@@ -206,7 +180,7 @@ function OrganizationMenuItem(props: {
         active
           ? "bg-foreground/10 text-foreground"
           : "text-foreground/80 hover:bg-foreground/5 transition-colors",
-        active ? classNames?.dropdownItemActive : classNames?.dropdownItem
+        active ? classNames?.dropdownItemActive : classNames?.dropdownItem,
       )}
       disabled={active}
       onClick={onClick}
@@ -229,15 +203,9 @@ function CurrentOrganizationSection(props: {
 
   return (
     <>
-      <DropdownTitle classNames={classNames}>
-        {copy.currentOrganizationLabel}
-      </DropdownTitle>
+      <DropdownTitle classNames={classNames}>{copy.currentOrganizationLabel}</DropdownTitle>
       <div className={cn("pb-1", classNames?.dropdownPanel)}>
-        <OrganizationMenuItem
-          organization={currentOrg}
-          active={true}
-          classNames={classNames}
-        />
+        <OrganizationMenuItem organization={currentOrg} active={true} classNames={classNames} />
       </div>
     </>
   );
@@ -255,9 +223,7 @@ function OtherOrganizationsSection(props: {
   return (
     <>
       <DropdownDivider classNames={classNames} />
-      <DropdownTitle classNames={classNames}>
-        {copy.otherOrganizationsLabel}
-      </DropdownTitle>
+      <DropdownTitle classNames={classNames}>{copy.otherOrganizationsLabel}</DropdownTitle>
       <div className={cn("pb-1", classNames?.dropdownPanel)}>
         {organizations.map((org) => (
           <OrganizationMenuItem
@@ -290,7 +256,7 @@ function PersonalAccountSection(props: {
           role="menuitem"
           className={cn(
             "text-foreground/80 hover:bg-foreground/5 flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
-            classNames?.dropdownItem
+            classNames?.dropdownItem,
           )}
           onClick={onSelect}
         >
@@ -306,9 +272,7 @@ function PersonalAccountSection(props: {
               fill="currentColor"
             />
           </svg>
-          <span className={cn(classNames?.dropdownItemLabel)}>
-            {copy.personalAccountLabel}
-          </span>
+          <span className={cn(classNames?.dropdownItemLabel)}>{copy.personalAccountLabel}</span>
         </button>
       </div>
     </>
@@ -333,7 +297,7 @@ function CreateOrganizationSection(props: {
           role="menuitem"
           className={cn(
             "text-foreground/60 hover:bg-foreground/5 flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
-            classNames?.createButton ?? classNames?.dropdownItem
+            classNames?.createButton ?? classNames?.dropdownItem,
           )}
           onClick={onCreate}
         >
@@ -346,9 +310,7 @@ function CreateOrganizationSection(props: {
           >
             <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" />
           </svg>
-          <span className={cn(classNames?.dropdownItemLabel)}>
-            {copy.createOrganizationLabel}
-          </span>
+          <span className={cn(classNames?.dropdownItemLabel)}>{copy.createOrganizationLabel}</span>
         </button>
       </div>
     </>
@@ -382,15 +344,11 @@ function OrganizationSwitcherDropdown(props: {
     <div
       className={cn(
         "border-foreground/10 bg-background absolute top-full left-0 z-50 mt-2 w-64 rounded-lg border shadow-xl",
-        classNames?.dropdown
+        classNames?.dropdown,
       )}
       role="menu"
     >
-      <CurrentOrganizationSection
-        currentOrg={currentOrg}
-        classNames={classNames}
-        copy={copy}
-      />
+      <CurrentOrganizationSection currentOrg={currentOrg} classNames={classNames} copy={copy} />
       <OtherOrganizationsSection
         organizations={otherOrgs}
         classNames={classNames}
@@ -453,7 +411,7 @@ export function ConvexOrganizationSwitcher(props: ConvexOrgSwitcherProps) {
       setOpen(false);
       await onSelectOrganization(orgId);
     },
-    [onSelectOrganization]
+    [onSelectOrganization],
   );
 
   const handlePersonal = useCallback(async () => {
@@ -467,12 +425,8 @@ export function ConvexOrganizationSwitcher(props: ConvexOrgSwitcherProps) {
   }, [onCreateOrganization]);
 
   const currentOrg =
-    currentOrganization ??
-    organizations.find((o) => o._id === currentOrganizationId) ??
-    null;
-  const otherOrgs = organizations.filter(
-    (o) => o._id !== currentOrganizationId
-  );
+    currentOrganization ?? organizations.find((o) => o._id === currentOrganizationId) ?? null;
+  const otherOrgs = organizations.filter((o) => o._id !== currentOrganizationId);
 
   return (
     <div className="relative inline-block" ref={dropdownRef}>
@@ -498,8 +452,7 @@ export function ConvexOrganizationSwitcher(props: ConvexOrgSwitcherProps) {
           classNames={classNames}
           copy={resolvedCopy}
           showPersonalAccount={
-            showPersonalAccount === true &&
-            typeof onSelectPersonalAccount === "function"
+            showPersonalAccount === true && typeof onSelectPersonalAccount === "function"
           }
           canCreateOrganization={typeof onCreateOrganization === "function"}
           onSelect={handleSelect}

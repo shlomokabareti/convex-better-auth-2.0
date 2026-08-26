@@ -122,7 +122,7 @@ export const updateWebhookEndpoint = mutation({
     const endpoint = await requireWebhookEndpointInOrganization(
       ctx,
       args.endpointId,
-      args.organizationId
+      args.organizationId,
     );
     const patch: Partial<Doc<"webhook_endpoints">> = { updatedAt: Date.now() };
     if (args.url !== undefined) {
@@ -197,13 +197,11 @@ export const listWebhookEndpointsByOrganization = query({
       status === undefined
         ? ctx.db
             .query("webhook_endpoints")
-            .withIndex("by_organization", (q) =>
-              q.eq("organizationId", organizationId)
-            )
+            .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
         : ctx.db
             .query("webhook_endpoints")
             .withIndex("by_org_status", (q) =>
-              q.eq("organizationId", organizationId).eq("status", status)
+              q.eq("organizationId", organizationId).eq("status", status),
             );
     const endpoints = await queryBuilder.take(resolvedLimit);
     return endpoints.map((endpoint) => ({
@@ -234,7 +232,7 @@ export const setWebhookEndpointStatus = mutation({
     const endpoint = await requireWebhookEndpointInOrganization(
       ctx,
       args.endpointId,
-      args.organizationId
+      args.organizationId,
     );
     if (endpoint.status === args.status) {
       return okResult();
@@ -259,11 +257,7 @@ export const rotateWebhookEndpointSecret = mutation({
   },
   returns: okResultValidator,
   handler: async (ctx, args) => {
-    await requireWebhookEndpointInOrganization(
-      ctx,
-      args.endpointId,
-      args.organizationId
-    );
+    await requireWebhookEndpointInOrganization(ctx, args.endpointId, args.organizationId);
     await ctx.db.patch("webhook_endpoints", args.endpointId, {
       secret: normalizeRequired(args.secret, "secret"),
       updatedAt: args.updatedAt ?? Date.now(),
@@ -282,7 +276,7 @@ export const deleteWebhookEndpoint = mutation({
     const endpoint = await requireWebhookEndpointInOrganization(
       ctx,
       args.endpointId,
-      args.organizationId
+      args.organizationId,
     );
     if (endpoint.status !== "archived") {
       throw new Error("Only archived webhook endpoints can be deleted");
@@ -363,7 +357,7 @@ export async function fanOutConvexWebhookEvent(
     metadataJson?: string;
     now?: number;
     createdAt?: number;
-  }
+  },
 ): Promise<{
   eventId: string;
   enqueued: number;
@@ -378,9 +372,7 @@ export async function fanOutConvexWebhookEvent(
   const endpoints = await listActiveEndpointsForEvent(ctx, args.organizationId);
   const deliveryIds = await Promise.all(
     endpoints
-      .filter((endpoint) =>
-        endpointSubscribesTo(endpoint.eventTypes, eventType)
-      )
+      .filter((endpoint) => endpointSubscribesTo(endpoint.eventTypes, eventType))
       .map((endpoint) =>
         ctx.db.insert("webhook_deliveries", {
           endpointId: endpoint._id,
@@ -393,8 +385,8 @@ export async function fanOutConvexWebhookEvent(
           metadataJson,
           createdAt: now,
           updatedAt: now,
-        })
-      )
+        }),
+      ),
   );
   return { eventId, enqueued: deliveryIds.length, deliveryIds };
 }
@@ -429,7 +421,7 @@ export const claimWebhookDelivery = mutation({
 function setWebhookPatchValue<Key extends keyof Doc<"webhook_deliveries">>(
   patch: Partial<Doc<"webhook_deliveries">>,
   key: Key,
-  value: Doc<"webhook_deliveries">[Key] | null | undefined
+  value: Doc<"webhook_deliveries">[Key] | null | undefined,
 ): void {
   if (value !== undefined) {
     patch[key] = value ?? undefined;
@@ -480,11 +472,7 @@ export const updateWebhookDelivery = mutation({
   returns: okResultValidator,
   handler: async (ctx, args) => {
     const delivery = await requireWebhookDelivery(ctx, args.deliveryId);
-    await ctx.db.patch(
-      "webhook_deliveries",
-      delivery._id,
-      webhookDeliveryPatch(args)
-    );
+    await ctx.db.patch("webhook_deliveries", delivery._id, webhookDeliveryPatch(args));
     return okResult();
   },
 });
@@ -516,7 +504,7 @@ export const listWebhookDeliveriesByEndpoint = query({
         : ctx.db
             .query("webhook_deliveries")
             .withIndex("by_endpoint_status", (q) =>
-              q.eq("endpointId", endpointId).eq("status", status)
+              q.eq("endpointId", endpointId).eq("status", status),
             );
     return await queryBuilder.take(resolvedLimit);
   },
@@ -539,7 +527,7 @@ export const listPendingWebhookDeliveries = query({
       .withIndex("by_status_next_attempt", (q) =>
         beforeNextAttemptAt !== undefined
           ? q.eq("status", "pending").lte("nextAttemptAt", beforeNextAttemptAt)
-          : q.eq("status", "pending")
+          : q.eq("status", "pending"),
       )
       .take(resolvedLimit);
   },
@@ -547,19 +535,15 @@ export const listPendingWebhookDeliveries = query({
 
 const WEBHOOK_SUBSCRIBE_ALL = "*";
 
-function endpointSubscribesTo(
-  subscribedEventTypes: readonly string[],
-  eventType: string
-): boolean {
+function endpointSubscribesTo(subscribedEventTypes: readonly string[], eventType: string): boolean {
   return subscribedEventTypes.some(
-    (subscribed) =>
-      subscribed === WEBHOOK_SUBSCRIBE_ALL || subscribed === eventType
+    (subscribed) => subscribed === WEBHOOK_SUBSCRIBE_ALL || subscribed === eventType,
   );
 }
 
 async function listActiveEndpointsForEvent(
   ctx: DbCtx,
-  organizationId: Id<"organizations"> | undefined
+  organizationId: Id<"organizations"> | undefined,
 ): Promise<Doc<"webhook_endpoints">[]> {
   if (organizationId === undefined) {
     // Global events reach only global endpoints (no organizationId). Previously
@@ -568,9 +552,7 @@ async function listActiveEndpointsForEvent(
     // platform/cache subscribers receive global events.
     const global = await ctx.db
       .query("webhook_endpoints")
-      .withIndex("by_org_status", (q) =>
-        q.eq("organizationId", undefined).eq("status", "active")
-      )
+      .withIndex("by_org_status", (q) => q.eq("organizationId", undefined).eq("status", "active"))
       .take(MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE + 1);
     return assertEndpointSetWithinLimit(global);
   }
@@ -583,29 +565,24 @@ async function listActiveEndpointsForEvent(
   const scoped = await ctx.db
     .query("webhook_endpoints")
     .withIndex("by_org_status", (q) =>
-      q.eq("organizationId", organizationId).eq("status", "active")
+      q.eq("organizationId", organizationId).eq("status", "active"),
     )
     .take(MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE + 1);
   // endpoints are platform-level subscribers; their count is bounded by the
   // number of platform integrations, not by tenant growth.
   const global = await ctx.db
     .query("webhook_endpoints")
-    .withIndex("by_org_status", (q) =>
-      q.eq("organizationId", undefined).eq("status", "active")
-    )
+    .withIndex("by_org_status", (q) => q.eq("organizationId", undefined).eq("status", "active"))
     .take(MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE + 1);
-  return [
-    ...assertEndpointSetWithinLimit(scoped),
-    ...assertEndpointSetWithinLimit(global),
-  ];
+  return [...assertEndpointSetWithinLimit(scoped), ...assertEndpointSetWithinLimit(global)];
 }
 
 function assertEndpointSetWithinLimit(
-  endpoints: Doc<"webhook_endpoints">[]
+  endpoints: Doc<"webhook_endpoints">[],
 ): Doc<"webhook_endpoints">[] {
   if (endpoints.length > MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE) {
     throw new Error(
-      `Webhook scope exceeds the supported ${MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE} active endpoints`
+      `Webhook scope exceeds the supported ${MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE} active endpoints`,
     );
   }
   return endpoints;
@@ -613,27 +590,22 @@ function assertEndpointSetWithinLimit(
 
 async function assertCanActivateWebhookEndpoint(
   ctx: DbCtx,
-  organizationId: Id<"organizations"> | undefined
+  organizationId: Id<"organizations"> | undefined,
 ): Promise<void> {
   const existingActiveEndpoints = await ctx.db
     .query("webhook_endpoints")
     .withIndex("by_org_status", (q) =>
-      q.eq("organizationId", organizationId).eq("status", "active")
+      q.eq("organizationId", organizationId).eq("status", "active"),
     )
     .take(MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE);
-  if (
-    existingActiveEndpoints.length >= MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE
-  ) {
+  if (existingActiveEndpoints.length >= MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE) {
     throw new Error(
-      `A webhook scope supports at most ${MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE} active endpoints`
+      `A webhook scope supports at most ${MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE} active endpoints`,
     );
   }
 }
 
-async function requireWebhookEndpoint(
-  ctx: DbCtx,
-  endpointId: Id<"webhook_endpoints">
-) {
+async function requireWebhookEndpoint(ctx: DbCtx, endpointId: Id<"webhook_endpoints">) {
   const endpoint = await ctx.db.get("webhook_endpoints", endpointId);
   if (endpoint === null) {
     throw new Error("Webhook endpoint not found");
@@ -652,7 +624,7 @@ async function requireWebhookEndpoint(
 async function requireWebhookEndpointInOrganization(
   ctx: DbCtx,
   endpointId: Id<"webhook_endpoints">,
-  organizationId: Id<"organizations">
+  organizationId: Id<"organizations">,
 ) {
   const endpoint = await requireWebhookEndpoint(ctx, endpointId);
   if (endpoint.organizationId !== organizationId) {
@@ -661,10 +633,7 @@ async function requireWebhookEndpointInOrganization(
   return endpoint;
 }
 
-async function requireWebhookDelivery(
-  ctx: DbCtx,
-  deliveryId: Id<"webhook_deliveries">
-) {
+async function requireWebhookDelivery(ctx: DbCtx, deliveryId: Id<"webhook_deliveries">) {
   const delivery = await ctx.db.get("webhook_deliveries", deliveryId);
   if (delivery === null) {
     throw new Error("Webhook delivery not found");
@@ -680,9 +649,7 @@ function normalizeRequired(value: string, fieldName: string): string {
   return normalized;
 }
 
-function normalizeOptional(
-  value: string | null | undefined
-): string | undefined {
+function normalizeOptional(value: string | null | undefined): string | undefined {
   const normalized = value?.trim();
   return normalized && normalized.length > 0 ? normalized : undefined;
 }

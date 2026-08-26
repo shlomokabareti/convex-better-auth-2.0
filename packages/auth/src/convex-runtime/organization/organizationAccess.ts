@@ -1,10 +1,6 @@
 export type OrganizationAccessStatus = "active" | "suspended" | "deleted";
 
-export type OrganizationMembershipStatus =
-  | "active"
-  | "pending"
-  | "inactive"
-  | "suspended";
+export type OrganizationMembershipStatus = "active" | "pending" | "inactive" | "suspended";
 
 export type OrganizationAccessOrganizationLike<TId extends string = string> = {
   _id: TId;
@@ -58,10 +54,10 @@ export function resolveAvailableOrganizations<
   organizations: readonly TOrganization[],
   options: {
     superAdminRole: TRole;
-  }
+  },
 ): Array<AvailableOrganization<TOrganization, TRole>> {
   const activeOrganizations = organizations.filter(
-    (organization) => organization.status === "active"
+    (organization) => organization.status === "active",
   );
   const superAdminRole = options.superAdminRole;
 
@@ -74,7 +70,7 @@ export function resolveAvailableOrganizations<
   }
 
   const organizationById = new Map(
-    activeOrganizations.map((organization) => [organization._id, organization])
+    activeOrganizations.map((organization) => [organization._id, organization]),
   );
 
   return memberships.flatMap((membership) => {
@@ -103,20 +99,17 @@ export function resolveActiveOrganization<
   TOrganization extends OrganizationAccessOrganizationLike<TId>,
 >(
   user: OrganizationAccessUserLike<TId>,
-  availableOrganizations: readonly AvailableOrganization<
-    TOrganization,
-    TRole
-  >[],
+  availableOrganizations: readonly AvailableOrganization<TOrganization, TRole>[],
   activeOrganization: TOrganization | null,
   options: {
     superAdminRole: TRole;
-  }
+  },
 ): AvailableOrganization<TOrganization, TRole> | null {
   const superAdminRole = options.superAdminRole;
 
   if (user.activeOrganizationId && activeOrganization?.status === "active") {
     const membershipMatch = availableOrganizations.find(
-      (organization) => organization._id === user.activeOrganizationId
+      (organization) => organization._id === user.activeOrganizationId,
     );
 
     if (membershipMatch) {
@@ -132,31 +125,22 @@ export function resolveActiveOrganization<
     }
   }
 
-  return (
-    availableOrganizations.find((organization) => organization.canSelect) ??
-    null
-  );
+  return availableOrganizations.find((organization) => organization.canSelect) ?? null;
 }
 
-export function buildOrganizationPermissionContext<
-  TId extends string,
-  TRole extends string,
->(args: {
+export function buildOrganizationPermissionContext<TId extends string, TRole extends string>(args: {
   user: OrganizationAccessUserLike<TId>;
   organization: { _id: TId; roleTemplate: TRole };
   userId: string;
   expandPermissions: (role: TRole) => readonly string[];
-  hasPermission: (
-    permissions: readonly string[],
-    permission: string
-  ) => boolean;
+  hasPermission: (permissions: readonly string[], permission: string) => boolean;
   hasAnyPermission?: (
     permissions: readonly string[],
-    requiredPermissions: readonly string[]
+    requiredPermissions: readonly string[],
   ) => boolean;
   hasAllPermissions?: (
     permissions: readonly string[],
-    requiredPermissions: readonly string[]
+    requiredPermissions: readonly string[],
   ) => boolean;
   ownerRoles?: readonly TRole[];
   adminRoles?: readonly TRole[];
@@ -193,19 +177,14 @@ export function buildOrganizationPermissionContext<
     permissions,
     isOwner: ownerRoles.includes(role),
     isAdmin: adminRoles.includes(role),
-    hasPermission: (permission: string) =>
-      args.hasPermission(permissions, permission),
+    hasPermission: (permission: string) => args.hasPermission(permissions, permission),
     hasAnyPermission: (requiredPermissions: readonly string[]) =>
       args.hasAnyPermission
         ? args.hasAnyPermission(permissions, requiredPermissions)
-        : requiredPermissions.some((permission) =>
-            args.hasPermission(permissions, permission)
-          ),
+        : requiredPermissions.some((permission) => args.hasPermission(permissions, permission)),
     hasAllPermissions: (requiredPermissions: readonly string[]) =>
       args.hasAllPermissions
         ? args.hasAllPermissions(permissions, requiredPermissions)
-        : requiredPermissions.every((permission) =>
-            args.hasPermission(permissions, permission)
-          ),
+        : requiredPermissions.every((permission) => args.hasPermission(permissions, permission)),
   };
 }

@@ -35,7 +35,7 @@ export type BetterAuthTestInstance = {
 };
 
 export function createBetterAuthTestInstance(
-  options: BetterAuthTestInstanceOptions = {}
+  options: BetterAuthTestInstanceOptions = {},
 ): BetterAuthTestInstance {
   const db: MemoryDB = {
     user: [],

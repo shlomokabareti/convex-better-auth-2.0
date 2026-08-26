@@ -81,14 +81,8 @@ export type AuthMdServiceAuthComponentHandle = {
     | "revokeServiceAuthCredentialAsHolder"
     | "revokeServiceAuthRegistration"
   >;
-  readonly identity: PickedRefs<
-    ConvexAuthComponentApi["identity"],
-    "getByIdentity"
-  >;
-  readonly mcp: PickedRefs<
-    ConvexAuthComponentApi["mcp"],
-    "getSigningKey" | "listSigningKeys"
-  >;
+  readonly identity: PickedRefs<ConvexAuthComponentApi["identity"], "getByIdentity">;
+  readonly mcp: PickedRefs<ConvexAuthComponentApi["mcp"], "getSigningKey" | "listSigningKeys">;
 };
 
 export type AuthMdServiceAuthMutationCtx = Pick<
@@ -96,10 +90,7 @@ export type AuthMdServiceAuthMutationCtx = Pick<
   "auth" | "runMutation" | "runQuery"
 >;
 
-export type AuthMdServiceAuthQueryCtx = Pick<
-  GenericQueryCtx<GenericDataModel>,
-  "runQuery"
->;
+export type AuthMdServiceAuthQueryCtx = Pick<GenericQueryCtx<GenericDataModel>, "runQuery">;
 
 export type AuthMdServiceAuthRegistrationResponse = {
   registration_id: string;
@@ -128,11 +119,7 @@ export type AuthMdServiceAuthTokenResponse = {
 export type AuthMdServiceAuthPollResponse =
   | AuthMdServiceAuthTokenResponse
   | {
-      error:
-        | "authorization_pending"
-        | "slow_down"
-        | "expired_token"
-        | "access_denied";
+      error: "authorization_pending" | "slow_down" | "expired_token" | "access_denied";
       interval?: number;
     };
 
@@ -161,7 +148,7 @@ export type CreateAuthMdServiceAuthRuntimeConfig = {
 export type AuthMdServiceAuthRuntime = {
   registerServiceAuth(
     ctx: AuthMdServiceAuthMutationCtx,
-    args: { loginHint: string; scopes: readonly string[] }
+    args: { loginHint: string; scopes: readonly string[] },
   ): Promise<AuthMdServiceAuthRegistrationResponse>;
   completeServiceAuthClaim(
     ctx: AuthMdServiceAuthMutationCtx,
@@ -169,17 +156,15 @@ export type AuthMdServiceAuthRuntime = {
       claimAttemptToken: string;
       userCode: string;
       organizationId: string;
-    }
-  ): Promise<
-    { ok: true; status: "claimed" } | { ok: false; reason: "invalid_claim" }
-  >;
+    },
+  ): Promise<{ ok: true; status: "claimed" } | { ok: false; reason: "invalid_claim" }>;
   pollServiceAuthClaim(
     ctx: AuthMdServiceAuthMutationCtx,
-    args: { claimToken: string }
+    args: { claimToken: string },
   ): Promise<AuthMdServiceAuthPollResponse>;
   exchangeIdentityAssertion(
     ctx: AuthMdServiceAuthMutationCtx,
-    args: { assertion: string; resource: string }
+    args: { assertion: string; resource: string },
   ): Promise<AuthMdServiceAuthTokenResponse>;
   /**
    * Rotates a live access token.
@@ -191,40 +176,36 @@ export type AuthMdServiceAuthRuntime = {
    */
   refreshAccessToken(
     ctx: AuthMdServiceAuthMutationCtx,
-    args: { accessToken: string }
+    args: { accessToken: string },
   ): Promise<AuthMdServiceAuthTokenResponse>;
   authenticateAccessToken(
     ctx: AuthMdServiceAuthQueryCtx,
-    args: { accessToken: string }
+    args: { accessToken: string },
   ): Promise<AuthMdServiceAuthPrincipal>;
   revokeAccessToken(
     ctx: AuthMdServiceAuthMutationCtx,
-    args: { accessToken: string }
+    args: { accessToken: string },
   ): Promise<{ ok: true }>;
   revokeRegistration(
     ctx: AuthMdServiceAuthMutationCtx,
-    args: { registrationId: string }
+    args: { registrationId: string },
   ): Promise<{ ok: true }>;
 };
 
 export function createAuthMdServiceAuthRuntime(
-  config: CreateAuthMdServiceAuthRuntimeConfig
+  config: CreateAuthMdServiceAuthRuntimeConfig,
 ): AuthMdServiceAuthRuntime {
   const issuer = normalizeIssuer(config.issuer);
   const resource = normalizeResource(config.resource);
   const scopesSupported = normalizeScopes(config.scopesSupported);
   const supportedScopeSet = new Set(scopesSupported);
-  const identityProvider =
-    config.identityProvider ?? BETTER_AUTH_IDENTITY_PROVIDER;
+  const identityProvider = config.identityProvider ?? BETTER_AUTH_IDENTITY_PROVIDER;
   const accessTokenExpiresInSeconds = requireAccessTokenLifetime(
-    config.accessTokenExpiresInSeconds ??
-      DEFAULT_ACCESS_TOKEN_EXPIRES_IN_SECONDS
+    config.accessTokenExpiresInSeconds ?? DEFAULT_ACCESS_TOKEN_EXPIRES_IN_SECONDS,
   );
   const now = config.now ?? Date.now;
 
-  const signingKey = async (
-    ctx: AuthMdServiceAuthQueryCtx
-  ): Promise<AuthMdSigningKeyRecord> => {
+  const signingKey = async (ctx: AuthMdServiceAuthQueryCtx): Promise<AuthMdSigningKeyRecord> => {
     const key = await ctx.runQuery(config.component.mcp.getSigningKey, {});
     if (key === null) {
       throw new Error("auth.md authorization signing key is not configured");
@@ -232,24 +213,19 @@ export function createAuthMdServiceAuthRuntime(
     return key;
   };
 
-  const signingKeys = async (
-    ctx: AuthMdServiceAuthQueryCtx
-  ): Promise<AuthMdSigningKeyRecord[]> =>
+  const signingKeys = async (ctx: AuthMdServiceAuthQueryCtx): Promise<AuthMdSigningKeyRecord[]> =>
     await ctx.runQuery(config.component.mcp.listSigningKeys, {
       includeRetired: true,
     });
 
   const exchangeAssertion = async (
     ctx: AuthMdServiceAuthMutationCtx,
-    claims: AuthMdIdentityAssertionClaims
+    claims: AuthMdIdentityAssertionClaims,
   ): Promise<AuthMdServiceAuthTokenResponse> => {
-    const authority = await ctx.runMutation(
-      config.component.authMd.consumeServiceAuthAssertion,
-      {
-        assertionId: claims.assertionId,
-        credentialExpiresInSeconds: accessTokenExpiresInSeconds,
-      }
-    );
+    const authority = await ctx.runMutation(config.component.authMd.consumeServiceAuthAssertion, {
+      assertionId: claims.assertionId,
+      credentialExpiresInSeconds: accessTokenExpiresInSeconds,
+    });
     requireAuthorityMatch(authority, claims);
     return await signAccessTokenResponse({
       issuer,
@@ -260,29 +236,23 @@ export function createAuthMdServiceAuthRuntime(
 
   return {
     async registerServiceAuth(ctx, args) {
-      const requestedScopes = requireSupportedScopes(
-        args.scopes,
-        supportedScopeSet
-      );
+      const requestedScopes = requireSupportedScopes(args.scopes, supportedScopeSet);
       const challenge = await createAuthMdServiceAuthChallenge({ now: now() });
       const verificationUri = normalizeVerificationUri(
         config.buildVerificationUri(challenge.claimViewToken),
-        challenge.claimViewToken
+        challenge.claimViewToken,
       );
-      const registration = await ctx.runMutation(
-        config.component.authMd.registerServiceAuth,
-        {
-          resource,
-          loginHintHash: await hashAuthMdLoginHint(args.loginHint),
-          scopes: requestedScopes,
-          claimTokenHash: challenge.claimTokenHash,
-          claimViewTokenHash: challenge.claimViewTokenHash,
-          userCodeHash: challenge.userCodeHash,
-          expiresAt: challenge.expiresAt,
-          userCodeExpiresAt: challenge.userCodeExpiresAt,
-          pollIntervalSeconds: challenge.interval,
-        }
-      );
+      const registration = await ctx.runMutation(config.component.authMd.registerServiceAuth, {
+        resource,
+        loginHintHash: await hashAuthMdLoginHint(args.loginHint),
+        scopes: requestedScopes,
+        claimTokenHash: challenge.claimTokenHash,
+        claimViewTokenHash: challenge.claimViewTokenHash,
+        userCodeHash: challenge.userCodeHash,
+        expiresAt: challenge.expiresAt,
+        userCodeExpiresAt: challenge.userCodeExpiresAt,
+        pollIntervalSeconds: challenge.interval,
+      });
       return {
         registration_id: registration.registrationId,
         registration_type: "service_auth",
@@ -303,30 +273,22 @@ export function createAuthMdServiceAuthRuntime(
       const userId = await requireAuthenticatedComponentUser(
         ctx,
         config.component,
-        identityProvider
+        identityProvider,
       );
-      return await ctx.runMutation(
-        config.component.authMd.completeServiceAuthClaim,
-        {
-          claimViewTokenHash: await hashAuthMdSecret(args.claimAttemptToken),
-          userCodeHash: await hashAuthMdUserCode(args.userCode),
-          userId,
-          organizationId: requireIdentifier(
-            args.organizationId,
-            "organizationId"
-          ),
-        }
-      );
+      return await ctx.runMutation(config.component.authMd.completeServiceAuthClaim, {
+        claimViewTokenHash: await hashAuthMdSecret(args.claimAttemptToken),
+        userCodeHash: await hashAuthMdUserCode(args.userCode),
+        userId,
+        organizationId: requireIdentifier(args.organizationId, "organizationId"),
+      });
     },
 
     async pollServiceAuthClaim(ctx, args) {
-      const poll = await ctx.runMutation(
-        config.component.authMd.pollServiceAuthClaim,
-        { claimTokenHash: await hashAuthMdSecret(args.claimToken) }
-      );
+      const poll = await ctx.runMutation(config.component.authMd.pollServiceAuthClaim, {
+        claimTokenHash: await hashAuthMdSecret(args.claimToken),
+      });
       if (poll.status !== "claimed") {
-        return poll.status === "authorization_pending" ||
-          poll.status === "slow_down"
+        return poll.status === "authorization_pending" || poll.status === "slow_down"
           ? { error: poll.status, interval: poll.interval }
           : { error: poll.status };
       }
@@ -356,9 +318,7 @@ export function createAuthMdServiceAuthRuntime(
         now: now(),
       });
       if (claims.resource !== resource) {
-        throw new Error(
-          "auth.md assertion resource does not match this service"
-        );
+        throw new Error("auth.md assertion resource does not match this service");
       }
       return await exchangeAssertion(ctx, claims);
     },
@@ -378,7 +338,7 @@ export function createAuthMdServiceAuthRuntime(
         {
           credentialId: claims.credentialId,
           credentialExpiresInSeconds: accessTokenExpiresInSeconds,
-        }
+        },
       );
       return await signAccessTokenResponse({
         issuer,
@@ -397,7 +357,7 @@ export function createAuthMdServiceAuthRuntime(
       });
       const authority = await ctx.runQuery(
         config.component.authMd.introspectServiceAuthCredential,
-        { credentialId: claims.credentialId }
+        { credentialId: claims.credentialId },
       );
       if (!authority.active) {
         throw new Error("auth.md access token authority is inactive");
@@ -423,28 +383,21 @@ export function createAuthMdServiceAuthRuntime(
         resource,
         now: now(),
       });
-      return await ctx.runMutation(
-        config.component.authMd.revokeServiceAuthCredentialAsHolder,
-        { credentialId: claims.credentialId }
-      );
+      return await ctx.runMutation(config.component.authMd.revokeServiceAuthCredentialAsHolder, {
+        credentialId: claims.credentialId,
+      });
     },
 
     async revokeRegistration(ctx, args) {
       const actorUserId = await requireAuthenticatedComponentUser(
         ctx,
         config.component,
-        identityProvider
+        identityProvider,
       );
-      return await ctx.runMutation(
-        config.component.authMd.revokeServiceAuthRegistration,
-        {
-          registrationId: requireIdentifier(
-            args.registrationId,
-            "registrationId"
-          ),
-          actorUserId,
-        }
-      );
+      return await ctx.runMutation(config.component.authMd.revokeServiceAuthRegistration, {
+        registrationId: requireIdentifier(args.registrationId, "registrationId"),
+        actorUserId,
+      });
     },
   };
 }
@@ -452,7 +405,7 @@ export function createAuthMdServiceAuthRuntime(
 async function requireAuthenticatedComponentUser(
   ctx: AuthMdServiceAuthMutationCtx,
   component: AuthMdServiceAuthComponentHandle,
-  provider: string
+  provider: string,
 ): Promise<string> {
   const identity = await ctx.auth.getUserIdentity();
   if (identity === null) {
@@ -544,7 +497,7 @@ function requireAuthorityMatch(
     userId: string;
     organizationId: string;
     scopes: string[];
-  }
+  },
 ): void {
   if (
     authority.registrationId !== claims.registrationId ||
@@ -559,7 +512,7 @@ function requireAuthorityMatch(
 
 function requireSupportedScopes(
   values: readonly string[],
-  supported: ReadonlySet<string>
+  supported: ReadonlySet<string>,
 ): string[] {
   const scopes = normalizeScopes(values);
   if (scopes.some((scope) => !supported.has(scope))) {
@@ -583,9 +536,7 @@ function normalizeScopes(values: readonly string[]): string[] {
 function normalizeVerificationUri(value: string, token: string): string {
   const uri = normalizeResource(value);
   if (new URL(uri).searchParams.get("claim_attempt_token") !== token) {
-    throw new Error(
-      "auth.md verification URI must carry the claim_attempt_token"
-    );
+    throw new Error("auth.md verification URI must carry the claim_attempt_token");
   }
   return uri;
 }
@@ -619,9 +570,7 @@ function normalizeResource(value: string): string {
 
 function requireAccessTokenLifetime(value: number): number {
   if (!Number.isSafeInteger(value) || value < 1 || value > 60 * 60) {
-    throw new TypeError(
-      "auth.md access token lifetime must be between 1 and 3600 seconds"
-    );
+    throw new TypeError("auth.md access token lifetime must be between 1 and 3600 seconds");
   }
   return value;
 }

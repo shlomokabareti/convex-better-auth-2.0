@@ -15,16 +15,12 @@ describe("auth preflight", () => {
 
     assert.equal(result.ok, false);
     assert.equal(
-      result.checks.some(
-        (check) => check.name === "VITE_BETTER_AUTH_URL" && !check.ok
-      ),
-      true
+      result.checks.some((check) => check.name === "VITE_BETTER_AUTH_URL" && !check.ok),
+      true,
     );
     assert.equal(
-      result.checks.some(
-        (check) => check.name === "VITE_CONVEX_URL" && !check.ok
-      ),
-      true
+      result.checks.some((check) => check.name === "VITE_CONVEX_URL" && !check.ok),
+      true,
     );
   });
 
@@ -40,18 +36,9 @@ describe("auth preflight", () => {
     });
 
     assert.equal(result.ok, true);
-    assert.equal(
-      calls.includes("https://auth.example.test/api/auth/get-session"),
-      true
-    );
-    assert.equal(
-      calls.includes("https://auth.example.test/api/auth/convex/token"),
-      true
-    );
-    assert.equal(
-      calls.includes("https://auth.example.test/api/auth/convex/jwks"),
-      true
-    );
+    assert.equal(calls.includes("https://auth.example.test/api/auth/get-session"), true);
+    assert.equal(calls.includes("https://auth.example.test/api/auth/convex/token"), true);
+    assert.equal(calls.includes("https://auth.example.test/api/auth/convex/jwks"), true);
     assert.equal(calls.includes("https://convex.example.test/"), true);
   });
 
@@ -60,9 +47,7 @@ describe("auth preflight", () => {
       betterAuthUrl: "https://auth.example.test/api/auth",
       convexUrl: "https://convex.example.test",
       fetchImpl: async (input) => {
-        if (
-          requestUrl(input) === "https://auth.example.test/api/auth/get-session"
-        ) {
+        if (requestUrl(input) === "https://auth.example.test/api/auth/get-session") {
           return new Response("not found", { status: 404 });
         }
         return new Response("ok", { status: 200 });
@@ -73,11 +58,9 @@ describe("auth preflight", () => {
     assert.equal(
       result.checks.some(
         (check) =>
-          check.name === "Better Auth /get-session" &&
-          !check.ok &&
-          check.severity === "error"
+          check.name === "Better Auth /get-session" && !check.ok && check.severity === "error",
       ),
-      true
+      true,
     );
   });
 
@@ -86,9 +69,7 @@ describe("auth preflight", () => {
       betterAuthUrl: "https://auth.example.test/api/auth",
       convexUrl: "https://convex.example.test",
       fetchImpl: async (input) => {
-        if (
-          requestUrl(input) === "https://auth.example.test/api/auth/convex/jwks"
-        ) {
+        if (requestUrl(input) === "https://auth.example.test/api/auth/convex/jwks") {
           return new Response("not found", { status: 404 });
         }
         return new Response("ok", { status: 200 });
@@ -99,11 +80,9 @@ describe("auth preflight", () => {
     assert.equal(
       result.checks.some(
         (check) =>
-          check.name === "Better Auth /convex/jwks" &&
-          !check.ok &&
-          check.severity === "error"
+          check.name === "Better Auth /convex/jwks" && !check.ok && check.severity === "error",
       ),
-      true
+      true,
     );
   });
 
@@ -112,10 +91,7 @@ describe("auth preflight", () => {
       betterAuthUrl: "https://auth.example.test/api/auth",
       convexUrl: "https://convex.example.test",
       fetchImpl: async (input) => {
-        if (
-          requestUrl(input) ===
-          "http://127.0.0.1:4173/src/lib/auth-runtime.better-auth.tsx"
-        ) {
+        if (requestUrl(input) === "http://127.0.0.1:4173/src/lib/auth-runtime.better-auth.tsx") {
           return new Response("const betterAuthBaseUrl = '';", { status: 200 });
         }
         return new Response("ok", { status: 200 });
@@ -130,11 +106,9 @@ describe("auth preflight", () => {
     assert.equal(result.ok, false);
     assert.equal(
       result.checks.some(
-        (check) =>
-          check.name === "App served env" &&
-          check.message.includes("not serving")
+        (check) => check.name === "App served env" && check.message.includes("not serving"),
       ),
-      true
+      true,
     );
   });
 
@@ -151,7 +125,7 @@ describe("auth preflight", () => {
               '<script type="module" src="/@vite/client"></script>',
               '<script type="module" src="/src/main.tsx"></script>',
             ].join("\n"),
-            { status: 200 }
+            { status: 200 },
           );
         }
         if (url === "http://127.0.0.1:5173/src/main.tsx") {
@@ -160,26 +134,21 @@ describe("auth preflight", () => {
               "const authUrl = 'https://auth.example.test/api/auth';",
               "const convexUrl = 'https://convex.example.test';",
             ].join("\n"),
-            { status: 200 }
+            { status: 200 },
           );
         }
         return new Response("ok", { status: 200 });
       },
       appServer: {
         baseUrl: "http://127.0.0.1:5173",
-        expectedValues: [
-          "https://auth.example.test/api/auth",
-          "https://convex.example.test",
-        ],
+        expectedValues: ["https://auth.example.test/api/auth", "https://convex.example.test"],
       },
     });
 
     assert.equal(result.ok, true, JSON.stringify(result.checks));
     assert.equal(
-      result.checks.filter(
-        (check) => check.name === "App served env" && check.ok
-      ).length,
-      2
+      result.checks.filter((check) => check.name === "App served env" && check.ok).length,
+      2,
     );
   });
 
@@ -198,9 +167,9 @@ describe("auth preflight", () => {
         (check) =>
           check.name === "Package version" &&
           check.ok &&
-          check.message.includes("local dependency link:convex-auth")
+          check.message.includes("local dependency link:convex-auth"),
       ),
-      true
+      true,
     );
   });
 
@@ -214,8 +183,7 @@ describe("auth preflight", () => {
           {
             name: "Convex Auth component registration",
             path: "convex/convex.config.ts",
-            content:
-              'import convexAuth from "convex-auth/convex.config.js";\napp.use(convexAuth);',
+            content: 'import convexAuth from "convex-auth/convex.config.js";\napp.use(convexAuth);',
             requiredSnippets: ["convex-auth/convex.config", "app.use"],
           },
         ],
@@ -234,16 +202,13 @@ describe("auth preflight", () => {
     assert.equal(result.ok, true);
     assert.equal(
       result.checks.some(
-        (check) =>
-          check.name === "Convex Auth component registration" && check.ok
+        (check) => check.name === "Convex Auth component registration" && check.ok,
       ),
-      true
+      true,
     );
     assert.equal(
-      result.checks.some(
-        (check) => check.name === "Backend Better Auth site URL" && check.ok
-      ),
-      true
+      result.checks.some((check) => check.name === "Backend Better Auth site URL" && check.ok),
+      true,
     );
   });
 
@@ -270,9 +235,9 @@ describe("auth preflight", () => {
         (check) =>
           check.name === "Convex HTTP auth routes" &&
           !check.ok &&
-          check.message.includes("registerAuthRoutes")
+          check.message.includes("registerAuthRoutes"),
       ),
-      true
+      true,
     );
   });
 });

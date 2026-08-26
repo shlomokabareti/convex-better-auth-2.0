@@ -21,7 +21,7 @@ import type {
 } from "./types";
 
 export async function hashMcpOAuthRefreshToken(
-  refreshToken: string
+  refreshToken: string,
 ): Promise<McpOAuthRefreshTokenHashResult> {
   const data = new TextEncoder().encode(refreshToken);
   const digest = await crypto.subtle.digest("SHA-256", data);
@@ -36,21 +36,15 @@ export function createMcpOAuthRefreshTokenPolicy(input: {
   absoluteLifetimeMs: number;
   inactivityLifetimeMs?: number | null;
 }): McpOAuthRefreshTokenPolicy {
-  if (
-    !Number.isFinite(input.absoluteLifetimeMs) ||
-    input.absoluteLifetimeMs <= 0
-  ) {
+  if (!Number.isFinite(input.absoluteLifetimeMs) || input.absoluteLifetimeMs <= 0) {
     throw new Error("absoluteLifetimeMs must be a positive number");
   }
   if (
     input.inactivityLifetimeMs !== undefined &&
     input.inactivityLifetimeMs !== null &&
-    (!Number.isFinite(input.inactivityLifetimeMs) ||
-      input.inactivityLifetimeMs <= 0)
+    (!Number.isFinite(input.inactivityLifetimeMs) || input.inactivityLifetimeMs <= 0)
   ) {
-    throw new Error(
-      "inactivityLifetimeMs must be a positive number when provided"
-    );
+    throw new Error("inactivityLifetimeMs must be a positive number when provided");
   }
 
   return {
@@ -60,7 +54,7 @@ export function createMcpOAuthRefreshTokenPolicy(input: {
 }
 
 export function createMcpOAuthRefreshToken(
-  args: McpOAuthRefreshTokenIssueArgs
+  args: McpOAuthRefreshTokenIssueArgs,
 ): McpOAuthRefreshTokenIssueResult {
   const now = args.now ?? Date.now();
   const policy = createMcpOAuthRefreshTokenPolicy(args.policy);
@@ -82,9 +76,7 @@ export function createMcpOAuthRefreshToken(
       issuedAt: now,
       expiresAt: now + policy.absoluteLifetimeMs,
       inactivityExpiresAt:
-        policy.inactivityLifetimeMs === null
-          ? null
-          : now + policy.inactivityLifetimeMs,
+        policy.inactivityLifetimeMs === null ? null : now + policy.inactivityLifetimeMs,
       consumedAt: null,
       revokedAt: null,
       replacedByTokenId: null,
@@ -93,7 +85,7 @@ export function createMcpOAuthRefreshToken(
 }
 
 export function rotateMcpOAuthRefreshToken(
-  args: McpOAuthRefreshTokenRotateArgs
+  args: McpOAuthRefreshTokenRotateArgs,
 ): McpOAuthRefreshTokenRotateResult {
   const now = args.now ?? Date.now();
   const next = createMcpOAuthRefreshToken({
@@ -126,9 +118,7 @@ export async function validateMcpOAuthRefreshTokenGrantRequest<
 >(args: {
   request: Request;
   resolveClient: (clientId: string) => Promise<TClient | null> | TClient | null;
-}): Promise<
-  McpOAuthRefreshTokenGrantFailure | McpOAuthRefreshTokenGrantSuccess<TClient>
-> {
+}): Promise<McpOAuthRefreshTokenGrantFailure | McpOAuthRefreshTokenGrantSuccess<TClient>> {
   const parsed = await parseMcpOAuthRefreshTokenGrantRequest(args.request);
 
   const clientAuthenticationError = validateTokenEndpointClientAuthentication({
@@ -176,7 +166,7 @@ export async function validateMcpOAuthRefreshTokenGrantRequest<
 
   const requestedScopes = normalizeScope(parsed.scope);
   const invalidRequestedScope = requestedScopes.find(
-    (scope) => !client.allowedScopes.includes(scope)
+    (scope) => !client.allowedScopes.includes(scope),
   );
   if (invalidRequestedScope !== undefined) {
     return {
@@ -201,15 +191,11 @@ export function resolveMcpOAuthRefreshTokenGrantedScopes(args: {
   client: McpOAuthClient;
   refreshTokenRecord: Pick<McpOAuthRefreshTokenRecord, "scopes">;
   requestedScopes?: readonly string[] | null;
-}):
-  | McpOAuthRefreshTokenResolveScopesFailure
-  | McpOAuthRefreshTokenResolveScopesSuccess {
+}): McpOAuthRefreshTokenResolveScopesFailure | McpOAuthRefreshTokenResolveScopesSuccess {
   const tokenScopes = Array.from(new Set(args.refreshTokenRecord.scopes));
   const requestedScopes = Array.from(new Set(args.requestedScopes ?? []));
 
-  const invalidTokenScope = tokenScopes.find(
-    (scope) => !args.client.allowedScopes.includes(scope)
-  );
+  const invalidTokenScope = tokenScopes.find((scope) => !args.client.allowedScopes.includes(scope));
   if (invalidTokenScope !== undefined) {
     return {
       ok: false,
@@ -225,9 +211,7 @@ export function resolveMcpOAuthRefreshTokenGrantedScopes(args: {
     };
   }
 
-  const invalidRequestedScope = requestedScopes.find(
-    (scope) => !tokenScopes.includes(scope)
-  );
+  const invalidRequestedScope = requestedScopes.find((scope) => !tokenScopes.includes(scope));
   if (invalidRequestedScope !== undefined) {
     return {
       ok: false,
@@ -341,7 +325,7 @@ export function getMcpOAuthRefreshTokenStatus(
     McpOAuthRefreshTokenRecord,
     "expiresAt" | "inactivityExpiresAt" | "consumedAt" | "revokedAt"
   >,
-  now: number
+  now: number,
 ): McpOAuthRefreshTokenStatus {
   if (record.revokedAt !== null && record.revokedAt !== undefined) {
     return "revoked";
@@ -363,7 +347,7 @@ export function getMcpOAuthRefreshTokenStatus(
 }
 
 async function parseMcpOAuthRefreshTokenGrantRequest(
-  request: Request
+  request: Request,
 ): Promise<McpOAuthRefreshTokenGrantRequest> {
   const params = new URLSearchParams(await request.text());
 
@@ -377,10 +361,7 @@ async function parseMcpOAuthRefreshTokenGrantRequest(
   };
 }
 
-function getOptionalSearchParam(
-  params: URLSearchParams,
-  key: string
-): string | null {
+function getOptionalSearchParam(params: URLSearchParams, key: string): string | null {
   const value = params.get(key)?.trim();
   return value && value.length > 0 ? value : null;
 }
@@ -391,8 +372,8 @@ function normalizeScope(scope: string | null): string[] {
       (scope ?? "")
         .split(/\s+/)
         .map((value) => value.trim())
-        .filter((value) => value.length > 0)
-    )
+        .filter((value) => value.length > 0),
+    ),
   );
 }
 
@@ -400,7 +381,7 @@ function invalidGrantFailure(
   reason: Exclude<
     McpOAuthRefreshTokenRedeemFailure["reason"],
     "invalid_scope" | "replay_detected" | "concurrent_conflict"
-  >
+  >,
 ): McpOAuthRefreshTokenRedeemFailure {
   return {
     ok: false,

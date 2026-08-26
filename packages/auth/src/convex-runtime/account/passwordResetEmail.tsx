@@ -1,10 +1,4 @@
-import {
-  Button,
-  EmailLayout,
-  EmailText,
-  renderEmail,
-  renderEmailText,
-} from "../../lib/email";
+import { Button, EmailLayout, EmailText, renderEmail, renderEmailText } from "../../lib/email";
 
 import {
   buildTokenUrl,
@@ -77,8 +71,7 @@ export async function createPasswordResetEmailDraft(args: {
   resetUrl: string | null;
   expiresAt?: number;
 }): Promise<
-  | PasswordResetEmailDraft
-  | Extract<PasswordResetEmailDeliveryResult, { status: "not_configured" }>
+  PasswordResetEmailDraft | Extract<PasswordResetEmailDeliveryResult, { status: "not_configured" }>
 > {
   const from = args.from?.trim();
   if (!from || from.length === 0) {
@@ -89,22 +82,12 @@ export async function createPasswordResetEmailDraft(args: {
   }
 
   const template = (
-    <PasswordResetEmailTemplate
-      resetUrl={args.resetUrl}
-      expiresAt={args.expiresAt}
-    />
+    <PasswordResetEmailTemplate resetUrl={args.resetUrl} expiresAt={args.expiresAt} />
   );
   const textTemplate = (
-    <PasswordResetEmailTemplate
-      resetUrl={args.resetUrl}
-      expiresAt={args.expiresAt}
-      plainText
-    />
+    <PasswordResetEmailTemplate resetUrl={args.resetUrl} expiresAt={args.expiresAt} plainText />
   );
-  const [html, text] = await Promise.all([
-    renderEmail(template),
-    renderEmailText(textTemplate),
-  ]);
+  const [html, text] = await Promise.all([renderEmail(template), renderEmailText(textTemplate)]);
 
   return {
     from,
@@ -190,7 +173,7 @@ export async function sendPasswordResetEmail(args: {
   sendEmail: (draft: PasswordResetEmailDraft) => Promise<string>;
   recordQueued: (emailId: string) => Promise<PasswordResetEmailDeliveryResult>;
   recordNotConfigured: (
-    reason: PasswordResetEmailNotConfiguredReason
+    reason: PasswordResetEmailNotConfiguredReason,
   ) => Promise<PasswordResetEmailDeliveryResult>;
   recordFailed: (reason: string) => Promise<PasswordResetEmailDeliveryResult>;
   renderEmailDraft?: (args: {
@@ -240,7 +223,7 @@ export async function sendPasswordResetEmail(args: {
     return await args.recordQueued(emailId);
   } catch (error) {
     return await args.recordFailed(
-      error instanceof Error ? error.message : "Unknown email delivery error"
+      error instanceof Error ? error.message : "Unknown email delivery error",
     );
   }
 }
@@ -248,10 +231,7 @@ export async function sendPasswordResetEmail(args: {
 export function mapResendEventToPasswordResetEmailDelivery(args: {
   event: ResendPasswordResetEmailEvent;
 }): {
-  status: Exclude<
-    PasswordResetEmailDeliveryStatus,
-    "not_configured" | "queued"
-  >;
+  status: Exclude<PasswordResetEmailDeliveryStatus, "not_configured" | "queued">;
   eventType: ResendPasswordResetEmailEvent["type"];
   error?: string;
 } {
@@ -271,13 +251,9 @@ function PasswordResetEmailTemplate(args: {
       ) : (
         <Button href={args.resetUrl}>Reset your password</Button>
       )}
-      <EmailText>
-        If you did not request this, you can safely ignore this email.
-      </EmailText>
+      <EmailText>If you did not request this, you can safely ignore this email.</EmailText>
       {args.expiresAt === undefined ? null : (
-        <EmailText>
-          This link expires {new Date(args.expiresAt).toUTCString()}.
-        </EmailText>
+        <EmailText>This link expires {new Date(args.expiresAt).toUTCString()}.</EmailText>
       )}
     </EmailLayout>
   );

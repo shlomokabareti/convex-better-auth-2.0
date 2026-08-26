@@ -28,7 +28,7 @@ describe("hasDuplicatePendingInvitation", () => {
           { email: "other@example.com", status: "accepted" },
         ],
       }),
-      true
+      true,
     );
   });
 
@@ -38,15 +38,12 @@ describe("hasDuplicatePendingInvitation", () => {
         email: "demo@example.com",
         invitations: [{ email: "demo@example.com", status: "revoked" }],
       }),
-      false
+      false,
     );
   });
 
   it("normalizes and validates invite email once for consumers", () => {
-    assert.equal(
-      normalizeInvitationEmail(" demo@example.com "),
-      "demo@example.com"
-    );
+    assert.equal(normalizeInvitationEmail(" demo@example.com "), "demo@example.com");
     assert.equal(getInvitationEmailValidationError("   "), "Email required");
     assert.equal(getInvitationEmailValidationError("demo@example.com"), null);
   });
@@ -54,7 +51,7 @@ describe("hasDuplicatePendingInvitation", () => {
   it("computes expiration with a one-day minimum", () => {
     assert.equal(
       computeInvitationExpiresAt({ now: 1000, expiresInDays: 0 }),
-      1000 + 24 * 60 * 60 * 1000
+      1000 + 24 * 60 * 60 * 1000,
     );
   });
 });
@@ -69,14 +66,11 @@ describe("organization invitation helpers", () => {
             invitations: [{ id: "invite_1", emailAddress: "new@example.com" }],
           },
         ],
-        "invite_1"
+        "invite_1",
       ),
-      "new@example.com"
+      "new@example.com",
     );
-    assert.equal(
-      findInvitationEmailByToken([{ invitations: [] }], "missing"),
-      null
-    );
+    assert.equal(findInvitationEmailByToken([{ invitations: [] }], "missing"), null);
   });
 
   it("normalizes invitation requests", () => {
@@ -90,7 +84,7 @@ describe("organization invitation helpers", () => {
         organizationId: "org_1",
         email: "new@example.com",
         roleTemplate: "manager",
-      }
+      },
     );
   });
 
@@ -102,9 +96,7 @@ describe("organization invitation helpers", () => {
           authorizedOrganizationId: "org_1",
           requestedOrganizationId: "org_2",
         }),
-      (error) =>
-        error instanceof OrganizationInvitationPolicyError &&
-        error.code === "FORBIDDEN"
+      (error) => error instanceof OrganizationInvitationPolicyError && error.code === "FORBIDDEN",
     );
 
     assert.throws(
@@ -113,9 +105,7 @@ describe("organization invitation helpers", () => {
           activeOrganizationId: null,
           requestedOrganizationId: "org_1",
         }),
-      (error) =>
-        error instanceof OrganizationInvitationPolicyError &&
-        error.code === "FORBIDDEN"
+      (error) => error instanceof OrganizationInvitationPolicyError && error.code === "FORBIDDEN",
     );
   });
 });
@@ -171,9 +161,7 @@ describe("createOrganizationInvitation", () => {
     assert.equal(inserted[0]?.email, "new@example.com");
     assert.equal(inserted[0]?.tokenHash, "hash:plain-token");
     assert.equal(inserted[0]?.expiresAt, 1000 + 2 * 24 * 60 * 60 * 1000);
-    assert.deepEqual(audits, [
-      { targetUserEmail: "new@example.com", resourceId: "invite_1" },
-    ]);
+    assert.deepEqual(audits, [{ targetUserEmail: "new@example.com", resourceId: "invite_1" }]);
   });
 
   it("rejects duplicate pending invitations before inserting", async () => {
@@ -194,8 +182,7 @@ describe("createOrganizationInvitation", () => {
         writeAudit: async () => {},
       }),
       (error) =>
-        error instanceof OrganizationInvitationPolicyError &&
-        error.code === "ALREADY_EXISTS"
+        error instanceof OrganizationInvitationPolicyError && error.code === "ALREADY_EXISTS",
     );
   });
 });
@@ -264,15 +251,9 @@ describe("redeemOrganizationInvitation", () => {
     assert.deepEqual(result, { ok: true, organizationId: "org_1" });
     assert.equal(memberships[0]?.userId, "user_2");
     assert.equal(memberships[0]?.roleTemplate, "member");
-    assert.deepEqual(patches, [
-      { id: "invite_1", status: "accepted", acceptedByUserId: "user_2" },
-    ]);
-    assert.deepEqual(activeOrganizations, [
-      { userId: "user_2", organizationId: "org_1" },
-    ]);
-    assert.deepEqual(audits, [
-      { targetUserId: "user_2", resourceId: "invite_1" },
-    ]);
+    assert.deepEqual(patches, [{ id: "invite_1", status: "accepted", acceptedByUserId: "user_2" }]);
+    assert.deepEqual(activeOrganizations, [{ userId: "user_2", organizationId: "org_1" }]);
+    assert.deepEqual(audits, [{ targetUserId: "user_2", resourceId: "invite_1" }]);
   });
 
   it("expires stale invitations before rejecting redemption", async () => {
@@ -306,9 +287,7 @@ describe("redeemOrganizationInvitation", () => {
         setActiveOrganization: async () => {},
         writeAudit: async () => {},
       }),
-      (error) =>
-        error instanceof OrganizationInvitationPolicyError &&
-        error.code === "FORBIDDEN"
+      (error) => error instanceof OrganizationInvitationPolicyError && error.code === "FORBIDDEN",
     );
 
     assert.deepEqual(expired, [{ invitationId: "invite_1", now: 3000 }]);
@@ -359,19 +338,14 @@ describe("setOrganizationMemberRole", () => {
     });
 
     assert.deepEqual(result, { ok: true });
-    assert.deepEqual(patches, [
-      { id: "membership_1", roleTemplate: "admin", updatedAt: 1234 },
-    ]);
-    assert.deepEqual(audits, [
-      { targetUserId: "user_2", oldValue: "member", newValue: "admin" },
-    ]);
+    assert.deepEqual(patches, [{ id: "membership_1", roleTemplate: "admin", updatedAt: 1234 }]);
+    assert.deepEqual(audits, [{ targetUserId: "user_2", oldValue: "member", newValue: "admin" }]);
   });
 });
 
 describe("setOrganizationMemberStatus", () => {
   it("patches status and writes audit through adapters", async () => {
-    const patches: Array<{ id: string; status: string; updatedAt: number }> =
-      [];
+    const patches: Array<{ id: string; status: string; updatedAt: number }> = [];
     const audits: Array<{
       action: string;
       oldValue: string;
@@ -414,9 +388,7 @@ describe("setOrganizationMemberStatus", () => {
     });
 
     assert.deepEqual(result, { ok: true });
-    assert.deepEqual(patches, [
-      { id: "membership_1", status: "suspended", updatedAt: 1234 },
-    ]);
+    assert.deepEqual(patches, [{ id: "membership_1", status: "suspended", updatedAt: 1234 }]);
     assert.deepEqual(audits, [
       { action: "member.suspended", oldValue: "active", newValue: "suspended" },
     ]);
@@ -471,8 +443,7 @@ describe("setOrganizationMemberStatus", () => {
         writeAudit: async () => {},
       }),
       (error) =>
-        error instanceof OrganizationInvitationPolicyError &&
-        error.code === "FAILED_PRECONDITION"
+        error instanceof OrganizationInvitationPolicyError && error.code === "FAILED_PRECONDITION",
     );
   });
 });
@@ -489,12 +460,7 @@ describe("custom consumer role catalog (TRole generic)", () => {
     const inserted: Array<{ roleTemplate: AquaRole }> = [];
     const auditedRoles: AquaRole[] = [];
 
-    const result = await createOrganizationInvitation<
-      string,
-      string,
-      string,
-      AquaRole
-    >({
+    const result = await createOrganizationInvitation<string, string, string, AquaRole>({
       organizationId: "org_1",
       authorizedOrganizationId: "org_1",
       viewer: {
@@ -524,13 +490,7 @@ describe("custom consumer role catalog (TRole generic)", () => {
     assert.equal(inserted[0]?.roleTemplate, "accountant");
     assert.equal(auditedRoles[0], "accountant");
 
-    const redeem = await redeemOrganizationInvitation<
-      string,
-      string,
-      string,
-      string,
-      AquaRole
-    >({
+    const redeem = await redeemOrganizationInvitation<string, string, string, string, AquaRole>({
       token: "plain-token",
       currentUser: { _id: "user_2", email: "cpa@aqua.test", name: "CPA" },
       hashToken: async (token) => `hash:${token}`,

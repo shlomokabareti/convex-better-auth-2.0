@@ -1,11 +1,9 @@
 function bytesToHex(bytes: Uint8Array): string {
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-    ""
-  );
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export function createConvexWebhookSecret(
-  randomUUID: () => string = () => crypto.randomUUID()
+  randomUUID: () => string = () => crypto.randomUUID(),
 ): string {
   return `cvxsec_${randomUUID().replace(/-/g, "")}${randomUUID().replace(/-/g, "")}`;
 }
@@ -14,22 +12,15 @@ export function getConvexWebhookSecretPreview(secret: string): string {
   return `${secret.slice(0, 10)}...${secret.slice(-6)}`;
 }
 
-export async function signConvexWebhookPayload(
-  secret: string,
-  payload: string
-): Promise<string> {
+export async function signConvexWebhookPayload(secret: string, payload: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(payload)
-  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
   return bytesToHex(new Uint8Array(signature));
 }
 
@@ -46,7 +37,7 @@ export async function signConvexWebhookPayload(
 export async function verifyConvexWebhookSignature(
   secret: string,
   payload: string,
-  signature: string | null | undefined
+  signature: string | null | undefined,
 ): Promise<boolean> {
   if (typeof signature !== "string" || signature.length === 0) {
     return false;

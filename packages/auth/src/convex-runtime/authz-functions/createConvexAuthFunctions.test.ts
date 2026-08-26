@@ -6,12 +6,7 @@ import { describe, it } from "vitest";
 
 import type { Id } from "../../component/_generated/dataModel";
 import { isAuthErrorPayload } from "../glue/throwAuthError";
-import type {
-  B2BGlue,
-  B2BViewer,
-  GlueCtx,
-  ResolvedMembership,
-} from "../glue/types";
+import type { B2BGlue, B2BViewer, GlueCtx, ResolvedMembership } from "../glue/types";
 import { createConvexAuthFunctions } from "./createConvexAuthFunctions";
 
 // ---------------------------------------------------------------------------
@@ -36,18 +31,20 @@ const COMPONENT_USER_ID = componentId("users", "vau_1");
 const COMPONENT_ORGANIZATION_ID = componentId("organizations", "vao_1");
 const COMPONENT_MEMBER_ID = componentId("organization_members", "mem_1");
 
-function componentId<
-  TableName extends "users" | "organizations" | "organization_members",
->(tableName: TableName, value: string): Id<TableName> {
+function componentId<TableName extends "users" | "organizations" | "organization_members">(
+  tableName: TableName,
+  value: string,
+): Id<TableName> {
   if (!isFixtureId(tableName, value)) {
     throw new TypeError(`invalid ${tableName} fixture id`);
   }
   return value;
 }
 
-function isFixtureId<
-  TableName extends "users" | "organizations" | "organization_members",
->(_tableName: TableName, value: string): value is Id<TableName> {
+function isFixtureId<TableName extends "users" | "organizations" | "organization_members">(
+  _tableName: TableName,
+  value: string,
+): value is Id<TableName> {
   return value.length > 0;
 }
 
@@ -58,10 +55,7 @@ const fakeMutation = mutationGeneric;
 // `.handler` on the public type). Our fake builder returns the raw composed
 // spec at runtime, so we reach into it to execute the gate -> handler pipeline.
 const exec = (registered: unknown) => {
-  if (
-    (typeof registered !== "object" && typeof registered !== "function") ||
-    registered === null
-  ) {
+  if ((typeof registered !== "object" && typeof registered !== "function") || registered === null) {
     throw new TypeError("expected an executable spec");
   }
   const handler = Reflect.get(registered, "_handler");
@@ -77,9 +71,7 @@ const exec = (registered: unknown) => {
 function readAuthzCode(error: unknown): unknown {
   if (typeof error !== "object" || error === null) return undefined;
   const data = Reflect.get(error, "data");
-  return typeof data === "object" && data !== null
-    ? Reflect.get(data, "authzCode")
-    : undefined;
+  return typeof data === "object" && data !== null ? Reflect.get(data, "authzCode") : undefined;
 }
 
 const membership: ResolvedMembership = {
@@ -91,7 +83,7 @@ const membership: ResolvedMembership = {
 
 function buildViewer(
   permissions: string[],
-  roleKey: string = membership.roleKey
+  roleKey: string = membership.roleKey,
 ): B2BViewer<LocalUser, LocalAnchor> {
   const has = (p: string) => hasPermission(permissions, p);
   return {
@@ -128,9 +120,7 @@ function buildViewer(
     // is not among the allowed keys.
     requireRole: (...allowedRoleKeys: string[]) => {
       if (!allowedRoleKeys.includes(roleKey)) {
-        const err = new Error(
-          `Role required: one of [${allowedRoleKeys.join(", ")}]`
-        ) as Error & {
+        const err = new Error(`Role required: one of [${allowedRoleKeys.join(", ")}]`) as Error & {
           data?: unknown;
         };
         err.data = {
@@ -144,9 +134,7 @@ function buildViewer(
   };
 }
 
-function buildGlue(
-  viewer: B2BViewer<LocalUser, LocalAnchor>
-): B2BGlue<LocalUser, LocalAnchor> {
+function buildGlue(viewer: B2BViewer<LocalUser, LocalAnchor>): B2BGlue<LocalUser, LocalAnchor> {
   return {
     mode: "b2b",
     resolveViewer: async (_ctx: GlueCtx) => viewer,
@@ -170,8 +158,8 @@ function makeFunctions(
       permission?: string;
       error: unknown;
       viewer?: B2BViewer<LocalUser, LocalAnchor>;
-    }
-  ) => Promise<void> | void
+    },
+  ) => Promise<void> | void,
 ) {
   return createConvexAuthFunctions({
     glue: buildGlue(buildViewer(permissions)),
@@ -192,10 +180,7 @@ function makeFunctionsForRole(roleKey: string) {
 describe("createConvexAuthFunctions — security contract", () => {
   it("permissionMutation runs the handler when the viewer HAS the permission", async () => {
     let handlerRan = false;
-    const { permissionMutation } = makeFunctions([
-      "widgets:view",
-      "widgets:edit",
-    ]);
+    const { permissionMutation } = makeFunctions(["widgets:view", "widgets:edit"]);
     const spec = exec(
       permissionMutation("widgets:edit")({
         args: {},
@@ -203,7 +188,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           handlerRan = true;
           return ctx.viewer.convexAuthOrganizationId;
         },
-      })
+      }),
     );
 
     const result = await spec.handler(fakeCtx, {});
@@ -221,26 +206,19 @@ describe("createConvexAuthFunctions — security contract", () => {
           handlerRan = true;
           return "should-never-return";
         },
-      })
+      }),
     );
 
     await assert.rejects(
       () => spec.handler(fakeCtx, {}),
       (err: Error & { data?: unknown }) => {
         // It's a genuine authz denial (PERMISSION_REQUIRED), not an incidental error.
-        assert.ok(
-          isAuthErrorDenial(err.data),
-          "expected a PERMISSION_REQUIRED denial"
-        );
+        assert.ok(isAuthErrorDenial(err.data), "expected a PERMISSION_REQUIRED denial");
         return true;
-      }
+      },
     );
     // The crux: the handler body NEVER executed. The check is unbypassable.
-    assert.equal(
-      handlerRan,
-      false,
-      "handler must not run when permission is denied"
-    );
+    assert.equal(handlerRan, false, "handler must not run when permission is denied");
   });
 
   it("permissionQuery enforces the same gate", async () => {
@@ -253,7 +231,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           handlerRan = true;
           return true;
         },
-      })
+      }),
     );
     await assert.rejects(() => spec.handler(fakeCtx, {}));
     assert.equal(handlerRan, false);
@@ -265,7 +243,7 @@ describe("createConvexAuthFunctions — security contract", () => {
       authedQuery({
         args: {},
         handler: async (ctx) => ctx.viewer.user._id,
-      })
+      }),
     );
     assert.equal(await spec.handler(fakeCtx, {}), "u1");
   });
@@ -295,7 +273,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           // the audit can attribute the denial to the authenticated principal.
           attributedUserId: viewer?.convexAuthUserId,
         });
-      }
+      },
     );
     const spec = exec(
       permissionMutation("widgets:edit")({
@@ -304,7 +282,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           handlerRan = true;
           return "nope";
         },
-      })
+      }),
     );
 
     await assert.rejects(() => spec.handler(fakeCtx, {}));
@@ -350,27 +328,22 @@ describe("createConvexAuthFunctions — security contract", () => {
       permissionMutation("widgets:edit")({
         args: {},
         handler: async () => "x",
-      })
+      }),
     );
     await assert.rejects(() => spec.handler(fakeCtx, {}));
-    assert.deepEqual(denials, [
-      { hasViewer: false, authzCode: "AUTHENTICATION_REQUIRED" },
-    ]);
+    assert.deepEqual(denials, [{ hasViewer: false, authzCode: "AUTHENTICATION_REQUIRED" }]);
   });
 
   it("does NOT fire onAuthorizationDenied on the success path", async () => {
     const denials: unknown[] = [];
-    const { permissionMutation } = makeFunctions(
-      ["widgets:view", "widgets:edit"],
-      (_ctx, args) => {
-        denials.push(args);
-      }
-    );
+    const { permissionMutation } = makeFunctions(["widgets:view", "widgets:edit"], (_ctx, args) => {
+      denials.push(args);
+    });
     const spec = exec(
       permissionMutation("widgets:edit")({
         args: {},
         handler: async () => "ok",
-      })
+      }),
     );
     assert.equal(await spec.handler(fakeCtx, {}), "ok");
     assert.deepEqual(denials, []);
@@ -391,7 +364,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           ran = true;
           return "ok";
         },
-      })
+      }),
     );
     assert.equal(await spec.handler(fakeCtx, {}), "ok");
     assert.equal(ran, true);
@@ -407,7 +380,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           ran = true;
           return "nope";
         },
-      })
+      }),
     );
     await assert.rejects(() => spec.handler(fakeCtx, {}));
     assert.equal(ran, false);
@@ -423,7 +396,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           ran = true;
           return "nope";
         },
-      })
+      }),
     );
     await assert.rejects(() => spec.handler(fakeCtx, {}));
     assert.equal(ran, false);
@@ -431,10 +404,7 @@ describe("createConvexAuthFunctions — security contract", () => {
 
   it("permissionAllMutation ALLOWS when the viewer holds every permission", async () => {
     let ran = false;
-    const { permissionAllMutation } = makeFunctions([
-      "widgets:view",
-      "widgets:edit",
-    ]);
+    const { permissionAllMutation } = makeFunctions(["widgets:view", "widgets:edit"]);
     const spec = exec(
       permissionAllMutation(["widgets:view", "widgets:edit"])({
         args: {},
@@ -442,7 +412,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           ran = true;
           return "ok";
         },
-      })
+      }),
     );
     assert.equal(await spec.handler(fakeCtx, {}), "ok");
     assert.equal(ran, true);
@@ -455,14 +425,14 @@ describe("createConvexAuthFunctions — security contract", () => {
     const ok = exec(
       roleMutation(
         "member",
-        "owner"
+        "owner",
       )({
         args: {},
         handler: async () => {
           ran = true;
           return "ok";
         },
-      })
+      }),
     );
     assert.equal(await ok.handler(fakeCtx, {}), "ok");
     assert.equal(ran, true);
@@ -476,7 +446,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           blockedRan = true;
           return "nope";
         },
-      })
+      }),
     );
     await assert.rejects(() => blocked.handler(fakeCtx, {}));
     assert.equal(blockedRan, false);
@@ -491,7 +461,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           ownerRan = true;
           return "owner-ok";
         },
-      })
+      }),
     );
     assert.equal(await ownerSpec.handler(fakeCtx, {}), "owner-ok");
     assert.equal(ownerRan, true);
@@ -504,7 +474,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           adminRan = true;
           return "admin-ok";
         },
-      })
+      }),
     );
     assert.equal(await adminSpec.handler(fakeCtx, {}), "admin-ok");
     assert.equal(adminRan, true);
@@ -517,7 +487,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           memberRan = true;
           return "nope";
         },
-      })
+      }),
     );
     await assert.rejects(() => memberSpec.handler(fakeCtx, {}));
     assert.equal(memberRan, false);
@@ -528,7 +498,7 @@ describe("createConvexAuthFunctions — security contract", () => {
       makeFunctionsForRole("owner").adminQuery({
         args: {},
         handler: async (ctx) => ctx.viewer.membership.roleKey,
-      })
+      }),
     );
     assert.equal(await ownerSpec.handler(fakeCtx, {}), "owner");
 
@@ -540,7 +510,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           memberRan = true;
           return "nope";
         },
-      })
+      }),
     );
     await assert.rejects(() => memberSpec.handler(fakeCtx, {}));
     assert.equal(memberRan, false);
@@ -556,7 +526,7 @@ describe("createConvexAuthFunctions — security contract", () => {
           unsafeRan = true;
           return "leaked";
         },
-      })
+      }),
     );
     // Same under-privileged caller. Nothing stops it — proving the gate is the
     // thing doing the work, and that the matrix has teeth.

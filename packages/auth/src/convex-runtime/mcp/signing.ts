@@ -27,22 +27,18 @@ function parseJsonObject(value: string): Record<string, unknown> {
   return Object.fromEntries(Object.entries(parsed));
 }
 
-export const MAX_MCP_OAUTH_ACCESS_TOKEN_TTL_SECONDS =
-  DEFAULT_ACCESS_TOKEN_TTL_SECONDS;
-export const MCP_OAUTH_RETIRED_SIGNING_KEY_RETENTION_MS =
-  DEFAULT_ACCESS_TOKEN_TTL_SECONDS * 1000;
+export const MAX_MCP_OAUTH_ACCESS_TOKEN_TTL_SECONDS = DEFAULT_ACCESS_TOKEN_TTL_SECONDS;
+export const MCP_OAUTH_RETIRED_SIGNING_KEY_RETENTION_MS = DEFAULT_ACCESS_TOKEN_TTL_SECONDS * 1000;
 
 export function shouldPublishMcpOAuthSigningKey(args: {
   key: McpOAuthSigningKeyPublicationRecord;
   now: number;
   retentionWindowMs?: number;
 }): boolean {
-  const retentionWindowMs =
-    args.retentionWindowMs ?? MCP_OAUTH_RETIRED_SIGNING_KEY_RETENTION_MS;
+  const retentionWindowMs = args.retentionWindowMs ?? MCP_OAUTH_RETIRED_SIGNING_KEY_RETENTION_MS;
   return (
     args.key.status === "active" ||
-    (args.key.retiredAt !== null &&
-      args.now - args.key.retiredAt <= retentionWindowMs)
+    (args.key.retiredAt !== null && args.now - args.key.retiredAt <= retentionWindowMs)
   );
 }
 
@@ -74,8 +70,7 @@ export async function createMcpOAuthSigningKeyRecord(args?: {
 }
 
 export function buildMcpOAuthJwks(args: {
-  keys: readonly (McpOAuthSigningKeyRecord &
-    McpOAuthSigningKeyPublicationRecord)[];
+  keys: readonly (McpOAuthSigningKeyRecord & McpOAuthSigningKeyPublicationRecord)[];
   now?: number;
   retentionWindowMs?: number;
 }): McpOAuthJwks {
@@ -88,7 +83,7 @@ export function buildMcpOAuthJwks(args: {
           key,
           now,
           retentionWindowMs: args.retentionWindowMs,
-        })
+        }),
       )
       .map((key) => parseJsonObject(key.publicJwkJson)),
   };
@@ -107,8 +102,7 @@ export async function signMcpOAuthAccessToken(args: {
   const signingKey = await importJWK(privateJwk, args.signingKey.algorithm);
   const now = args.now ?? Math.floor(Date.now() / 1000);
   const expiresInSeconds =
-    args.expiresInSeconds !== undefined &&
-    Number.isFinite(args.expiresInSeconds)
+    args.expiresInSeconds !== undefined && Number.isFinite(args.expiresInSeconds)
       ? Math.max(1, Math.floor(args.expiresInSeconds))
       : DEFAULT_ACCESS_TOKEN_TTL_SECONDS;
   const expiresAt = now + expiresInSeconds;
@@ -121,9 +115,7 @@ export async function signMcpOAuthAccessToken(args: {
       ? {}
       : { better_auth_user_id: args.claims.betterAuthUserId }),
     resource: args.claims.resourceId,
-    ...(args.claims.organizationId !== undefined
-      ? { org_id: args.claims.organizationId }
-      : {}),
+    ...(args.claims.organizationId !== undefined ? { org_id: args.claims.organizationId } : {}),
     ...(args.claims.organizationSlug !== undefined
       ? { org_slug: args.claims.organizationSlug }
       : {}),
@@ -160,9 +152,7 @@ export async function verifyMcpOAuthAccessToken(args: {
     throw new Error("Signing key id missing");
   }
 
-  const key =
-    args.signingKeys.find((candidate) => candidate.keyId === header.kid) ??
-    null;
+  const key = args.signingKeys.find((candidate) => candidate.keyId === header.kid) ?? null;
   if (key === null) {
     throw new Error("Signing key not found");
   }
@@ -185,16 +175,12 @@ export async function verifyMcpOAuthAccessToken(args: {
     subject: typeof payload.sub === "string" ? payload.sub : null,
     clientId: typeof payload.azp === "string" ? payload.azp : null,
     betterAuthUserId:
-      typeof payload.better_auth_user_id === "string"
-        ? payload.better_auth_user_id
-        : null,
+      typeof payload.better_auth_user_id === "string" ? payload.better_auth_user_id : null,
     organizationId: typeof payload.org_id === "string" ? payload.org_id : null,
-    organizationSlug:
-      typeof payload.org_slug === "string" ? payload.org_slug : null,
+    organizationSlug: typeof payload.org_slug === "string" ? payload.org_slug : null,
     resourceId: typeof payload.resource === "string" ? payload.resource : null,
     scope: typeof payload.scope === "string" ? payload.scope : "",
-    subjectType:
-      typeof payload.subject_type === "string" ? payload.subject_type : null,
+    subjectType: typeof payload.subject_type === "string" ? payload.subject_type : null,
     issuedAt: typeof payload.iat === "number" ? payload.iat : null,
     expiresAt: typeof payload.exp === "number" ? payload.exp : null,
     claims: payload,
@@ -203,9 +189,7 @@ export async function verifyMcpOAuthAccessToken(args: {
 
 function normalizeJwtAudience(audience: unknown): string[] {
   if (Array.isArray(audience)) {
-    return audience.filter(
-      (value): value is string => typeof value === "string"
-    );
+    return audience.filter((value): value is string => typeof value === "string");
   }
   return typeof audience === "string" ? [audience] : [];
 }
@@ -228,8 +212,6 @@ export function buildMcpOAuthTokenResponse(args: {
     token_type: args.tokenType ?? "Bearer",
     expires_in: args.expiresIn,
     scope: args.scope,
-    ...(args.refreshToken !== undefined
-      ? { refresh_token: args.refreshToken }
-      : {}),
+    ...(args.refreshToken !== undefined ? { refresh_token: args.refreshToken } : {}),
   };
 }

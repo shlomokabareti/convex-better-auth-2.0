@@ -35,7 +35,7 @@ describe("organization brand metadata (VOR-182)", () => {
           ignored: true,
         },
         other: 1,
-      })
+      }),
     );
     assert.deepEqual(brand, {
       primaryColor: "#0F172A",
@@ -47,13 +47,10 @@ describe("organization brand metadata (VOR-182)", () => {
   });
 
   it("merges brand updates and preserves sibling metadata keys", () => {
-    const next = mergeOrganizationBrandIntoMetadataJson(
-      JSON.stringify({ keep: true }),
-      {
-        primaryColor: "#111111",
-        emailFromName: "Seal",
-      }
-    );
+    const next = mergeOrganizationBrandIntoMetadataJson(JSON.stringify({ keep: true }), {
+      primaryColor: "#111111",
+      emailFromName: "Seal",
+    });
     assert.ok(next);
     const parsed: unknown = JSON.parse(next);
     assert.ok(isRecord(parsed));

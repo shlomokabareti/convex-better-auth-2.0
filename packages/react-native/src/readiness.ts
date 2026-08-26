@@ -15,10 +15,8 @@ export function mapExpoAuthReadiness(args: {
   convex: ExpoConvexAuthState;
   session: ExpoSessionState;
 }): AuthRuntimeStatus {
-  const providerAuthenticated =
-    args.session.data !== null && args.session.data !== undefined;
-  const reauthRequired =
-    args.session.error !== null && args.session.error !== undefined;
+  const providerAuthenticated = args.session.data !== null && args.session.data !== undefined;
+  const reauthRequired = args.session.error !== null && args.session.error !== undefined;
 
   if (reauthRequired) {
     return {

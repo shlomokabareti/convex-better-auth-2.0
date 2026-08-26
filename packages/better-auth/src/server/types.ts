@@ -20,5 +20,5 @@ export type BetterAuthServerIdentity = {
 };
 
 export type BetterAuthIdentityNormalizer = (
-  identity: BetterAuthServerIdentity
+  identity: BetterAuthServerIdentity,
 ) => NormalizedAuthIdentity;

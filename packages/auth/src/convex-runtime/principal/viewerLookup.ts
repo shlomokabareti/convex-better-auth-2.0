@@ -55,9 +55,7 @@ export type ViewerLookupResult<
       failure: ViewerLookupFailure;
     };
 
-export function anonymousViewerFailure(
-  message = "Authentication required"
-): ViewerLookupFailure {
+export function anonymousViewerFailure(message = "Authentication required"): ViewerLookupFailure {
   return {
     code: "ANONYMOUS",
     message,
@@ -65,7 +63,7 @@ export function anonymousViewerFailure(
 }
 
 export function missingLocalIdentityFailure(
-  message = "Local identity missing"
+  message = "Local identity missing",
 ): ViewerLookupFailure {
   return {
     code: "LOCAL_IDENTITY_MISSING",
@@ -73,18 +71,14 @@ export function missingLocalIdentityFailure(
   };
 }
 
-export function invalidSessionFailure(
-  message = "Active session required"
-): ViewerLookupFailure {
+export function invalidSessionFailure(message = "Active session required"): ViewerLookupFailure {
   return {
     code: "SESSION_INVALID",
     message,
   };
 }
 
-export function missingUserFailure(
-  message = "User not found"
-): ViewerLookupFailure {
+export function missingUserFailure(message = "User not found"): ViewerLookupFailure {
   return {
     code: "USER_MISSING",
     message,
@@ -110,14 +104,8 @@ export function resolveViewerLookup<
           TOrganizationId,
           TMembershipId
         >;
-      }
-): ViewerLookupResult<
-  TIdentity,
-  TLocalIdentity,
-  TUser,
-  TOrganizationId,
-  TMembershipId
-> {
+      },
+): ViewerLookupResult<TIdentity, TLocalIdentity, TUser, TOrganizationId, TMembershipId> {
   if ("failure" in args) {
     return {
       ok: false,

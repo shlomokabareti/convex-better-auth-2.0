@@ -18,14 +18,11 @@ describe("mcp dynamic client registration", () => {
       registerMcpOAuthClient(
         {
           clientName: " CRM Desktop ",
-          redirectUris: [
-            "http://127.0.0.1:8788/callback",
-            "http://127.0.0.1:8788/callback",
-          ],
+          redirectUris: ["http://127.0.0.1:8788/callback", "http://127.0.0.1:8788/callback"],
           scope: "crm:organization:read crm:opportunities:write",
         },
         policy,
-        { clientId: "client_123" }
+        { clientId: "client_123" },
       ),
       {
         clientId: "client_123",
@@ -40,7 +37,7 @@ describe("mcp dynamic client registration", () => {
         softwareVersion: null,
         registrationClientUri: null,
         registrationAccessToken: null,
-      }
+      },
     );
   });
 
@@ -51,7 +48,7 @@ describe("mcp dynamic client registration", () => {
           clientName: "Web Client",
           redirectUris: ["https://app.example.com/oauth/callback"],
         },
-        policy
+        policy,
       ),
       {
         name: "Web Client",
@@ -63,7 +60,7 @@ describe("mcp dynamic client registration", () => {
         responseTypes: ["code"],
         softwareId: null,
         softwareVersion: null,
-      }
+      },
     );
   });
 
@@ -75,12 +72,12 @@ describe("mcp dynamic client registration", () => {
           redirectUris: ["https://app.example.com/oauth/callback"],
           scope: "crm:tasks:read",
         },
-        policy
+        policy,
       ),
       {
         error: "invalid_client_metadata",
         error_description: "Unsupported scope: crm:tasks:read",
-      }
+      },
     );
   });
 
@@ -91,13 +88,13 @@ describe("mcp dynamic client registration", () => {
           clientName: "Bad Redirect",
           redirectUris: ["http://evil.test/callback"],
         },
-        policy
+        policy,
       ),
       {
         error: "invalid_client_metadata",
         error_description:
           "Redirect URI must use https or localhost http: http://evil.test/callback",
-      }
+      },
     );
   });
 
@@ -109,9 +106,9 @@ describe("mcp dynamic client registration", () => {
           redirectUris: ["https://app.example.com/oauth/callback"],
           grantTypes: ["authorization_code", "refresh_token"],
         },
-        policy
+        policy,
       ).grantTypes,
-      ["authorization_code", "refresh_token"]
+      ["authorization_code", "refresh_token"],
     );
 
     assert.deepEqual(
@@ -121,13 +118,12 @@ describe("mcp dynamic client registration", () => {
           redirectUris: ["https://app.example.com/oauth/callback"],
           tokenEndpointAuthMethod: "client_secret_post",
         },
-        policy
+        policy,
       ),
       {
         error: "invalid_client_metadata",
-        error_description:
-          "Unsupported token_endpoint_auth_method: client_secret_post",
-      }
+        error_description: "Unsupported token_endpoint_auth_method: client_secret_post",
+      },
     );
 
     assert.deepEqual(
@@ -137,12 +133,12 @@ describe("mcp dynamic client registration", () => {
           redirectUris: ["https://app.example.com/oauth/callback"],
           grantTypes: ["client_credentials"],
         },
-        policy
+        policy,
       ),
       {
         error: "invalid_client_metadata",
         error_description: "Unsupported grant_types value: client_credentials",
-      }
+      },
     );
   });
 });

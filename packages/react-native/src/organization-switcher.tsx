@@ -93,20 +93,14 @@ function OrganizationSwitcherTrigger(props: {
   }
 
   return (
-    <Pressable
-      onPress={props.onPress}
-      style={[styles.trigger, props.styles.trigger]}
-    >
-      {props.current?.imageUrl !== undefined &&
-      props.current.imageUrl.length > 0 ? (
+    <Pressable onPress={props.onPress} style={[styles.trigger, props.styles.trigger]}>
+      {props.current?.imageUrl !== undefined && props.current.imageUrl.length > 0 ? (
         <Image
           source={{ uri: props.current.imageUrl }}
           style={[styles.triggerImage, props.styles.triggerImage]}
         />
       ) : (
-        <View
-          style={[styles.triggerPlaceholder, props.styles.triggerPlaceholder]}
-        />
+        <View style={[styles.triggerPlaceholder, props.styles.triggerPlaceholder]} />
       )}
       <Text style={[styles.triggerName, props.styles.triggerName]}>
         {props.current?.name ?? props.copy.personalAccountLabel}
@@ -129,27 +123,13 @@ function CurrentOrganizationSection(props: {
       <Text style={[styles.sectionTitle, props.styles.sectionTitle]}>
         {props.copy.currentOrganizationLabel}
       </Text>
-      <View
-        style={[
-          styles.item,
-          styles.itemActive,
-          props.styles.item,
-          props.styles.itemActive,
-        ]}
-      >
-        <Text style={[styles.itemLabel, props.styles.itemLabel]}>
-          {props.current.name}
-        </Text>
+      <View style={[styles.item, styles.itemActive, props.styles.item, props.styles.itemActive]}>
+        <Text style={[styles.itemLabel, props.styles.itemLabel]}>{props.current.name}</Text>
         {props.current.slug !== undefined ? (
-          <Text style={[styles.itemMeta, props.styles.itemMeta]}>
-            {props.current.slug}
-          </Text>
+          <Text style={[styles.itemMeta, props.styles.itemMeta]}>{props.current.slug}</Text>
         ) : null}
       </View>
-      <View
-        className="bg-border"
-        style={[styles.divider, props.styles.divider]}
-      />
+      <View className="bg-border" style={[styles.divider, props.styles.divider]} />
     </View>
   );
 }
@@ -161,9 +141,7 @@ export function ConvexOrganizationSwitcher(props: ExpoOrgSwitcherProps) {
 
   const current =
     props.currentOrganization ??
-    props.organizations.find(
-      (org) => org._id === props.currentOrganizationId
-    ) ??
+    props.organizations.find((org) => org._id === props.currentOrganizationId) ??
     null;
   const others = props.organizations.filter((org) => org._id !== current?._id);
 
@@ -189,33 +167,15 @@ export function ConvexOrganizationSwitcher(props: ExpoOrgSwitcherProps) {
         renderCustomTrigger={props.renderCustomTrigger}
         styles={s}
       />
-      <Modal
-        visible={open}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setOpen(false)}
-      >
-        <Pressable
-          style={[styles.modal, s.modal]}
-          onPress={() => setOpen(false)}
-        >
-          <Pressable
-            className="bg-popover"
-            style={[styles.panel, s.panel]}
-            onPress={() => {}}
-          >
-            <CurrentOrganizationSection
-              copy={copy}
-              current={current}
-              styles={s}
-            />
+      <Modal visible={open} animationType="slide" transparent onRequestClose={() => setOpen(false)}>
+        <Pressable style={[styles.modal, s.modal]} onPress={() => setOpen(false)}>
+          <Pressable className="bg-popover" style={[styles.panel, s.panel]} onPress={() => {}}>
+            <CurrentOrganizationSection copy={copy} current={current} styles={s} />
             <Text style={[styles.sectionTitle, s.sectionTitle]}>
               {copy.otherOrganizationsLabel}
             </Text>
             {others.length === 0 ? (
-              <Text style={[styles.itemMeta, s.itemMeta]}>
-                {copy.noOrganizationsLabel}
-              </Text>
+              <Text style={[styles.itemMeta, s.itemMeta]}>{copy.noOrganizationsLabel}</Text>
             ) : (
               others.map((org) => (
                 <Pressable
@@ -223,40 +183,24 @@ export function ConvexOrganizationSwitcher(props: ExpoOrgSwitcherProps) {
                   onPress={() => void pickOrg(org._id)}
                   style={[styles.item, s.item]}
                 >
-                  <Text style={[styles.itemLabel, s.itemLabel]}>
-                    {org.name}
-                  </Text>
+                  <Text style={[styles.itemLabel, s.itemLabel]}>{org.name}</Text>
                   {org.slug !== undefined ? (
-                    <Text style={[styles.itemMeta, s.itemMeta]}>
-                      {org.slug}
-                    </Text>
+                    <Text style={[styles.itemMeta, s.itemMeta]}>{org.slug}</Text>
                   ) : null}
                 </Pressable>
               ))
             )}
-            {props.showPersonalAccount === true &&
-            props.onSelectPersonalAccount !== undefined ? (
+            {props.showPersonalAccount === true && props.onSelectPersonalAccount !== undefined ? (
               <View>
-                <View
-                  className="bg-border"
-                  style={[styles.divider, s.divider]}
-                />
-                <Pressable
-                  onPress={() => void pickPersonal()}
-                  style={[styles.item, s.item]}
-                >
-                  <Text style={[styles.itemLabel, s.itemLabel]}>
-                    {copy.personalAccountLabel}
-                  </Text>
+                <View className="bg-border" style={[styles.divider, s.divider]} />
+                <Pressable onPress={() => void pickPersonal()} style={[styles.item, s.item]}>
+                  <Text style={[styles.itemLabel, s.itemLabel]}>{copy.personalAccountLabel}</Text>
                 </Pressable>
               </View>
             ) : null}
             {props.onCreateOrganization !== undefined ? (
               <View>
-                <View
-                  className="bg-border"
-                  style={[styles.divider, s.divider]}
-                />
+                <View className="bg-border" style={[styles.divider, s.divider]} />
                 <Pressable
                   onPress={() => void pickCreate()}
                   style={[styles.createButton, s.createButton]}

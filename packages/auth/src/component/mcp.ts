@@ -47,7 +47,7 @@ const authorizationCodeResultValidator = v.union(
     // Returned so the token-exchange validator can enforce the expiry the code
     // was issued with (the package's McpOAuthAuthorizationCodeRecord requires it).
     expiresAt: v.number(),
-  })
+  }),
 );
 
 const refreshTokenIssueResultValidator = v.object({
@@ -81,15 +81,12 @@ const refreshTokenRedeemResultValidator = v.union(
         familyId: v.string(),
         reason: v.string(),
         revokedAt: v.number(),
-      })
+      }),
     ),
-  })
+  }),
 );
 
-const signingKeyStatusValidator = v.union(
-  v.literal("active"),
-  v.literal("retired")
-);
+const signingKeyStatusValidator = v.union(v.literal("active"), v.literal("retired"));
 
 const storedClientValidator = v.union(
   v.null(),
@@ -104,7 +101,7 @@ const storedClientValidator = v.union(
     responseTypes: v.array(v.string()),
     softwareId: v.union(v.string(), v.null()),
     softwareVersion: v.union(v.string(), v.null()),
-  })
+  }),
 );
 
 const signingKeyRecordValidator = v.object({
@@ -129,10 +126,7 @@ const MCP_OAUTH_REFRESH_TOKEN_POLICY = createMcpOAuthRefreshTokenPolicy({
   inactivityLifetimeMs: 7 * 24 * 60 * 60 * 1000,
 });
 
-type StoredMcpOAuthClientDoc = Omit<
-  McpOAuthStoredClientRecord,
-  "tokenEndpointAuthMethod"
-> & {
+type StoredMcpOAuthClientDoc = Omit<McpOAuthStoredClientRecord, "tokenEndpointAuthMethod"> & {
   tokenEndpointAuthMethod: "none";
 };
 
@@ -160,9 +154,7 @@ type StoredMcpOAuthRefreshTokenRow = StoredMcpOAuthRefreshTokenDoc & {
   _id: Id<"mcp_oauth_refresh_tokens">;
 };
 
-function toStoredMcpOAuthClientDoc(
-  record: McpOAuthStoredClientRecord
-): StoredMcpOAuthClientDoc {
+function toStoredMcpOAuthClientDoc(record: McpOAuthStoredClientRecord): StoredMcpOAuthClientDoc {
   return {
     ...record,
     tokenEndpointAuthMethod: "none",
@@ -197,7 +189,7 @@ function toStoredMcpOAuthRefreshTokenDoc(args: {
 }
 
 function toMcpOAuthRefreshTokenRecord(
-  doc: StoredMcpOAuthRefreshTokenDoc
+  doc: StoredMcpOAuthRefreshTokenDoc,
 ): McpOAuthRefreshTokenRecord {
   return {
     tokenId: doc.tokenId,
@@ -272,10 +264,7 @@ export const consumeAuthorizationCode = mutation({
       return null;
     }
 
-    if (
-      doc.clientId !== args.clientId ||
-      doc.redirectUri !== args.redirectUri
-    ) {
+    if (doc.clientId !== args.clientId || doc.redirectUri !== args.redirectUri) {
       return null;
     }
 
@@ -355,10 +344,10 @@ export const registerDynamicClient = mutation({
       },
       {
         clientId: args.clientId,
-      }
+      },
     );
     const storedClient = toStoredMcpOAuthClientDoc(
-      createMcpOAuthStoredClientRecord(registeredClient, now)
+      createMcpOAuthStoredClientRecord(registeredClient, now),
     );
 
     const existing = await ctx.db
@@ -431,10 +420,7 @@ export const createDynamicClient = mutation({
       },
       clientId: `${args.clientIdPrefix ?? "vtx-mcp"}-${crypto.randomUUID()}`,
       persist: async (record) => {
-        return await ctx.db.insert(
-          "mcp_oauth_clients",
-          toStoredMcpOAuthClientDoc(record)
-        );
+        return await ctx.db.insert("mcp_oauth_clients", toStoredMcpOAuthClientDoc(record));
       },
     });
 
@@ -446,12 +432,8 @@ export const createDynamicClient = mutation({
       allowedScopes: [...created.client.allowedScopes],
       tokenEndpointAuthMethod: "none" as const,
       pkceRequired: created.client.pkceRequired,
-      grantTypes: created.client.grantTypes
-        ? [...created.client.grantTypes]
-        : undefined,
-      responseTypes: created.client.responseTypes
-        ? [...created.client.responseTypes]
-        : undefined,
+      grantTypes: created.client.grantTypes ? [...created.client.grantTypes] : undefined,
+      responseTypes: created.client.responseTypes ? [...created.client.responseTypes] : undefined,
       softwareId: created.client.softwareId ?? null,
       softwareVersion: created.client.softwareVersion ?? null,
       registrationClientUri: created.client.registrationClientUri ?? null,
@@ -490,7 +472,7 @@ export const issueRefreshToken = mutation({
         record: issued.record,
         tokenHash,
         now,
-      })
+      }),
     );
 
     return {
@@ -549,14 +531,10 @@ export const redeemRefreshToken = mutation({
             : { ...record, revokedAt: familyRevocation.revokedAt };
         },
         rotate: async (input) => {
-          const currentHash = await hashMcpOAuthRefreshToken(
-            input.currentRefreshToken
-          );
+          const currentHash = await hashMcpOAuthRefreshToken(input.currentRefreshToken);
           const doc = (await ctx.db
             .query("mcp_oauth_refresh_tokens")
-            .withIndex("by_token_hash", (q) =>
-              q.eq("tokenHash", currentHash.tokenHash)
-            )
+            .withIndex("by_token_hash", (q) => q.eq("tokenHash", currentHash.tokenHash))
             .unique()) as StoredMcpOAuthRefreshTokenRow | null;
           if (doc === null || doc.clientId !== input.currentRecord.clientId) {
             return { ok: false as const, reason: "not_found" as const };
@@ -574,16 +552,14 @@ export const redeemRefreshToken = mutation({
             return { ok: false as const, reason: "conflict" as const };
           }
 
-          const nextHash = await hashMcpOAuthRefreshToken(
-            input.nextRefreshToken
-          );
+          const nextHash = await hashMcpOAuthRefreshToken(input.nextRefreshToken);
           await ctx.db.insert(
             "mcp_oauth_refresh_tokens",
             toStoredMcpOAuthRefreshTokenDoc({
               record: input.nextRecord,
               tokenHash: nextHash.tokenHash,
               now,
-            })
+            }),
           );
           await ctx.db.patch("mcp_oauth_refresh_tokens", doc._id, {
             consumedAt: input.consumedRecordPatch.consumedAt,
@@ -673,15 +649,12 @@ export const listSigningKeys = query({
               .withIndex("by_status_retired_at", (q) =>
                 q
                   .eq("status", "retired")
-                  .gte(
-                    "retiredAt",
-                    Date.now() - MCP_OAUTH_RETIRED_SIGNING_KEY_RETENTION_MS
-                  )
+                  .gte("retiredAt", Date.now() - MCP_OAUTH_RETIRED_SIGNING_KEY_RETENTION_MS),
               )
               .order("desc"),
           ],
-          ["retiredAt", "_creationTime"]
-        ).take(MAX_RETAINED_SIGNING_KEYS + 1))
+          ["retiredAt", "_creationTime"],
+        ).take(MAX_RETAINED_SIGNING_KEYS + 1)),
       );
     } else {
       for await (const key of ctx.db
@@ -698,8 +671,7 @@ export const listSigningKeys = query({
     if (keys.length > MAX_RETAINED_SIGNING_KEYS) {
       throw new ConvexError({
         code: "MCP_SIGNING_KEY_LIMIT_EXCEEDED",
-        message:
-          "The retained MCP OAuth signing-key set exceeds the supported bound",
+        message: "The retained MCP OAuth signing-key set exceeds the supported bound",
       });
     }
 
@@ -767,8 +739,7 @@ export const updateSigningKeyStatus = mutation({
 
     await ctx.db.patch("mcp_oauth_signing_keys", existing._id, {
       status: args.status,
-      retiredAt:
-        args.status === "retired" ? (args.retiredAt ?? Date.now()) : undefined,
+      retiredAt: args.status === "retired" ? (args.retiredAt ?? Date.now()) : undefined,
       updatedAt: Date.now(),
     });
 

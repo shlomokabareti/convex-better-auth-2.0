@@ -12,11 +12,7 @@ export function buildApiAuthOrganizationAccessResult<
   TOrganizationId extends string = string,
   TRole extends string = string,
 >(args: {
-  memberships: readonly ApiAuthMembershipRecord<
-    TMembershipId,
-    TOrganizationId,
-    TRole
-  >[];
+  memberships: readonly ApiAuthMembershipRecord<TMembershipId, TOrganizationId, TRole>[];
   organizationId: TOrganizationId | null;
   expandPermissions: (role: TRole) => readonly string[];
 }): ApiAuthOrganizationAccessResult {
@@ -31,24 +27,19 @@ export function buildApiAuthOrganizationAccessResult<
 
   const organizationMemberships = args.memberships.filter(
     (membership) =>
-      membership.status === "active" &&
-      membership.organizationId === args.organizationId
+      membership.status === "active" && membership.organizationId === args.organizationId,
   );
 
   const roleKeys = Array.from(
-    new Set(
-      organizationMemberships.map((membership) => membership.roleTemplate)
-    )
+    new Set(organizationMemberships.map((membership) => membership.roleTemplate)),
   );
 
   const permissions = Array.from(
     new Set(
       organizationMemberships.flatMap(
-        (membership) =>
-          membership.permissions ??
-          args.expandPermissions(membership.roleTemplate)
-      )
-    )
+        (membership) => membership.permissions ?? args.expandPermissions(membership.roleTemplate),
+      ),
+    ),
   );
 
   return {

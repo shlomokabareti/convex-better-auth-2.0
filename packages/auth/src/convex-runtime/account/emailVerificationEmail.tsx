@@ -1,10 +1,4 @@
-import {
-  Button,
-  EmailLayout,
-  EmailText,
-  renderEmail,
-  renderEmailText,
-} from "../../lib/email";
+import { Button, EmailLayout, EmailText, renderEmail, renderEmailText } from "../../lib/email";
 
 import {
   buildTokenUrl,
@@ -89,10 +83,7 @@ export async function createEmailVerificationEmailDraft(args: {
   }
 
   const template = (
-    <EmailVerificationEmailTemplate
-      verifyUrl={args.verifyUrl}
-      expiresAt={args.expiresAt}
-    />
+    <EmailVerificationEmailTemplate verifyUrl={args.verifyUrl} expiresAt={args.expiresAt} />
   );
   const textTemplate = (
     <EmailVerificationEmailTemplate
@@ -101,10 +92,7 @@ export async function createEmailVerificationEmailDraft(args: {
       plainText
     />
   );
-  const [html, text] = await Promise.all([
-    renderEmail(template),
-    renderEmailText(textTemplate),
-  ]);
+  const [html, text] = await Promise.all([renderEmail(template), renderEmailText(textTemplate)]);
 
   return {
     from,
@@ -188,15 +176,11 @@ export async function sendEmailVerificationEmail(args: {
   appOrigin?: string | null;
   verifyPath?: string;
   sendEmail: (draft: EmailVerificationEmailDraft) => Promise<string>;
-  recordQueued: (
-    emailId: string
-  ) => Promise<EmailVerificationEmailDeliveryResult>;
+  recordQueued: (emailId: string) => Promise<EmailVerificationEmailDeliveryResult>;
   recordNotConfigured: (
-    reason: EmailVerificationEmailNotConfiguredReason
+    reason: EmailVerificationEmailNotConfiguredReason,
   ) => Promise<EmailVerificationEmailDeliveryResult>;
-  recordFailed: (
-    reason: string
-  ) => Promise<EmailVerificationEmailDeliveryResult>;
+  recordFailed: (reason: string) => Promise<EmailVerificationEmailDeliveryResult>;
   renderEmailDraft?: (args: {
     from: string;
     to: string;
@@ -244,7 +228,7 @@ export async function sendEmailVerificationEmail(args: {
     return await args.recordQueued(emailId);
   } catch (error) {
     return await args.recordFailed(
-      error instanceof Error ? error.message : "Unknown email delivery error"
+      error instanceof Error ? error.message : "Unknown email delivery error",
     );
   }
 }
@@ -252,10 +236,7 @@ export async function sendEmailVerificationEmail(args: {
 export function mapResendEventToVerificationEmailDelivery(args: {
   event: ResendVerificationEmailEvent;
 }): {
-  status: Exclude<
-    EmailVerificationEmailDeliveryStatus,
-    "not_configured" | "queued"
-  >;
+  status: Exclude<EmailVerificationEmailDeliveryStatus, "not_configured" | "queued">;
   eventType: ResendVerificationEmailEvent["type"];
   error?: string;
 } {
@@ -269,18 +250,14 @@ function EmailVerificationEmailTemplate(args: {
 }) {
   return (
     <EmailLayout preview="Verify your email">
-      <EmailText>
-        Confirm your email address to finish setting up your account.
-      </EmailText>
+      <EmailText>Confirm your email address to finish setting up your account.</EmailText>
       {args.plainText === true ? (
         <EmailText>Verify your email: {args.verifyUrl}</EmailText>
       ) : (
         <Button href={args.verifyUrl}>Verify your email</Button>
       )}
       {args.expiresAt === undefined ? null : (
-        <EmailText>
-          This link expires {new Date(args.expiresAt).toUTCString()}.
-        </EmailText>
+        <EmailText>This link expires {new Date(args.expiresAt).toUTCString()}.</EmailText>
       )}
     </EmailLayout>
   );

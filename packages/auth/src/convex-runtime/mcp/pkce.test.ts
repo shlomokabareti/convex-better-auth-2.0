@@ -8,7 +8,7 @@ describe("pkce helpers", () => {
   it("derives the expected S256 challenge", async () => {
     assert.equal(
       await derivePkceChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
-      "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+      "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
     );
   });
 

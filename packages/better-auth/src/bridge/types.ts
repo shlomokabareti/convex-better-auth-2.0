@@ -11,10 +11,8 @@ export type BetterAuthBridgeInputs = {
   recovering: boolean;
 };
 
-export type BetterAuthReadinessMapper = (
-  inputs: BetterAuthBridgeInputs
-) => AuthReadinessState;
+export type BetterAuthReadinessMapper = (inputs: BetterAuthBridgeInputs) => AuthReadinessState;
 
 export type BetterAuthIdentityMapper = (
-  identity: BetterAuthServerIdentity
+  identity: BetterAuthServerIdentity,
 ) => NormalizedAuthIdentity;

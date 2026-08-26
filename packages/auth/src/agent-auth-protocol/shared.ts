@@ -9,20 +9,14 @@ export type AgentAuthProtocolJsonObject = {
   [key: string]: AgentAuthProtocolJsonValue;
 };
 
-export function readObject(
-  value: unknown,
-  name: string
-): Record<string, unknown> {
+export function readObject(value: unknown, name: string): Record<string, unknown> {
   if (!isObjectRecord(value)) {
     throw new TypeError(`${name} must be an object`);
   }
   return value;
 }
 
-export function readRequiredString(
-  object: Record<string, unknown>,
-  key: string
-): string {
+export function readRequiredString(object: Record<string, unknown>, key: string): string {
   const value = object[key];
   if (typeof value !== "string" || value.length === 0) {
     throw new TypeError(`${key} must be a non-empty string`);
@@ -32,7 +26,7 @@ export function readRequiredString(
 
 export function readOptionalString(
   object: Record<string, unknown>,
-  key: string
+  key: string,
 ): string | undefined {
   const value = object[key];
   if (value === undefined) return undefined;
@@ -42,10 +36,7 @@ export function readOptionalString(
   return value;
 }
 
-export function readRequiredInteger(
-  object: Record<string, unknown>,
-  key: string
-): number {
+export function readRequiredInteger(object: Record<string, unknown>, key: string): number {
   const value = object[key];
   if (typeof value !== "number" || !Number.isSafeInteger(value)) {
     throw new TypeError(`${key} must be a safe integer`);
@@ -56,12 +47,10 @@ export function readRequiredInteger(
 export function readStringArray(
   value: unknown,
   name: string,
-  options: { allowEmpty: boolean }
+  options: { allowEmpty: boolean },
 ): string[] {
   if (!Array.isArray(value) || (!options.allowEmpty && value.length === 0)) {
-    throw new TypeError(
-      `${name} must be ${options.allowEmpty ? "an" : "a non-empty"} array`
-    );
+    throw new TypeError(`${name} must be ${options.allowEmpty ? "an" : "a non-empty"} array`);
   }
   const strings = value.map((item, index) => {
     if (typeof item !== "string" || item.length === 0) {
@@ -107,17 +96,12 @@ export function readRelativeEndpoint(value: string, name: string): string {
     value.includes("?") ||
     value.includes("#")
   ) {
-    throw new TypeError(
-      `${name} must be an issuer-relative path without query or fragment`
-    );
+    throw new TypeError(`${name} must be an issuer-relative path without query or fragment`);
   }
   return value;
 }
 
-export function readJsonObject(
-  value: unknown,
-  name: string
-): AgentAuthProtocolJsonObject {
+export function readJsonObject(value: unknown, name: string): AgentAuthProtocolJsonObject {
   const object = readObject(value, name);
   const parsed: AgentAuthProtocolJsonObject = {};
   for (const [key, item] of Object.entries(object)) {
@@ -126,15 +110,8 @@ export function readJsonObject(
   return parsed;
 }
 
-function parseJsonValue(
-  value: unknown,
-  name: string
-): AgentAuthProtocolJsonValue {
-  if (
-    value === null ||
-    typeof value === "boolean" ||
-    typeof value === "string"
-  ) {
+function parseJsonValue(value: unknown, name: string): AgentAuthProtocolJsonValue {
+  if (value === null || typeof value === "boolean" || typeof value === "string") {
     return value;
   }
   if (typeof value === "number") {
@@ -144,9 +121,7 @@ function parseJsonValue(
     return value;
   }
   if (Array.isArray(value)) {
-    return value.map((item, index) =>
-      parseJsonValue(item, `${name}[${index}]`)
-    );
+    return value.map((item, index) => parseJsonValue(item, `${name}[${index}]`));
   }
   const object = readObject(value, name);
   const parsed: AgentAuthProtocolJsonObject = {};

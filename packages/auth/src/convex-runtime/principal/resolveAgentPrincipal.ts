@@ -1,8 +1,4 @@
-import type {
-  AgentCapabilityGrantSnapshot,
-  AgentMode,
-  AgentPrincipal,
-} from "../coreTypes";
+import type { AgentCapabilityGrantSnapshot, AgentMode, AgentPrincipal } from "../coreTypes";
 
 export type AgentPrincipalInput = {
   agentId: string;
@@ -17,20 +13,12 @@ export type AgentPrincipalInput = {
   restrictedReason?: string | null;
 };
 
-export function resolveAgentPrincipal(
-  input: AgentPrincipalInput
-): AgentPrincipal {
+export function resolveAgentPrincipal(input: AgentPrincipalInput): AgentPrincipal {
   const agentId = requireIdentifier(input.agentId, "agentId");
   const hostId = requireIdentifier(input.hostId, "hostId");
-  const organizationId = requireIdentifier(
-    input.organizationId,
-    "organizationId"
-  );
+  const organizationId = requireIdentifier(input.organizationId, "organizationId");
   const credentialId = requireIdentifier(input.credentialId, "credentialId");
-  const delegatedUserId = resolveDelegatedUserId(
-    input.mode,
-    input.delegatedUserId
-  );
+  const delegatedUserId = resolveDelegatedUserId(input.mode, input.delegatedUserId);
   const restrictedReason = input.restrictedReason ?? null;
 
   return {
@@ -48,10 +36,7 @@ export function resolveAgentPrincipal(
   };
 }
 
-function resolveDelegatedUserId(
-  mode: AgentMode,
-  delegatedUserId: string | null
-): string | null {
+function resolveDelegatedUserId(mode: AgentMode, delegatedUserId: string | null): string | null {
   if (mode === "delegated") {
     if (delegatedUserId === null) {
       throw new TypeError("Delegated agents require delegatedUserId");
@@ -65,7 +50,7 @@ function resolveDelegatedUserId(
 }
 
 function normalizeCapabilityGrants(
-  grants: readonly AgentCapabilityGrantSnapshot[]
+  grants: readonly AgentCapabilityGrantSnapshot[],
 ): AgentCapabilityGrantSnapshot[] {
   const byCapability = new Map<string, AgentCapabilityGrantSnapshot>();
   for (const grant of grants) {
@@ -86,14 +71,12 @@ function normalizeCapabilityGrants(
     });
   }
   return [...byCapability.values()].toSorted((left, right) =>
-    left.capability.localeCompare(right.capability)
+    left.capability.localeCompare(right.capability),
   );
 }
 
 function normalizeStringSet(values: readonly string[]): string[] {
-  return [
-    ...new Set(values.map((value) => requireIdentifier(value, "permission"))),
-  ].toSorted();
+  return [...new Set(values.map((value) => requireIdentifier(value, "permission")))].toSorted();
 }
 
 function requireIdentifier(value: string, field: string): string {

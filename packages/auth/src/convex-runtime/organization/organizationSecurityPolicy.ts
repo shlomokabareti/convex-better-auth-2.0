@@ -38,7 +38,7 @@ function optionalTimeoutMinutes(value: unknown): number | undefined {
  * Normalize org security from metadataJson (or a pre-parsed object).
  */
 export function parseOrganizationSecurityPolicy(
-  metadataJson: string | null | undefined
+  metadataJson: string | null | undefined,
 ): OrganizationSecurityPolicy {
   const empty: OrganizationSecurityPolicy = { requireMfa: false };
   if (!metadataJson || metadataJson.trim() === "") {
@@ -57,9 +57,7 @@ export function parseOrganizationSecurityPolicy(
       requireMfa: security.requireMfa === true,
       ...(optionalTimeoutMinutes(security.sessionTimeoutMinutes) !== undefined
         ? {
-            sessionTimeoutMinutes: optionalTimeoutMinutes(
-              security.sessionTimeoutMinutes
-            ),
+            sessionTimeoutMinutes: optionalTimeoutMinutes(security.sessionTimeoutMinutes),
           }
         : {}),
     };
@@ -105,10 +103,7 @@ export function evaluateOrgSessionTimeout(args: {
   if (minutes === undefined) {
     return null;
   }
-  if (
-    typeof args.sessionCreatedAt !== "number" ||
-    !Number.isFinite(args.sessionCreatedAt)
-  ) {
+  if (typeof args.sessionCreatedAt !== "number" || !Number.isFinite(args.sessionCreatedAt)) {
     return {
       code: "ORG_SESSION_TIMEOUT",
       message: "Active session required",

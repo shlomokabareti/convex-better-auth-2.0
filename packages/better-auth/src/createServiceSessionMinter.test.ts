@@ -47,7 +47,7 @@ function fakeRuntime(sessionToken = "minted-token") {
     createSession: async (
       userId: string,
       dontRememberMe?: boolean,
-      override?: Record<string, unknown>
+      override?: Record<string, unknown>,
     ) => {
       created.push({ userId, dontRememberMe, override });
       return { token: sessionToken, expiresAt: 1_780_000_000_000 };
@@ -70,10 +70,7 @@ describe("createAuthServiceSessionMinter — security contract", () => {
   it("BLOCKS the mint when authorize throws (createSession never called)", async () => {
     const rt = fakeRuntime();
     const audits: unknown[] = [];
-    const { mintServiceSession } = createAuthServiceSessionMinter<
-      FakeCtx,
-      { id: string }
-    >({
+    const { mintServiceSession } = createAuthServiceSessionMinter<FakeCtx, { id: string }>({
       createAuth: rt.createAuth,
       authorize: async () => {
         throw new Error("FORBIDDEN: not allowed to impersonate");
@@ -82,25 +79,15 @@ describe("createAuthServiceSessionMinter — security contract", () => {
         audits.push(e);
       },
     });
-    await assert.rejects(
-      () => mintServiceSession(ctx, { targetUserId: "user_9" }),
-      /FORBIDDEN/
-    );
-    assert.equal(
-      rt.created.length,
-      0,
-      "mint must not run when authorize denies"
-    );
+    await assert.rejects(() => mintServiceSession(ctx, { targetUserId: "user_9" }), /FORBIDDEN/);
+    assert.equal(rt.created.length, 0, "mint must not run when authorize denies");
     assert.equal(audits.length, 0);
   });
 
   it("mints natively + fires audit with the acting principal and target", async () => {
     const rt = fakeRuntime("tok-123");
     const audits: ServiceSessionMintAudit<{ id: string }>[] = [];
-    const { mintServiceSession } = createAuthServiceSessionMinter<
-      FakeCtx,
-      { id: string }
-    >({
+    const { mintServiceSession } = createAuthServiceSessionMinter<FakeCtx, { id: string }>({
       createAuth: rt.createAuth,
       authorize: async () => ({ id: "agent_principal_1" }),
       audit: async (_c, e) => {
@@ -116,9 +103,7 @@ describe("createAuthServiceSessionMinter — security contract", () => {
       expiresAt: 1_780_000_000_000,
     });
     // native createSession: target + dontRememberMe default true + NO override (no impersonatedBy).
-    assert.deepEqual(rt.created, [
-      { userId: "user_9", dontRememberMe: true, override: undefined },
-    ]);
+    assert.deepEqual(rt.created, [{ userId: "user_9", dontRememberMe: true, override: undefined }]);
     // audit carries the principal + request + result.
     assert.equal(audits.length, 1);
     const audit = only(audits, "service-session mint audit is missing");
@@ -131,16 +116,13 @@ describe("createAuthServiceSessionMinter — security contract", () => {
     assert.equal(
       Reflect.get(audit.result, "token"),
       undefined,
-      "audit must never receive the session token"
+      "audit must never receive the session token",
     );
   });
 
   it("REVOKES the minted session when the audit write fails (no unaudited session)", async () => {
     const rt = fakeRuntime("tok-to-revoke");
-    const { mintServiceSession } = createAuthServiceSessionMinter<
-      FakeCtx,
-      { id: string }
-    >({
+    const { mintServiceSession } = createAuthServiceSessionMinter<FakeCtx, { id: string }>({
       createAuth: rt.createAuth,
       authorize: async () => ({ id: "p" }),
       audit: async () => {
@@ -149,23 +131,20 @@ describe("createAuthServiceSessionMinter — security contract", () => {
     });
     await assert.rejects(
       () => mintServiceSession(ctx, { targetUserId: "user_9" }),
-      /audit store unavailable/
+      /audit store unavailable/,
     );
     assert.equal(rt.created.length, 1, "session was minted");
     assert.deepEqual(
       rt.deleted,
       ["tok-to-revoke"],
-      "minted session must be revoked on audit failure"
+      "minted session must be revoked on audit failure",
     );
   });
 
   it("validates targetUserId BEFORE authorize (no work on a bad request)", async () => {
     const rt = fakeRuntime();
     let authorizeCalled = false;
-    const { mintServiceSession } = createAuthServiceSessionMinter<
-      FakeCtx,
-      { id: string }
-    >({
+    const { mintServiceSession } = createAuthServiceSessionMinter<FakeCtx, { id: string }>({
       createAuth: rt.createAuth,
       authorize: async () => {
         authorizeCalled = true;
@@ -175,7 +154,7 @@ describe("createAuthServiceSessionMinter — security contract", () => {
     });
     await assert.rejects(
       () => mintServiceSession(ctx, { targetUserId: "" }),
-      /targetUserId is required/
+      /targetUserId is required/,
     );
     assert.equal(authorizeCalled, false);
     assert.equal(rt.created.length, 0);
@@ -184,10 +163,7 @@ describe("createAuthServiceSessionMinter — security contract", () => {
   it("REJECTS an unknown target (no orphan session minted, no audit)", async () => {
     const rt = fakeRuntime();
     const audits: unknown[] = [];
-    const { mintServiceSession } = createAuthServiceSessionMinter<
-      FakeCtx,
-      { id: string }
-    >({
+    const { mintServiceSession } = createAuthServiceSessionMinter<FakeCtx, { id: string }>({
       createAuth: rt.createAuth,
       authorize: async () => ({ id: "agent_principal_1" }),
       audit: async (_c, e) => {
@@ -196,26 +172,19 @@ describe("createAuthServiceSessionMinter — security contract", () => {
     });
     await assert.rejects(
       () => mintServiceSession(ctx, { targetUserId: GHOST_USER_ID }),
-      /target user not found/
+      /target user not found/,
     );
     // authorize ran (gate cleared) and the target was looked up, but no
     // session was minted and nothing was audited.
     assert.deepEqual(rt.lookedUp, [GHOST_USER_ID]);
-    assert.equal(
-      rt.created.length,
-      0,
-      "no session may be minted for a missing target"
-    );
+    assert.equal(rt.created.length, 0, "no session may be minted for a missing target");
     assert.equal(rt.deleted.length, 0);
     assert.equal(audits.length, 0);
   });
 
   it("passes through dontRememberMe=false when requested", async () => {
     const rt = fakeRuntime();
-    const { mintServiceSession } = createAuthServiceSessionMinter<
-      FakeCtx,
-      { id: string }
-    >({
+    const { mintServiceSession } = createAuthServiceSessionMinter<FakeCtx, { id: string }>({
       createAuth: rt.createAuth,
       authorize: async () => ({ id: "p" }),
       audit: async () => {},
@@ -224,10 +193,7 @@ describe("createAuthServiceSessionMinter — security contract", () => {
       targetUserId: "user_9",
       dontRememberMe: false,
     });
-    assert.equal(
-      only(rt.created, "created service session is missing").dontRememberMe,
-      false
-    );
+    assert.equal(only(rt.created, "created service session is missing").dontRememberMe, false);
   });
 
   it("normalizes a Date expiresAt to epoch millis", async () => {
@@ -243,10 +209,7 @@ describe("createAuthServiceSessionMinter — security contract", () => {
     const createAuth = () => ({
       $context: Promise.resolve({ internalAdapter }),
     });
-    const { mintServiceSession } = createAuthServiceSessionMinter<
-      FakeCtx,
-      { id: string }
-    >({
+    const { mintServiceSession } = createAuthServiceSessionMinter<FakeCtx, { id: string }>({
       createAuth,
       authorize: async () => ({ id: "p" }),
       audit: async () => {},

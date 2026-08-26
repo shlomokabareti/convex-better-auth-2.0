@@ -12,8 +12,8 @@ describe("requireActiveApiKeyRecord", () => {
           status: "active",
           expiresAt: Date.now() + 60_000,
         },
-        Date.now()
-      )
+        Date.now(),
+      ),
     );
   });
 
@@ -24,7 +24,7 @@ describe("requireActiveApiKeyRecord", () => {
           status: "revoked",
           expiresAt: null,
         }),
-      /API key is not active: revoked/
+      /API key is not active: revoked/,
     );
   });
 
@@ -36,9 +36,9 @@ describe("requireActiveApiKeyRecord", () => {
             status: "active",
             expiresAt: 100,
           },
-          100
+          100,
         ),
-      /API key is not active: expired/
+      /API key is not active: expired/,
     );
   });
 
@@ -53,9 +53,9 @@ describe("requireActiveApiKeyRecord", () => {
             lastUsedAt: 100,
             maxIdleMs: 50,
           },
-          150
+          150,
         ),
-      /API key is not active: idle_timeout/
+      /API key is not active: idle_timeout/,
     );
   });
 
@@ -70,9 +70,9 @@ describe("requireActiveApiKeyRecord", () => {
             lastUsedAt: null,
             maxIdleMs: 50,
           },
-          150
+          150,
         ),
-      /API key is not active: idle_timeout/
+      /API key is not active: idle_timeout/,
     );
   });
 
@@ -86,8 +86,8 @@ describe("requireActiveApiKeyRecord", () => {
           lastUsedAt: 140,
           maxIdleMs: 50,
         },
-        150
-      )
+        150,
+      ),
     );
   });
 });

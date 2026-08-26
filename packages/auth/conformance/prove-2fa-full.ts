@@ -36,8 +36,7 @@ function base32(s: string): Buffer {
   for (const c of s.toUpperCase())
     if (a.indexOf(c) >= 0) b += a.indexOf(c).toString(2).padStart(5, "0");
   const o: number[] = [];
-  for (let i = 0; i + 8 <= b.length; i += 8)
-    o.push(parseInt(b.slice(i, i + 8), 2));
+  for (let i = 0; i + 8 <= b.length; i += 8) o.push(parseInt(b.slice(i, i + 8), 2));
   return Buffer.from(o);
 }
 function totp(secret: string): string {
@@ -89,7 +88,7 @@ async function enroll(): Promise<{
   });
   if (!en.ok) {
     console.log(
-      `[SKIP] 2FA not enabled on this deployment (two-factor/enable -> ${en.status}); skipping matrix.`
+      `[SKIP] 2FA not enabled on this deployment (two-factor/enable -> ${en.status}); skipping matrix.`,
     );
     process.exit(0);
   }
@@ -122,9 +121,7 @@ async function enroll(): Promise<{
   });
   const body = await readJsonObject(si);
   if (!body.twoFactorRedirect) {
-    console.log(
-      `[SKIP] 2FA not gating sign-in on this deployment; skipping matrix.`
-    );
+    console.log(`[SKIP] 2FA not gating sign-in on this deployment; skipping matrix.`);
     process.exit(0);
   }
   const pending = mergeCookies(si);
@@ -142,9 +139,7 @@ async function enroll(): Promise<{
   if (vt.ok && (await tokenAndSessionUsable(final))) {
     r.ok("A: TOTP completes sign-in -> usable session");
   } else {
-    r.bad(
-      `A: 2FA completion did not yield a usable session (verify ${vt.status})`
-    );
+    r.bad(`A: 2FA completion did not yield a usable session (verify ${vt.status})`);
   }
 }
 
@@ -203,8 +198,7 @@ async function enroll(): Promise<{
     body: JSON.stringify({ email: u.email, password: u.pw }),
   });
   const b2 = await readJsonObject(si2);
-  if (b2.twoFactorRedirect)
-    r.bad("C: trusted-device sign-in still required 2FA");
+  if (b2.twoFactorRedirect) r.bad("C: trusted-device sign-in still required 2FA");
   else r.ok("C: trusted device skips 2FA");
 }
 
@@ -222,15 +216,11 @@ async function enroll(): Promise<{
     body: JSON.stringify({ email: u.email, password: u.pw }),
   });
   const b = await readJsonObject(si);
-  if (
-    dis.ok &&
-    !b.twoFactorRedirect &&
-    (await tokenAndSessionUsable(mergeCookies(si)))
-  ) {
+  if (dis.ok && !b.twoFactorRedirect && (await tokenAndSessionUsable(mergeCookies(si)))) {
     r.ok("D: disable 2FA -> sign-in not challenged");
   } else {
     r.bad(
-      `D: disable did not remove 2FA (disable ${dis.status}, redirect=${b.twoFactorRedirect === true ? "true" : "false"})`
+      `D: disable did not remove 2FA (disable ${dis.status}, redirect=${b.twoFactorRedirect === true ? "true" : "false"})`,
     );
   }
 }
@@ -257,8 +247,7 @@ async function enroll(): Promise<{
       body: JSON.stringify({ code: u.backup[0] }),
     });
     if (old.ok) r.bad("E: OLD backup code still works after regenerate");
-    else
-      r.ok(`E: regenerate invalidates old backup codes (HTTP ${old.status})`);
+    else r.ok(`E: regenerate invalidates old backup codes (HTTP ${old.status})`);
   }
 }
 

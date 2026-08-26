@@ -6,10 +6,7 @@ import {
   type StoredApiKeyCredential,
 } from "../machine";
 import { ApiAuthError } from "./errors";
-import type {
-  ApiAuthRequestHeaders,
-  ApiAuthRequestLike,
-} from "./resolveApiAuthContextFromRequest";
+import type { ApiAuthRequestHeaders, ApiAuthRequestLike } from "./resolveApiAuthContextFromRequest";
 
 export type StoredApiKeyCredentialWithIpAllowlist = StoredApiKeyCredential & {
   allowedIpRanges?: readonly string[] | null;
@@ -38,7 +35,7 @@ export type ResolveStoredApiKeyCredentialForRequestResult<
 export async function resolveStoredApiKeyCredentialForRequest<
   TApiKey extends StoredApiKeyCredentialWithIpAllowlist,
 >(
-  args: ResolveStoredApiKeyCredentialForRequestArgs<TApiKey>
+  args: ResolveStoredApiKeyCredentialForRequestArgs<TApiKey>,
 ): Promise<ResolveStoredApiKeyCredentialForRequestResult<TApiKey>> {
   const credential = await resolveStoredApiKeyCredential({
     findByKeyPrefix: args.findByKeyPrefix,
@@ -55,12 +52,10 @@ export async function resolveStoredApiKeyCredentialForRequest<
 
   if (!allowlist.ok) {
     throw new ApiAuthError(
-      allowlist.reason === "missing_ip"
-        ? "API_KEY_IP_MISSING"
-        : "API_KEY_IP_FORBIDDEN",
+      allowlist.reason === "missing_ip" ? "API_KEY_IP_MISSING" : "API_KEY_IP_FORBIDDEN",
       allowlist.reason === "missing_ip"
         ? "API key requires a request IP."
-        : "Request IP is not allowed for this API key."
+        : "Request IP is not allowed for this API key.",
     );
   }
 
@@ -72,20 +67,15 @@ export async function resolveStoredApiKeyCredentialForRequest<
 }
 
 function assertStoredApiKeyCredential<TApiKey extends StoredApiKeyCredential>(
-  credential: ResolveStoredApiKeyCredentialResult<TApiKey>
-): asserts credential is Extract<
-  ResolveStoredApiKeyCredentialResult<TApiKey>,
-  { ok: true }
-> {
+  credential: ResolveStoredApiKeyCredentialResult<TApiKey>,
+): asserts credential is Extract<ResolveStoredApiKeyCredentialResult<TApiKey>, { ok: true }> {
   if (credential.ok) {
     return;
   }
 
   throw new ApiAuthError(
     credential.reason === "expired" ? "API_KEY_EXPIRED" : "API_KEY_INVALID",
-    credential.reason === "expired"
-      ? "API key is expired."
-      : "API key is invalid."
+    credential.reason === "expired" ? "API key is expired." : "API key is invalid.",
   );
 }
 

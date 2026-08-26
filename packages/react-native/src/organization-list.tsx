@@ -108,9 +108,7 @@ function OrganizationListHeader(props: {
   return (
     <View style={[styles.header, props.styles.header]}>
       <Text style={[styles.title, props.styles.title]}>{props.copy.title}</Text>
-      <Text style={[styles.description, props.styles.description]}>
-        {props.copy.description}
-      </Text>
+      <Text style={[styles.description, props.styles.description]}>{props.copy.description}</Text>
     </View>
   );
 }
@@ -126,17 +124,12 @@ function CreateOrganizationAction(props: {
 
   return (
     <View>
-      <View
-        className="bg-border"
-        style={[styles.divider, props.styles.divider]}
-      />
+      <View className="bg-border" style={[styles.divider, props.styles.divider]} />
       <Pressable
         onPress={() => void props.onCreateOrganization?.()}
         style={[styles.primaryButton, props.styles.primaryButton]}
       >
-        <Text
-          style={[styles.primaryButtonText, props.styles.primaryButtonText]}
-        >
+        <Text style={[styles.primaryButtonText, props.styles.primaryButtonText]}>
           {props.copy.createLabel}
         </Text>
       </Pressable>
@@ -152,13 +145,9 @@ export function ConvexOrganizationList(props: ExpoOrgListProps) {
   return (
     <View style={[styles.root, s.root]}>
       <OrganizationListHeader copy={copy} styles={s} />
-      <Text style={[styles.sectionTitle, s.sectionTitle]}>
-        {copy.membershipsLabel}
-      </Text>
+      <Text style={[styles.sectionTitle, s.sectionTitle]}>{copy.membershipsLabel}</Text>
       {props.organizations.length === 0 ? (
-        <Text style={[styles.emptyState, s.emptyState]}>
-          {copy.noOrganizationsLabel}
-        </Text>
+        <Text style={[styles.emptyState, s.emptyState]}>{copy.noOrganizationsLabel}</Text>
       ) : (
         <FlatList
           data={props.organizations}
@@ -176,10 +165,7 @@ export function ConvexOrganizationList(props: ExpoOrgListProps) {
                 ]}
               >
                 {item.imageUrl !== undefined && item.imageUrl.length > 0 ? (
-                  <Image
-                    source={{ uri: item.imageUrl }}
-                    style={[styles.itemImage, s.itemImage]}
-                  />
+                  <Image source={{ uri: item.imageUrl }} style={[styles.itemImage, s.itemImage]} />
                 ) : (
                   <View style={[styles.itemPlaceholder, s.itemPlaceholder]} />
                 )}
@@ -191,9 +177,7 @@ export function ConvexOrganizationList(props: ExpoOrgListProps) {
                       {isCurrent ? ` · ${copy.currentLabel}` : ""}
                     </Text>
                   ) : isCurrent ? (
-                    <Text style={[styles.itemMeta, s.itemMeta]}>
-                      {copy.currentLabel}
-                    </Text>
+                    <Text style={[styles.itemMeta, s.itemMeta]}>{copy.currentLabel}</Text>
                   ) : null}
                 </View>
               </Pressable>
@@ -202,27 +186,16 @@ export function ConvexOrganizationList(props: ExpoOrgListProps) {
           scrollEnabled={false}
         />
       )}
-      {showInvites &&
-      props.invitations !== undefined &&
-      props.invitations.length > 0 ? (
+      {showInvites && props.invitations !== undefined && props.invitations.length > 0 ? (
         <View>
           <View className="bg-border" style={[styles.divider, s.divider]} />
-          <Text style={[styles.sectionTitle, s.sectionTitle]}>
-            {copy.invitationsLabel}
-          </Text>
+          <Text style={[styles.sectionTitle, s.sectionTitle]}>{copy.invitationsLabel}</Text>
           {props.invitations.map((inv) => (
-            <View
-              key={inv._id}
-              style={[styles.invitationItem, s.invitationItem]}
-            >
+            <View key={inv._id} style={[styles.invitationItem, s.invitationItem]}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.itemName, s.itemName]}>
-                  {inv.organizationName}
-                </Text>
+                <Text style={[styles.itemName, s.itemName]}>{inv.organizationName}</Text>
                 {inv.roleKey !== undefined ? (
-                  <Text style={[styles.itemMeta, s.itemMeta]}>
-                    {inv.roleKey}
-                  </Text>
+                  <Text style={[styles.itemMeta, s.itemMeta]}>{inv.roleKey}</Text>
                 ) : null}
               </View>
               {props.onAcceptInvitation !== undefined ? (
@@ -240,9 +213,7 @@ export function ConvexOrganizationList(props: ExpoOrgListProps) {
                   onPress={() => void props.onRejectInvitation?.(inv._id)}
                   style={[styles.secondaryButton, s.secondaryButton]}
                 >
-                  <Text
-                    style={[styles.secondaryButtonText, s.secondaryButtonText]}
-                  >
+                  <Text style={[styles.secondaryButtonText, s.secondaryButtonText]}>
                     {copy.rejectLabel}
                   </Text>
                 </Pressable>

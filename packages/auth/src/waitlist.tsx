@@ -9,9 +9,7 @@ export type WaitlistJoinInput = {
   honeypot?: string;
 };
 
-export async function joinWaitlist(
-  input: WaitlistJoinInput
-): Promise<WaitlistJoinResult> {
+export async function joinWaitlist(input: WaitlistJoinInput): Promise<WaitlistJoinResult> {
   const response = await fetch(input.endpoint, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -26,14 +24,8 @@ export async function joinWaitlist(
   return { ok: true };
 }
 
-export function useWaitlist(options: {
-  endpoint: string;
-  product: string;
-  source?: string;
-}) {
-  const [status, setStatus] = useState<
-    "idle" | "submitting" | "submitted" | "error"
-  >("idle");
+export function useWaitlist(options: { endpoint: string; product: string; source?: string }) {
+  const [status, setStatus] = useState<"idle" | "submitting" | "submitted" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   async function join(email: string, honeypot?: string): Promise<void> {
     setStatus("submitting");
@@ -42,11 +34,7 @@ export function useWaitlist(options: {
       await joinWaitlist({ ...options, email, honeypot });
       setStatus("submitted");
     } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "Unable to join waitlist right now"
-      );
+      setError(caught instanceof Error ? caught.message : "Unable to join waitlist right now");
       setStatus("error");
     }
   }
@@ -95,10 +83,7 @@ export function Waitlist(props: {
         {props.buttonLabel ?? "Join waitlist"}
       </button>
       {waitlist.status === "submitted" ? (
-        <p>
-          {props.successMessage ??
-            "You're on the list. Check your email for confirmation."}
-        </p>
+        <p>{props.successMessage ?? "You're on the list. Check your email for confirmation."}</p>
       ) : null}
       {waitlist.error ? <p role="alert">{waitlist.error}</p> : null}
     </form>

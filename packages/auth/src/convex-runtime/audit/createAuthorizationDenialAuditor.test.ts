@@ -40,7 +40,7 @@ function deniedError(
     permission: string;
     message: string;
     actorUserId: string;
-  }> = {}
+  }> = {},
 ): { data: Record<string, unknown> } {
   return {
     data: {
@@ -102,7 +102,7 @@ describe("createAuthorizationDenialAuditor — drift-proof emission", () => {
         permission: "reports:read",
         error,
         viewer,
-      })
+      }),
     );
 
     assert.equal(emitted.length, 2);
@@ -151,13 +151,8 @@ describe("createAuthorizationDenialAuditor — drift-proof emission", () => {
 
   it("threads deriveContext with the resolved viewer, ctx, and error", async () => {
     const emitted: AuthorizationDenialAuditEvent<TestContext>[] = [];
-    const seen: { viewer: TestViewer | null; ctx: TestCtx; error: unknown }[] =
-      [];
-    const auditor = createAuthorizationDenialAuditor<
-      TestViewer,
-      TestCtx,
-      TestContext
-    >({
+    const seen: { viewer: TestViewer | null; ctx: TestCtx; error: unknown }[] = [];
+    const auditor = createAuthorizationDenialAuditor<TestViewer, TestCtx, TestContext>({
       emit: (event) => {
         emitted.push(event);
       },
@@ -189,16 +184,13 @@ describe("createAuthorizationDenialAuditor — drift-proof emission", () => {
     assert.equal(derivedContextCall.viewer, viewer);
     assert.equal(derivedContextCall.ctx, ctx);
     assert.equal(derivedContextCall.error, error);
-    assert.deepEqual(
-      only(emitted, "authorization denial event is missing").context,
-      {
-        userId: "user-9",
-        organizationId: "org-9",
-        hasIdentity: true,
-        hasLocalUser: true,
-        hasActiveOrganization: true,
-      }
-    );
+    assert.deepEqual(only(emitted, "authorization denial event is missing").context, {
+      userId: "user-9",
+      organizationId: "org-9",
+      hasIdentity: true,
+      hasLocalUser: true,
+      hasActiveOrganization: true,
+    });
   });
 
   it("passes viewer:null to deriveContext when resolution failed (no viewer)", async () => {
@@ -213,16 +205,13 @@ describe("createAuthorizationDenialAuditor — drift-proof emission", () => {
       viewer: undefined,
     });
 
-    assert.deepEqual(
-      only(emitted, "authorization denial event is missing").context,
-      {
-        userId: null,
-        organizationId: null,
-        hasIdentity: false,
-        hasLocalUser: false,
-        hasActiveOrganization: false,
-      }
-    );
+    assert.deepEqual(only(emitted, "authorization denial event is missing").context, {
+      userId: null,
+      organizationId: null,
+      hasIdentity: false,
+      hasLocalUser: false,
+      hasActiveOrganization: false,
+    });
   });
 
   it("auditAndRethrow re-throws the ORIGINAL error after emitting", async () => {
@@ -240,7 +229,7 @@ describe("createAuthorizationDenialAuditor — drift-proof emission", () => {
       (thrown: unknown) => {
         assert.equal(thrown, error, "must re-throw the same error instance");
         return true;
-      }
+      },
     );
     assert.equal(emitted.length, 1, "must emit exactly once before throwing");
   });
@@ -255,12 +244,11 @@ describe("createAuthorizationDenialAuditor — drift-proof emission", () => {
     });
 
     await assert.rejects(
-      () =>
-        auditor.auditAndRethrow(ctx, { error: deniedError(), viewer: null }),
+      () => auditor.auditAndRethrow(ctx, { error: deniedError(), viewer: null }),
       () => {
         order.push("threw");
         return true;
-      }
+      },
     );
     assert.deepEqual(order, ["emitted", "threw"]);
   });

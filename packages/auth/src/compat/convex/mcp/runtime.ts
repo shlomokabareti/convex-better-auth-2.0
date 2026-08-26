@@ -65,10 +65,7 @@ export type McpOAuthTokenRequestArgs<TClient extends McpOAuthClient> = {
     code: string;
     clientId: string;
     redirectUri: string;
-  }) =>
-    | Promise<McpOAuthAuthorizationCodeRecord | null>
-    | McpOAuthAuthorizationCodeRecord
-    | null;
+  }) => Promise<McpOAuthAuthorizationCodeRecord | null> | McpOAuthAuthorizationCodeRecord | null;
   redeemRefreshToken: (input: {
     client: TClient;
     refreshGrant: McpOAuthRefreshTokenGrantSuccess<TClient>;
@@ -113,9 +110,7 @@ export type McpOAuthTokenRequestArgs<TClient extends McpOAuthClient> = {
       assertion: string;
       assertionType: string;
       clientId: string;
-    }) =>
-      | Promise<McpOAuthClientAssertionResult>
-      | McpOAuthClientAssertionResult;
+    }) => Promise<McpOAuthClientAssertionResult> | McpOAuthClientAssertionResult;
     /** Resolve which tenant and audience this machine client acts for. */
     resolveGrantTarget: (input: {
       client: TClient;
@@ -153,7 +148,7 @@ export type McpOAuthTokenRequestArgs<TClient extends McpOAuthClient> = {
 
 export type McpOAuthAccessRuntime = {
   resolveIdentityForSession: (
-    session: McpOAuthResolvedSession
+    session: McpOAuthResolvedSession,
   ) => Promise<McpOAuthResolvedIdentity | null>;
   authorize: (input: {
     identity: McpOAuthResolvedIdentity;
@@ -184,16 +179,11 @@ export type McpOAuthAuthorizeAccessResult =
 
 export type CreateMcpOAuthAccessRuntimeArgs = {
   resolveIdentityForUser: (
-    betterAuthUserId: string
-  ) =>
-    | Promise<McpOAuthResolvedIdentity | null>
-    | McpOAuthResolvedIdentity
-    | null;
+    betterAuthUserId: string,
+  ) => Promise<McpOAuthResolvedIdentity | null> | McpOAuthResolvedIdentity | null;
   getAccessibleOrganizations: (
-    userId: string
-  ) =>
-    | Promise<McpOAuthAccessibleOrganizations>
-    | McpOAuthAccessibleOrganizations;
+    userId: string,
+  ) => Promise<McpOAuthAccessibleOrganizations> | McpOAuthAccessibleOrganizations;
   getOrganizationAccess: (input: {
     userId: string;
     requestedOrganizationId: string | null;
@@ -219,10 +209,8 @@ export async function authorizeMcpOAuthAccessRequest(args: {
   requestedOrganizationId: string | null;
   requestedScopes: readonly string[];
   getAccessibleOrganizations: (
-    userId: string
-  ) =>
-    | Promise<McpOAuthAccessibleOrganizations>
-    | McpOAuthAccessibleOrganizations;
+    userId: string,
+  ) => Promise<McpOAuthAccessibleOrganizations> | McpOAuthAccessibleOrganizations;
   getOrganizationAccess: (input: {
     userId: string;
     requestedOrganizationId: string | null;
@@ -235,9 +223,7 @@ export async function authorizeMcpOAuthAccessRequest(args: {
   }) => McpOAuthErrorBody | null;
   requireAccessibleOrganization: (organizationId: string | null) => string;
 }): Promise<McpOAuthAuthorizeAccessResult> {
-  const accessibleOrganizations = await args.getAccessibleOrganizations(
-    args.userId
-  );
+  const accessibleOrganizations = await args.getAccessibleOrganizations(args.userId);
   if (
     args.requestedOrganizationId === null &&
     accessibleOrganizations.organizationIds.length !== 1
@@ -247,8 +233,7 @@ export async function authorizeMcpOAuthAccessRequest(args: {
       status: 400,
       body: {
         error: "invalid_request",
-        error_description:
-          "organization_id is required for multi-organization users",
+        error_description: "organization_id is required for multi-organization users",
       },
     };
   }
@@ -286,9 +271,7 @@ export async function authorizeMcpOAuthAccessRequest(args: {
 
   return {
     ok: true,
-    organizationId: args.requireAccessibleOrganization(
-      organizationAccess.organizationId
-    ),
+    organizationId: args.requireAccessibleOrganization(organizationAccess.organizationId),
     scopes: allowedScopes,
   };
 }
@@ -302,10 +285,7 @@ function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
-function toInvalidRequestResponse(
-  error: unknown,
-  fallbackMessage: string
-): Response {
+function toInvalidRequestResponse(error: unknown, fallbackMessage: string): Response {
   return jsonResponse(400, {
     error: "invalid_request",
     error_description: error instanceof Error ? error.message : fallbackMessage,
@@ -318,14 +298,11 @@ function isOAuthErrorBody(value: unknown): value is McpOAuthErrorBody {
     value !== null &&
     "error" in value &&
     typeof value.error === "string" &&
-    (!("error_description" in value) ||
-      typeof value.error_description === "string")
+    (!("error_description" in value) || typeof value.error_description === "string")
   );
 }
 
-function isHttpFailure(
-  value: object | McpOAuthHttpFailure
-): value is McpOAuthHttpFailure {
+function isHttpFailure(value: object | McpOAuthHttpFailure): value is McpOAuthHttpFailure {
   return "status" in value && "body" in value;
 }
 
@@ -336,11 +313,8 @@ export async function signAuthorizedMcpOAuthAccessToken(args: {
   scopes: readonly string[];
   audience: string;
   resolveIdentityForUser: (
-    betterAuthUserId: string
-  ) =>
-    | Promise<McpOAuthResolvedIdentity | null>
-    | McpOAuthResolvedIdentity
-    | null;
+    betterAuthUserId: string,
+  ) => Promise<McpOAuthResolvedIdentity | null> | McpOAuthResolvedIdentity | null;
   authorize: (input: {
     identity: McpOAuthResolvedIdentity;
     betterAuthUserId: string;
@@ -389,7 +363,7 @@ export async function signAuthorizedMcpOAuthAccessToken(args: {
 }
 
 export function createMcpOAuthAccessRuntime(
-  args: CreateMcpOAuthAccessRuntimeArgs
+  args: CreateMcpOAuthAccessRuntimeArgs,
 ): McpOAuthAccessRuntime {
   return {
     resolveIdentityForSession: async (session) =>
@@ -405,13 +379,7 @@ export function createMcpOAuthAccessRuntime(
         validateScopes: args.validateScopes,
         requireAccessibleOrganization: args.requireAccessibleOrganization,
       }),
-    signAccessToken: async ({
-      betterAuthUserId,
-      clientId,
-      organizationId,
-      scopes,
-      audience,
-    }) =>
+    signAccessToken: async ({ betterAuthUserId, clientId, organizationId, scopes, audience }) =>
       await signAuthorizedMcpOAuthAccessToken({
         betterAuthUserId,
         clientId,
@@ -419,11 +387,7 @@ export function createMcpOAuthAccessRuntime(
         scopes,
         audience,
         resolveIdentityForUser: args.resolveIdentityForUser,
-        authorize: async ({
-          identity,
-          requestedOrganizationId,
-          requestedScopes,
-        }) =>
+        authorize: async ({ identity, requestedOrganizationId, requestedScopes }) =>
           await authorizeMcpOAuthAccessRequest({
             userId: identity.userId,
             requestedOrganizationId,
@@ -439,9 +403,7 @@ export function createMcpOAuthAccessRuntime(
   };
 }
 
-export function getMcpOAuthSessionTokenFromRequest(
-  request: Request
-): string | null {
+export function getMcpOAuthSessionTokenFromRequest(request: Request): string | null {
   const signedCookie =
     getSessionCookie(request.headers) ??
     getSessionCookie(request.headers, {
@@ -454,14 +416,10 @@ export function getMcpOAuthSessionTokenFromRequest(
   }
 
   const separatorIndex = signedCookie.indexOf(".");
-  return separatorIndex === -1
-    ? signedCookie
-    : signedCookie.slice(0, separatorIndex);
+  return separatorIndex === -1 ? signedCookie : signedCookie.slice(0, separatorIndex);
 }
 
-export async function handleMcpOAuthAuthorizeRequest<
-  TClient extends McpOAuthClient,
->(args: {
+export async function handleMcpOAuthAuthorizeRequest<TClient extends McpOAuthClient>(args: {
   request: Request;
   defaultAudience: string;
   defaultResourceId: string;
@@ -470,14 +428,11 @@ export async function handleMcpOAuthAuthorizeRequest<
   requireAllowedRedirectUri: (client: TClient, redirectUri: string) => void;
   resolveRequestedScopes: (scope: string) => readonly string[];
   resolveSessionFromToken: (
-    sessionToken: string
+    sessionToken: string,
   ) => Promise<McpOAuthResolvedSession | null> | McpOAuthResolvedSession | null;
   resolveIdentityForSession: (
-    session: McpOAuthResolvedSession
-  ) =>
-    | Promise<McpOAuthResolvedIdentity | null>
-    | McpOAuthResolvedIdentity
-    | null;
+    session: McpOAuthResolvedSession,
+  ) => Promise<McpOAuthResolvedIdentity | null> | McpOAuthResolvedIdentity | null;
   authorize: (input: {
     identity: McpOAuthResolvedIdentity;
     betterAuthUserId: string;
@@ -517,10 +472,7 @@ export async function handleMcpOAuthAuthorizeRequest<
 
   args.requireAllowedRedirectUri(client, params.redirectUri);
   const requestedScopes = args.resolveRequestedScopes(params.scope);
-  const disallowedScope = findMcpOAuthClientDisallowedScope(
-    client,
-    requestedScopes
-  );
+  const disallowedScope = findMcpOAuthClientDisallowedScope(client, requestedScopes);
   if (disallowedScope !== null) {
     return jsonResponse(400, {
       error: "invalid_scope",
@@ -581,10 +533,7 @@ export async function handleMcpOAuthAuthorizeRequest<
     audience: params.audience,
     resourceId: params.resourceId,
     expiresAt:
-      Date.now() +
-      (params.expiresInMs ??
-        args.authorizationCodeExpiresInMs ??
-        5 * 60 * 1000),
+      Date.now() + (params.expiresInMs ?? args.authorizationCodeExpiresInMs ?? 5 * 60 * 1000),
   });
 
   const redirect = new URL(params.redirectUri);
@@ -603,21 +552,16 @@ export async function handleMcpOAuthClientRegistrationRequest(args: {
   request: Request;
   supportedScopes: readonly string[];
   createDynamicClient: (
-    input: McpOAuthDynamicClientRegistrationInput
+    input: McpOAuthDynamicClientRegistrationInput,
   ) =>
-    | Promise<
-        McpOAuthDynamicClientRegistrationResult & { clientIdIssuedAt: number }
-      >
+    | Promise<McpOAuthDynamicClientRegistrationResult & { clientIdIssuedAt: number }>
     | (McpOAuthDynamicClientRegistrationResult & { clientIdIssuedAt: number });
 }): Promise<Response> {
   const body = (await args.request.json()) as unknown;
   const registration = parseMcpOAuthDynamicClientRegistrationRequest(body);
-  const validationError = validateMcpOAuthDynamicClientRegistrationInput(
-    registration,
-    {
-      supportedScopes: args.supportedScopes,
-    }
-  );
+  const validationError = validateMcpOAuthDynamicClientRegistrationInput(registration, {
+    supportedScopes: args.supportedScopes,
+  });
   if (validationError !== null) {
     return jsonResponse(400, validationError);
   }
@@ -625,16 +569,13 @@ export async function handleMcpOAuthClientRegistrationRequest(args: {
   const created = await args.createDynamicClient(registration);
   return jsonResponse(
     201,
-    buildMcpOAuthDynamicClientRegistrationResponse(
-      created,
-      created.clientIdIssuedAt
-    )
+    buildMcpOAuthDynamicClientRegistrationResponse(created, created.clientIdIssuedAt),
   );
 }
 
-export async function handleMcpOAuthTokenRequest<
-  TClient extends McpOAuthClient,
->(args: McpOAuthTokenRequestArgs<TClient>): Promise<Response> {
+export async function handleMcpOAuthTokenRequest<TClient extends McpOAuthClient>(
+  args: McpOAuthTokenRequestArgs<TClient>,
+): Promise<Response> {
   // Machine grant first: it is the only one with no user, so it must not fall
   // through to a path that assumes one.
   if (args.clientCredentials !== undefined) {
@@ -672,11 +613,9 @@ export async function handleMcpOAuthTokenRequest<
   return await handleMcpOAuthAuthorizationCodeExchange(args);
 }
 
-async function handleMcpOAuthClientCredentialsExchange<
-  TClient extends McpOAuthClient,
->(
+async function handleMcpOAuthClientCredentialsExchange<TClient extends McpOAuthClient>(
   args: McpOAuthTokenRequestArgs<TClient>,
-  grant: McpOAuthClientCredentialsTokenExchangeSuccess<TClient>
+  grant: McpOAuthClientCredentialsTokenExchangeSuccess<TClient>,
 ): Promise<Response> {
   const clientCredentials = args.clientCredentials;
   if (clientCredentials === undefined) {
@@ -712,11 +651,9 @@ async function handleMcpOAuthClientCredentialsExchange<
   });
 }
 
-async function handleMcpOAuthRefreshTokenExchange<
-  TClient extends McpOAuthClient,
->(
+async function handleMcpOAuthRefreshTokenExchange<TClient extends McpOAuthClient>(
   args: McpOAuthTokenRequestArgs<TClient>,
-  refreshGrant: McpOAuthRefreshTokenGrantSuccess<TClient>
+  refreshGrant: McpOAuthRefreshTokenGrantSuccess<TClient>,
 ): Promise<Response> {
   const redeemed = await args.redeemRefreshToken({
     client: refreshGrant.client,
@@ -745,13 +682,13 @@ async function handleMcpOAuthRefreshTokenExchange<
       tokenType: token.tokenType,
       expiresIn: token.expiresIn,
       scope: token.scope,
-    })
+    }),
   );
 }
 
-async function handleMcpOAuthAuthorizationCodeExchange<
-  TClient extends McpOAuthClient,
->(args: McpOAuthTokenRequestArgs<TClient>): Promise<Response> {
+async function handleMcpOAuthAuthorizationCodeExchange<TClient extends McpOAuthClient>(
+  args: McpOAuthTokenRequestArgs<TClient>,
+): Promise<Response> {
   const exchange = await validateMcpOAuthAuthorizationCodeTokenExchange({
     request: args.request,
     resolveClient: args.resolveClient,
@@ -792,25 +729,17 @@ async function handleMcpOAuthAuthorizationCodeExchange<
       tokenType: token.tokenType,
       expiresIn: token.expiresIn,
       scope: token.scope,
-    })
+    }),
   );
 }
 
-export function createMcpOAuthHttpHandlers<
-  TClient extends McpOAuthClient,
->(args: {
-  authorize: Omit<
-    Parameters<typeof handleMcpOAuthAuthorizeRequest<TClient>>[0],
-    "request"
-  >;
+export function createMcpOAuthHttpHandlers<TClient extends McpOAuthClient>(args: {
+  authorize: Omit<Parameters<typeof handleMcpOAuthAuthorizeRequest<TClient>>[0], "request">;
   clientRegistration: Omit<
     Parameters<typeof handleMcpOAuthClientRegistrationRequest>[0],
     "request"
   >;
-  token: Omit<
-    Parameters<typeof handleMcpOAuthTokenRequest<TClient>>[0],
-    "request"
-  >;
+  token: Omit<Parameters<typeof handleMcpOAuthTokenRequest<TClient>>[0], "request">;
 }): McpOAuthHttpHandlers {
   return {
     handleAuthorizeRequest: async (request) => {

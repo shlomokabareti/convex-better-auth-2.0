@@ -2,7 +2,7 @@ import type { NormalizedAuthIdentity } from "../coreTypes";
 import type { AuthIdentityRecord } from "./types";
 
 export function identityRecordToNormalizedIdentity(
-  record: AuthIdentityRecord
+  record: AuthIdentityRecord,
 ): NormalizedAuthIdentity {
   return {
     provider: record.provider,

@@ -1,12 +1,6 @@
 import assert from "node:assert/strict";
 
-import {
-  exportJWK,
-  generateKeyPair,
-  SignJWT,
-  type JWK,
-  type JWTPayload,
-} from "jose";
+import { exportJWK, generateKeyPair, SignJWT, type JWK, type JWTPayload } from "jose";
 import { describe, it } from "vitest";
 
 import {
@@ -70,7 +64,7 @@ async function importRsaSigningKey(privateJwk: JWK): Promise<CryptoKey> {
       hash: "SHA-256",
     },
     false,
-    ["sign"]
+    ["sign"],
   );
 }
 
@@ -93,11 +87,7 @@ function encodeJwtPart(value: Record<string, unknown>): string {
   return Buffer.from(JSON.stringify(value)).toString("base64url");
 }
 
-function createUnsignedJwt(args: {
-  issuer: string;
-  audience: string;
-  subject: string;
-}): string {
+function createUnsignedJwt(args: { issuer: string; audience: string; subject: string }): string {
   return [
     encodeJwtPart({ alg: "none", typ: "JWT" }),
     encodeJwtPart({
@@ -189,8 +179,8 @@ describe("createBetterAuthApiTokenVerifier", () => {
             hash: "SHA-256",
           },
           false,
-          ["sign"]
-        )
+          ["sign"],
+        ),
       );
 
     const verifiedToken = await verifier.verifyUserBearerToken(token);
@@ -211,7 +201,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
         issuer,
         jwks: `data:text/plain;charset=utf-8;base64,${Buffer.from(JSON.stringify(jwks)).toString("base64")}`,
       },
-      { audience }
+      { audience },
     );
 
     const token = await signToken({
@@ -230,8 +220,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
 
   describe("JWT tampering rejection", () => {
     it("accepts a correctly signed in-audience, in-issuer, unexpired token", async () => {
-      const { audience, issuer, privateJwk, verifier } =
-        await createVerifierFixture();
+      const { audience, issuer, privateJwk, verifier } = await createVerifierFixture();
       const token = await signToken({
         privateJwk,
         issuer,
@@ -257,9 +246,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
       ];
 
       await Promise.all(
-        brokenTokens.map((token) =>
-          assert.rejects(() => verifier.verifyUserBearerToken(token))
-        )
+        brokenTokens.map((token) => assert.rejects(() => verifier.verifyUserBearerToken(token))),
       );
     });
 
@@ -275,8 +262,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
     });
 
     it("rejects tokens with a tampered signature", async () => {
-      const { audience, issuer, privateJwk, verifier } =
-        await createVerifierFixture();
+      const { audience, issuer, privateJwk, verifier } = await createVerifierFixture();
       const token = await signToken({
         privateJwk,
         issuer,
@@ -284,9 +270,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
         subject: "user_123",
       });
 
-      await assert.rejects(() =>
-        verifier.verifyUserBearerToken(tamperSignature(token))
-      );
+      await assert.rejects(() => verifier.verifyUserBearerToken(tamperSignature(token)));
     });
 
     it("rejects tokens with the wrong audience", async () => {
@@ -314,8 +298,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
     });
 
     it("rejects expired tokens", async () => {
-      const { audience, issuer, privateJwk, verifier } =
-        await createVerifierFixture();
+      const { audience, issuer, privateJwk, verifier } = await createVerifierFixture();
       const token = await signToken({
         privateJwk,
         issuer,
@@ -328,8 +311,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
     });
 
     it("rejects not-yet-valid tokens", async () => {
-      const { audience, issuer, privateJwk, verifier } =
-        await createVerifierFixture();
+      const { audience, issuer, privateJwk, verifier } = await createVerifierFixture();
       const token = await signToken({
         privateJwk,
         issuer,
@@ -342,8 +324,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
     });
 
     it("rejects spoofed domain-truth claims when the canonical subject is absent", async () => {
-      const { audience, issuer, privateJwk, verifier } =
-        await createVerifierFixture();
+      const { audience, issuer, privateJwk, verifier } = await createVerifierFixture();
       const token = await signToken({
         privateJwk,
         issuer,
@@ -357,37 +338,34 @@ describe("createBetterAuthApiTokenVerifier", () => {
         },
       });
 
-      await assert.rejects(
-        () => verifier.verifyUserBearerToken(token),
-        /missing subject/
-      );
+      await assert.rejects(() => verifier.verifyUserBearerToken(token), /missing subject/);
     });
   });
 
   it("requires audience (rejects cross-service token confusion)", () => {
     const inlineJwks = `data:text/plain;charset=utf-8;base64,${Buffer.from(
-      JSON.stringify({ keys: [] })
+      JSON.stringify({ keys: [] }),
     ).toString("base64")}`;
     const missingAudienceOptions = Object.defineProperty(
       { audience: "runtime-placeholder" },
       "audience",
-      { value: undefined }
+      { value: undefined },
     );
     assert.throws(
       () =>
         createBetterAuthApiTokenVerifierFromConvexAuthConfig(
           { issuer: "https://auth.example.com", jwks: inlineJwks },
-          missingAudienceOptions
+          missingAudienceOptions,
         ),
-      /audience` is required/
+      /audience` is required/,
     );
     assert.throws(
       () =>
         createBetterAuthApiTokenVerifierFromConvexAuthConfig(
           { issuer: "https://auth.example.com", jwks: inlineJwks },
-          { audience: "" }
+          { audience: "" },
         ),
-      /audience` is required/
+      /audience` is required/,
     );
   });
 
@@ -400,7 +378,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
           audience: "api",
           jwksUrl: "http://example.com/jwks",
         }),
-      /must use https/
+      /must use https/,
     );
     assert.throws(
       () =>
@@ -409,7 +387,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
           audience: "api",
           jwksUrl: "https://169.254.169.254/jwks",
         }),
-      /not deliverable/
+      /not deliverable/,
     );
     assert.throws(
       () =>
@@ -418,7 +396,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
           audience: "api",
           jwksUrl: "https://localhost/jwks",
         }),
-      /not deliverable/
+      /not deliverable/,
     );
     // A public https endpoint constructs fine (no fetch until first verify).
     assert.doesNotThrow(() =>
@@ -426,7 +404,7 @@ describe("createBetterAuthApiTokenVerifier", () => {
         issuer,
         audience: "api",
         jwksUrl: "https://auth.example.com/.well-known/jwks.json",
-      })
+      }),
     );
   });
 });

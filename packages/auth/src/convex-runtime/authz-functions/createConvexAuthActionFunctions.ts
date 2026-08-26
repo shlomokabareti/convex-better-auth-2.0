@@ -84,20 +84,19 @@ export type CreateConvexAuthActionFunctionsOptions<
    * caller → the gate throws `AUTHENTICATION_REQUIRED`.
    */
   resolveAuthSnapshot: (
-    ctx: GenericActionCtx<DataModel>
+    ctx: GenericActionCtx<DataModel>,
   ) => Promise<ActionAuthSnapshot<TRole> | null>;
   /** Same baked denial observer as the query/mutation factory (see createConvexAuthFunctions). */
   onAuthorizationDenied?: (
     ctx: GenericActionCtx<DataModel>,
-    args: { permission?: string; error: unknown; viewer?: ActionViewer<TRole> }
+    args: { permission?: string; error: unknown; viewer?: ActionViewer<TRole> },
   ) => Promise<void> | void;
 };
 
 function buildActionViewer<TRole extends string>(
-  snapshot: ActionAuthSnapshot<TRole>
+  snapshot: ActionAuthSnapshot<TRole>,
 ): ActionViewer<TRole> {
-  const has = (permission: string): boolean =>
-    hasPermission(snapshot.permissions, permission);
+  const has = (permission: string): boolean => hasPermission(snapshot.permissions, permission);
   return {
     userId: snapshot.userId,
     organizationId: snapshot.organizationId,
@@ -109,11 +108,7 @@ function buildActionViewer<TRole extends string>(
     hasAllPermissions: (permissions) => permissions.every(has),
     requirePermission: (permission) => {
       if (!has(permission)) {
-        throwAuthError(
-          "FORBIDDEN",
-          "PERMISSION_REQUIRED",
-          `Permission required: ${permission}`
-        );
+        throwAuthError("FORBIDDEN", "PERMISSION_REQUIRED", `Permission required: ${permission}`);
       }
     },
     requireRole: (...roleKeys) => {
@@ -121,7 +116,7 @@ function buildActionViewer<TRole extends string>(
         throwAuthError(
           "FORBIDDEN",
           "PERMISSION_REQUIRED",
-          `Role required: one of [${roleKeys.join(", ")}]`
+          `Role required: one of [${roleKeys.join(", ")}]`,
         );
       }
     },
@@ -139,17 +134,13 @@ export function createConvexAuthActionFunctions<
   const guard = async (
     ctx: GenericActionCtx<DataModel>,
     check?: (viewer: ActionViewer<TRole>) => void,
-    label?: string
+    label?: string,
   ): Promise<ActionViewer<TRole>> => {
     let resolved: ActionViewer<TRole> | undefined;
     try {
       const snapshot = await opts.resolveAuthSnapshot(ctx);
       if (snapshot === null) {
-        throwAuthError(
-          "UNAUTHORIZED",
-          "AUTHENTICATION_REQUIRED",
-          "Authentication required"
-        );
+        throwAuthError("UNAUTHORIZED", "AUTHENTICATION_REQUIRED", "Authentication required");
       }
       const viewer = buildActionViewer(snapshot);
       resolved = viewer;
@@ -165,16 +156,11 @@ export function createConvexAuthActionFunctions<
     }
   };
 
-  const gate = (
-    check?: (viewer: ActionViewer<TRole>) => void,
-    label?: string
-  ) =>
+  const gate = (check?: (viewer: ActionViewer<TRole>) => void, label?: string) =>
     customCtx(
-      async (
-        ctx: GenericActionCtx<DataModel>
-      ): Promise<{ viewer: ActionViewer<TRole> }> => ({
+      async (ctx: GenericActionCtx<DataModel>): Promise<{ viewer: ActionViewer<TRole> }> => ({
         viewer: await guard(ctx, check, label),
-      })
+      }),
     );
 
   return {
@@ -182,18 +168,16 @@ export function createConvexAuthActionFunctions<
     permissionAction: (permission: string) =>
       customAction(
         opts.action,
-        gate((viewer) => viewer.requirePermission(permission), permission)
+        gate((viewer) => viewer.requirePermission(permission), permission),
       ),
     permissionAnyAction: (permissions: readonly string[]) =>
       customAction(
         opts.action,
         gate((viewer) => {
-          if (
-            !permissions.some((permission) => viewer.hasPermission(permission))
-          ) {
+          if (!permissions.some((permission) => viewer.hasPermission(permission))) {
             viewer.requirePermission(permissions[0] ?? "");
           }
-        }, permissions.join(" OR "))
+        }, permissions.join(" OR ")),
       ),
     permissionAllAction: (permissions: readonly string[]) =>
       customAction(
@@ -202,15 +186,12 @@ export function createConvexAuthActionFunctions<
           for (const permission of permissions) {
             viewer.requirePermission(permission);
           }
-        }, permissions.join(" AND "))
+        }, permissions.join(" AND ")),
       ),
     roleAction: (...roleKeys: string[]) =>
       customAction(
         opts.action,
-        gate(
-          (viewer) => viewer.requireRole(...roleKeys),
-          `role:[${roleKeys.join(",")}]`
-        )
+        gate((viewer) => viewer.requireRole(...roleKeys), `role:[${roleKeys.join(",")}]`),
       ),
   };
 }

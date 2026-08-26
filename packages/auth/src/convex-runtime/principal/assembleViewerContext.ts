@@ -1,9 +1,6 @@
 import { hasPermission } from "../../compat/permissions";
 
-import {
-  resolveConvexUserContext,
-  type ConvexUserIdentity,
-} from "./resolveConvexUserContext";
+import { resolveConvexUserContext, type ConvexUserIdentity } from "./resolveConvexUserContext";
 
 export type ResolvedViewerAccess<
   TOrganizationId extends string | null = string | null,
@@ -63,14 +60,8 @@ export function assembleViewerContext<
     TUser,
     TOrganizationId,
     TMembershipId
-  >
-): AssembledViewerContext<
-  TIdentity,
-  TLocalIdentity,
-  TUser,
-  TOrganizationId,
-  TMembershipId
-> {
+  >,
+): AssembledViewerContext<TIdentity, TLocalIdentity, TUser, TOrganizationId, TMembershipId> {
   const sessionId = sessionIdFromConvexIdentity(input.identity);
 
   return {
@@ -96,14 +87,11 @@ export function assembleViewerContext<
     membershipIds: input.access.membershipIds,
     roleKeys: input.access.roleKeys,
     permissions: input.access.permissions,
-    hasPermission: (permission: string) =>
-      hasPermission(input.access.permissions, permission),
+    hasPermission: (permission: string) => hasPermission(input.access.permissions, permission),
   };
 }
 
-export function sessionIdFromConvexIdentity(
-  identity: ConvexUserIdentity
-): string | null {
+export function sessionIdFromConvexIdentity(identity: ConvexUserIdentity): string | null {
   return typeof identity.sessionId === "string"
     ? identity.sessionId
     : typeof identity.sid === "string"

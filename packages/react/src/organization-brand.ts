@@ -47,9 +47,7 @@ function parseBrandObject(value: unknown): ConvexOrganizationBrand | undefined {
     ...(optionalString(value.accentColor)
       ? { accentColor: optionalString(value.accentColor) }
       : {}),
-    ...(optionalString(value.website)
-      ? { website: optionalString(value.website) }
-      : {}),
+    ...(optionalString(value.website) ? { website: optionalString(value.website) } : {}),
     ...(optionalString(value.emailFromName)
       ? { emailFromName: optionalString(value.emailFromName) }
       : {}),
@@ -64,7 +62,7 @@ function parseBrandObject(value: unknown): ConvexOrganizationBrand | undefined {
  * Read suite brand fields from organization `metadataJson`.
  */
 export function parseOrganizationBrandFromMetadataJson(
-  metadataJson: string | null | undefined
+  metadataJson: string | null | undefined,
 ): ConvexOrganizationBrand | undefined {
   if (!metadataJson || metadataJson.trim() === "") {
     return undefined;
@@ -86,16 +84,10 @@ export type ConvexOrganizationBrandUpdate = {
 
 function applyBrandUpdate(
   current: ConvexOrganizationBrand | undefined,
-  update: ConvexOrganizationBrandUpdate
+  update: ConvexOrganizationBrandUpdate,
 ): ConvexOrganizationBrand | undefined {
   const next: ConvexOrganizationBrand = { ...current };
-  const keys = [
-    "primaryColor",
-    "accentColor",
-    "website",
-    "emailFromName",
-    "emailReplyTo",
-  ] as const;
+  const keys = ["primaryColor", "accentColor", "website", "emailFromName", "emailReplyTo"] as const;
 
   for (const key of keys) {
     if (!(key in update)) {
@@ -119,7 +111,7 @@ function applyBrandUpdate(
  */
 export function mergeOrganizationBrandIntoMetadataJson(
   metadataJson: string | null | undefined,
-  brandUpdate: ConvexOrganizationBrandUpdate
+  brandUpdate: ConvexOrganizationBrandUpdate,
 ): string | undefined {
   let base: MetadataRecord = {};
   if (metadataJson && metadataJson.trim() !== "") {
@@ -133,9 +125,7 @@ export function mergeOrganizationBrandIntoMetadataJson(
     }
   }
 
-  const currentBrand = parseBrandObject(
-    base[ORGANIZATION_BRAND_METADATA_KEY]
-  );
+  const currentBrand = parseBrandObject(base[ORGANIZATION_BRAND_METADATA_KEY]);
   const nextBrand = applyBrandUpdate(currentBrand, brandUpdate);
 
   if (nextBrand === undefined) {

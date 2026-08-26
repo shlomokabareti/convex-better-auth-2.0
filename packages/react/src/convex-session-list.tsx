@@ -98,17 +98,16 @@ export function ConvexSessionList(props: ConvexSessionListProps) {
   const cn = props.classNames ?? {};
   const fmt = props.formatTimestamp ?? defaultFormatTimestamp;
 
-  const { sessions, isLoading, error, refetch } = useConvexAuthSessionList(
-    props.authClient
+  const { sessions, isLoading, error, refetch } = useConvexAuthSessionList(props.authClient);
+  const { revokeSession, revokeOtherSessions, isRevoking } = useConvexAuthRevokeSession(
+    props.authClient,
   );
-  const { revokeSession, revokeOtherSessions, isRevoking } =
-    useConvexAuthRevokeSession(props.authClient);
   const [revokingToken, setRevokingToken] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const showRevokeOthers = props.showRevokeOthersAction ?? true;
   const otherSessionCount = (sessions ?? []).filter(
-    (s) => s.token !== props.currentSessionToken
+    (s) => s.token !== props.currentSessionToken,
   ).length;
 
   async function handleRevoke(token: string) {
@@ -202,24 +201,12 @@ function SessionRow(args: {
   onRevoke: () => void;
   formatTimestamp: (value: string | Date) => string;
 }): ReactNode {
-  const {
-    session,
-    isCurrent,
-    isRevoking,
-    copy,
-    classNames,
-    onRevoke,
-    formatTimestamp,
-  } = args;
+  const { session, isCurrent, isRevoking, copy, classNames, onRevoke, formatTimestamp } = args;
   return (
     <div>
       <div>
-        <strong>
-          {isCurrent ? copy.currentBadge : (session.userAgent ?? "Device")}
-        </strong>
-        {isCurrent ? null : session.ipAddress ? (
-          <span>{session.ipAddress}</span>
-        ) : null}
+        <strong>{isCurrent ? copy.currentBadge : (session.userAgent ?? "Device")}</strong>
+        {isCurrent ? null : session.ipAddress ? <span>{session.ipAddress}</span> : null}
       </div>
       <div className={classNames.itemMeta}>
         {copy.lastActivePrefix}: {formatTimestamp(session.updatedAt)}

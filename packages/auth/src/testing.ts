@@ -9,11 +9,7 @@ export {
   type ConvexJwtTrustProofResult,
 } from "../../better-auth/src/server/proveConvexJwtTrust";
 import { resolveBetterAuthTrustedOrigins } from "../../better-auth/src/convex";
-import {
-  formatAuthPreflightResult,
-  runAuthPreflight,
-  type AuthPreflightCheck,
-} from "./preflight";
+import { formatAuthPreflightResult, runAuthPreflight, type AuthPreflightCheck } from "./preflight";
 
 const DEFAULT_CONVEX_RUNTIME_TIMEOUT_MS = 15000;
 const DEFAULT_AUTH_RUNTIME_TIMEOUT_MS = 15000;
@@ -29,10 +25,7 @@ const DEFAULT_PASSWORD_INPUT_SELECTOR = 'input[type="password"]';
 const DEFAULT_SIGN_IN_BUTTON_NAME = /continue|sign in/i;
 
 export type ConvexAuthTestingPage = {
-  evaluate<T, TArg>(
-    pageFunction: (arg: TArg) => T | Promise<T>,
-    arg: TArg
-  ): Promise<T>;
+  evaluate<T, TArg>(pageFunction: (arg: TArg) => T | Promise<T>, arg: TArg): Promise<T>;
 };
 
 export type ConvexAuthTestingLocator = {
@@ -46,24 +39,18 @@ export type ConvexAuthTestingPageWithUi = {
     url: string,
     options?: {
       waitUntil?: "commit" | "domcontentloaded" | "load" | "networkidle";
-    }
+    },
   ): Promise<unknown>;
-  getByRole(
-    role: "button",
-    options: { name: string | RegExp }
-  ): ConvexAuthTestingLocator;
+  getByRole(role: "button", options: { name: string | RegExp }): ConvexAuthTestingLocator;
   locator(selector: string): ConvexAuthTestingLocator;
   url(): string;
-  waitForSelector(
-    selector: string,
-    options?: { timeout?: number }
-  ): Promise<unknown>;
+  waitForSelector(selector: string, options?: { timeout?: number }): Promise<unknown>;
   waitForURL(
     url: string | RegExp,
     options?: {
       timeout?: number;
       waitUntil?: "commit" | "domcontentloaded" | "load" | "networkidle";
-    }
+    },
   ): Promise<unknown>;
 };
 
@@ -72,18 +59,16 @@ export type WaitForExposedConvexRuntimeOptions = {
   pollIntervalMs?: number;
 };
 
-export type WaitForExposedAuthRuntimeOptions =
-  WaitForExposedConvexRuntimeOptions;
+export type WaitForExposedAuthRuntimeOptions = WaitForExposedConvexRuntimeOptions;
 
 export type ReadConvexAuthTokenOptions = WaitForExposedConvexRuntimeOptions & {
   forceRefreshToken?: boolean;
 };
 
-export type CreateAuthenticatedConvexHttpClientOptions =
-  ReadConvexAuthTokenOptions & {
-    convexUrl?: string;
-    convexUrlEnvName?: string;
-  };
+export type CreateAuthenticatedConvexHttpClientOptions = ReadConvexAuthTokenOptions & {
+  convexUrl?: string;
+  convexUrlEnvName?: string;
+};
 
 export type ConvexAuthTestingEnv = Record<string, string | undefined>;
 
@@ -98,14 +83,13 @@ export type ConvexAuthTestCredentialsOptions = {
   passwordEnvName?: string;
 };
 
-export type ConvexAuthE2EEnvironmentOptions =
-  ConvexAuthTestCredentialsOptions & {
-    scope?: string;
-    baseUrlEnvName?: string;
-    defaultBaseUrl?: string;
-    convexUrlEnvName?: string;
-    logger?: (message: string) => void;
-  };
+export type ConvexAuthE2EEnvironmentOptions = ConvexAuthTestCredentialsOptions & {
+  scope?: string;
+  baseUrlEnvName?: string;
+  defaultBaseUrl?: string;
+  convexUrlEnvName?: string;
+  logger?: (message: string) => void;
+};
 
 export type ConvexAuthPreflightCommandOptions = {
   repoRoot: string;
@@ -132,26 +116,21 @@ export type ConvexAuthPreflightBackendSetupOptions = {
   httpPath?: string;
 };
 
-export type SignInWithConvexAuthEmailPasswordOptions =
-  ConvexAuthTestCredentialsOptions & {
-    afterSignInPathPattern?: RegExp;
-    credentials?: ConvexAuthTestCredentials;
-    emailInputSelector?: string;
-    passwordInputSelector?: string;
-    readFailureMessage?: (
-      page: ConvexAuthTestingPageWithUi
-    ) => Promise<string | null>;
-    signInButtonName?: string | RegExp;
-    signInPath?: string;
-    signInUrlPattern?: RegExp;
-    timeoutMs?: number;
-  };
+export type SignInWithConvexAuthEmailPasswordOptions = ConvexAuthTestCredentialsOptions & {
+  afterSignInPathPattern?: RegExp;
+  credentials?: ConvexAuthTestCredentials;
+  emailInputSelector?: string;
+  passwordInputSelector?: string;
+  readFailureMessage?: (page: ConvexAuthTestingPageWithUi) => Promise<string | null>;
+  signInButtonName?: string | RegExp;
+  signInPath?: string;
+  signInUrlPattern?: RegExp;
+  timeoutMs?: number;
+};
 
 type ConvexAuthBrowserRuntime = {
   __authRuntime?: {
-    getConvexToken?: (args?: {
-      forceRefreshToken?: boolean;
-    }) => Promise<string | null>;
+    getConvexToken?: (args?: { forceRefreshToken?: boolean }) => Promise<string | null>;
   };
   __convexApi?: unknown;
   __convexClient?: unknown;
@@ -165,9 +144,7 @@ type PackageJson = {
 
 let hasLoggedE2EEnvironment = false;
 
-export function hasConvexAuthTestCredentials(
-  options: ConvexAuthTestCredentialsOptions = {}
-) {
+export function hasConvexAuthTestCredentials(options: ConvexAuthTestCredentialsOptions = {}) {
   const env = options.env ?? process.env;
   const emailEnvName = options.emailEnvName ?? "TEST_USER_EMAIL";
   const passwordEnvName = options.passwordEnvName ?? "TEST_USER_PASSWORD";
@@ -176,7 +153,7 @@ export function hasConvexAuthTestCredentials(
 }
 
 export function getConvexAuthTestCredentials(
-  options: ConvexAuthTestCredentialsOptions = {}
+  options: ConvexAuthTestCredentialsOptions = {},
 ): ConvexAuthTestCredentials {
   const env = options.env ?? process.env;
   const emailEnvName = options.emailEnvName ?? "TEST_USER_EMAIL";
@@ -185,23 +162,16 @@ export function getConvexAuthTestCredentials(
   const password = env[passwordEnvName]?.trim();
 
   if (!email || !password) {
-    throw new Error(
-      `${emailEnvName} and ${passwordEnvName} must be set for auth E2E tests.`
-    );
+    throw new Error(`${emailEnvName} and ${passwordEnvName} must be set for auth E2E tests.`);
   }
 
   return { email, password };
 }
 
-export function assertConvexAuthAppEnv(
-  options: ConvexAuthE2EEnvironmentOptions = {}
-) {
+export function assertConvexAuthAppEnv(options: ConvexAuthE2EEnvironmentOptions = {}) {
   const env = options.env ?? process.env;
   const baseUrlEnvName = options.baseUrlEnvName ?? "PLAYWRIGHT_TEST_BASE_URL";
-  const baseUrl =
-    env[baseUrlEnvName]?.trim() ||
-    options.defaultBaseUrl ||
-    DEFAULT_TEST_BASE_URL;
+  const baseUrl = env[baseUrlEnvName]?.trim() || options.defaultBaseUrl || DEFAULT_TEST_BASE_URL;
 
   if (!baseUrl.trim()) {
     throw new Error(`[E2E preflight] Missing ${baseUrlEnvName} for app setup`);
@@ -214,9 +184,7 @@ export function assertConvexAuthAppEnv(
   });
 }
 
-export function assertConvexAuthCredentialsEnv(
-  options: ConvexAuthE2EEnvironmentOptions = {}
-) {
+export function assertConvexAuthCredentialsEnv(options: ConvexAuthE2EEnvironmentOptions = {}) {
   getConvexAuthTestCredentials(options);
   logConvexAuthE2EEnvironment({
     ...options,
@@ -224,9 +192,7 @@ export function assertConvexAuthCredentialsEnv(
   });
 }
 
-export function logConvexAuthE2EEnvironment(
-  options: ConvexAuthE2EEnvironmentOptions = {}
-) {
+export function logConvexAuthE2EEnvironment(options: ConvexAuthE2EEnvironmentOptions = {}) {
   if (hasLoggedE2EEnvironment) {
     return;
   }
@@ -236,25 +202,18 @@ export function logConvexAuthE2EEnvironment(
 
   logger(`[setup:${environment.scope}] Base URL: ${environment.baseUrl}`);
   logger(`[setup:${environment.scope}] Convex URL: ${environment.convexUrl}`);
-  logger(
-    `[setup:${environment.scope}] Auth test user: ${environment.authEmail}`
-  );
+  logger(`[setup:${environment.scope}] Auth test user: ${environment.authEmail}`);
 
   hasLoggedE2EEnvironment = true;
 }
 
-function resolveConvexAuthE2EEnvironment(
-  options: ConvexAuthE2EEnvironmentOptions
-) {
+function resolveConvexAuthE2EEnvironment(options: ConvexAuthE2EEnvironmentOptions) {
   const env = options.env ?? process.env;
   const scope = options.scope ?? "app";
   const baseUrlEnvName = options.baseUrlEnvName ?? "PLAYWRIGHT_TEST_BASE_URL";
   const emailEnvName = options.emailEnvName ?? "TEST_USER_EMAIL";
   const convexUrlEnvName = options.convexUrlEnvName ?? "VITE_CONVEX_URL";
-  const baseUrl =
-    env[baseUrlEnvName]?.trim() ||
-    options.defaultBaseUrl ||
-    DEFAULT_TEST_BASE_URL;
+  const baseUrl = env[baseUrlEnvName]?.trim() || options.defaultBaseUrl || DEFAULT_TEST_BASE_URL;
   const authEmail = env[emailEnvName]?.trim() || "<missing>";
   const convexUrl = env[convexUrlEnvName]?.trim() || "<missing>";
   return { authEmail, baseUrl, convexUrl, scope };
@@ -263,7 +222,7 @@ function resolveConvexAuthE2EEnvironment(
 async function loadTestEnvIntoProcessEnv(
   repoRoot: string,
   env: NodeJS.ProcessEnv,
-  testEnvPath?: string
+  testEnvPath?: string,
 ): Promise<void> {
   const resolvedPath = testEnvPath ?? resolve(repoRoot, ".test-env");
   if (!existsSync(resolvedPath)) {
@@ -278,7 +237,7 @@ async function loadTestEnvIntoProcessEnv(
 function expectedPreflightPackageVersion(
   packageName: string,
   rootPackageJson: PackageJson,
-  webPackageJson: PackageJson
+  webPackageJson: PackageJson,
 ): string | null {
   return (
     webPackageJson.dependencies?.[packageName] ??
@@ -289,32 +248,21 @@ function expectedPreflightPackageVersion(
   );
 }
 
-function resolvePreflightUrls(
-  env: NodeJS.ProcessEnv,
-  options: ConvexAuthPreflightCommandOptions
-) {
+function resolvePreflightUrls(env: NodeJS.ProcessEnv, options: ConvexAuthPreflightCommandOptions) {
   return {
     appBaseUrl: firstEnvValue(
       env,
-      options.appBaseUrlEnvNames ?? ["PLAYWRIGHT_TEST_BASE_URL", "TEST_WEB_URL"]
+      options.appBaseUrlEnvNames ?? ["PLAYWRIGHT_TEST_BASE_URL", "TEST_WEB_URL"],
     ),
     betterAuthUrl: firstEnvValue(
       env,
-      options.betterAuthUrlEnvNames ?? [
-        "VITE_BETTER_AUTH_URL",
-        "PRODUCTION_BETTER_AUTH_URL",
-      ]
+      options.betterAuthUrlEnvNames ?? ["VITE_BETTER_AUTH_URL", "PRODUCTION_BETTER_AUTH_URL"],
     ),
-    convexUrl: firstEnvValue(
-      env,
-      options.convexUrlEnvNames ?? ["VITE_CONVEX_URL", "CONVEX_URL"]
-    ),
+    convexUrl: firstEnvValue(env, options.convexUrlEnvNames ?? ["VITE_CONVEX_URL", "CONVEX_URL"]),
   };
 }
 
-export async function runConvexAuthPreflightCommand(
-  options: ConvexAuthPreflightCommandOptions
-) {
+export async function runConvexAuthPreflightCommand(options: ConvexAuthPreflightCommandOptions) {
   const env = options.env ?? process.env;
   const logger = options.logger ?? console.info;
   const packageName = options.packageName ?? DEFAULT_PACKAGE_NAME;
@@ -322,31 +270,22 @@ export async function runConvexAuthPreflightCommand(
   await loadTestEnvIntoProcessEnv(options.repoRoot, env, options.testEnvPath);
 
   const rootPackageJson = await readPackageJson(
-    options.rootPackageJsonPath ?? resolve(options.repoRoot, "package.json")
+    options.rootPackageJsonPath ?? resolve(options.repoRoot, "package.json"),
   );
   const webPackageJson = await readPackageJson(
-    options.webPackageJsonPath ??
-      resolve(options.repoRoot, "apps/web/package.json")
+    options.webPackageJsonPath ?? resolve(options.repoRoot, "apps/web/package.json"),
   );
   const installedPackageJson = await readPackageJson(
     options.installedPackageJsonPath ??
-      resolve(
-        options.repoRoot,
-        "node_modules",
-        ...packageName.split("/"),
-        "package.json"
-      )
+      resolve(options.repoRoot, "node_modules", ...packageName.split("/"), "package.json"),
   );
 
   const expectedPackageVersion = expectedPreflightPackageVersion(
     packageName,
     rootPackageJson,
-    webPackageJson
+    webPackageJson,
   );
-  const { appBaseUrl, betterAuthUrl, convexUrl } = resolvePreflightUrls(
-    env,
-    options
-  );
+  const { appBaseUrl, betterAuthUrl, convexUrl } = resolvePreflightUrls(env, options);
   const backendSetup =
     options.backendSetup === false
       ? undefined
@@ -365,9 +304,7 @@ export async function runConvexAuthPreflightCommand(
     actualPackageVersion: installedPackageJson.version ?? null,
     appServer: {
       baseUrl: appBaseUrl,
-      expectedValues: [betterAuthUrl, convexUrl].filter(
-        (value): value is string => Boolean(value)
-      ),
+      expectedValues: [betterAuthUrl, convexUrl].filter((value): value is string => Boolean(value)),
       probePaths: options.appServerProbePaths,
     },
     backendSetup,
@@ -393,25 +330,19 @@ export async function runConvexAuthPreflightCommand(
 
 export async function signInWithConvexAuthEmailPassword(
   page: ConvexAuthTestingPageWithUi,
-  options: SignInWithConvexAuthEmailPasswordOptions = {}
+  options: SignInWithConvexAuthEmailPasswordOptions = {},
 ) {
-  const credentials =
-    options.credentials ?? getConvexAuthTestCredentials(options);
+  const credentials = options.credentials ?? getConvexAuthTestCredentials(options);
   const timeoutMs = options.timeoutMs ?? DEFAULT_AUTH_RUNTIME_TIMEOUT_MS;
-  const emailInputSelector =
-    options.emailInputSelector ?? DEFAULT_EMAIL_INPUT_SELECTOR;
-  const passwordInputSelector =
-    options.passwordInputSelector ?? DEFAULT_PASSWORD_INPUT_SELECTOR;
+  const emailInputSelector = options.emailInputSelector ?? DEFAULT_EMAIL_INPUT_SELECTOR;
+  const passwordInputSelector = options.passwordInputSelector ?? DEFAULT_PASSWORD_INPUT_SELECTOR;
 
   await page.goto(options.signInPath ?? DEFAULT_SIGN_IN_PATH, {
     waitUntil: "domcontentloaded",
   });
-  await page.waitForURL(
-    options.signInUrlPattern ?? DEFAULT_SIGN_IN_URL_PATTERN,
-    {
-      timeout: timeoutMs,
-    }
-  );
+  await page.waitForURL(options.signInUrlPattern ?? DEFAULT_SIGN_IN_URL_PATTERN, {
+    timeout: timeoutMs,
+  });
   await page.waitForSelector(emailInputSelector, { timeout: timeoutMs });
   await page.waitForSelector(passwordInputSelector, { timeout: timeoutMs });
 
@@ -431,16 +362,15 @@ export async function signInWithConvexAuthEmailPassword(
   } catch (error) {
     const failureMessage = await options.readFailureMessage?.(page);
     const suffix = failureMessage ? `: ${failureMessage}` : "";
-    throw new Error(
-      `${error instanceof Error ? error.message : String(error)}${suffix}`,
-      { cause: error }
-    );
+    throw new Error(`${error instanceof Error ? error.message : String(error)}${suffix}`, {
+      cause: error,
+    });
   }
 }
 
 export async function waitForExposedConvexRuntime(
   page: ConvexAuthTestingPage,
-  options: WaitForExposedConvexRuntimeOptions = {}
+  options: WaitForExposedConvexRuntimeOptions = {},
 ) {
   await pollUntil(
     async () =>
@@ -452,15 +382,14 @@ export async function waitForExposedConvexRuntime(
     {
       timeoutMs: options.timeoutMs ?? DEFAULT_CONVEX_RUNTIME_TIMEOUT_MS,
       pollIntervalMs: options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
-      errorMessage:
-        "Convex runtime was not exposed before the readiness timeout.",
-    }
+      errorMessage: "Convex runtime was not exposed before the readiness timeout.",
+    },
   );
 }
 
 export async function waitForExposedAuthRuntime(
   page: ConvexAuthTestingPage,
-  options: WaitForExposedAuthRuntimeOptions = {}
+  options: WaitForExposedAuthRuntimeOptions = {},
 ) {
   await pollUntil(
     async () =>
@@ -472,15 +401,14 @@ export async function waitForExposedAuthRuntime(
     {
       timeoutMs: options.timeoutMs ?? DEFAULT_AUTH_RUNTIME_TIMEOUT_MS,
       pollIntervalMs: options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
-      errorMessage:
-        "Auth runtime was not exposed before the readiness timeout.",
-    }
+      errorMessage: "Auth runtime was not exposed before the readiness timeout.",
+    },
   );
 }
 
 export async function readConvexAuthToken(
   page: ConvexAuthTestingPage,
-  options: ReadConvexAuthTokenOptions = {}
+  options: ReadConvexAuthTokenOptions = {},
 ) {
   await waitForExposedConvexRuntime(page, options);
   await waitForExposedAuthRuntime(page, options);
@@ -494,21 +422,16 @@ export async function readConvexAuthToken(
             args.forceRefreshToken === undefined
               ? undefined
               : { forceRefreshToken: args.forceRefreshToken };
-          return (
-            (await runtime.__authRuntime?.getConvexToken?.(tokenOptions)) ??
-            null
-          );
+          return (await runtime.__authRuntime?.getConvexToken?.(tokenOptions)) ?? null;
         },
-        { forceRefreshToken: options.forceRefreshToken }
+        { forceRefreshToken: options.forceRefreshToken },
       ),
-    (candidate): candidate is string =>
-      typeof candidate === "string" && candidate.length > 0,
+    (candidate): candidate is string => typeof candidate === "string" && candidate.length > 0,
     {
       timeoutMs: options.timeoutMs ?? DEFAULT_CONVEX_AUTH_TOKEN_TIMEOUT_MS,
       pollIntervalMs: options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS,
-      errorMessage:
-        "Convex auth token was not available before the readiness timeout.",
-    }
+      errorMessage: "Convex auth token was not available before the readiness timeout.",
+    },
   );
 
   return token;
@@ -516,14 +439,14 @@ export async function readConvexAuthToken(
 
 export async function waitForAuthenticatedConvexReady(
   page: ConvexAuthTestingPage,
-  options: ReadConvexAuthTokenOptions = {}
+  options: ReadConvexAuthTokenOptions = {},
 ) {
   return await readConvexAuthToken(page, options);
 }
 
 export async function createAuthenticatedConvexHttpClient(
   page: ConvexAuthTestingPage,
-  options: CreateAuthenticatedConvexHttpClientOptions = {}
+  options: CreateAuthenticatedConvexHttpClientOptions = {},
 ) {
   const convexUrl = getRequiredConvexUrl(options);
   const token = await readConvexAuthToken(page, options);
@@ -532,15 +455,11 @@ export async function createAuthenticatedConvexHttpClient(
   return client;
 }
 
-function getRequiredConvexUrl(
-  options: CreateAuthenticatedConvexHttpClientOptions
-) {
+function getRequiredConvexUrl(options: CreateAuthenticatedConvexHttpClientOptions) {
   const envName = options.convexUrlEnvName ?? "VITE_CONVEX_URL";
   const convexUrl = options.convexUrl ?? process.env[envName]?.trim();
   if (!convexUrl) {
-    throw new Error(
-      `${envName} is required for authenticated Convex E2E helpers.`
-    );
+    throw new Error(`${envName} is required for authenticated Convex E2E helpers.`);
   }
 
   return convexUrl;
@@ -585,13 +504,11 @@ export type ConvexAuthMintedTestSession = {
 };
 
 export async function mintConvexAuthTestSession(
-  options: MintConvexAuthTestSessionOptions
+  options: MintConvexAuthTestSessionOptions,
 ): Promise<ConvexAuthMintedTestSession> {
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
   if (typeof fetchImpl !== "function") {
-    throw new Error(
-      "mintConvexAuthTestSession: no fetch implementation available."
-    );
+    throw new Error("mintConvexAuthTestSession: no fetch implementation available.");
   }
   const siteUrl = options.siteUrl.replace(/\/$/, "");
   const testSessionPath = options.testSessionPath ?? "/test-session";
@@ -611,15 +528,14 @@ export async function mintConvexAuthTestSession(
   if (!signInResponse.ok) {
     throw new Error(
       `mintConvexAuthTestSession: test-session mint failed (${signInResponse.status} ${signInResponse.statusText}). ` +
-        "Confirm CONVEX_AUTH_TEST_SESSIONS=enabled, the secret matches, and the user exists."
+        "Confirm CONVEX_AUTH_TEST_SESSIONS=enabled, the secret matches, and the user exists.",
     );
   }
   const cookie = extractSessionCookieHeader(signInResponse);
-  const sessionToken =
-    signInResponse.headers.get("set-auth-token") ?? undefined;
+  const sessionToken = signInResponse.headers.get("set-auth-token") ?? undefined;
   if (!cookie && !sessionToken) {
     throw new Error(
-      "mintConvexAuthTestSession: sign-in succeeded but returned no session (no Set-Cookie / set-auth-token)."
+      "mintConvexAuthTestSession: sign-in succeeded but returned no session (no Set-Cookie / set-auth-token).",
     );
   }
 
@@ -633,18 +549,14 @@ export async function mintConvexAuthTestSession(
   });
   if (!tokenResponse.ok) {
     throw new Error(
-      `mintConvexAuthTestSession: convex token exchange failed (${tokenResponse.status} ${tokenResponse.statusText}).`
+      `mintConvexAuthTestSession: convex token exchange failed (${tokenResponse.status} ${tokenResponse.statusText}).`,
     );
   }
   const payload: unknown = await tokenResponse.json();
   const token =
-    typeof payload === "object" && payload !== null
-      ? Reflect.get(payload, "token")
-      : undefined;
+    typeof payload === "object" && payload !== null ? Reflect.get(payload, "token") : undefined;
   if (typeof token !== "string" || token.length === 0) {
-    throw new Error(
-      "mintConvexAuthTestSession: /api/auth/convex/token returned no token."
-    );
+    throw new Error("mintConvexAuthTestSession: /api/auth/convex/token returned no token.");
   }
 
   return { convexToken: token, cookie, sessionToken };
@@ -659,7 +571,7 @@ export async function createTestSessionConvexHttpClient(
   options: MintConvexAuthTestSessionOptions & {
     convexUrl?: string;
     convexUrlEnvName?: string;
-  }
+  },
 ): Promise<ConvexHttpClient> {
   const session = await mintConvexAuthTestSession(options);
   const convexUrl = getRequiredConvexUrl(options);
@@ -689,7 +601,7 @@ async function waitForConvexAuthSignedInPath(
   options: {
     afterSignInPathPattern?: RegExp;
     timeoutMs: number;
-  }
+  },
 ) {
   const afterSignInPathPattern = options.afterSignInPathPattern;
   await pollUntil(
@@ -705,9 +617,8 @@ async function waitForConvexAuthSignedInPath(
     {
       timeoutMs: options.timeoutMs,
       pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
-      errorMessage:
-        "Sign-in did not leave the auth route before the readiness timeout.",
-    }
+      errorMessage: "Sign-in did not leave the auth route before the readiness timeout.",
+    },
   );
 }
 
@@ -726,9 +637,7 @@ async function readEnvFile(path: string) {
       continue;
     }
 
-    values[trimmed.slice(0, separatorIndex)] = trimmed.slice(
-      separatorIndex + 1
-    );
+    values[trimmed.slice(0, separatorIndex)] = trimmed.slice(separatorIndex + 1);
   }
 
   return values;
@@ -737,14 +646,12 @@ async function readEnvFile(path: string) {
 async function readBackendSetup(
   repoRoot: string,
   env: NodeJS.ProcessEnv,
-  options: ConvexAuthPreflightBackendSetupOptions = {}
+  options: ConvexAuthPreflightBackendSetupOptions = {},
 ) {
-  const convexConfigPath =
-    options.convexConfigPath ?? "convex/convex.config.ts";
+  const convexConfigPath = options.convexConfigPath ?? "convex/convex.config.ts";
   const authConfigPath = options.authConfigPath ?? "convex/auth.config.ts";
   const httpPath = options.httpPath ?? "convex/http.ts";
-  const betterAuthRuntimePath =
-    options.betterAuthRuntimePath ?? "convex/betterAuth.ts";
+  const betterAuthRuntimePath = options.betterAuthRuntimePath ?? "convex/betterAuth.ts";
 
   return {
     files: [
@@ -769,9 +676,7 @@ async function readBackendSetup(
       {
         name: "Better Auth Convex runtime",
         path: betterAuthRuntimePath,
-        content: await readOptionalText(
-          resolve(repoRoot, betterAuthRuntimePath)
-        ),
+        content: await readOptionalText(resolve(repoRoot, betterAuthRuntimePath)),
         requiredSnippets: [
           "createBetterAuthConvexRuntime",
           "components.convexAuth",
@@ -802,16 +707,13 @@ function createTrustedOriginsCheck(args: {
         name: "Better Auth trusted origins",
         severity: "warning",
         ok: false,
-        message:
-          "app base URL is missing or invalid; trusted-origin proof skipped.",
+        message: "app base URL is missing or invalid; trusted-origin proof skipped.",
       },
     ];
   }
 
   const betterAuthOrigin = readOrigin(args.betterAuthUrl);
-  const siteOrigin = readOrigin(
-    firstEnvValue(args.env, ["CONVEX_SITE_URL", "BETTER_AUTH_URL"])
-  );
+  const siteOrigin = readOrigin(firstEnvValue(args.env, ["CONVEX_SITE_URL", "BETTER_AUTH_URL"]));
   if (appOrigin === betterAuthOrigin || appOrigin === siteOrigin) {
     return [
       {
@@ -824,21 +726,18 @@ function createTrustedOriginsCheck(args: {
   }
 
   const configuredAppOrigin = readOrigin(
-    firstEnvValue(args.env, ["APP_ORIGIN", "VITE_APP_ORIGIN"])
+    firstEnvValue(args.env, ["APP_ORIGIN", "VITE_APP_ORIGIN"]),
   );
   const trustedOrigins = new Set(
     resolveBetterAuthTrustedOrigins({
       envValue: args.env.BETTER_AUTH_TRUSTED_ORIGINS,
-      origins: [siteOrigin, configuredAppOrigin].filter(
-        (value): value is string => value !== null
-      ),
-    })
+      origins: [siteOrigin, configuredAppOrigin].filter((value): value is string => value !== null),
+    }),
   );
   const runtimeFile = args.backendSetup?.files?.find(
-    (file) => file.name === "Better Auth Convex runtime"
+    (file) => file.name === "Better Auth Convex runtime",
   );
-  const runtimeExplicitlyAllowsOrigin =
-    runtimeFile?.content?.includes(`"${appOrigin}"`) === true;
+  const runtimeExplicitlyAllowsOrigin = runtimeFile?.content?.includes(`"${appOrigin}"`) === true;
 
   return trustedOrigins.has(appOrigin) || runtimeExplicitlyAllowsOrigin
     ? [
@@ -891,9 +790,7 @@ async function readPackageJson(path: string): Promise<PackageJson> {
     dependencies: readStringRecord(Reflect.get(value, "dependencies")),
     devDependencies: readStringRecord(Reflect.get(value, "devDependencies")),
     version:
-      typeof Reflect.get(value, "version") === "string"
-        ? Reflect.get(value, "version")
-        : undefined,
+      typeof Reflect.get(value, "version") === "string" ? Reflect.get(value, "version") : undefined,
   };
 }
 
@@ -907,11 +804,7 @@ function readStringRecord(value: unknown): Record<string, string> | undefined {
     : undefined;
 }
 
-async function runCommand(
-  repoRoot: string,
-  env: NodeJS.ProcessEnv,
-  commandArgs: string[]
-) {
+async function runCommand(repoRoot: string, env: NodeJS.ProcessEnv, commandArgs: string[]) {
   const [command, ...args] = commandArgs;
   if (!command) {
     return 0;
@@ -948,7 +841,7 @@ async function pollUntil<T, TAccepted extends T>(
     timeoutMs: number;
     pollIntervalMs: number;
     errorMessage: string;
-  }
+  },
 ) {
   const startedAt = Date.now();
 

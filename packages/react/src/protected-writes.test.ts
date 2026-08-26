@@ -19,7 +19,7 @@ describe("protected writes", () => {
         providerAuthenticated: true,
         tokenAvailable: true,
         convexAuthenticated: true,
-      })
+      }),
     );
 
     assert.equal(await runner({ value: "ok" }), "ok");
@@ -48,14 +48,12 @@ describe("protected writes", () => {
           assert.equal(error.message, getProtectedWriteNotReadyMessage(status));
           return true;
         });
-      })
+      }),
     );
   });
 });
 
-function createStatus(
-  overrides: Partial<AuthRuntimeStatus>
-): AuthRuntimeStatus {
+function createStatus(overrides: Partial<AuthRuntimeStatus>): AuthRuntimeStatus {
   return {
     state: "signedOut",
     providerAuthenticated: false,

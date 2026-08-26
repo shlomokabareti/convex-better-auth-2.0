@@ -71,12 +71,7 @@ export function parseAgentAuthProtocolHostJwt(args: {
   const base = readBaseClaims(object);
   const hostPublicKey = readOptionalPublicKey(object, "host_public_key");
   const hostJwksUrl = readOptionalHttpsUrl(object, "host_jwks_url");
-  requireExactlyOneKeySource(
-    hostPublicKey,
-    hostJwksUrl,
-    "host_public_key",
-    "host_jwks_url"
-  );
+  requireExactlyOneKeySource(hostPublicKey, hostJwksUrl, "host_public_key", "host_jwks_url");
   if (hostJwksUrl !== undefined && header.kid === undefined) {
     throw new TypeError("host JWT header kid is required with host_jwks_url");
   }
@@ -84,49 +79,29 @@ export function parseAgentAuthProtocolHostJwt(args: {
   const agentPublicKey = readOptionalPublicKey(object, "agent_public_key");
   const agentJwksUrl = readOptionalHttpsUrl(object, "agent_jwks_url");
   const agentKid = readOptionalString(object, "agent_kid");
-  if (
-    agentPublicKey !== undefined &&
-    (agentJwksUrl !== undefined || agentKid !== undefined)
-  ) {
-    throw new TypeError(
-      "agent_public_key cannot be combined with agent_jwks_url or agent_kid"
-    );
+  if (agentPublicKey !== undefined && (agentJwksUrl !== undefined || agentKid !== undefined)) {
+    throw new TypeError("agent_public_key cannot be combined with agent_jwks_url or agent_kid");
   }
-  if (
-    agentJwksUrl !== undefined &&
-    (agentKid === undefined || agentPublicKey !== undefined)
-  ) {
+  if (agentJwksUrl !== undefined && (agentKid === undefined || agentPublicKey !== undefined)) {
     throw new TypeError("agent_jwks_url requires agent_kid and no inline key");
   }
   if (agentKid !== undefined && agentJwksUrl === undefined) {
     throw new TypeError("agent_kid requires agent_jwks_url");
   }
   if (hostJwksUrl !== undefined && hostJwksUrl === agentJwksUrl) {
-    throw new TypeError(
-      "host_jwks_url and agent_jwks_url must use different endpoints"
-    );
+    throw new TypeError("host_jwks_url and agent_jwks_url must use different endpoints");
   }
-  if (
-    args.registration &&
-    agentPublicKey === undefined &&
-    agentJwksUrl === undefined
-  ) {
-    throw new TypeError(
-      "registration host JWT requires agent_public_key or agent_jwks_url"
-    );
+  if (args.registration && agentPublicKey === undefined && agentJwksUrl === undefined) {
+    throw new TypeError("registration host JWT requires agent_public_key or agent_jwks_url");
   }
 
   return {
     header,
     claims: {
       ...base,
-      ...(hostPublicKey === undefined
-        ? {}
-        : { host_public_key: hostPublicKey }),
+      ...(hostPublicKey === undefined ? {} : { host_public_key: hostPublicKey }),
       ...(hostJwksUrl === undefined ? {} : { host_jwks_url: hostJwksUrl }),
-      ...(agentPublicKey === undefined
-        ? {}
-        : { agent_public_key: agentPublicKey }),
+      ...(agentPublicKey === undefined ? {} : { agent_public_key: agentPublicKey }),
       ...(agentJwksUrl === undefined ? {} : { agent_jwks_url: agentJwksUrl }),
       ...(agentKid === undefined ? {} : { agent_kid: agentKid }),
     },
@@ -179,10 +154,7 @@ function parseAgentHeader(value: unknown): AgentAuthProtocolAgentJwtHeader {
   };
 }
 
-function assertHeader(
-  object: Record<string, unknown>,
-  typ: "host+jwt" | "agent+jwt"
-): void {
+function assertHeader(object: Record<string, unknown>, typ: "host+jwt" | "agent+jwt"): void {
   if (object.alg !== "EdDSA") {
     throw new TypeError("JWT header alg must be EdDSA");
   }
@@ -214,26 +186,22 @@ function readBaseClaims(object: Record<string, unknown>): {
 
 function readOptionalPublicKey(
   object: Record<string, unknown>,
-  key: string
+  key: string,
 ): AgentAuthProtocolPublicEd25519Jwk | undefined {
   const value = object[key];
-  return value === undefined
-    ? undefined
-    : parseAgentAuthProtocolPublicEd25519Jwk(value, key);
+  return value === undefined ? undefined : parseAgentAuthProtocolPublicEd25519Jwk(value, key);
 }
 
 export function parseAgentAuthProtocolPublicEd25519Jwk(
   value: unknown,
-  name = "public JWK"
+  name = "public JWK",
 ): AgentAuthProtocolPublicEd25519Jwk {
   const object = readObject(value, name);
   if (object.kty !== "OKP" || object.crv !== "Ed25519") {
     throw new TypeError(`${name} must be an OKP Ed25519 public JWK`);
   }
   if (typeof object.x !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(object.x)) {
-    throw new TypeError(
-      `${name}.x must encode exactly one 32-byte Ed25519 public key`
-    );
+    throw new TypeError(`${name}.x must encode exactly one 32-byte Ed25519 public key`);
   }
   if ("d" in object) {
     throw new TypeError(`${name} must not contain private key material`);
@@ -255,10 +223,7 @@ export function parseAgentAuthProtocolPublicEd25519Jwk(
   };
 }
 
-function readOptionalHttpsUrl(
-  object: Record<string, unknown>,
-  key: string
-): string | undefined {
+function readOptionalHttpsUrl(object: Record<string, unknown>, key: string): string | undefined {
   const value = readOptionalString(object, key);
   return value === undefined ? undefined : readHttpsUrl(value, key);
 }
@@ -267,11 +232,9 @@ function requireExactlyOneKeySource(
   inlineKey: AgentAuthProtocolPublicEd25519Jwk | undefined,
   jwksUrl: string | undefined,
   inlineName: string,
-  jwksName: string
+  jwksName: string,
 ): void {
   if ((inlineKey === undefined) === (jwksUrl === undefined)) {
-    throw new TypeError(
-      `Exactly one of ${inlineName} or ${jwksName} is required`
-    );
+    throw new TypeError(`Exactly one of ${inlineName} or ${jwksName} is required`);
   }
 }

@@ -14,9 +14,7 @@ export type ExpoInviteActions = {
   accept(token: string): Promise<ExpoAuthActionResult>;
 };
 
-export function parseExpoInvitationUrl(
-  url: string | null | undefined
-): ExpoInviteParseResult {
+export function parseExpoInvitationUrl(url: string | null | undefined): ExpoInviteParseResult {
   if (!url) {
     return { kind: "none", reason: "no_token" };
   }
@@ -28,9 +26,7 @@ export function parseExpoInvitationUrl(
     return { kind: "none", reason: "invalid_url" };
   }
 
-  const token =
-    parsed.searchParams.get("invitation_token") ??
-    parsed.searchParams.get("token");
+  const token = parsed.searchParams.get("invitation_token") ?? parsed.searchParams.get("token");
 
   if (!token) {
     return { kind: "none", reason: "no_token" };

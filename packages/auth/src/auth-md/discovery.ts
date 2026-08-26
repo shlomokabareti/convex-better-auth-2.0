@@ -16,20 +16,13 @@ export const AUTH_MD_EVENTS_ENDPOINT_PATH = "/agent/event/notify" as const;
 export const AUTH_MD_TOKEN_ENDPOINT_PATH = "/oauth2/token" as const;
 export const AUTH_MD_REVOCATION_ENDPOINT_PATH = "/oauth2/revoke" as const;
 
-export const AUTH_MD_JWT_BEARER_GRANT =
-  "urn:ietf:params:oauth:grant-type:jwt-bearer" as const;
-export const AUTH_MD_CLAIM_GRANT =
-  "urn:workos:agent-auth:grant-type:claim" as const;
-export const AUTH_MD_ID_JAG_ASSERTION_TYPE =
-  "urn:ietf:params:oauth:token-type:id-jag" as const;
+export const AUTH_MD_JWT_BEARER_GRANT = "urn:ietf:params:oauth:grant-type:jwt-bearer" as const;
+export const AUTH_MD_CLAIM_GRANT = "urn:workos:agent-auth:grant-type:claim" as const;
+export const AUTH_MD_ID_JAG_ASSERTION_TYPE = "urn:ietf:params:oauth:token-type:id-jag" as const;
 export const AUTH_MD_IDENTITY_ASSERTION_REVOKED_EVENT =
   "https://schemas.workos.com/events/agent/auth/identity/assertion/revoked" as const;
 
-export const AUTH_MD_IDENTITY_TYPES = [
-  "service_auth",
-  "identity_assertion",
-  "anonymous",
-] as const;
+export const AUTH_MD_IDENTITY_TYPES = ["service_auth", "identity_assertion", "anonymous"] as const;
 
 export type AuthMdIdentityType = (typeof AUTH_MD_IDENTITY_TYPES)[number];
 
@@ -62,10 +55,7 @@ export type AuthMdAuthorizationServerMetadata = {
   issuer: string;
   token_endpoint: string;
   revocation_endpoint: string;
-  grant_types_supported: [
-    typeof AUTH_MD_JWT_BEARER_GRANT,
-    typeof AUTH_MD_CLAIM_GRANT,
-  ];
+  grant_types_supported: [typeof AUTH_MD_JWT_BEARER_GRANT, typeof AUTH_MD_CLAIM_GRANT];
   agent_auth: AuthMdAgentAuthorizationMetadata;
 };
 
@@ -89,7 +79,7 @@ export type CreateConvexAuthMdDiscoveryDocumentsArgs = Omit<
 >;
 
 export function createConvexAuthMdDiscoveryDocuments(
-  args: CreateConvexAuthMdDiscoveryDocumentsArgs
+  args: CreateConvexAuthMdDiscoveryDocumentsArgs,
 ): AuthMdDiscoveryDocuments {
   return createAuthMdDiscoveryDocuments({
     ...args,
@@ -98,7 +88,7 @@ export function createConvexAuthMdDiscoveryDocuments(
 }
 
 export function createAuthMdDiscoveryDocuments(
-  args: CreateAuthMdDiscoveryDocumentsArgs
+  args: CreateAuthMdDiscoveryDocumentsArgs,
 ): AuthMdDiscoveryDocuments {
   const resource = readHttpsUrl(args.resource, "resource");
   const issuer = readIssuer(args.issuer);
@@ -117,9 +107,7 @@ export function createAuthMdDiscoveryDocuments(
   const protectedResource: AuthMdProtectedResourceMetadata = {
     resource,
     resource_name: resourceName,
-    ...(resourceLogoUri === undefined
-      ? {}
-      : { resource_logo_uri: resourceLogoUri }),
+    ...(resourceLogoUri === undefined ? {} : { resource_logo_uri: resourceLogoUri }),
     authorization_servers: authorizationServers,
     scopes_supported: scopes,
     bearer_methods_supported: ["header"],
@@ -159,35 +147,18 @@ export function createAuthMdDiscoveryDocuments(
   });
 }
 
-export function parseAuthMdDiscoveryDocuments(
-  value: unknown
-): AuthMdDiscoveryDocuments {
+export function parseAuthMdDiscoveryDocuments(value: unknown): AuthMdDiscoveryDocuments {
   const object = readObject(value, "auth.md discovery documents");
-  const protectedResource = parseAuthMdProtectedResourceMetadata(
-    object.protectedResource
-  );
-  const authorizationServer = parseAuthMdAuthorizationServerMetadata(
-    object.authorizationServer
-  );
+  const protectedResource = parseAuthMdProtectedResourceMetadata(object.protectedResource);
+  const authorizationServer = parseAuthMdAuthorizationServerMetadata(object.authorizationServer);
 
   if (protectedResource.resource !== authorizationServer.resource) {
     throw new TypeError("auth.md discovery resource values must match");
   }
-  if (
-    !protectedResource.authorization_servers.includes(
-      authorizationServer.issuer
-    )
-  ) {
-    throw new TypeError(
-      "protected resource metadata must authorize the declared issuer"
-    );
+  if (!protectedResource.authorization_servers.includes(authorizationServer.issuer)) {
+    throw new TypeError("protected resource metadata must authorize the declared issuer");
   }
-  if (
-    !sameStringSet(
-      protectedResource.scopes_supported,
-      authorizationServer.scopes_supported
-    )
-  ) {
+  if (!sameStringSet(protectedResource.scopes_supported, authorizationServer.scopes_supported)) {
     throw new TypeError("auth.md discovery scope inventories must match");
   }
 
@@ -195,17 +166,14 @@ export function parseAuthMdDiscoveryDocuments(
 }
 
 export function parseAuthMdProtectedResourceMetadata(
-  value: unknown
+  value: unknown,
 ): AuthMdProtectedResourceMetadata {
   const object = readObject(value, "protected resource metadata");
-  const resource = readHttpsUrl(
-    readRequiredString(object, "resource"),
-    "resource"
-  );
+  const resource = readHttpsUrl(readRequiredString(object, "resource"), "resource");
   const resourceName = readRequiredString(object, "resource_name");
   const authorizationServers = readIssuerArray(
     object.authorization_servers,
-    "authorization_servers"
+    "authorization_servers",
   );
   const scopes = readScopes(object.scopes_supported);
   readHeaderBearerMethod(object.bearer_methods_supported);
@@ -213,17 +181,12 @@ export function parseAuthMdProtectedResourceMetadata(
   const resourceLogoUri =
     logo === undefined
       ? undefined
-      : readHttpsUrl(
-          readRequiredString(object, "resource_logo_uri"),
-          "resource_logo_uri"
-        );
+      : readHttpsUrl(readRequiredString(object, "resource_logo_uri"), "resource_logo_uri");
 
   return {
     resource,
     resource_name: resourceName,
-    ...(resourceLogoUri === undefined
-      ? {}
-      : { resource_logo_uri: resourceLogoUri }),
+    ...(resourceLogoUri === undefined ? {} : { resource_logo_uri: resourceLogoUri }),
     authorization_servers: authorizationServers,
     scopes_supported: scopes,
     bearer_methods_supported: ["header"],
@@ -231,42 +194,29 @@ export function parseAuthMdProtectedResourceMetadata(
 }
 
 export function parseAuthMdAuthorizationServerMetadata(
-  value: unknown
+  value: unknown,
 ): AuthMdAuthorizationServerMetadata {
   const object = readObject(value, "authorization server metadata");
-  const resource = readHttpsUrl(
-    readRequiredString(object, "resource"),
-    "resource"
-  );
+  const resource = readHttpsUrl(readRequiredString(object, "resource"), "resource");
   const authorizationServers = readIssuerArray(
     object.authorization_servers,
-    "authorization_servers"
+    "authorization_servers",
   );
   const scopes = readScopes(object.scopes_supported);
   readHeaderBearerMethod(object.bearer_methods_supported);
   const issuer = readIssuer(readRequiredString(object, "issuer"));
   const issuerOrigin = new URL(issuer).origin;
-  const tokenEndpoint = readIssuerEndpoint(
-    object,
-    "token_endpoint",
-    issuerOrigin
-  );
-  const revocationEndpoint = readIssuerEndpoint(
-    object,
-    "revocation_endpoint",
-    issuerOrigin
-  );
+  const tokenEndpoint = readIssuerEndpoint(object, "token_endpoint", issuerOrigin);
+  const revocationEndpoint = readIssuerEndpoint(object, "revocation_endpoint", issuerOrigin);
   readRequiredGrantTypes(object.grant_types_supported);
   const agentAuth = readAgentAuthorizationMetadata(
     object.agent_auth,
     new URL(resource).origin,
-    issuerOrigin
+    issuerOrigin,
   );
 
   if (!authorizationServers.includes(issuer)) {
-    throw new TypeError(
-      "authorization server metadata must include its issuer"
-    );
+    throw new TypeError("authorization server metadata must include its issuer");
   }
 
   return {
@@ -282,9 +232,7 @@ export function parseAuthMdAuthorizationServerMetadata(
   };
 }
 
-export function createAuthMdBearerChallenge(
-  resourceMetadataUrl: string
-): string {
+export function createAuthMdBearerChallenge(resourceMetadataUrl: string): string {
   const url = readHttpsUrl(resourceMetadataUrl, "resourceMetadataUrl");
   return `Bearer resource_metadata="${url}"`;
 }
@@ -296,9 +244,7 @@ export function parseAuthMdBearerChallenge(value: unknown): string {
   const match = /^Bearer\s+resource_metadata="([^"]+)"$/i.exec(value.trim());
   const resourceMetadataUrl = match?.[1];
   if (resourceMetadataUrl === undefined) {
-    throw new TypeError(
-      "WWW-Authenticate challenge must contain one Bearer resource_metadata URL"
-    );
+    throw new TypeError("WWW-Authenticate challenge must contain one Bearer resource_metadata URL");
   }
   return readHttpsUrl(resourceMetadataUrl, "resource_metadata");
 }
@@ -306,72 +252,38 @@ export function parseAuthMdBearerChallenge(value: unknown): string {
 function readAgentAuthorizationMetadata(
   value: unknown,
   resourceOrigin: string,
-  issuerOrigin: string
+  issuerOrigin: string,
 ): AuthMdAgentAuthorizationMetadata {
   const object = readObject(value, "agent_auth");
-  const skill = readHttpsUrl(
-    readRequiredString(object, "skill"),
-    "agent_auth.skill"
-  );
+  const skill = readHttpsUrl(readRequiredString(object, "skill"), "agent_auth.skill");
   const skillUrl = new URL(skill);
-  if (
-    skillUrl.origin !== resourceOrigin ||
-    skillUrl.pathname !== AUTH_MD_DOCUMENT_PATH
-  ) {
-    throw new TypeError(
-      "agent_auth.skill must be the resource origin /auth.md"
-    );
+  if (skillUrl.origin !== resourceOrigin || skillUrl.pathname !== AUTH_MD_DOCUMENT_PATH) {
+    throw new TypeError("agent_auth.skill must be the resource origin /auth.md");
   }
-  const identityEndpoint = readIssuerEndpoint(
-    object,
-    "identity_endpoint",
-    issuerOrigin
-  );
-  const claimEndpoint = readIssuerEndpoint(
-    object,
-    "claim_endpoint",
-    issuerOrigin
-  );
-  const eventsEndpoint = readIssuerEndpoint(
-    object,
-    "events_endpoint",
-    issuerOrigin
-  );
+  const identityEndpoint = readIssuerEndpoint(object, "identity_endpoint", issuerOrigin);
+  const claimEndpoint = readIssuerEndpoint(object, "claim_endpoint", issuerOrigin);
+  const eventsEndpoint = readIssuerEndpoint(object, "events_endpoint", issuerOrigin);
   const identityTypes = readIdentityTypes(object.identity_types_supported);
-  const events = readStringArray(
-    object.events_supported,
-    "agent_auth.events_supported",
-    {
-      allowEmpty: true,
-    }
-  );
+  const events = readStringArray(object.events_supported, "agent_auth.events_supported", {
+    allowEmpty: true,
+  });
   const identityAssertion = object.identity_assertion;
 
   if (identityTypes.includes("identity_assertion")) {
-    const assertionObject = readObject(
-      identityAssertion,
-      "agent_auth.identity_assertion"
-    );
+    const assertionObject = readObject(identityAssertion, "agent_auth.identity_assertion");
     const assertionTypes = readStringArray(
       assertionObject.assertion_types_supported,
       "agent_auth.identity_assertion.assertion_types_supported",
-      { allowEmpty: false }
+      { allowEmpty: false },
     );
-    if (
-      assertionTypes.length !== 1 ||
-      assertionTypes[0] !== AUTH_MD_ID_JAG_ASSERTION_TYPE
-    ) {
+    if (assertionTypes.length !== 1 || assertionTypes[0] !== AUTH_MD_ID_JAG_ASSERTION_TYPE) {
       throw new TypeError("identity_assertion must advertise only ID-JAG");
     }
     if (!events.includes(AUTH_MD_IDENTITY_ASSERTION_REVOKED_EVENT)) {
-      throw new TypeError(
-        "identity_assertion must advertise upstream revocation events"
-      );
+      throw new TypeError("identity_assertion must advertise upstream revocation events");
     }
   } else if (identityAssertion !== undefined) {
-    throw new TypeError(
-      "identity_assertion metadata requires the identity_assertion flow"
-    );
+    throw new TypeError("identity_assertion metadata requires the identity_assertion flow");
   }
 
   return {
@@ -403,7 +315,7 @@ function readIssuer(value: string): string {
 function readIssuerEndpoint(
   object: Record<string, unknown>,
   key: string,
-  issuerOrigin: string
+  issuerOrigin: string,
 ): string {
   const endpoint = readHttpsUrl(readRequiredString(object, key), key);
   if (new URL(endpoint).origin !== issuerOrigin) {
@@ -436,9 +348,7 @@ function readIdentityTypes(value: unknown): AuthMdIdentityType[] {
 }
 
 function readIssuerArray(value: unknown, name: string): string[] {
-  return readStringArray(value, name, { allowEmpty: false }).map((item) =>
-    readIssuer(item)
-  );
+  return readStringArray(value, name, { allowEmpty: false }).map((item) => readIssuer(item));
 }
 
 function readHeaderBearerMethod(value: unknown): void {
@@ -454,13 +364,8 @@ function readRequiredGrantTypes(value: unknown): void {
   const grants = readStringArray(value, "grant_types_supported", {
     allowEmpty: false,
   });
-  if (
-    !grants.includes(AUTH_MD_JWT_BEARER_GRANT) ||
-    !grants.includes(AUTH_MD_CLAIM_GRANT)
-  ) {
-    throw new TypeError(
-      "grant_types_supported must include JWT bearer and auth.md claim grants"
-    );
+  if (!grants.includes(AUTH_MD_JWT_BEARER_GRANT) || !grants.includes(AUTH_MD_CLAIM_GRANT)) {
+    throw new TypeError("grant_types_supported must include JWT bearer and auth.md claim grants");
   }
 }
 
@@ -474,13 +379,7 @@ function readNonEmptyValue(value: unknown, name: string): string {
 function isOAuthScopeToken(value: string): boolean {
   for (const character of value) {
     const code = character.codePointAt(0);
-    if (
-      code === undefined ||
-      code < 0x21 ||
-      code > 0x7e ||
-      code === 0x22 ||
-      code === 0x5c
-    ) {
+    if (code === undefined || code < 0x21 || code > 0x7e || code === 0x22 || code === 0x5c) {
       return false;
     }
   }
@@ -491,11 +390,6 @@ function isAuthMdIdentityType(value: string): value is AuthMdIdentityType {
   return AUTH_MD_IDENTITY_TYPES.some((identityType) => identityType === value);
 }
 
-function sameStringSet(
-  left: readonly string[],
-  right: readonly string[]
-): boolean {
-  return (
-    left.length === right.length && left.every((value) => right.includes(value))
-  );
+function sameStringSet(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value) => right.includes(value));
 }

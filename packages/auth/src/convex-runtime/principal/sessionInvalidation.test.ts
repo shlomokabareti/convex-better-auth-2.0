@@ -4,10 +4,7 @@ import { ConvexError } from "convex/values";
 import { describe, it } from "vitest";
 
 import type { ConvexUserIdentity } from "./resolveConvexUserContext";
-import {
-  requireLocalSessionValid,
-  requireActiveSession,
-} from "./sessionInvalidation";
+import { requireLocalSessionValid, requireActiveSession } from "./sessionInvalidation";
 
 describe("sessionInvalidation", () => {
   const okIdentity: ConvexUserIdentity = {
@@ -18,22 +15,20 @@ describe("sessionInvalidation", () => {
   };
 
   it("requireLocalSessionValid passes when sessionId matches", () => {
-    assert.doesNotThrow(() =>
-      requireLocalSessionValid(okIdentity, { sessionId: "sess-a" })
-    );
+    assert.doesNotThrow(() => requireLocalSessionValid(okIdentity, { sessionId: "sess-a" }));
   });
 
   it("requireLocalSessionValid throws ConvexError when sessionId mismatches", () => {
     assert.throws(
       () => requireLocalSessionValid(okIdentity, { sessionId: "sess-b" }),
-      (e) => e instanceof ConvexError && e.data?.code === "UNAUTHORIZED"
+      (e) => e instanceof ConvexError && e.data?.code === "UNAUTHORIZED",
     );
   });
 
   it("requireLocalSessionValid throws when local sessionId is null", () => {
     assert.throws(
       () => requireLocalSessionValid(okIdentity, { sessionId: null }),
-      (e) => e instanceof ConvexError && e.data?.code === "UNAUTHORIZED"
+      (e) => e instanceof ConvexError && e.data?.code === "UNAUTHORIZED",
     );
   });
 
@@ -44,35 +39,27 @@ describe("sessionInvalidation", () => {
     };
     assert.throws(
       () => requireLocalSessionValid(identity, { sessionId: "sess-a" }),
-      (e) => e instanceof ConvexError && e.data?.code === "UNAUTHORIZED"
+      (e) => e instanceof ConvexError && e.data?.code === "UNAUTHORIZED",
     );
   });
 
   it("requireActiveSession passes when both layers are valid", async () => {
     await assert.doesNotReject(() =>
-      requireActiveSession(okIdentity, { sessionId: "sess-a" }, () =>
-        Promise.resolve(true)
-      )
+      requireActiveSession(okIdentity, { sessionId: "sess-a" }, () => Promise.resolve(true)),
     );
   });
 
   it("requireActiveSession throws when Layer 2 says session missing", async () => {
     await assert.rejects(
-      () =>
-        requireActiveSession(okIdentity, { sessionId: "sess-a" }, () =>
-          Promise.resolve(false)
-        ),
-      (e) => e instanceof ConvexError && e.data?.code === "UNAUTHORIZED"
+      () => requireActiveSession(okIdentity, { sessionId: "sess-a" }, () => Promise.resolve(false)),
+      (e) => e instanceof ConvexError && e.data?.code === "UNAUTHORIZED",
     );
   });
 
   it("requireActiveSession throws immediately when Layer 1 fails", async () => {
     await assert.rejects(
-      () =>
-        requireActiveSession(okIdentity, { sessionId: "sess-b" }, () =>
-          Promise.resolve(true)
-        ),
-      (e) => e instanceof ConvexError && e.data?.code === "UNAUTHORIZED"
+      () => requireActiveSession(okIdentity, { sessionId: "sess-b" }, () => Promise.resolve(true)),
+      (e) => e instanceof ConvexError && e.data?.code === "UNAUTHORIZED",
     );
   });
 
@@ -80,9 +67,9 @@ describe("sessionInvalidation", () => {
     await assert.rejects(
       () =>
         requireActiveSession(okIdentity, { sessionId: "sess-a" }, () =>
-          Promise.reject(new Error("DB down"))
+          Promise.reject(new Error("DB down")),
         ),
-      (e: unknown) => e instanceof Error && e.message === "DB down"
+      (e: unknown) => e instanceof Error && e.message === "DB down",
     );
   });
 

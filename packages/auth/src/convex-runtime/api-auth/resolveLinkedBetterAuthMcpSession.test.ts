@@ -49,10 +49,7 @@ describe("resolveLinkedBetterAuthMcpSession", () => {
     assert.equal(context.userId, "user_123");
     assert.equal(context.organizationId, "org_456");
     assert.deepEqual(context.permissions, ["organization:view"]);
-    assert.deepEqual(context.scopes, [
-      "organization:read",
-      "opportunities:read",
-    ]);
+    assert.deepEqual(context.scopes, ["organization:read", "opportunities:read"]);
   });
 
   it("rejects client-only MCP sessions", async () => {
@@ -81,8 +78,7 @@ describe("resolveLinkedBetterAuthMcpSession", () => {
             },
           },
         }),
-      (error) =>
-        error instanceof ApiAuthError && error.code === "OAUTH_SESSION_INVALID"
+      (error) => error instanceof ApiAuthError && error.code === "OAUTH_SESSION_INVALID",
     );
   });
 
@@ -122,8 +118,7 @@ describe("resolveLinkedBetterAuthMcpSession", () => {
             },
           },
         }),
-      (error) =>
-        error instanceof ApiAuthError && error.code === "PRINCIPAL_RESTRICTED"
+      (error) => error instanceof ApiAuthError && error.code === "PRINCIPAL_RESTRICTED",
     );
   });
 
@@ -154,9 +149,7 @@ describe("resolveLinkedBetterAuthMcpSession", () => {
             },
           },
         }),
-      (error) =>
-        error instanceof ApiAuthError &&
-        error.code === "USER_IDENTITY_NOT_LINKED"
+      (error) => error instanceof ApiAuthError && error.code === "USER_IDENTITY_NOT_LINKED",
     );
   });
 });

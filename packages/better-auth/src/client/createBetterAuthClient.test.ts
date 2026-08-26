@@ -10,16 +10,10 @@ describe("createBetterAuthConvexClient", () => {
       baseURL: "https://auth.example.test/api/auth",
     });
 
-    assert.ok(
-      (typeof client === "object" || typeof client === "function") &&
-        client !== null
-    );
+    assert.ok((typeof client === "object" || typeof client === "function") && client !== null);
     assert.equal(typeof Reflect.get(client, "getCookie"), "function");
     const convex = Reflect.get(client, "convex");
-    assert.ok(
-      (typeof convex === "object" || typeof convex === "function") &&
-        convex !== null
-    );
+    assert.ok((typeof convex === "object" || typeof convex === "function") && convex !== null);
     assert.equal(typeof Reflect.get(convex, "token"), "function");
   });
 });

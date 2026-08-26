@@ -59,15 +59,15 @@ The non-negotiable rule for this architecture is:
 
 This project takes Better Auth's feature set and re-implements the B2B control plane as a Convex component:
 
-| Better Auth plugin | Convex primitive in this repo |
-|---|---|
-| `organization` | `packages/auth/src/component/organizations.ts` — queries, mutations, and actions for orgs, members, and invitations |
-| `admin` | `packages/auth/src/component/scopes.ts` + `servicePrincipals.ts` — role and permission checks |
-| `api-key` | `packages/auth/src/component/apiKeys.ts` — API key issuance, rotation, and verification |
-| `two-factor` | `packages/auth/src/component/identity.ts` + React Native/Expo forms for TOTP and backup codes |
-| `oauth-provider` / `mcp` | `packages/auth/src/mcp.ts` + `agent-auth-protocol/` — MCP and agent auth flows |
-| `jwt` | `packages/better-auth/src/server/createConvexAuthConfig.ts` — JWKS and issuer configuration for Convex |
-| `webhooks` | `packages/auth/src/component/webhooks.ts` — webhook fan-out and security |
+| Better Auth plugin       | Convex primitive in this repo                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `organization`           | `packages/auth/src/component/organizations.ts` — queries, mutations, and actions for orgs, members, and invitations |
+| `admin`                  | `packages/auth/src/component/scopes.ts` + `servicePrincipals.ts` — role and permission checks                       |
+| `api-key`                | `packages/auth/src/component/apiKeys.ts` — API key issuance, rotation, and verification                             |
+| `two-factor`             | `packages/auth/src/component/identity.ts` + React Native/Expo forms for TOTP and backup codes                       |
+| `oauth-provider` / `mcp` | `packages/auth/src/mcp.ts` + `agent-auth-protocol/` — MCP and agent auth flows                                      |
+| `jwt`                    | `packages/better-auth/src/server/createConvexAuthConfig.ts` — JWKS and issuer configuration for Convex              |
+| `webhooks`               | `packages/auth/src/component/webhooks.ts` — webhook fan-out and security                                            |
 
 Better Auth's **authentication core** (password hashing, session issuance, OAuth dance, token signing) is still used. Its **B2B domain plugins** are rebuilt so the data lives in your Convex database.
 

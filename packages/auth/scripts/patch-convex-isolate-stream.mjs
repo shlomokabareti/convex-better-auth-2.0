@@ -18,8 +18,7 @@ const FILES = ["dist/convex.js", "dist/index.js", "dist/better-auth-server.js"];
 // Quote- AND whitespace-agnostic (\s matches newlines): esbuild emits a single-line
 // double-quoted import today, but a format change (single quotes, multiline braces) must not
 // slip past the patch.
-const IMPORT_RE =
-  /import\s*\{\s*Writable\s*\}\s*from\s*['"\x60](?:node:)?stream['"\x60];/g;
+const IMPORT_RE = /import\s*\{\s*Writable\s*\}\s*from\s*['"\x60](?:node:)?stream['"\x60];/g;
 // The final fail-closed scan is FORM-INDEPENDENT: it matches the exact stream module
 // specifier ("stream" / "node:stream", single or double quote, exact close-quote so
 // "stream/web" never matches) preceded by ANY import mechanism — `from`, static/dynamic
@@ -44,7 +43,7 @@ for (const file of FILES) {
     src = await readFile(file, "utf8");
   } catch {
     fail(
-      `expected isolate entry ${file} was not produced by the build — cannot verify the node:stream fix.`
+      `expected isolate entry ${file} was not produced by the build — cannot verify the node:stream fix.`,
     );
   }
   const count = (src.match(IMPORT_RE) ?? []).length;
@@ -59,7 +58,7 @@ for (const file of FILES) {
 if (totalPatched === 0) {
   fail(
     'found no `import { Writable } from "stream"` in any isolate entry. Either the leak is ' +
-      "gone (remove this patch) or a dependency changed its shape (investigate). Failing closed."
+      "gone (remove this patch) or a dependency changed its shape (investigate). Failing closed.",
   );
 }
 
@@ -72,11 +71,9 @@ for (const file of FILES) {
   }
 }
 if (stillLeaking.length > 0) {
-  fail(
-    `node:stream still imported after patching: ${stillLeaking.join(", ")}. Failing closed.`
-  );
+  fail(`node:stream still imported after patching: ${stillLeaking.join(", ")}. Failing closed.`);
 }
 
 console.log(
-  `patch-convex-isolate-stream: stubbed node:stream in ${totalPatched} import(s) across the isolate entries; verified none remain.`
+  `patch-convex-isolate-stream: stubbed node:stream in ${totalPatched} import(s) across the isolate entries; verified none remain.`,
 );

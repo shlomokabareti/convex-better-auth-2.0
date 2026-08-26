@@ -21,7 +21,7 @@ describe("organization invitation email helpers", () => {
         token: "token with spaces",
         templateUrl: "https://app.example.com/invites/{token}",
       }),
-      "https://app.example.com/invites/token%20with%20spaces"
+      "https://app.example.com/invites/token%20with%20spaces",
     );
   });
 
@@ -31,7 +31,7 @@ describe("organization invitation email helpers", () => {
         token: "abc123",
         appOrigin: "https://app.example.com/",
       }),
-      "https://app.example.com/accept-invite?token=abc123"
+      "https://app.example.com/accept-invite?token=abc123",
     );
   });
 
@@ -46,7 +46,7 @@ describe("organization invitation email helpers", () => {
         inviterLabel: "owner@example.com",
         expiresAt: Date.UTC(2026, 0, 1),
       }),
-      { status: "not_configured", reason: "missing_from_address" }
+      { status: "not_configured", reason: "missing_from_address" },
     );
 
     assert.deepStrictEqual(
@@ -59,7 +59,7 @@ describe("organization invitation email helpers", () => {
         inviterLabel: "owner@example.com",
         expiresAt: Date.UTC(2026, 0, 1),
       }),
-      { status: "not_configured", reason: "missing_accept_url" }
+      { status: "not_configured", reason: "missing_accept_url" },
     );
   });
 
@@ -74,10 +74,7 @@ describe("organization invitation email helpers", () => {
       expiresAt: Date.UTC(2026, 0, 1),
     });
 
-    assert.equal(
-      "subject" in draft ? draft.subject : null,
-      "You're invited to Convex & Co"
-    );
+    assert.equal("subject" in draft ? draft.subject : null, "You're invited to Convex & Co");
     assert.equal("to" in draft ? draft.to : null, "invitee@example.com");
     assert.match("html" in draft ? draft.html : "", /Convex &amp; Co/);
     assert.match("text" in draft ? draft.text : "", /Convex & Co/);
@@ -85,9 +82,8 @@ describe("organization invitation email helpers", () => {
     assert.match("html" in draft ? draft.html : "", /Admin/);
     assert.match(
       "html" in draft ? draft.html : "",
-      /https:\/\/app\.example\.com\/accept-invite\?token=abc/
+      /https:\/\/app\.example\.com\/accept-invite\?token=abc/,
     );
-
   });
 
   it("maps Resend delivery events into invite delivery status", () => {
@@ -95,7 +91,7 @@ describe("organization invitation email helpers", () => {
       mapResendEventToInvitationEmailDelivery({
         event: { type: "email.delivered" },
       }),
-      { status: "delivered", eventType: "email.delivered" }
+      { status: "delivered", eventType: "email.delivered" },
     );
 
     assert.deepStrictEqual(
@@ -109,21 +105,18 @@ describe("organization invitation email helpers", () => {
         status: "bounced",
         eventType: "email.bounced",
         error: "Mailbox not found",
-      }
+      },
     );
   });
 
   it("creates delivery patches for client Convex mutations", () => {
-    assert.deepStrictEqual(
-      createInvitationEmailQueuedPatch({ emailId: "email_123", now: 10 }),
-      {
-        emailId: "email_123",
-        emailDeliveryStatus: "queued",
-        emailDeliveryEvent: "queued",
-        emailDeliveryError: undefined,
-        emailDeliveryUpdatedAt: 10,
-      }
-    );
+    assert.deepStrictEqual(createInvitationEmailQueuedPatch({ emailId: "email_123", now: 10 }), {
+      emailId: "email_123",
+      emailDeliveryStatus: "queued",
+      emailDeliveryEvent: "queued",
+      emailDeliveryError: undefined,
+      emailDeliveryUpdatedAt: 10,
+    });
 
     assert.deepStrictEqual(
       createInvitationEmailNotConfiguredPatch({
@@ -135,18 +128,15 @@ describe("organization invitation email helpers", () => {
         emailDeliveryEvent: "missing_from_address",
         emailDeliveryError: undefined,
         emailDeliveryUpdatedAt: 20,
-      }
+      },
     );
 
-    assert.deepStrictEqual(
-      createInvitationEmailFailedPatch({ reason: "boom", now: 30 }),
-      {
-        emailDeliveryStatus: "failed",
-        emailDeliveryEvent: "enqueue_failed",
-        emailDeliveryError: "boom",
-        emailDeliveryUpdatedAt: 30,
-      }
-    );
+    assert.deepStrictEqual(createInvitationEmailFailedPatch({ reason: "boom", now: 30 }), {
+      emailDeliveryStatus: "failed",
+      emailDeliveryEvent: "enqueue_failed",
+      emailDeliveryError: "boom",
+      emailDeliveryUpdatedAt: 30,
+    });
 
     assert.deepStrictEqual(
       createInvitationEmailEventPatch({
@@ -161,7 +151,7 @@ describe("organization invitation email helpers", () => {
         emailDeliveryEvent: "email.failed",
         emailDeliveryError: "denied",
         emailDeliveryUpdatedAt: 40,
-      }
+      },
     );
   });
 
@@ -171,21 +161,21 @@ describe("organization invitation email helpers", () => {
         primary: " CRM <crm@example.com> ",
         fallback: "Fallback <fallback@example.com>",
       }),
-      "CRM <crm@example.com>"
+      "CRM <crm@example.com>",
     );
     assert.equal(
       resolveInvitationEmailFromAddress({
         primary: " ",
         fallback: "Fallback <fallback@example.com>",
       }),
-      "Fallback <fallback@example.com>"
+      "Fallback <fallback@example.com>",
     );
     assert.equal(
       resolveInvitationEmailFromAddress({
         primary: null,
         fallback: "Fallback <fallback@example.com>",
       }),
-      "Fallback <fallback@example.com>"
+      "Fallback <fallback@example.com>",
     );
   });
 

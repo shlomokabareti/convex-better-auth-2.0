@@ -16,10 +16,9 @@ export type ConvexPostSignUpFlowState = {
 };
 
 export function getSelectableOrganizationCount(
-  organizations: readonly SelectableOrganization[] | null | undefined
+  organizations: readonly SelectableOrganization[] | null | undefined,
 ): number {
-  return (organizations ?? []).filter((organization) => organization.canSelect)
-    .length;
+  return (organizations ?? []).filter((organization) => organization.canSelect).length;
 }
 
 export function shouldAttemptEnsureOrganization(args: {
@@ -29,21 +28,15 @@ export function shouldAttemptEnsureOrganization(args: {
   hasAttemptedEnsure: boolean;
 }): boolean {
   return (
-    !args.hasCurrentOrganization &&
-    args.availableOrganizationsResolved &&
-    !args.hasAttemptedEnsure
+    !args.hasCurrentOrganization && args.availableOrganizationsResolved && !args.hasAttemptedEnsure
   );
 }
 
-export function shouldSchedulePostSignUpTimeout(
-  hasCurrentOrganization: boolean
-): boolean {
+export function shouldSchedulePostSignUpTimeout(hasCurrentOrganization: boolean): boolean {
   return !hasCurrentOrganization;
 }
 
-export function getPostSignUpStatusDescription(
-  isEnsuringOrganization: boolean
-): string {
+export function getPostSignUpStatusDescription(isEnsuringOrganization: boolean): string {
   return isEnsuringOrganization
     ? "Activating your organization now..."
     : "We're waiting for your organization access to finish syncing.";
@@ -97,7 +90,7 @@ export function useConvexPostSignUpFlow(args: {
 
   const selectableOrganizationCount = useMemo(
     () => getSelectableOrganizationCount(availableOrganizations),
-    [availableOrganizations]
+    [availableOrganizations],
   );
 
   useEffect(() => {
@@ -128,12 +121,7 @@ export function useConvexPostSignUpFlow(args: {
       .finally(() => {
         setIsRedeemingInvitation(false);
       });
-  }, [
-    currentOrganization,
-    invitationToken,
-    isRedeemingInvitation,
-    redeemInvitation,
-  ]);
+  }, [currentOrganization, invitationToken, isRedeemingInvitation, redeemInvitation]);
 
   useEffect(() => {
     if (

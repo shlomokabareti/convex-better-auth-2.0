@@ -54,7 +54,7 @@ function printHelp(): void {
       "      --convex-dir ./apps/backend/convex\n" +
       "  Now:\n" +
       "    pnpm dlx convex-auth check --convex-dir ./apps/backend/convex\n" +
-      "    pnpm dlx convex-auth preflight --repo-root . --convex-dir ./apps/backend/convex\n"
+      "    pnpm dlx convex-auth preflight --repo-root . --convex-dir ./apps/backend/convex\n",
   );
 }
 
@@ -68,9 +68,7 @@ function runScript(script: string, args: readonly string[]): void {
     process.exit(code ?? 1);
   });
   child.on("error", (err) => {
-    process.stderr.write(
-      `convex-auth: failed to spawn ${script}: ${err.message}\n`
-    );
+    process.stderr.write(`convex-auth: failed to spawn ${script}: ${err.message}\n`);
     process.exit(1);
   });
 }

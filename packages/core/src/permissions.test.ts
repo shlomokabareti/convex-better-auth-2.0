@@ -6,19 +6,12 @@ import {
   permissionIntersectionConformanceCases,
   permissionMatcherConformanceCases,
 } from "./permissions-conformance";
-import {
-  getExpandedPermissions,
-  hasPermission,
-  intersectPermissions,
-} from "./permissions";
+import { getExpandedPermissions, hasPermission, intersectPermissions } from "./permissions";
 
 describe("canonical permission policy", () => {
   for (const testCase of permissionMatcherConformanceCases) {
     it(testCase.name, () => {
-      assert.equal(
-        hasPermission(testCase.granted, testCase.required),
-        testCase.expected
-      );
+      assert.equal(hasPermission(testCase.granted, testCase.required), testCase.expected);
     });
   }
 
@@ -26,7 +19,7 @@ describe("canonical permission policy", () => {
     it(`intersection: ${testCase.name}`, () => {
       assert.deepEqual(
         intersectPermissions(testCase.owner, testCase.narrowed).toSorted(),
-        [...testCase.expected].toSorted()
+        [...testCase.expected].toSorted(),
       );
     });
   }
@@ -38,9 +31,9 @@ describe("canonical permission policy", () => {
         {
           role: ["billing:*", "unknown:read", "billing:**", ""],
         },
-        "role"
+        "role",
       ).toSorted(),
-      ["billing:read", "billing:write"]
+      ["billing:read", "billing:write"],
     );
   });
 });

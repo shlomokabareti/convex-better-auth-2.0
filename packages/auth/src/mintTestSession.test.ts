@@ -33,10 +33,7 @@ function recordingFetch(handlers: {
   convexToken: (call: Call) => Response;
 }): { fetchImpl: typeof fetch; calls: Call[] } {
   const calls: Call[] = [];
-  const fetchImpl = async (
-    input: string | URL | Request,
-    init?: RequestInit
-  ) => {
+  const fetchImpl = async (input: string | URL | Request, init?: RequestInit) => {
     const url = requestUrl(input);
     const headers: Record<string, string> = {};
     for (const [k, v] of new Headers(init?.headers).entries()) {
@@ -71,8 +68,7 @@ describe("mintConvexAuthTestSession — headless form-free mint", () => {
         new Response(JSON.stringify({ ok: true }), {
           status: 200,
           headers: {
-            "set-cookie":
-              "better-auth.session_token=sess-abc; Path=/; HttpOnly",
+            "set-cookie": "better-auth.session_token=sess-abc; Path=/; HttpOnly",
           },
         }),
       convexToken: () =>
@@ -99,10 +95,7 @@ describe("mintConvexAuthTestSession — headless form-free mint", () => {
     const tokenCall = callAt(calls, 1);
     assert.equal(tokenCall.method, "GET");
     assert.ok(tokenCall.url.endsWith("/api/auth/convex/token"));
-    assert.equal(
-      tokenCall.headers.cookie,
-      "better-auth.session_token=sess-abc"
-    );
+    assert.equal(tokenCall.headers.cookie, "better-auth.session_token=sess-abc");
   });
 
   it("uses a bearer set-auth-token when the deployment returns one (no cookie)", async () => {
@@ -121,10 +114,7 @@ describe("mintConvexAuthTestSession — headless form-free mint", () => {
     const session = await mintConvexAuthTestSession({ ...BASE, fetchImpl });
     assert.equal(session.convexToken, "jwt-from-bearer");
     assert.equal(session.sessionToken, "bearer-sess-1");
-    assert.equal(
-      callAt(calls, 1).headers.authorization,
-      "Bearer bearer-sess-1"
-    );
+    assert.equal(callAt(calls, 1).headers.authorization, "Bearer bearer-sess-1");
   });
 
   it("throws a guidance error when the mint is rejected (wrong secret / disabled)", async () => {
@@ -134,19 +124,18 @@ describe("mintConvexAuthTestSession — headless form-free mint", () => {
     });
     await assert.rejects(
       () => mintConvexAuthTestSession({ ...BASE, fetchImpl }),
-      /test-session mint failed \(403/
+      /test-session mint failed \(403/,
     );
   });
 
   it("throws when sign-in returns no session material", async () => {
     const { fetchImpl } = recordingFetch({
-      testSession: () =>
-        new Response(JSON.stringify({ ok: true }), { status: 200 }),
+      testSession: () => new Response(JSON.stringify({ ok: true }), { status: 200 }),
       convexToken: () => new Response("{}", { status: 200 }),
     });
     await assert.rejects(
       () => mintConvexAuthTestSession({ ...BASE, fetchImpl }),
-      /returned no session/
+      /returned no session/,
     );
   });
 
@@ -161,7 +150,7 @@ describe("mintConvexAuthTestSession — headless form-free mint", () => {
     });
     await assert.rejects(
       () => mintConvexAuthTestSession({ ...BASE, fetchImpl }),
-      /convex token exchange failed \(401/
+      /convex token exchange failed \(401/,
     );
   });
 
@@ -172,8 +161,7 @@ describe("mintConvexAuthTestSession — headless form-free mint", () => {
           status: 200,
           headers: { "set-cookie": "better-auth.session_token=s; Path=/" },
         }),
-      convexToken: () =>
-        new Response(JSON.stringify({ token: "t" }), { status: 200 }),
+      convexToken: () => new Response(JSON.stringify({ token: "t" }), { status: 200 }),
     });
     await mintConvexAuthTestSession({
       ...BASE,

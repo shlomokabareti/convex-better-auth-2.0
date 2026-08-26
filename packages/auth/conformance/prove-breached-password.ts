@@ -30,10 +30,7 @@ const b = await fetch(`${site}/api/auth/sign-up/email`, {
     name: "Brk",
   }),
 });
-if (
-  b.status >= 400 &&
-  /pwn|breach|compromis|exposed|data breach/i.test(await b.text())
-) {
+if (b.status >= 400 && /pwn|breach|compromis|exposed|data breach/i.test(await b.text())) {
   r.ok(`known-breached password rejected (HTTP ${b.status})`);
 } else {
   r.bad(`known-breached password NOT rejected (HTTP ${b.status})`);

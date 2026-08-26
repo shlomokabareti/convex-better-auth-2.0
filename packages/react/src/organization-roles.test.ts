@@ -18,7 +18,7 @@ describe("organization role helpers", () => {
         name: "Ops lead",
         permissions: ["people:view"],
       }),
-      true
+      true,
     );
     assert.equal(
       canSubmitConvexOrganizationRoleForm({
@@ -26,7 +26,7 @@ describe("organization role helpers", () => {
         name: " ",
         permissions: ["people:view"],
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexOrganizationRoleForm({
@@ -34,7 +34,7 @@ describe("organization role helpers", () => {
         name: "Ops lead",
         permissions: [],
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexOrganizationRoleForm({
@@ -42,20 +42,20 @@ describe("organization role helpers", () => {
         name: "Ops lead",
         permissions: ["people:view"],
       }),
-      false
+      false,
     );
   });
 
   it("toggles selected permissions without mutating the input", () => {
     const current = ["people:view", "companies:view"];
-    assert.deepEqual(
-      toggleConvexOrganizationRolePermission(current, "people:view"),
-      ["companies:view"]
-    );
-    assert.deepEqual(
-      toggleConvexOrganizationRolePermission(current, "tasks:view"),
-      ["people:view", "companies:view", "tasks:view"]
-    );
+    assert.deepEqual(toggleConvexOrganizationRolePermission(current, "people:view"), [
+      "companies:view",
+    ]);
+    assert.deepEqual(toggleConvexOrganizationRolePermission(current, "tasks:view"), [
+      "people:view",
+      "companies:view",
+      "tasks:view",
+    ]);
     assert.deepEqual(current, ["people:view", "companies:view"]);
   });
 
@@ -75,7 +75,7 @@ describe("organization role helpers", () => {
           ],
         },
         { label: "general", permissions: [{ key: "system" }] },
-      ]
+      ],
     );
   });
 
@@ -87,15 +87,9 @@ describe("organization role helpers", () => {
 
   it("returns stable role mutation error copy", () => {
     assert.equal(
-      getConvexOrganizationRoleManagerErrorMessage(
-        new Error("Nope"),
-        "Fallback"
-      ),
-      "Nope"
+      getConvexOrganizationRoleManagerErrorMessage(new Error("Nope"), "Fallback"),
+      "Nope",
     );
-    assert.equal(
-      getConvexOrganizationRoleManagerErrorMessage("bad", "Fallback"),
-      "Fallback"
-    );
+    assert.equal(getConvexOrganizationRoleManagerErrorMessage("bad", "Fallback"), "Fallback");
   });
 });

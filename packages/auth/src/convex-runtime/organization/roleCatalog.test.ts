@@ -24,31 +24,21 @@ describe("defaultOrganizationRoleCatalog", () => {
   it("every definition has a non-empty name and permission list", () => {
     for (const role of defaultOrganizationRoleCatalog()) {
       assert.ok(role.name.length > 0, `${role.key} name must be non-empty`);
-      assert.ok(
-        role.description.length > 0,
-        `${role.key} description must be non-empty`
-      );
-      assert.ok(
-        role.permissions.length > 0,
-        `${role.key} must have at least one permission`
-      );
+      assert.ok(role.description.length > 0, `${role.key} description must be non-empty`);
+      assert.ok(role.permissions.length > 0, `${role.key} must have at least one permission`);
       assert.equal(typeof role.isSystem, "boolean");
     }
   });
 
   it("owner has wildcard permission and is a system role", () => {
-    const owner = defaultOrganizationRoleCatalog().find(
-      (role) => role.key === "owner"
-    );
+    const owner = defaultOrganizationRoleCatalog().find((role) => role.key === "owner");
     assert.ok(owner);
     assert.deepEqual(owner.permissions, ["*"]);
     assert.equal(owner.isSystem, true);
   });
 
   it("admin is a system role without billing or org-delete authority", () => {
-    const admin = defaultOrganizationRoleCatalog().find(
-      (role) => role.key === "admin"
-    );
+    const admin = defaultOrganizationRoleCatalog().find((role) => role.key === "admin");
     assert.ok(admin);
     assert.equal(admin.isSystem, true);
     assert.ok(!admin.permissions.includes("*"));
@@ -58,24 +48,17 @@ describe("defaultOrganizationRoleCatalog", () => {
 
   it("manager, member, and viewer are non-system roles", () => {
     for (const key of ["manager", "member", "viewer"] as const) {
-      const role = defaultOrganizationRoleCatalog().find(
-        (entry) => entry.key === key
-      );
+      const role = defaultOrganizationRoleCatalog().find((entry) => entry.key === key);
       assert.ok(role);
       assert.equal(role.isSystem, false);
     }
   });
 
   it("viewer is read-only (no manage/write permissions)", () => {
-    const viewer = defaultOrganizationRoleCatalog().find(
-      (role) => role.key === "viewer"
-    );
+    const viewer = defaultOrganizationRoleCatalog().find((role) => role.key === "viewer");
     assert.ok(viewer);
     for (const permission of viewer.permissions) {
-      assert.ok(
-        permission.endsWith(":read"),
-        `viewer permission ${permission} must be read-only`
-      );
+      assert.ok(permission.endsWith(":read"), `viewer permission ${permission} must be read-only`);
     }
   });
 

@@ -36,18 +36,14 @@ export const NEVER_ISSUABLE_SCOPES: readonly string[] = [
  * developer-facing programming error at issuance time, and naming the offending
  * scope is what makes it fixable.
  */
-export function assertScopesAreIssuable(
-  scopes: readonly string[] | undefined
-): void {
+export function assertScopesAreIssuable(scopes: readonly string[] | undefined): void {
   if (scopes === undefined) {
     return;
   }
-  const forbidden = scopes.filter((scope) =>
-    NEVER_ISSUABLE_SCOPES.includes(scope)
-  );
+  const forbidden = scopes.filter((scope) => NEVER_ISSUABLE_SCOPES.includes(scope));
   if (forbidden.length > 0) {
     throw new Error(
-      `Refusing to issue a credential holding never issuable scope(s): ${forbidden.join(", ")}. A credential that can mint credentials self-replicates, so a single leak becomes unrecoverable. Issue this capability through a session-authenticated path instead.`
+      `Refusing to issue a credential holding never issuable scope(s): ${forbidden.join(", ")}. A credential that can mint credentials self-replicates, so a single leak becomes unrecoverable. Issue this capability through a session-authenticated path instead.`,
     );
   }
 }

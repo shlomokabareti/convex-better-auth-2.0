@@ -1,8 +1,4 @@
-import type {
-  ApiResolvedAuthContext,
-  AuthPrincipal,
-  VerifiedUserToken,
-} from "../coreTypes";
+import type { ApiResolvedAuthContext, AuthPrincipal, VerifiedUserToken } from "../coreTypes";
 import {
   resolveAgentContext,
   resolveApiKeyContext,
@@ -88,7 +84,7 @@ function resolveApiCredentialContext(args: {
 
 async function resolveUserBearerAuthContext(
   args: ResolveApiAuthContextArgs,
-  verifiedToken: VerifiedUserToken
+  verifiedToken: VerifiedUserToken,
 ): Promise<ApiResolvedAuthContext> {
   const linkedUser = await args.adapter.getUserByIdentity({
     provider: verifiedToken.provider,
@@ -100,23 +96,19 @@ async function resolveUserBearerAuthContext(
   if (linkedUser === null) {
     throw new ApiAuthError(
       "USER_IDENTITY_NOT_LINKED",
-      "Verified user token is not linked to a local user."
+      "Verified user token is not linked to a local user.",
     );
   }
 
   const organizationAccess = await args.adapter.getOrganizationAccess({
     userId: linkedUser.userId,
     requestedOrganizationId: args.requestedOrganizationId ?? null,
-    organizationHintId:
-      args.organizationHintId ?? linkedUser.activeOrganizationId,
+    organizationHintId: args.organizationHintId ?? linkedUser.activeOrganizationId,
   });
 
   const principal = resolveUserPrincipal({
     userId: linkedUser.userId,
-    identity:
-      linkedUser.identityId === null
-        ? null
-        : { identityId: linkedUser.identityId },
+    identity: linkedUser.identityId === null ? null : { identityId: linkedUser.identityId },
     activeOrganizationId: organizationAccess.organizationId,
     membershipIds: organizationAccess.membershipIds,
     roleKeys: organizationAccess.roleKeys,
@@ -129,7 +121,7 @@ async function resolveUserBearerAuthContext(
   if (principal.isRestricted) {
     throw new ApiAuthError(
       "PRINCIPAL_RESTRICTED",
-      principal.restrictedReason ?? "Resolved principal is restricted."
+      principal.restrictedReason ?? "Resolved principal is restricted.",
     );
   }
 
@@ -153,12 +145,12 @@ async function resolveUserBearerAuthContext(
 }
 
 async function resolveApiKeyBearerAuthContext(
-  args: ResolveApiAuthContextArgs
+  args: ResolveApiAuthContextArgs,
 ): Promise<ApiResolvedAuthContext> {
   if (args.adapter.getApiKeyPrincipal === undefined) {
     throw new ApiAuthError(
       "API_CREDENTIAL_UNSUPPORTED",
-      "API key bearer credentials are not configured for this adapter."
+      "API key bearer credentials are not configured for this adapter.",
     );
   }
 
@@ -168,17 +160,13 @@ async function resolveApiKeyBearerAuthContext(
   });
 
   if (resolvedApiKey === null) {
-    throw new ApiAuthError(
-      "API_CREDENTIAL_INVALID",
-      "API key bearer credential is invalid."
-    );
+    throw new ApiAuthError("API_CREDENTIAL_INVALID", "API key bearer credential is invalid.");
   }
 
   if (isRestrictedPrincipal(resolvedApiKey.principal)) {
     throw new ApiAuthError(
       "PRINCIPAL_RESTRICTED",
-      getRestrictedReason(resolvedApiKey.principal) ??
-        "Resolved principal is restricted."
+      getRestrictedReason(resolvedApiKey.principal) ?? "Resolved principal is restricted.",
     );
   }
 
@@ -202,7 +190,7 @@ async function resolveApiKeyBearerAuthContext(
 }
 
 export async function resolveApiAuthContext(
-  args: ResolveApiAuthContextArgs
+  args: ResolveApiAuthContextArgs,
 ): Promise<ApiResolvedAuthContext> {
   switch (args.credential.credentialType) {
     case "userBearer": {
@@ -216,16 +204,12 @@ export async function resolveApiAuthContext(
   }
 }
 
-async function verifyUserBearerToken(
-  args: ResolveApiAuthContextArgs
-): Promise<VerifiedUserToken> {
+async function verifyUserBearerToken(args: ResolveApiAuthContextArgs): Promise<VerifiedUserToken> {
   try {
     return await args.verifier.verifyUserBearerToken(args.credential.token);
   } catch (error) {
-    throw new ApiAuthError(
-      "API_CREDENTIAL_INVALID",
-      "User bearer credential is invalid.",
-      { cause: error }
-    );
+    throw new ApiAuthError("API_CREDENTIAL_INVALID", "User bearer credential is invalid.", {
+      cause: error,
+    });
   }
 }

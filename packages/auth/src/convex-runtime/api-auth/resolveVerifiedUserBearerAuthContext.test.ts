@@ -29,9 +29,7 @@ function createVerifier(): ApiTokenVerifier {
   };
 }
 
-function createAdapter(
-  overrides?: Partial<ApiAuthLookupAdapter>
-): ApiAuthLookupAdapter {
+function createAdapter(overrides?: Partial<ApiAuthLookupAdapter>): ApiAuthLookupAdapter {
   return {
     async getUserByIdentity() {
       return {
@@ -87,8 +85,7 @@ describe("resolveVerifiedUserBearerAuthContext", () => {
           },
           adapter: createAdapter(),
         }),
-      (error: unknown) =>
-        error instanceof ApiAuthError && error.code === "API_CREDENTIAL_INVALID"
+      (error: unknown) => error instanceof ApiAuthError && error.code === "API_CREDENTIAL_INVALID",
     );
   });
 });

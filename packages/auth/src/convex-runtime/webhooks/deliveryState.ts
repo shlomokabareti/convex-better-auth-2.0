@@ -1,7 +1,4 @@
-import {
-  getConvexWebhookRetryAt,
-  type ConvexWebhookRetryPolicyOptions,
-} from "./retryPolicy";
+import { getConvexWebhookRetryAt, type ConvexWebhookRetryPolicyOptions } from "./retryPolicy";
 import type { ConvexWebhookFailureKind } from "./types";
 
 export type ConvexWebhookDeliveryResultDelivery = {
@@ -53,16 +50,11 @@ export function buildConvexWebhookDeliveryResultUpdate(args: {
     attemptCount,
     nextAttemptAt,
     processingScheduledAt:
-      args.outcome.status === "pending"
-        ? args.delivery.processingScheduledAt
-        : undefined,
+      args.outcome.status === "pending" ? args.delivery.processingScheduledAt : undefined,
     responseStatus: args.outcome.responseStatus,
     responseBody: args.outcome.responseBody,
     failureKind: args.outcome.failureKind,
-    deliveredAt:
-      args.outcome.status === "delivered"
-        ? args.now
-        : args.delivery.deliveredAt,
+    deliveredAt: args.outcome.status === "delivered" ? args.now : args.delivery.deliveredAt,
     exhaustedAt: args.outcome.status === "failed" ? args.now : undefined,
     updatedAt: args.now,
   };
@@ -93,8 +85,7 @@ export function buildConvexWebhookStaleDeliveryUpdate(args: {
     updatedAt: args.now,
     recoveredAt: args.now,
     recoveryCount: (args.delivery.recoveryCount ?? 0) + 1,
-    responseBody:
-      args.responseBody ?? "Recovered stale processing delivery for retry",
+    responseBody: args.responseBody ?? "Recovered stale processing delivery for retry",
     failureKind: undefined,
   };
 }

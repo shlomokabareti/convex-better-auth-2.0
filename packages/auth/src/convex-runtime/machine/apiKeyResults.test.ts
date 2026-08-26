@@ -2,10 +2,7 @@ import assert from "node:assert/strict";
 
 import { describe, it } from "vitest";
 
-import {
-  createConvexApiKeyListItem,
-  createConvexApiKeyTokenResult,
-} from "./apiKeyResults";
+import { createConvexApiKeyListItem, createConvexApiKeyTokenResult } from "./apiKeyResults";
 
 describe("createConvexApiKeyTokenResult", () => {
   it("formats one-time API key tokens without mutating caller arrays", () => {

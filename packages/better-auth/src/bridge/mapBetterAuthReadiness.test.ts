@@ -20,10 +20,7 @@ describe("mapBetterAuthReadiness", () => {
   });
 
   it("returns signedOut when not authenticated", () => {
-    assert.equal(
-      mapBetterAuthReadiness({ ...base, providerAuthenticated: false }),
-      "signedOut"
-    );
+    assert.equal(mapBetterAuthReadiness({ ...base, providerAuthenticated: false }), "signedOut");
   });
 
   it("returns providerReady when token missing", () => {
@@ -33,7 +30,7 @@ describe("mapBetterAuthReadiness", () => {
         tokenAvailable: false,
         convexAuthenticated: false,
       }),
-      "providerReady"
+      "providerReady",
     );
   });
 
@@ -43,14 +40,11 @@ describe("mapBetterAuthReadiness", () => {
         ...base,
         convexAuthenticated: false,
       }),
-      "tokenReady"
+      "tokenReady",
     );
   });
 
   it("returns reauthRequired on terminal failure", () => {
-    assert.equal(
-      mapBetterAuthReadiness({ ...base, terminalFailure: true }),
-      "reauthRequired"
-    );
+    assert.equal(mapBetterAuthReadiness({ ...base, terminalFailure: true }), "reauthRequired");
   });
 });

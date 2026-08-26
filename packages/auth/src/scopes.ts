@@ -5,7 +5,4 @@
  * component bundles and where issuance enforces it; consumers import it from
  * here so a route can name the same set the component refuses.
  */
-export {
-  assertScopesAreIssuable,
-  NEVER_ISSUABLE_SCOPES,
-} from "./component/scopes.js";
+export { assertScopesAreIssuable, NEVER_ISSUABLE_SCOPES } from "./component/scopes.js";

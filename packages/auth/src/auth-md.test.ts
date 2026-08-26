@@ -58,12 +58,7 @@ describe("auth.md discovery contract", () => {
         },
       },
     });
-    assert.ok(
-      !(
-        "identity_assertion" in
-        serviceAuthDiscovery.authorizationServer.agent_auth
-      )
-    );
+    assert.ok(!("identity_assertion" in serviceAuthDiscovery.authorizationServer.agent_auth));
   });
 
   it("parses the standard identity_assertion profile only with ID-JAG revocation", () => {
@@ -75,28 +70,20 @@ describe("auth.md discovery contract", () => {
       identityTypesSupported: ["identity_assertion"],
     });
 
-    assert.deepEqual(
-      discovery.authorizationServer.agent_auth.identity_assertion,
-      {
-        assertion_types_supported: [AUTH_MD_ID_JAG_ASSERTION_TYPE],
-      }
-    );
-    assert.deepEqual(
-      discovery.authorizationServer.agent_auth.events_supported,
-      [AUTH_MD_IDENTITY_ASSERTION_REVOKED_EVENT]
-    );
+    assert.deepEqual(discovery.authorizationServer.agent_auth.identity_assertion, {
+      assertion_types_supported: [AUTH_MD_ID_JAG_ASSERTION_TYPE],
+    });
+    assert.deepEqual(discovery.authorizationServer.agent_auth.events_supported, [
+      AUTH_MD_IDENTITY_ASSERTION_REVOKED_EVENT,
+    ]);
 
     const missingRevocation = structuredClone(discovery);
     missingRevocation.authorizationServer.agent_auth.events_supported = [];
-    expect(() => parseAuthMdDiscoveryDocuments(missingRevocation)).toThrow(
-      /revocation events/
-    );
+    expect(() => parseAuthMdDiscoveryDocuments(missingRevocation)).toThrow(/revocation events/);
 
     const missingAssertion = structuredClone(discovery);
     delete missingAssertion.authorizationServer.agent_auth.identity_assertion;
-    expect(() => parseAuthMdDiscoveryDocuments(missingAssertion)).toThrow(
-      /identity_assertion/
-    );
+    expect(() => parseAuthMdDiscoveryDocuments(missingAssertion)).toThrow(/identity_assertion/);
   });
 
   it("ignores unknown fields and treats scope inventories as sets", () => {
@@ -116,10 +103,7 @@ describe("auth.md discovery contract", () => {
     };
 
     const parsed = parseAuthMdDiscoveryDocuments(withExtensions);
-    assert.deepEqual(parsed.authorizationServer.scopes_supported, [
-      "chat:write",
-      "chat:read",
-    ]);
+    assert.deepEqual(parsed.authorizationServer.scopes_supported, ["chat:write", "chat:read"]);
     assert.ok(!("future_top_level" in parsed));
     assert.ok(!("future_resource_field" in parsed.protectedResource));
   });
@@ -131,42 +115,31 @@ describe("auth.md discovery contract", () => {
         resourceName: "Convex Chat",
         issuer: "https://auth.example.com",
         scopesSupported: ["chat:read"],
-      })
+      }),
     ).toThrow(/must use https/);
 
     const crossOriginEndpoint = structuredClone(serviceAuthDiscovery);
-    crossOriginEndpoint.authorizationServer.token_endpoint =
-      "https://evil.example/token";
-    expect(() => parseAuthMdDiscoveryDocuments(crossOriginEndpoint)).toThrow(
-      /issuer origin/
-    );
+    crossOriginEndpoint.authorizationServer.token_endpoint = "https://evil.example/token";
+    expect(() => parseAuthMdDiscoveryDocuments(crossOriginEndpoint)).toThrow(/issuer origin/);
 
     const wrongSkill = structuredClone(serviceAuthDiscovery);
-    wrongSkill.authorizationServer.agent_auth.skill =
-      "https://chat.example.com/not-auth.md";
-    expect(() => parseAuthMdDiscoveryDocuments(wrongSkill)).toThrow(
-      /resource origin \/auth\.md/
-    );
+    wrongSkill.authorizationServer.agent_auth.skill = "https://chat.example.com/not-auth.md";
+    expect(() => parseAuthMdDiscoveryDocuments(wrongSkill)).toThrow(/resource origin \/auth\.md/);
 
     const mismatchedScopes = structuredClone(serviceAuthDiscovery);
     mismatchedScopes.authorizationServer.scopes_supported = ["admin"];
     expect(() => parseAuthMdDiscoveryDocuments(mismatchedScopes)).toThrow(
-      /scope inventories must match/
+      /scope inventories must match/,
     );
 
     const invalidGrants: unknown = {
       ...serviceAuthDiscovery,
       authorizationServer: {
         ...serviceAuthDiscovery.authorizationServer,
-        grant_types_supported: [
-          AUTH_MD_JWT_BEARER_GRANT,
-          AUTH_MD_JWT_BEARER_GRANT,
-        ],
+        grant_types_supported: [AUTH_MD_JWT_BEARER_GRANT, AUTH_MD_JWT_BEARER_GRANT],
       },
     };
-    expect(() => parseAuthMdDiscoveryDocuments(invalidGrants)).toThrow(
-      /duplicates|claim grants/
-    );
+    expect(() => parseAuthMdDiscoveryDocuments(invalidGrants)).toThrow(/duplicates|claim grants/);
 
     expect(() =>
       createConvexAuthMdDiscoveryDocuments({
@@ -174,7 +147,7 @@ describe("auth.md discovery contract", () => {
         resourceName: "Convex Chat",
         issuer: "https://auth.example.com",
         scopesSupported: ["chat:read", "chat:read"],
-      })
+      }),
     ).toThrow(/duplicates/);
   });
 });
@@ -200,7 +173,7 @@ describe("auth.md human-readable and challenge contracts", () => {
     expect(document).not.toContain("`identity_assertion`");
     expect(document).toContain("`chat:read` — Read authorized room context.");
     expect(document).toContain(
-      "The structured metadata is authoritative. This document is its human-readable summary."
+      "The structured metadata is authoritative. This document is its human-readable summary.",
     );
     assert.equal(
       document,
@@ -215,20 +188,17 @@ describe("auth.md human-readable and challenge contracts", () => {
         termsUrl: "https://example.com/terms",
         privacyUrl: "https://example.com/privacy",
         contact: "security@example.com",
-      })
+      }),
     );
   });
 
   it("round-trips the protected-resource challenge and rejects ambiguity", () => {
-    const metadataUrl =
-      "https://chat.example.com/.well-known/oauth-protected-resource";
+    const metadataUrl = "https://chat.example.com/.well-known/oauth-protected-resource";
     const challenge = createAuthMdBearerChallenge(metadataUrl);
     assert.equal(challenge, `Bearer resource_metadata="${metadataUrl}"`);
     assert.equal(parseAuthMdBearerChallenge(challenge), metadataUrl);
     expect(() =>
-      parseAuthMdBearerChallenge(
-        `Bearer resource_metadata="${metadataUrl}", realm="extra"`
-      )
+      parseAuthMdBearerChallenge(`Bearer resource_metadata="${metadataUrl}", realm="extra"`),
     ).toThrow(/one Bearer resource_metadata URL/);
   });
 
@@ -240,7 +210,7 @@ describe("auth.md human-readable and challenge contracts", () => {
         discovery: serviceAuthDiscovery,
         scopeDescriptions: { "chat:read": "Read rooms" },
         contact: "security@example.com",
-      })
+      }),
     ).toThrow(/scopeDescriptions\.chat:write/);
 
     expect(() =>
@@ -253,7 +223,7 @@ describe("auth.md human-readable and challenge contracts", () => {
           "chat:write": "Write rooms",
         },
         contact: "security@example.com",
-      })
+      }),
     ).toThrow(/single line/);
   });
 });
@@ -276,40 +246,30 @@ describe("auth.md service_auth ceremony secrets", () => {
     assert.match(challenge.userCode, /^\d{6}$/u);
     assert.match(challenge.claimTokenHash, /^[A-Za-z0-9_-]{43}$/u);
     assert.match(challenge.claimViewTokenHash, /^[A-Za-z0-9_-]{43}$/u);
-    assert.equal(
-      challenge.userCodeHash,
-      await hashAuthMdUserCode(challenge.userCode)
-    );
+    assert.equal(challenge.userCodeHash, await hashAuthMdUserCode(challenge.userCode));
     assert.equal(challenge.expiresIn, 900);
     assert.equal(challenge.userCodeExpiresIn, 600);
     assert.equal(challenge.interval, 5);
   });
 
   it("normalizes email hints and six-digit user codes before hashing", async () => {
-    assert.equal(
-      normalizeAuthMdLoginHint(" Owner@Example.COM "),
-      "owner@example.com"
-    );
+    assert.equal(normalizeAuthMdLoginHint(" Owner@Example.COM "), "owner@example.com");
     assert.equal(normalizeAuthMdUserCode("123-456"), "123456");
     assert.equal(
       await hashAuthMdLoginHint(" Owner@Example.COM "),
-      await hashAuthMdLoginHint("owner@example.com")
+      await hashAuthMdLoginHint("owner@example.com"),
     );
     expect(() => normalizeAuthMdLoginHint("not-an-email")).toThrow(/email/);
     expect(() => normalizeAuthMdUserCode("12345")).toThrow(/six digits/);
   });
 
   it("rejects invalid lifetimes, cadence, and entropy sources", async () => {
-    await expect(
-      createAuthMdServiceAuthChallenge({ expiresIn: 901 })
-    ).rejects.toThrow(/expiresIn/);
-    await expect(
-      createAuthMdServiceAuthChallenge({ interval: 61 })
-    ).rejects.toThrow(/interval/);
+    await expect(createAuthMdServiceAuthChallenge({ expiresIn: 901 })).rejects.toThrow(/expiresIn/);
+    await expect(createAuthMdServiceAuthChallenge({ interval: 61 })).rejects.toThrow(/interval/);
     await expect(
       createAuthMdServiceAuthChallenge({
         randomBytes: () => new Uint8Array(1),
-      })
+      }),
     ).rejects.toThrow(/entropy source/);
   });
 });

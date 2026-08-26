@@ -21,7 +21,7 @@ describe("password reset email helpers", () => {
         token: "token with spaces",
         templateUrl: "https://app.example.com/reset/{token}",
       }),
-      "https://app.example.com/reset/token%20with%20spaces"
+      "https://app.example.com/reset/token%20with%20spaces",
     );
   });
 
@@ -31,7 +31,7 @@ describe("password reset email helpers", () => {
         token: "abc123",
         appOrigin: "https://app.example.com/",
       }),
-      "https://app.example.com/reset-password?token=abc123"
+      "https://app.example.com/reset-password?token=abc123",
     );
   });
 
@@ -46,7 +46,7 @@ describe("password reset email helpers", () => {
         to: "user@example.com",
         resetUrl: "https://app.example.com/reset-password?token=abc",
       }),
-      { status: "not_configured", reason: "missing_from_address" }
+      { status: "not_configured", reason: "missing_from_address" },
     );
 
     assert.deepStrictEqual(
@@ -55,7 +55,7 @@ describe("password reset email helpers", () => {
         to: "user@example.com",
         resetUrl: null,
       }),
-      { status: "not_configured", reason: "missing_reset_url" }
+      { status: "not_configured", reason: "missing_reset_url" },
     );
   });
 
@@ -67,27 +67,23 @@ describe("password reset email helpers", () => {
       expiresAt: Date.UTC(2026, 0, 1),
     });
 
-    assert.equal(
-      "subject" in draft ? draft.subject : null,
-      "Reset your password"
-    );
+    assert.equal("subject" in draft ? draft.subject : null, "Reset your password");
     assert.equal("to" in draft ? draft.to : null, "user@example.com");
     assert.match("html" in draft ? draft.html : "", /token=a&amp;b/);
     assert.match("text" in draft ? draft.text : "", /token=a&b/);
     assert.match("html" in draft ? draft.html : "", /This link expires/);
     assert.match(
       "html" in draft ? draft.html : "",
-      /We received a request to reset your password\./
+      /We received a request to reset your password\./,
     );
     assert.match(
       "html" in draft ? draft.html : "",
-      /If you did not request this, you can safely ignore this email\./
+      /If you did not request this, you can safely ignore this email\./,
     );
     assert.match(
       "text" in draft ? draft.text : "",
-      /Reset your password: https:\/\/app\.example\.com\/reset-password\?token=a&b/
+      /Reset your password: https:\/\/app\.example\.com\/reset-password\?token=a&b/,
     );
-
   });
 
   it("maps Resend delivery events into reset delivery status", () => {
@@ -95,14 +91,14 @@ describe("password reset email helpers", () => {
       mapResendEventToPasswordResetEmailDelivery({
         event: { type: "email.sent" },
       }),
-      { status: "sent", eventType: "email.sent" }
+      { status: "sent", eventType: "email.sent" },
     );
 
     assert.deepStrictEqual(
       mapResendEventToPasswordResetEmailDelivery({
         event: { type: "email.delivered" },
       }),
-      { status: "delivered", eventType: "email.delivered" }
+      { status: "delivered", eventType: "email.delivered" },
     );
 
     assert.deepStrictEqual(
@@ -116,28 +112,25 @@ describe("password reset email helpers", () => {
         status: "bounced",
         eventType: "email.bounced",
         error: "Mailbox not found",
-      }
+      },
     );
 
     assert.deepStrictEqual(
       mapResendEventToPasswordResetEmailDelivery({
         event: { type: "email.failed", data: { failed: { reason: "denied" } } },
       }),
-      { status: "failed", eventType: "email.failed", error: "denied" }
+      { status: "failed", eventType: "email.failed", error: "denied" },
     );
   });
 
   it("creates delivery patches for client Convex mutations", () => {
-    assert.deepStrictEqual(
-      createPasswordResetEmailQueuedPatch({ emailId: "email_123", now: 10 }),
-      {
-        emailId: "email_123",
-        emailDeliveryStatus: "queued",
-        emailDeliveryEvent: "queued",
-        emailDeliveryError: undefined,
-        emailDeliveryUpdatedAt: 10,
-      }
-    );
+    assert.deepStrictEqual(createPasswordResetEmailQueuedPatch({ emailId: "email_123", now: 10 }), {
+      emailId: "email_123",
+      emailDeliveryStatus: "queued",
+      emailDeliveryEvent: "queued",
+      emailDeliveryError: undefined,
+      emailDeliveryUpdatedAt: 10,
+    });
 
     assert.deepStrictEqual(
       createPasswordResetEmailNotConfiguredPatch({
@@ -149,18 +142,15 @@ describe("password reset email helpers", () => {
         emailDeliveryEvent: "missing_reset_url",
         emailDeliveryError: undefined,
         emailDeliveryUpdatedAt: 20,
-      }
+      },
     );
 
-    assert.deepStrictEqual(
-      createPasswordResetEmailFailedPatch({ reason: "boom", now: 30 }),
-      {
-        emailDeliveryStatus: "failed",
-        emailDeliveryEvent: "enqueue_failed",
-        emailDeliveryError: "boom",
-        emailDeliveryUpdatedAt: 30,
-      }
-    );
+    assert.deepStrictEqual(createPasswordResetEmailFailedPatch({ reason: "boom", now: 30 }), {
+      emailDeliveryStatus: "failed",
+      emailDeliveryEvent: "enqueue_failed",
+      emailDeliveryError: "boom",
+      emailDeliveryUpdatedAt: 30,
+    });
 
     assert.deepStrictEqual(
       createPasswordResetEmailEventPatch({
@@ -172,7 +162,7 @@ describe("password reset email helpers", () => {
         emailDeliveryEvent: "email.failed",
         emailDeliveryError: "denied",
         emailDeliveryUpdatedAt: 40,
-      }
+      },
     );
   });
 
@@ -182,19 +172,16 @@ describe("password reset email helpers", () => {
         primary: " Convex <auth@example.com> ",
         fallback: "Fallback <fallback@example.com>",
       }),
-      "Convex <auth@example.com>"
+      "Convex <auth@example.com>",
     );
     assert.equal(
       resolvePasswordResetFromAddress({
         primary: " ",
         fallback: "Fallback <fallback@example.com>",
       }),
-      "Fallback <fallback@example.com>"
+      "Fallback <fallback@example.com>",
     );
-    assert.equal(
-      resolvePasswordResetFromAddress({ primary: null, fallback: null }),
-      null
-    );
+    assert.equal(resolvePasswordResetFromAddress({ primary: null, fallback: null }), null);
   });
 
   it("orchestrates send, render, and delivery recording", async () => {

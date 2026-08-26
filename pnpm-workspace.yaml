@@ -1,2 +1,5 @@
 packages:
   - "packages/*"
+
+overrides:
+  vitest: 4.1.10

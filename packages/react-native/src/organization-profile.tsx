@@ -84,9 +84,7 @@ function OrganizationProfileHeader(props: {
   return (
     <View style={[styles.header, props.styles.header]}>
       <Text style={[styles.title, props.styles.title]}>{props.copy.title}</Text>
-      <Text style={[styles.description, props.styles.description]}>
-        {props.copy.description}
-      </Text>
+      <Text style={[styles.description, props.styles.description]}>{props.copy.description}</Text>
     </View>
   );
 }
@@ -103,9 +101,7 @@ function OrganizationProfileDangerZone(props: {
 
   return (
     <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
-      <Text style={[styles.label, props.styles.label]}>
-        {props.copy.dangerZoneTitle}
-      </Text>
+      <Text style={[styles.label, props.styles.label]}>{props.copy.dangerZoneTitle}</Text>
       <Pressable
         onPress={props.onDelete}
         disabled={props.deleting}
@@ -181,11 +177,7 @@ export function ConvexOrganizationProfile(props: ExpoOrgProfileProps) {
       <OrganizationProfileHeader copy={copy} styles={s} />
       <View style={[styles.field, s.field]}>
         <Text style={[styles.label, s.label]}>{copy.nameLabel}</Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          style={[styles.input, s.input]}
-        />
+        <TextInput value={name} onChangeText={setName} style={[styles.input, s.input]} />
       </View>
       {showSlug ? (
         <View style={[styles.field, s.field]}>
@@ -211,19 +203,14 @@ export function ConvexOrganizationProfile(props: ExpoOrgProfileProps) {
         <Text style={[styles.successState, s.successState]}>{success}</Text>
       ) : null}
       {error !== null ? (
-        <Text
-          className="text-destructive"
-          style={[styles.errorState, s.errorState]}
-        >
+        <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
           {error}
         </Text>
       ) : null}
       <OrganizationProfileDangerZone
         copy={copy}
         deleting={deleting}
-        onDelete={
-          props.onDelete === undefined ? undefined : () => void handleDelete()
-        }
+        onDelete={props.onDelete === undefined ? undefined : () => void handleDelete()}
         styles={s}
       />
     </View>

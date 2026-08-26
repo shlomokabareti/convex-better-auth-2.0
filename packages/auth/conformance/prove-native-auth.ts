@@ -35,8 +35,7 @@ function b32(s: string): Buffer {
   for (const c of s.toUpperCase())
     if (a.indexOf(c) >= 0) b += a.indexOf(c).toString(2).padStart(5, "0");
   const o: number[] = [];
-  for (let i = 0; i + 8 <= b.length; i += 8)
-    o.push(parseInt(b.slice(i, i + 8), 2));
+  for (let i = 0; i + 8 <= b.length; i += 8) o.push(parseInt(b.slice(i, i + 8), 2));
   return Buffer.from(o);
 }
 function totp(secret: string): string {
@@ -75,8 +74,7 @@ r.ok("native sign-up (expo-origin, no cookie jar) -> session");
 
 // 2. get-session valid with manually-injected cookie
 const sess = await getSession(site, cookie, NATIVE_HEADERS);
-if (sess?.user?.email === email)
-  r.ok("get-session valid with manually-injected cookie");
+if (sess?.user?.email === email) r.ok("get-session valid with manually-injected cookie");
 else r.bad("get-session invalid over native transport");
 
 // 3. convex JWT verified vs JWKS (iss=site, aud=convex)
@@ -89,9 +87,7 @@ if (!token) {
   r.bad("native /convex/token returned no JWT");
 } else {
   try {
-    const jwks = await readJsonObject(
-      await fetch(`${site}/api/auth/convex/jwks`)
-    );
+    const jwks = await readJsonObject(await fetch(`${site}/api/auth/convex/jwks`));
     if (!Array.isArray(jwks.keys)) throw new TypeError("JWKS keys missing");
     const keys = jwks.keys
       .filter((value) => typeof value === "object" && value !== null)
@@ -104,7 +100,7 @@ if (!token) {
     r.ok(`native Convex JWT verified vs JWKS (iss=${site}, aud=convex)`);
   } catch (e) {
     r.bad(
-      `native Convex JWT failed JWKS verification: ${e instanceof Error ? e.message : String(e)}`
+      `native Convex JWT failed JWKS verification: ${e instanceof Error ? e.message : String(e)}`,
     );
   }
 }
@@ -120,15 +116,10 @@ if (!token) {
       name: "B",
     }),
   });
-  if (
-    brk.status >= 400 &&
-    /pwn|breach|compromis|exposed/i.test(await brk.text())
-  ) {
+  if (brk.status >= 400 && /pwn|breach|compromis|exposed/i.test(await brk.text())) {
     r.ok("breach screening enforced over native transport");
   } else {
-    r.bad(
-      `breach screening NOT enforced over native transport (HTTP ${brk.status})`
-    );
+    r.bad(`breach screening NOT enforced over native transport (HTTP ${brk.status})`);
   }
 }
 
@@ -147,17 +138,14 @@ if (!token) {
     body: JSON.stringify({ password: pw }),
   });
   if (!en.ok) {
-    console.log(
-      "[SKIP] 2FA not enabled on this deployment; skipping native 2FA round trip."
-    );
+    console.log("[SKIP] 2FA not enabled on this deployment; skipping native 2FA round trip.");
   } else {
     const eb = await readJsonObject(en);
     if (typeof eb.totpURI !== "string") {
       throw new TypeError("2FA enrollment response missing totpURI");
     }
     const secret = new URL(eb.totpURI).searchParams.get("secret");
-    if (secret === null)
-      throw new TypeError("2FA enrollment URI missing secret");
+    if (secret === null) throw new TypeError("2FA enrollment URI missing secret");
     const cv = await fetch(`${site}/api/auth/two-factor/verify-totp`, {
       method: "POST",
       headers: { ...NATIVE_HEADERS, cookie: ck },
@@ -175,14 +163,9 @@ if (!token) {
       headers: { ...NATIVE_HEADERS, cookie: pending },
     });
     const preTokBody = await readJsonObject(preTokRes);
-    const preTok =
-      typeof preTokBody.token === "string" ? preTokBody.token : undefined;
-    if (siBody.twoFactorRedirect && !preTok)
-      r.ok("native 2FA: session WITHHELD pre-2FA");
-    else
-      r.bad(
-        "native 2FA: token issued before 2nd factor (session not withheld)"
-      );
+    const preTok = typeof preTokBody.token === "string" ? preTokBody.token : undefined;
+    if (siBody.twoFactorRedirect && !preTok) r.ok("native 2FA: session WITHHELD pre-2FA");
+    else r.bad("native 2FA: token issued before 2nd factor (session not withheld)");
     const vt = await fetch(`${site}/api/auth/two-factor/verify-totp`, {
       method: "POST",
       headers: { ...NATIVE_HEADERS, cookie: pending },
@@ -193,10 +176,8 @@ if (!token) {
       headers: { ...NATIVE_HEADERS, cookie: final },
     });
     const finTokBody = await readJsonObject(finTokRes);
-    const finTok =
-      typeof finTokBody.token === "string" ? finTokBody.token : undefined;
-    if (vt.ok && finTok)
-      r.ok("native 2FA: TOTP completes sign-in -> usable native token");
+    const finTok = typeof finTokBody.token === "string" ? finTokBody.token : undefined;
+    if (vt.ok && finTok) r.ok("native 2FA: TOTP completes sign-in -> usable native token");
     else r.bad(`native 2FA: completion failed (verify ${vt.status})`);
   }
 }
@@ -217,8 +198,7 @@ if (!token) {
       headers: { ...NATIVE_HEADERS, cookie: after },
     });
     const tokenResult = await readJsonObject(tr);
-    const tk =
-      typeof tokenResult.token === "string" ? tokenResult.token : undefined;
+    const tk = typeof tokenResult.token === "string" ? tokenResult.token : undefined;
     if (!tk) {
       revoked = true;
       break;
@@ -226,12 +206,8 @@ if (!token) {
     await new Promise((res) => setTimeout(res, 5_000));
   }
   const elapsed = Math.round((Date.now() - start) / 1000);
-  if (so.ok && revoked)
-    r.ok(`native sign-out invalidates session (~${elapsed}s, bound 60s)`);
-  else
-    r.bad(
-      `native sign-out did not invalidate (revoked=${revoked}, ~${elapsed}s)`
-    );
+  if (so.ok && revoked) r.ok(`native sign-out invalidates session (~${elapsed}s, bound 60s)`);
+  else r.bad(`native sign-out did not invalidate (revoked=${revoked}, ~${elapsed}s)`);
 }
 
 // 7. Convex-native rate limit applies on native sign-in
@@ -250,10 +226,9 @@ if (!token) {
         body: JSON.stringify({ email: e3, password: "wrong-password-xyz" }),
       });
       return response.status;
-    })
+    }),
   );
-  if (codes.includes(429))
-    r.ok(`native sign-in rate-limited (429 after burst)`);
+  if (codes.includes(429)) r.ok(`native sign-in rate-limited (429 after burst)`);
   else r.bad(`native sign-in NOT rate-limited: ${codes.join(",")}`);
 }
 

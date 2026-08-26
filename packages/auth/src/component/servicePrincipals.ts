@@ -98,11 +98,7 @@ export const upsertServicePrincipal = mutation({
         ? await ctx.db.get("service_principals", args.servicePrincipalId)
         : null) ?? (await findServicePrincipalByKey(ctx, key));
     const keyOwner = await findServicePrincipalByKey(ctx, key);
-    if (
-      keyOwner !== null &&
-      existing !== null &&
-      keyOwner._id !== existing._id
-    ) {
+    if (keyOwner !== null && existing !== null && keyOwner._id !== existing._id) {
       throw new Error("Service principal key already exists");
     }
     const patch = servicePrincipalPatch({
@@ -168,14 +164,12 @@ export const listServicePrincipals = query({
     return status === undefined
       ? await ctx.db
           .query("service_principals")
-          .withIndex("by_organization", (q) =>
-            q.eq("organizationId", organizationId)
-          )
+          .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
           .take(resolvedLimit)
       : await ctx.db
           .query("service_principals")
           .withIndex("by_organization_status", (q) =>
-            q.eq("organizationId", organizationId).eq("status", status)
+            q.eq("organizationId", organizationId).eq("status", status),
           )
           .take(resolvedLimit);
   },
@@ -199,17 +193,14 @@ export const setServicePrincipalDetails = mutation({
     const servicePrincipal = await requireServicePrincipalInOrganization(
       ctx,
       args.servicePrincipalId,
-      args.actingOrganizationId
+      args.actingOrganizationId,
     );
     if (args.organizationId !== undefined && args.organizationId !== null) {
       await requireOrganization(ctx, args.organizationId);
     }
 
     await ctx.db.patch("service_principals", servicePrincipal._id, {
-      name:
-        args.name === undefined
-          ? servicePrincipal.name
-          : normalizeRequired(args.name, "name"),
+      name: args.name === undefined ? servicePrincipal.name : normalizeRequired(args.name, "name"),
       description:
         args.description === undefined
           ? servicePrincipal.description
@@ -241,15 +232,8 @@ export const setServicePrincipalStatus = mutation({
     status: servicePrincipalStatusValidator,
   },
   returns: okResultValidator,
-  handler: async (
-    ctx,
-    { servicePrincipalId, actingOrganizationId, status }
-  ) => {
-    await requireServicePrincipalInOrganization(
-      ctx,
-      servicePrincipalId,
-      actingOrganizationId
-    );
+  handler: async (ctx, { servicePrincipalId, actingOrganizationId, status }) => {
+    await requireServicePrincipalInOrganization(ctx, servicePrincipalId, actingOrganizationId);
     await ctx.db.patch("service_principals", servicePrincipalId, {
       status,
       updatedAt: Date.now(),
@@ -260,7 +244,7 @@ export const setServicePrincipalStatus = mutation({
 
 async function findServicePrincipalByKey(
   ctx: DbCtx,
-  key: string
+  key: string,
 ): Promise<Doc<"service_principals"> | null> {
   return await ctx.db
     .query("service_principals")
@@ -270,12 +254,9 @@ async function findServicePrincipalByKey(
 
 async function requireServicePrincipal(
   ctx: DbCtx,
-  servicePrincipalId: Id<"service_principals">
+  servicePrincipalId: Id<"service_principals">,
 ): Promise<Doc<"service_principals">> {
-  const servicePrincipal = await ctx.db.get(
-    "service_principals",
-    servicePrincipalId
-  );
+  const servicePrincipal = await ctx.db.get("service_principals", servicePrincipalId);
   if (servicePrincipal === null) {
     throw new Error("Service principal not found");
   }
@@ -292,22 +273,16 @@ async function requireServicePrincipal(
 async function requireServicePrincipalInOrganization(
   ctx: DbCtx,
   servicePrincipalId: Id<"service_principals">,
-  organizationId: Id<"organizations">
+  organizationId: Id<"organizations">,
 ): Promise<Doc<"service_principals">> {
-  const servicePrincipal = await requireServicePrincipal(
-    ctx,
-    servicePrincipalId
-  );
+  const servicePrincipal = await requireServicePrincipal(ctx, servicePrincipalId);
   if (servicePrincipal.organizationId !== organizationId) {
     throw new Error("Service principal not found");
   }
   return servicePrincipal;
 }
 
-async function requireOrganization(
-  ctx: DbCtx,
-  organizationId: Id<"organizations">
-) {
+async function requireOrganization(ctx: DbCtx, organizationId: Id<"organizations">) {
   const organization = await ctx.db.get("organizations", organizationId);
   if (organization === null) {
     throw new Error("Organization not found");
@@ -329,9 +304,7 @@ function normalizeRequired(value: string, fieldName: string): string {
   return normalized;
 }
 
-function normalizeOptional(
-  value: string | null | undefined
-): string | undefined {
+function normalizeOptional(value: string | null | undefined): string | undefined {
   const normalized = value?.trim();
   return normalized && normalized.length > 0 ? normalized : undefined;
 }

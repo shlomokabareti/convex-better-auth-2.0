@@ -53,7 +53,7 @@ describe("authorize helpers", () => {
         allowed: false,
         reason: "Authentication required",
         code: "AUTHENTICATION_REQUIRED",
-      }
+      },
     );
   });
 
@@ -64,14 +64,11 @@ describe("authorize helpers", () => {
       code: "PRINCIPAL_RESTRICTED",
     });
 
-    assert.deepStrictEqual(
-      authorizePermission(restrictedUserContext, "org:read"),
-      {
-        allowed: false,
-        reason: "manual_hold",
-        code: "PRINCIPAL_RESTRICTED",
-      }
-    );
+    assert.deepStrictEqual(authorizePermission(restrictedUserContext, "org:read"), {
+      allowed: false,
+      reason: "manual_hold",
+      code: "PRINCIPAL_RESTRICTED",
+    });
   });
 
   it("denies missing organization context", () => {
@@ -99,7 +96,7 @@ describe("authorize helpers", () => {
         allowed: false,
         reason: "Organization context required",
         code: "ORGANIZATION_REQUIRED",
-      }
+      },
     );
   });
 
@@ -114,7 +111,7 @@ describe("authorize helpers", () => {
         isRestricted: true,
         restrictedReason: null,
       }),
-      "Principal is restricted"
+      "Principal is restricted",
     );
   });
 });

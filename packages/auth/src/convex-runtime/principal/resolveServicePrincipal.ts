@@ -10,9 +10,7 @@ export type ServicePrincipalInput = Pick<
   restrictedReason?: string | null;
 };
 
-export function resolveServicePrincipal(
-  input: ServicePrincipalInput
-): ServicePrincipal {
+export function resolveServicePrincipal(input: ServicePrincipalInput): ServicePrincipal {
   return {
     kind: "service",
     serviceId: input.serviceId,

@@ -20,10 +20,7 @@ describe("Agent Auth RFC 8628 device authorization", () => {
         }),
     });
 
-    assert.match(
-      challenge.userCode,
-      /^[BCDFGHJKLMNPQRSTVWXZ]{4}-[BCDFGHJKLMNPQRSTVWXZ]{4}$/u
-    );
+    assert.match(challenge.userCode, /^[BCDFGHJKLMNPQRSTVWXZ]{4}-[BCDFGHJKLMNPQRSTVWXZ]{4}$/u);
     assert.match(challenge.deviceCode, /^[A-Za-z0-9_-]{43}$/u);
     assert.match(challenge.userCodeHash, /^[A-Za-z0-9_-]{43}$/u);
     assert.match(challenge.deviceCodeHash, /^[A-Za-z0-9_-]{43}$/u);
@@ -38,24 +35,19 @@ describe("Agent Auth RFC 8628 device authorization", () => {
     assert.equal(normalized, "BCDFGHJK");
     assert.equal(
       await hashAgentAuthDeviceAuthorizationCode(normalized),
-      await hashAgentAuthDeviceAuthorizationCode(
-        normalizeAgentAuthUserCode("BCDF GHJK")
-      )
+      await hashAgentAuthDeviceAuthorizationCode(normalizeAgentAuthUserCode("BCDF GHJK")),
     );
   });
 
   it("rejects invalid code characters and unsafe policy bounds", async () => {
-    assert.throws(
-      () => normalizeAgentAuthUserCode("AAAA-AAAA"),
-      /user code is invalid/
-    );
+    assert.throws(() => normalizeAgentAuthUserCode("AAAA-AAAA"), /user code is invalid/);
     await assert.rejects(
       createAgentAuthDeviceAuthorizationChallenge({ expiresIn: 901 }),
-      /expiresIn must be/
+      /expiresIn must be/,
     );
     await assert.rejects(
       createAgentAuthDeviceAuthorizationChallenge({ interval: 61 }),
-      /interval must be/
+      /interval must be/,
     );
   });
 });

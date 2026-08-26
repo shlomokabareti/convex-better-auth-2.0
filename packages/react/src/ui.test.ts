@@ -22,14 +22,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "vitest";
 
-import {
-  AuthAlert,
-  AuthCard,
-  AuthCardHeader,
-  AuthDivider,
-  AuthInput,
-  AuthScreen,
-} from "./ui";
+import { AuthAlert, AuthCard, AuthCardHeader, AuthDivider, AuthInput, AuthScreen } from "./ui";
 
 describe("AuthScreen", () => {
   it("renders title + description + children", () => {
@@ -38,7 +31,7 @@ describe("AuthScreen", () => {
         title: "Sign in",
         description: "Welcome back",
         children: createElement("p", { id: "kid" }, "child"),
-      })
+      }),
     );
     assert.match(html, /Sign in/);
     assert.match(html, /Welcome back/);
@@ -50,13 +43,11 @@ describe("AuthScreen", () => {
       createElement(AuthScreen, {
         title: "Sign in",
         children: createElement("p", null, "child"),
-      })
+      }),
     );
     assert.match(html, /Sign in/);
     // No description means no second <p> in the header block.
-    const headerBlock = html.match(
-      /<div [^>]*space-y-2[^>]*>([\s\S]*?)<\/div>/
-    );
+    const headerBlock = html.match(/<div [^>]*space-y-2[^>]*>([\s\S]*?)<\/div>/);
     const headerContent = headerBlock?.[1];
     assert.ok(headerContent !== undefined, "header block missing");
     assert.equal((headerContent.match(/<p/g) ?? []).length, 0);
@@ -69,7 +60,7 @@ describe("AuthCard", () => {
       createElement(AuthCard, {
         className: "consumer-card-cls",
         children: "body",
-      })
+      }),
     );
     assert.match(html, /consumer-card-cls/);
     // Default card styling still present.
@@ -83,7 +74,7 @@ describe("AuthCardHeader", () => {
       createElement(AuthCardHeader, {
         title: "Card title",
         description: "Card sub",
-      })
+      }),
     );
     assert.match(html, /Card title/);
     assert.match(html, /Card sub/);
@@ -93,7 +84,7 @@ describe("AuthCardHeader", () => {
 describe("AuthAlert", () => {
   it("error tone uses the destructive color token", () => {
     const html = renderToStaticMarkup(
-      createElement(AuthAlert, { tone: "error", children: "Boom" })
+      createElement(AuthAlert, { tone: "error", children: "Boom" }),
     );
     assert.match(html, /destructive/);
     assert.match(html, /Boom/);
@@ -101,7 +92,7 @@ describe("AuthAlert", () => {
 
   it("success tone uses the success color token", () => {
     const html = renderToStaticMarkup(
-      createElement(AuthAlert, { tone: "success", children: "OK" })
+      createElement(AuthAlert, { tone: "success", children: "OK" }),
     );
     assert.match(html, /success/);
   });
@@ -109,9 +100,7 @@ describe("AuthAlert", () => {
 
 describe("AuthDivider", () => {
   it("with label embeds the label text", () => {
-    const html = renderToStaticMarkup(
-      createElement(AuthDivider, { label: "OR" })
-    );
+    const html = renderToStaticMarkup(createElement(AuthDivider, { label: "OR" }));
     assert.match(html, /OR/);
   });
 
@@ -129,7 +118,7 @@ describe("AuthInput", () => {
         id: "email-input",
         name: "email",
         type: "email",
-      })
+      }),
     );
     assert.match(html, /<input[^>]+id="email-input"/);
     assert.match(html, /name="email"/);

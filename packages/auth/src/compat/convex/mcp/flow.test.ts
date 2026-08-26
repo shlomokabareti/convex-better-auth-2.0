@@ -17,12 +17,12 @@ describe("mcp oauth flow helpers", () => {
   it("parses authorize request with defaults", () => {
     const parsed = parseMcpOAuthAuthorizeRequest(
       new Request(
-        "https://crm.test/oauth/crm-mcp/authorize?response_type=code&client_id=client_123&redirect_uri=http://127.0.0.1:8788/callback&code_challenge=challenge_123&code_challenge_method=S256&scope=crm:organization:read&state=state_123"
+        "https://crm.test/oauth/crm-mcp/authorize?response_type=code&client_id=client_123&redirect_uri=http://127.0.0.1:8788/callback&code_challenge=challenge_123&code_challenge_method=S256&scope=crm:organization:read&state=state_123",
       ),
       {
         defaultAudience: "crm-mcp",
         defaultResourceId: "crm:mcp",
-      }
+      },
     );
 
     assert.deepEqual(parsed, {
@@ -103,10 +103,7 @@ describe("mcp oauth flow helpers", () => {
     });
 
     assert.deepEqual(
-      buildMcpOAuthDynamicClientRegistrationResponse(
-        persisted.client,
-        persisted.clientIdIssuedAt
-      ),
+      buildMcpOAuthDynamicClientRegistrationResponse(persisted.client, persisted.clientIdIssuedAt),
       {
         client_id: "crm-mcp-generated-client",
         client_id_issued_at: 1_700_000_000,
@@ -116,7 +113,7 @@ describe("mcp oauth flow helpers", () => {
         response_types: ["code"],
         token_endpoint_auth_method: "none",
         scope: "crm:organization:read crm:tasks:read",
-      }
+      },
     );
   });
 
@@ -134,7 +131,7 @@ describe("mcp oauth flow helpers", () => {
         softwareId: "cloudflare-agents",
         softwareVersion: "1.2.3",
       },
-      1_700_000_000
+      1_700_000_000,
     );
 
     assert.equal(response.software_id, "cloudflare-agents");
@@ -329,7 +326,7 @@ describe("mcp oauth flow helpers", () => {
           }),
           now: 1_000,
         },
-      ]
+      ],
     );
 
     assert.deepEqual(result, {

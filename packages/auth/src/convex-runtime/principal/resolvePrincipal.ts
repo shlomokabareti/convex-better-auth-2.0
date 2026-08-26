@@ -9,9 +9,7 @@ import {
 } from "./resolvePrincipalContext";
 import type { PrincipalResolutionRequest } from "./types";
 
-export function resolvePrincipal(
-  request: PrincipalResolutionRequest
-): ResolvedAuthContext {
+export function resolvePrincipal(request: PrincipalResolutionRequest): ResolvedAuthContext {
   switch (request.credentialType) {
     case "anonymous":
       return resolveAnonymousContext(request);

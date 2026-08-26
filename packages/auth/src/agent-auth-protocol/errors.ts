@@ -37,8 +37,7 @@ export const AGENT_AUTH_PROTOCOL_ERROR_HTTP_STATUS = {
   internal_error: 500,
 } as const;
 
-export type AgentAuthProtocolErrorCode =
-  keyof typeof AGENT_AUTH_PROTOCOL_ERROR_HTTP_STATUS;
+export type AgentAuthProtocolErrorCode = keyof typeof AGENT_AUTH_PROTOCOL_ERROR_HTTP_STATUS;
 
 export type AgentAuthProtocolErrorResponse = AgentAuthProtocolJsonObject & {
   error: string;
@@ -54,9 +53,7 @@ export function createAgentAuthProtocolErrorResponse(args: {
 }): AgentAuthProtocolErrorResponse {
   const message = requireNonEmptyMessage(args.message);
   const extensions =
-    args.extensions === undefined
-      ? {}
-      : readJsonObject(args.extensions, "error extensions");
+    args.extensions === undefined ? {} : readJsonObject(args.extensions, "error extensions");
   if ("error" in extensions || "message" in extensions) {
     throw new TypeError("error extensions must not override error or message");
   }
@@ -68,7 +65,7 @@ export function createAgentAuthProtocolErrorResponse(args: {
 }
 
 export function parseAgentAuthProtocolErrorResponse(
-  value: unknown
+  value: unknown,
 ): AgentAuthProtocolErrorResponse {
   const object = readObject(value, "Agent Auth error response");
   const error = readRequiredString(object, "error");
@@ -80,9 +77,7 @@ export function parseAgentAuthProtocolErrorResponse(
   return { ...parsed, error, message };
 }
 
-export function resolveAgentAuthProtocolErrorHttpStatus(
-  error: string
-): number | undefined {
+export function resolveAgentAuthProtocolErrorHttpStatus(error: string): number | undefined {
   return isAgentAuthProtocolErrorCode(error)
     ? AGENT_AUTH_PROTOCOL_ERROR_HTTP_STATUS[error]
     : undefined;
@@ -95,11 +90,6 @@ function requireNonEmptyMessage(value: string): string {
   return value;
 }
 
-function isAgentAuthProtocolErrorCode(
-  value: string
-): value is AgentAuthProtocolErrorCode {
-  return Object.prototype.hasOwnProperty.call(
-    AGENT_AUTH_PROTOCOL_ERROR_HTTP_STATUS,
-    value
-  );
+function isAgentAuthProtocolErrorCode(value: string): value is AgentAuthProtocolErrorCode {
+  return Object.prototype.hasOwnProperty.call(AGENT_AUTH_PROTOCOL_ERROR_HTTP_STATUS, value);
 }

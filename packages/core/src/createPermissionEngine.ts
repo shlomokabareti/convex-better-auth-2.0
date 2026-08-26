@@ -25,9 +25,7 @@ import {
 } from "./permissions";
 
 /** The universe of concrete permission keys — as a registry map or a key list. */
-export type PermissionEngineRegistry =
-  | Readonly<Record<string, unknown>>
-  | readonly string[];
+export type PermissionEngineRegistry = Readonly<Record<string, unknown>> | readonly string[];
 
 /** A role's grants — a list (may contain `"*"` / `"domain:*"`) or `{ permissions }`. */
 export type PermissionEngineRoleGrants =
@@ -47,21 +45,15 @@ export type PermissionEngine<TRole extends string> = {
   /** `"*"` → exact → `"domain:*"`. Registry-free string matching on what the user HAS. */
   hasPermission(userPermissions: readonly string[], required: string): boolean;
   /** True if the user is granted ANY of the required permissions. */
-  hasAnyPermission(
-    userPermissions: readonly string[],
-    required: readonly string[]
-  ): boolean;
+  hasAnyPermission(userPermissions: readonly string[], required: readonly string[]): boolean;
   /** True only if the user is granted ALL of the required permissions. */
-  hasAllPermissions(
-    userPermissions: readonly string[],
-    required: readonly string[]
-  ): boolean;
+  hasAllPermissions(userPermissions: readonly string[], required: readonly string[]): boolean;
   /** Expand a role's grants into concrete registry keys (`"*"`/`"domain:*"` resolved). */
   expandPermissions(role: TRole): readonly string[];
 };
 
 export function createPermissionEngine<TRole extends string>(
-  config: CreatePermissionEngineConfig<TRole>
+  config: CreatePermissionEngineConfig<TRole>,
 ): PermissionEngine<TRole> {
   function roleGrants(role: TRole): readonly string[] {
     const entry = config.roleCatalog[role];

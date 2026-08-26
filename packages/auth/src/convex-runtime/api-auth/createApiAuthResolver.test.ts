@@ -1,16 +1,10 @@
 import assert from "node:assert/strict";
 
-import {
-  hasPermission,
-  permissionMatcherConformanceCases,
-} from "convex-auth-core";
+import { hasPermission, permissionMatcherConformanceCases } from "convex-auth-core";
 import { describe, it } from "vitest";
 
 import type { VerifiedUserToken } from "../coreTypes";
-import {
-  createApiAuthResolver,
-  type ResolvedApiAuthScopeContext,
-} from "./createApiAuthResolver";
+import { createApiAuthResolver, type ResolvedApiAuthScopeContext } from "./createApiAuthResolver";
 import { ApiAuthError } from "./errors";
 import type { McpSessionLike } from "./resolveMcpSessionAuthContext";
 
@@ -29,27 +23,18 @@ import type { McpSessionLike } from "./resolveMcpSessionAuthContext";
 
 type TestScope = "reports:read" | "reports:write" | "billing:read";
 
-const ALL_SCOPES: TestScope[] = [
-  "reports:read",
-  "reports:write",
-  "billing:read",
-];
+const ALL_SCOPES: TestScope[] = ["reports:read", "reports:write", "billing:read"];
 
 type TestCtx = { marker: "test-ctx" };
 const ctx: TestCtx = { marker: "test-ctx" };
 
 // canUseScope models live permissions as the explicit list of scopes the
 // owner's CURRENT membership may exercise. permission name === scope name.
-function canUseScope(
-  permissions: readonly string[],
-  scope: TestScope
-): boolean {
+function canUseScope(permissions: readonly string[], scope: TestScope): boolean {
   return hasPermission(permissions, scope);
 }
 
-function buildVerifiedUserToken(
-  overrides: Partial<VerifiedUserToken> = {}
-): VerifiedUserToken {
+function buildVerifiedUserToken(overrides: Partial<VerifiedUserToken> = {}): VerifiedUserToken {
   return {
     credentialType: "userBearer",
     provider: "convex",
@@ -101,8 +86,7 @@ function makeResolver(overrides: ResolverOverrides = {}) {
         roleKeys: [liveRole],
         permissions: livePermissions,
         isRestricted: overrides.restricted ?? false,
-        restrictedReason:
-          overrides.restricted === true ? "account_suspended" : null,
+        restrictedReason: overrides.restricted === true ? "account_suspended" : null,
       };
     },
     async getOrganizationAccess() {
@@ -123,9 +107,7 @@ function makeResolver(overrides: ResolverOverrides = {}) {
     parseOrganizationId: (value) => value,
     sessionFullAccessRoles: overrides.sessionFullAccessRoles,
     authorizeOrganizationAccess: async () =>
-      overrides.liveAccessDenied === true
-        ? null
-        : { role: liveRole, permissions: livePermissions },
+      overrides.liveAccessDenied === true ? null : { role: liveRole, permissions: livePermissions },
     resourceType: "http.route",
     resourceId: "test:api",
     apiKey: {
@@ -174,10 +156,7 @@ async function expectThrowsApiAuth(fn: () => unknown): Promise<ApiAuthError> {
   try {
     await fn();
   } catch (error) {
-    assert.ok(
-      error instanceof ApiAuthError,
-      `expected ApiAuthError, got ${String(error)}`
-    );
+    assert.ok(error instanceof ApiAuthError, `expected ApiAuthError, got ${String(error)}`);
     return error;
   }
   throw new assert.AssertionError({
@@ -213,9 +192,7 @@ describe("createApiAuthResolver — scope-ceiling proof matrix", () => {
     // reports:read is in scope + permitted → allowed
     resolver.requireScope(auth, "reports:read");
     // reports:write is NOT in the key's scope set → owner does NOT bypass
-    await expectThrowsApiAuth(() =>
-      resolver.requireScope(auth, "reports:write")
-    );
+    await expectThrowsApiAuth(() => resolver.requireScope(auth, "reports:write"));
   });
 
   it("session-role-bypass: jwt owner WITH no explicit scope IS allowed (intended)", async () => {
@@ -241,9 +218,7 @@ describe("createApiAuthResolver — scope-ceiling proof matrix", () => {
     const auth = await resolver.resolveApiAuth(ctx, apiKeyRequest());
 
     // scope ∩ permission: both required. Permission missing → deny.
-    await expectThrowsApiAuth(() =>
-      resolver.requireScope(auth, "reports:read")
-    );
+    await expectThrowsApiAuth(() => resolver.requireScope(auth, "reports:read"));
   });
 
   it("token-without-scope: key lacks the scope → THROWS regardless of permissions", async () => {
@@ -254,9 +229,7 @@ describe("createApiAuthResolver — scope-ceiling proof matrix", () => {
     });
     const auth = await resolver.resolveApiAuth(ctx, apiKeyRequest());
 
-    await expectThrowsApiAuth(() =>
-      resolver.requireScope(auth, "reports:read")
-    );
+    await expectThrowsApiAuth(() => resolver.requireScope(auth, "reports:read"));
   });
 
   it("stale-token: owner lost the permission after issuance → live lookup THROWS", async () => {
@@ -269,9 +242,7 @@ describe("createApiAuthResolver — scope-ceiling proof matrix", () => {
     });
     const auth = await resolver.resolveApiAuth(ctx, apiKeyRequest());
 
-    await expectThrowsApiAuth(() =>
-      resolver.requireScope(auth, "reports:read")
-    );
+    await expectThrowsApiAuth(() => resolver.requireScope(auth, "reports:read"));
   });
 
   it("consumer-cannot-widen: no sessionFullAccessRoles value lets an api_key bypass its scope set", async () => {
@@ -287,12 +258,8 @@ describe("createApiAuthResolver — scope-ceiling proof matrix", () => {
 
     // superuser is "full access" for sessions, but this is an api_key →
     // the scope set is the hard ceiling.
-    await expectThrowsApiAuth(() =>
-      resolver.requireScope(auth, "billing:read")
-    );
-    await expectThrowsApiAuth(() =>
-      resolver.requireScope(auth, "reports:write")
-    );
+    await expectThrowsApiAuth(() => resolver.requireScope(auth, "billing:read"));
+    await expectThrowsApiAuth(() => resolver.requireScope(auth, "reports:write"));
   });
 
   it("oauth/mcp owner-exceeds-scope: mcp session owner CANNOT bypass the token scope set", async () => {
@@ -308,9 +275,7 @@ describe("createApiAuthResolver — scope-ceiling proof matrix", () => {
 
     assert.equal(auth.authType, "oauth");
     resolver.requireScope(auth, "reports:read");
-    await expectThrowsApiAuth(() =>
-      resolver.requireScope(auth, "reports:write")
-    );
+    await expectThrowsApiAuth(() => resolver.requireScope(auth, "reports:write"));
   });
 
   it("restricted user via MCP fails closed (no account-suspension bypass)", async () => {
@@ -323,7 +288,7 @@ describe("createApiAuthResolver — scope-ceiling proof matrix", () => {
       restricted: true,
     });
     const error = await expectThrowsApiAuth(() =>
-      resolver.resolveMcpAuth(ctx, { session: mcpSession(["reports:read"]) })
+      resolver.resolveMcpAuth(ctx, { session: mcpSession(["reports:read"]) }),
     );
     assert.equal(error.code, "PRINCIPAL_RESTRICTED");
   });
@@ -347,9 +312,7 @@ describe("createApiAuthResolver — scope-ceiling proof matrix", () => {
       liveAccessDenied: true,
       apiKeyScopes: ["reports:read"],
     });
-    await expectThrowsApiAuth(() =>
-      resolver.resolveApiAuth(ctx, apiKeyRequest())
-    );
+    await expectThrowsApiAuth(() => resolver.resolveApiAuth(ctx, apiKeyRequest()));
   });
 
   it("type-level: ResolvedApiAuthScopeContext carries the baked surface", () => {

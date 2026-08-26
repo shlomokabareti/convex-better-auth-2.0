@@ -19,9 +19,7 @@ import {
   type AgentAuthProtocolHostRequestAuthorityAdapter,
 } from "./agent-auth-protocol-convex";
 
-type AgentPrincipal = Awaited<
-  ReturnType<typeof resolveAgentAuthProtocolAgentPrincipal>
->;
+type AgentPrincipal = Awaited<ReturnType<typeof resolveAgentAuthProtocolAgentPrincipal>>;
 
 export const AGENT_AUTH_PROTOCOL_V1_ENDPOINTS = {
   register: "/agent/register",
@@ -46,10 +44,9 @@ export type AgentAuthProtocolHttpRoute<THandler> = {
   handler: THandler;
 };
 
-export type AgentAuthProtocolCapabilityDefinition =
-  AgentAuthProtocolJsonObject & {
-    name: string;
-  };
+export type AgentAuthProtocolCapabilityDefinition = AgentAuthProtocolJsonObject & {
+  name: string;
+};
 
 export type AgentAuthProtocolRequestedGrant = {
   capability: string;
@@ -77,15 +74,15 @@ export type AgentAuthProtocolHttpAuthority<TContext> = {
         expiresAt: number;
         pollIntervalSeconds: number;
       };
-    }
+    },
   ): Promise<{ agentId: string; authorizationId: string }>;
   pollDeviceAuthorization(
     ctx: TContext,
-    input: { deviceCodeHash: string }
+    input: { deviceCodeHash: string },
   ): Promise<AgentAuthProtocolJsonObject>;
   getAgentStatus(
     ctx: TContext,
-    input: { agentId: string; organizationId: string }
+    input: { agentId: string; organizationId: string },
   ): Promise<AgentAuthProtocolJsonObject | null>;
   reactivateAgent(
     ctx: TContext,
@@ -94,15 +91,15 @@ export type AgentAuthProtocolHttpAuthority<TContext> = {
       agentId: string;
       organizationId: string;
       expiresAt: number;
-    }
+    },
   ): Promise<AgentAuthProtocolJsonObject>;
   revokeAgent(
     ctx: TContext,
-    input: { hostId: string; agentId: string; organizationId: string }
+    input: { hostId: string; agentId: string; organizationId: string },
   ): Promise<AgentAuthProtocolJsonObject>;
   revokeHost(
     ctx: TContext,
-    input: { hostId: string; organizationId: string }
+    input: { hostId: string; organizationId: string },
   ): Promise<AgentAuthProtocolJsonObject>;
   rotateAgentKey(
     ctx: TContext,
@@ -111,7 +108,7 @@ export type AgentAuthProtocolHttpAuthority<TContext> = {
       organizationId: string;
       expectedGeneration: number;
       publicJwkJson: string;
-    }
+    },
   ): Promise<AgentAuthProtocolJsonObject>;
   rotateHostKey(
     ctx: TContext,
@@ -120,7 +117,7 @@ export type AgentAuthProtocolHttpAuthority<TContext> = {
       organizationId: string;
       expectedGeneration: number;
       publicJwkJson: string;
-    }
+    },
   ): Promise<AgentAuthProtocolJsonObject>;
   introspectAgent(
     ctx: TContext,
@@ -129,7 +126,7 @@ export type AgentAuthProtocolHttpAuthority<TContext> = {
       organizationId: string;
       claimedPermissions?: string[];
       claimedCapabilities?: string[];
-    }
+    },
   ): Promise<AgentAuthProtocolJsonObject>;
 };
 
@@ -148,11 +145,11 @@ export type CreateAgentAuthProtocolHttpServerConfig<TContext> = {
         query?: string;
         cursor?: string;
         limit: number;
-      }
+      },
     ): Promise<AgentAuthProtocolJsonObject>;
     describe(
       ctx: TContext,
-      input: { principal: AgentPrincipal; capability: string }
+      input: { principal: AgentPrincipal; capability: string },
     ): Promise<AgentAuthProtocolCapabilityDefinition | null>;
     request(
       ctx: TContext,
@@ -160,7 +157,7 @@ export type CreateAgentAuthProtocolHttpServerConfig<TContext> = {
         principal: AgentPrincipal;
         capabilities: AgentAuthProtocolRequestedGrant[];
         reason?: string;
-      }
+      },
     ): Promise<AgentAuthProtocolJsonObject>;
     execute(
       ctx: TContext,
@@ -168,7 +165,7 @@ export type CreateAgentAuthProtocolHttpServerConfig<TContext> = {
         principal: AgentPrincipal;
         capability: string;
         arguments: AgentAuthProtocolJsonObject;
-      }
+      },
     ): Promise<AgentAuthProtocolJsonObject>;
   };
 };
@@ -180,46 +177,35 @@ export type AgentAuthProtocolHttpServer<TContext> = {
     http: {
       route(spec: AgentAuthProtocolHttpRoute<THandler>): void;
     },
-    handler: THandler
+    handler: THandler,
   ): void;
 };
 
 class ProtocolHttpError extends Error {
   constructor(
-    readonly code: Parameters<
-      typeof createAgentAuthProtocolErrorResponse
-    >[0]["error"],
-    message: string
+    readonly code: Parameters<typeof createAgentAuthProtocolErrorResponse>[0]["error"],
+    message: string,
   ) {
     super(message);
   }
 }
 
 export function createAgentAuthProtocolHttpServer<TContext>(
-  config: CreateAgentAuthProtocolHttpServerConfig<TContext>
+  config: CreateAgentAuthProtocolHttpServerConfig<TContext>,
 ): AgentAuthProtocolHttpServer<TContext> {
   const issuer = normalizeIssuer(config.issuer);
-  const verificationUri = normalizeHttpsUrl(
-    config.verificationUri,
-    "verificationUri"
-  );
+  const verificationUri = normalizeHttpsUrl(config.verificationUri, "verificationUri");
   const discovery = createAgentAuthProtocolDiscoveryDocument({
     provider_name: config.providerName,
     description: config.description,
     issuer,
-    default_location: absoluteEndpoint(
-      issuer,
-      AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.execute
-    ),
+    default_location: absoluteEndpoint(issuer, AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.execute),
     modes: config.modes ?? ["delegated", "autonomous"],
     approval_methods: ["device_authorization"],
     endpoints: AGENT_AUTH_PROTOCOL_V1_ENDPOINTS,
   });
 
-  const handleHttpRequest = async (
-    ctx: TContext,
-    request: Request
-  ): Promise<Response> => {
+  const handleHttpRequest = async (ctx: TContext, request: Request): Promise<Response> => {
     try {
       return await dispatch(ctx, request, config, discovery, verificationUri);
     } catch (error) {
@@ -229,15 +215,14 @@ export function createAgentAuthProtocolHttpServer<TContext>(
           createAgentAuthProtocolErrorResponse({
             error: error.code,
             message: error.message,
-          })
+          }),
         );
       }
-      const message =
-        error instanceof Error ? error.message : "Agent Auth request failed";
+      const message = error instanceof Error ? error.message : "Agent Auth request failed";
       const code = classifyAuthorityError(message);
       return jsonResponse(
         resolveAgentAuthProtocolErrorHttpStatus(code) ?? 500,
-        createAgentAuthProtocolErrorResponse({ error: code, message })
+        createAgentAuthProtocolErrorResponse({ error: code, message }),
       );
     }
   };
@@ -288,13 +273,10 @@ async function dispatch<TContext>(
   request: Request,
   config: CreateAgentAuthProtocolHttpServerConfig<TContext>,
   discovery: AgentAuthProtocolDiscoveryDocument,
-  verificationUri: string
+  verificationUri: string,
 ): Promise<Response> {
   const url = new URL(request.url);
-  if (
-    url.pathname === AGENT_AUTH_PROTOCOL_DISCOVERY_PATH &&
-    request.method === "GET"
-  ) {
+  if (url.pathname === AGENT_AUTH_PROTOCOL_DISCOVERY_PATH && request.method === "GET") {
     return jsonResponse(200, discovery, {
       cacheControl: AGENT_AUTH_PROTOCOL_DISCOVERY_CACHE_CONTROL,
     });
@@ -309,20 +291,17 @@ async function dispatch<TContext>(
   if (endpoint === "register") {
     const body = await readJsonBody(request);
     const organizationId = requiredString(body, "organization_id");
-    const resolved = await resolveAgentAuthProtocolHostRequest(
-      config.authority.host(ctx),
-      {
-        token: bearerToken(request),
-        audience,
-        registration: true,
-        requestedOrganizationId: organizationId,
-      }
-    );
+    const resolved = await resolveAgentAuthProtocolHostRequest(config.authority.host(ctx), {
+      token: bearerToken(request),
+      audience,
+      registration: true,
+      requestedOrganizationId: organizationId,
+    });
     const agentPublicKey = resolved.verified.claims.agent_public_key;
     if (agentPublicKey === undefined) {
       throw new ProtocolHttpError(
         "invalid_request",
-        "Convex registration requires an inline agent_public_key"
+        "Convex registration requires an inline agent_public_key",
       );
     }
     const mode = readMode(body.mode);
@@ -370,22 +349,18 @@ async function dispatch<TContext>(
       return jsonResponse(
         200,
         await config.authority.pollDeviceAuthorization(ctx, {
-          deviceCodeHash:
-            await hashAgentAuthDeviceAuthorizationCode(deviceCode),
-        })
+          deviceCodeHash: await hashAgentAuthDeviceAuthorizationCode(deviceCode),
+        }),
       );
     }
     const organizationId = requiredQuery(url, "organization_id");
     const agentId = requiredQuery(url, "agent_id");
-    const host = await resolveAgentAuthProtocolHostRequest(
-      config.authority.host(ctx),
-      {
-        token: bearerToken(request),
-        audience,
-        registration: false,
-        requestedOrganizationId: organizationId,
-      }
-    );
+    const host = await resolveAgentAuthProtocolHostRequest(config.authority.host(ctx), {
+      token: bearerToken(request),
+      audience,
+      registration: false,
+      requestedOrganizationId: organizationId,
+    });
     const status = await config.authority.getAgentStatus(ctx, {
       agentId,
       organizationId,
@@ -404,22 +379,19 @@ async function dispatch<TContext>(
   ) {
     const body = await readJsonBody(request);
     const organizationId = requiredString(body, "organization_id");
-    const host = await resolveAgentAuthProtocolHostRequest(
-      config.authority.host(ctx),
-      {
-        token: bearerToken(request),
-        audience,
-        registration: false,
-        requestedOrganizationId: organizationId,
-      }
-    );
+    const host = await resolveAgentAuthProtocolHostRequest(config.authority.host(ctx), {
+      token: bearerToken(request),
+      audience,
+      registration: false,
+      requestedOrganizationId: organizationId,
+    });
     if (endpoint === "revoke_host") {
       return jsonResponse(
         200,
         await config.authority.revokeHost(ctx, {
           hostId: host.authority.hostId,
           organizationId,
-        })
+        }),
       );
     }
     if (endpoint === "rotate_host_key") {
@@ -429,10 +401,8 @@ async function dispatch<TContext>(
           hostId: host.authority.hostId,
           organizationId,
           expectedGeneration: requiredInteger(body, "expected_generation"),
-          publicJwkJson: JSON.stringify(
-            parseAgentAuthProtocolPublicEd25519Jwk(body.public_key)
-          ),
-        })
+          publicJwkJson: JSON.stringify(parseAgentAuthProtocolPublicEd25519Jwk(body.public_key)),
+        }),
       );
     }
     const agentId = requiredString(body, "agent_id");
@@ -448,24 +418,20 @@ async function dispatch<TContext>(
             ...input,
             expiresAt: requiredInteger(body, "expires_at"),
           })
-        : await config.authority.revokeAgent(ctx, input)
+        : await config.authority.revokeAgent(ctx, input),
     );
   }
 
-  const body =
-    request.method === "POST" ? await readJsonBody(request) : undefined;
+  const body = request.method === "POST" ? await readJsonBody(request) : undefined;
   const organizationId =
     body === undefined
       ? requiredQuery(url, "organization_id")
       : requiredString(body, "organization_id");
-  const principal = await resolveAgentAuthProtocolAgentPrincipal(
-    config.authority.agent(ctx),
-    {
-      token: bearerToken(request),
-      audience,
-      requestedOrganizationId: organizationId,
-    }
-  );
+  const principal = await resolveAgentAuthProtocolAgentPrincipal(config.authority.agent(ctx), {
+    token: bearerToken(request),
+    audience,
+    requestedOrganizationId: organizationId,
+  });
   const authenticatedBody = body ?? {};
 
   switch (endpoint) {
@@ -481,7 +447,7 @@ async function dispatch<TContext>(
             ? {}
             : { cursor: optionalQuery(url, "cursor") }),
           limit: readLimit(url.searchParams.get("limit")),
-        })
+        }),
       );
     case "describe_capability": {
       const capability = requiredQuery(url, "capability");
@@ -490,10 +456,7 @@ async function dispatch<TContext>(
         capability,
       });
       if (definition === null) {
-        throw new ProtocolHttpError(
-          "capability_not_found",
-          "Capability not found"
-        );
+        throw new ProtocolHttpError("capability_not_found", "Capability not found");
       }
       return jsonResponse(200, definition);
     }
@@ -504,7 +467,7 @@ async function dispatch<TContext>(
           principal,
           capability: requiredString(authenticatedBody, "capability"),
           arguments: readJsonObject(authenticatedBody.arguments, "arguments"),
-        })
+        }),
       );
     case "request_capability":
       return jsonResponse(
@@ -517,7 +480,7 @@ async function dispatch<TContext>(
             : {
                 reason: optionalString(authenticatedBody, "reason", 1_000),
               }),
-        })
+        }),
       );
     case "rotate_key":
       return jsonResponse(
@@ -525,14 +488,11 @@ async function dispatch<TContext>(
         await config.authority.rotateAgentKey(ctx, {
           agentId: principal.agentId,
           organizationId,
-          expectedGeneration: requiredInteger(
-            authenticatedBody,
-            "expected_generation"
-          ),
+          expectedGeneration: requiredInteger(authenticatedBody, "expected_generation"),
           publicJwkJson: JSON.stringify(
-            parseAgentAuthProtocolPublicEd25519Jwk(authenticatedBody.public_key)
+            parseAgentAuthProtocolPublicEd25519Jwk(authenticatedBody.public_key),
           ),
-        })
+        }),
       );
     case "introspect":
       return jsonResponse(
@@ -546,7 +506,7 @@ async function dispatch<TContext>(
                 claimedPermissions: readStringArray(
                   authenticatedBody.permissions,
                   "permissions",
-                  64
+                  64,
                 ),
               }),
           ...(authenticatedBody.capabilities === undefined
@@ -555,60 +515,38 @@ async function dispatch<TContext>(
                 claimedCapabilities: readStringArray(
                   authenticatedBody.capabilities,
                   "capabilities",
-                  64
+                  64,
                 ),
               }),
-        })
+        }),
       );
     default:
-      throw new ProtocolHttpError(
-        "invalid_request",
-        "Protocol route is not implemented"
-      );
+      throw new ProtocolHttpError("invalid_request", "Protocol route is not implemented");
   }
 }
 
 function endpointForRequest(
   path: string,
-  method: string
+  method: string,
 ): keyof typeof AGENT_AUTH_PROTOCOL_V1_ENDPOINTS | null {
-  if (
-    path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.capabilities &&
-    method === "GET"
-  )
+  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.capabilities && method === "GET")
     return "capabilities";
-  if (
-    path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.describe_capability &&
-    method === "GET"
-  )
+  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.describe_capability && method === "GET")
     return "describe_capability";
-  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.status && method === "GET")
-    return "status";
-  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.register && method === "POST")
-    return "register";
-  if (
-    path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.request_capability &&
-    method === "POST"
-  )
+  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.status && method === "GET") return "status";
+  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.register && method === "POST") return "register";
+  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.request_capability && method === "POST")
     return "request_capability";
   if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.reactivate && method === "POST")
     return "reactivate";
-  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.revoke && method === "POST")
-    return "revoke";
-  if (
-    path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.revoke_host &&
-    method === "POST"
-  )
+  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.revoke && method === "POST") return "revoke";
+  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.revoke_host && method === "POST")
     return "revoke_host";
   if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.rotate_key && method === "POST")
     return "rotate_key";
-  if (
-    path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.rotate_host_key &&
-    method === "POST"
-  )
+  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.rotate_host_key && method === "POST")
     return "rotate_host_key";
-  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.execute && method === "POST")
-    return "execute";
+  if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.execute && method === "POST") return "execute";
   if (path === AGENT_AUTH_PROTOCOL_V1_ENDPOINTS.introspect && method === "POST")
     return "introspect";
   return null;
@@ -619,7 +557,7 @@ function requireVersion(request: Request): void {
   if (value !== AGENT_AUTH_PROTOCOL_VERSION) {
     throw new ProtocolHttpError(
       "invalid_request",
-      `agent-auth-version must be ${AGENT_AUTH_PROTOCOL_VERSION}`
+      `agent-auth-version must be ${AGENT_AUTH_PROTOCOL_VERSION}`,
     );
   }
 }
@@ -630,15 +568,13 @@ function bearerToken(request: Request): string {
   if (match?.[1] === undefined || match[1].split(".").length !== 3) {
     throw new ProtocolHttpError(
       "authentication_required",
-      "Bearer Agent Auth Protocol credential required"
+      "Bearer Agent Auth Protocol credential required",
     );
   }
   return match[1];
 }
 
-async function readJsonBody(
-  request: Request
-): Promise<Record<string, unknown>> {
+async function readJsonBody(request: Request): Promise<Record<string, unknown>> {
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (contentLength > 64_000) {
     throw new ProtocolHttpError("limit_exceeded", "Request body is too large");
@@ -647,37 +583,21 @@ async function readJsonBody(
     return readJsonObject(await request.json(), "request body");
   } catch (error) {
     if (error instanceof ProtocolHttpError) throw error;
-    throw new ProtocolHttpError(
-      "invalid_request",
-      "Request body must be a JSON object"
-    );
+    throw new ProtocolHttpError("invalid_request", "Request body must be a JSON object");
   }
 }
 
-function readJsonObject(
-  value: unknown,
-  name: string
-): AgentAuthProtocolJsonObject {
+function readJsonObject(value: unknown, name: string): AgentAuthProtocolJsonObject {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new ProtocolHttpError("invalid_request", `${name} must be an object`);
   }
   return Object.fromEntries(
-    Object.entries(value).map(([key, item]) => [
-      key,
-      readJsonValue(item, `${name}.${key}`),
-    ])
+    Object.entries(value).map(([key, item]) => [key, readJsonValue(item, `${name}.${key}`)]),
   );
 }
 
-function readJsonValue(
-  value: unknown,
-  name: string
-): AgentAuthProtocolJsonObject[string] {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "boolean"
-  ) {
+function readJsonValue(value: unknown, name: string): AgentAuthProtocolJsonObject[string] {
+  if (value === null || typeof value === "string" || typeof value === "boolean") {
     return value;
   }
   if (typeof value === "number") {
@@ -692,11 +612,7 @@ function readJsonValue(
   return readJsonObject(value, name);
 }
 
-function requiredString(
-  object: Record<string, unknown>,
-  key: string,
-  maximum = 256
-): string {
+function requiredString(object: Record<string, unknown>, key: string, maximum = 256): string {
   const value = object[key];
   if (typeof value !== "string") {
     throw new ProtocolHttpError("invalid_request", `${key} is required`);
@@ -711,20 +627,15 @@ function requiredString(
 function optionalString(
   object: Record<string, unknown>,
   key: string,
-  maximum = 256
+  maximum = 256,
 ): string | undefined {
-  return object[key] === undefined
-    ? undefined
-    : requiredString(object, key, maximum);
+  return object[key] === undefined ? undefined : requiredString(object, key, maximum);
 }
 
 function requiredInteger(object: Record<string, unknown>, key: string): number {
   const value = object[key];
   if (typeof value !== "number" || !Number.isSafeInteger(value)) {
-    throw new ProtocolHttpError(
-      "invalid_request",
-      `${key} must be a safe integer`
-    );
+    throw new ProtocolHttpError("invalid_request", `${key} must be a safe integer`);
   }
   return value;
 }
@@ -734,11 +645,7 @@ function readMode(value: unknown): AgentAuthProtocolMode {
   throw new ProtocolHttpError("unsupported_mode", "Unsupported agent mode");
 }
 
-function readStringArray(
-  value: unknown,
-  name: string,
-  maximum: number
-): string[] {
+function readStringArray(value: unknown, name: string, maximum: number): string[] {
   if (!Array.isArray(value) || value.length > maximum) {
     throw new ProtocolHttpError("invalid_request", `${name} is invalid`);
   }
@@ -749,21 +656,16 @@ function readStringArray(
     return item.trim();
   });
   if (new Set(values).size !== values.length) {
-    throw new ProtocolHttpError(
-      "invalid_request",
-      `${name} must not contain duplicates`
-    );
+    throw new ProtocolHttpError("invalid_request", `${name} must not contain duplicates`);
   }
   return values;
 }
 
-function readRequestedGrants(
-  value: unknown
-): AgentAuthProtocolRequestedGrant[] {
+function readRequestedGrants(value: unknown): AgentAuthProtocolRequestedGrant[] {
   if (!Array.isArray(value) || value.length > 64) {
     throw new ProtocolHttpError(
       "invalid_capabilities",
-      "capabilities must be an array of at most 64 grants"
+      "capabilities must be an array of at most 64 grants",
     );
   }
   return value.map((item) => {
@@ -776,15 +678,10 @@ function readRequestedGrants(
         ? undefined
         : JSON.stringify(readJsonObject(object.constraints, "constraints"));
     if (constraints !== undefined && constraints.length > 16_000) {
-      throw new ProtocolHttpError(
-        "limit_exceeded",
-        "Capability constraints are too large"
-      );
+      throw new ProtocolHttpError("limit_exceeded", "Capability constraints are too large");
     }
     const expiresAt =
-      object.expires_at === undefined
-        ? undefined
-        : requiredInteger(object, "expires_at");
+      object.expires_at === undefined ? undefined : requiredInteger(object, "expires_at");
     return {
       capability: requiredString(object, "name"),
       ...(constraints === undefined ? {} : { constraintsJson: constraints }),
@@ -796,10 +693,7 @@ function readRequestedGrants(
 function requiredQuery(url: URL, name: string): string {
   const value = optionalQuery(url, name);
   if (value === undefined) {
-    throw new ProtocolHttpError(
-      "invalid_request",
-      `${name} query parameter is required`
-    );
+    throw new ProtocolHttpError("invalid_request", `${name} query parameter is required`);
   }
   return value;
 }
@@ -817,10 +711,7 @@ function readLimit(value: string | null): number {
   if (value === null) return 50;
   const limit = Number(value);
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
-    throw new ProtocolHttpError(
-      "invalid_request",
-      "limit must be an integer between 1 and 100"
-    );
+    throw new ProtocolHttpError("invalid_request", "limit must be an integer between 1 and 100");
   }
   return limit;
 }
@@ -842,11 +733,7 @@ function normalizeIssuer(value: string): string {
 
 function normalizeHttpsUrl(value: string, name: string): string {
   const url = new URL(value);
-  if (
-    url.protocol !== "https:" ||
-    url.username.length > 0 ||
-    url.password.length > 0
-  ) {
+  if (url.protocol !== "https:" || url.username.length > 0 || url.password.length > 0) {
     throw new TypeError(`${name} must be an HTTPS URL`);
   }
   return url.toString();
@@ -859,7 +746,7 @@ function absoluteEndpoint(issuer: string, path: string): string {
 function jsonResponse(
   status: number,
   body: unknown,
-  options?: { cacheControl?: string }
+  options?: { cacheControl?: string },
 ): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -871,7 +758,7 @@ function jsonResponse(
 }
 
 function classifyAuthorityError(
-  message: string
+  message: string,
 ): Parameters<typeof createAgentAuthProtocolErrorResponse>[0]["error"] {
   const normalized = message.toLowerCase();
   if (normalized.includes("replay")) return "invalid_jwt";

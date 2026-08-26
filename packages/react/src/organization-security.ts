@@ -38,18 +38,13 @@ function optionalTimeoutMinutes(value: unknown): number | undefined {
     return undefined;
   }
   const rounded = Math.round(value);
-  if (
-    rounded < ORGANIZATION_SESSION_TIMEOUT_MIN ||
-    rounded > ORGANIZATION_SESSION_TIMEOUT_MAX
-  ) {
+  if (rounded < ORGANIZATION_SESSION_TIMEOUT_MIN || rounded > ORGANIZATION_SESSION_TIMEOUT_MAX) {
     return undefined;
   }
   return rounded;
 }
 
-function parseSecurityObject(
-  value: unknown
-): ConvexOrganizationSecurity | undefined {
+function parseSecurityObject(value: unknown): ConvexOrganizationSecurity | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
@@ -59,9 +54,7 @@ function parseSecurityObject(
       : {}),
     ...(optionalTimeoutMinutes(value.sessionTimeoutMinutes) !== undefined
       ? {
-          sessionTimeoutMinutes: optionalTimeoutMinutes(
-            value.sessionTimeoutMinutes
-          ),
+          sessionTimeoutMinutes: optionalTimeoutMinutes(value.sessionTimeoutMinutes),
         }
       : {}),
   };
@@ -72,7 +65,7 @@ function parseSecurityObject(
  * Read suite security policy from organization `metadataJson`.
  */
 export function parseOrganizationSecurityFromMetadataJson(
-  metadataJson: string | null | undefined
+  metadataJson: string | null | undefined,
 ): ConvexOrganizationSecurity | undefined {
   if (!metadataJson || metadataJson.trim() === "") {
     return undefined;
@@ -82,9 +75,7 @@ export function parseOrganizationSecurityFromMetadataJson(
     if (!isRecord(parsed)) {
       return undefined;
     }
-    return parseSecurityObject(
-      parsed[ORGANIZATION_SECURITY_METADATA_KEY]
-    );
+    return parseSecurityObject(parsed[ORGANIZATION_SECURITY_METADATA_KEY]);
   } catch {
     return undefined;
   }
@@ -97,7 +88,7 @@ export type ConvexOrganizationSecurityUpdate = {
 
 function applySecurityUpdate(
   current: ConvexOrganizationSecurity | undefined,
-  update: ConvexOrganizationSecurityUpdate
+  update: ConvexOrganizationSecurityUpdate,
 ): ConvexOrganizationSecurity | undefined {
   const next: ConvexOrganizationSecurity = { ...current };
 
@@ -110,16 +101,13 @@ function applySecurityUpdate(
   }
 
   if ("sessionTimeoutMinutes" in update) {
-    if (
-      update.sessionTimeoutMinutes === null ||
-      update.sessionTimeoutMinutes === undefined
-    ) {
+    if (update.sessionTimeoutMinutes === null || update.sessionTimeoutMinutes === undefined) {
       delete next.sessionTimeoutMinutes;
     } else {
       const minutes = optionalTimeoutMinutes(update.sessionTimeoutMinutes);
       if (minutes === undefined) {
         throw new Error(
-          `sessionTimeoutMinutes must be between ${ORGANIZATION_SESSION_TIMEOUT_MIN} and ${ORGANIZATION_SESSION_TIMEOUT_MAX}`
+          `sessionTimeoutMinutes must be between ${ORGANIZATION_SESSION_TIMEOUT_MIN} and ${ORGANIZATION_SESSION_TIMEOUT_MAX}`,
         );
       }
       next.sessionTimeoutMinutes = minutes;
@@ -136,7 +124,7 @@ function applySecurityUpdate(
  */
 export function mergeOrganizationSecurityIntoMetadataJson(
   metadataJson: string | null | undefined,
-  securityUpdate: ConvexOrganizationSecurityUpdate
+  securityUpdate: ConvexOrganizationSecurityUpdate,
 ): string | undefined {
   let base: MetadataRecord = {};
   if (metadataJson && metadataJson.trim() !== "") {
@@ -150,9 +138,7 @@ export function mergeOrganizationSecurityIntoMetadataJson(
     }
   }
 
-  const currentSecurity = parseSecurityObject(
-    base[ORGANIZATION_SECURITY_METADATA_KEY]
-  );
+  const currentSecurity = parseSecurityObject(base[ORGANIZATION_SECURITY_METADATA_KEY]);
   const nextSecurity = applySecurityUpdate(currentSecurity, securityUpdate);
 
   if (nextSecurity === undefined) {

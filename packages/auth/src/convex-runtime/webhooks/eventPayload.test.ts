@@ -2,16 +2,13 @@ import assert from "node:assert/strict";
 
 import { describe, it } from "vitest";
 
-import {
-  buildConvexWebhookPayload,
-  createConvexWebhookEventId,
-} from "./eventPayload";
+import { buildConvexWebhookPayload, createConvexWebhookEventId } from "./eventPayload";
 
 describe("webhook event payload helpers", () => {
   it("creates stable event ids when injected with deterministic inputs", () => {
     assert.equal(
       createConvexWebhookEventId("evt", 1_700_000_000_000, () => 0.5),
-      "evt_1700000000000_i"
+      "evt_1700000000000_i",
     );
   });
 
@@ -32,7 +29,7 @@ describe("webhook event payload helpers", () => {
         id: "evt_1",
         organization_id: "org_1",
         type: "organization.member.added",
-      })
+      }),
     );
   });
 });

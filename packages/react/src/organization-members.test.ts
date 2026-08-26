@@ -21,7 +21,7 @@ describe("organization member helpers", () => {
         inviting: false,
         roleTemplate: "member",
       }),
-      true
+      true,
     );
     assert.equal(
       canSubmitConvexOrganizationInviteForm({
@@ -29,7 +29,7 @@ describe("organization member helpers", () => {
         inviting: false,
         roleTemplate: "member",
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexOrganizationInviteForm({
@@ -38,7 +38,7 @@ describe("organization member helpers", () => {
         inviting: false,
         roleTemplate: "member",
       }),
-      false
+      false,
     );
     assert.equal(
       canSubmitConvexOrganizationInviteForm({
@@ -46,7 +46,7 @@ describe("organization member helpers", () => {
         inviting: true,
         roleTemplate: "member",
       }),
-      false
+      false,
     );
   });
 
@@ -55,26 +55,20 @@ describe("organization member helpers", () => {
       getConvexOrganizationMemberLabel({
         user: { name: "Jane", email: "jane@example.com" },
       }),
-      "Jane"
+      "Jane",
     );
     assert.equal(
       getConvexOrganizationMemberLabel({
         user: { email: "jane@example.com" },
       }),
-      "jane@example.com"
+      "jane@example.com",
     );
-    assert.equal(
-      getConvexOrganizationMemberLabel({ user: null }, "Unknown"),
-      "Unknown"
-    );
+    assert.equal(getConvexOrganizationMemberLabel({ user: null }, "Unknown"), "Unknown");
   });
 
   it("formats role and status labels", () => {
     assert.equal(getConvexOrganizationRoleLabel("owner"), "Owner");
-    assert.equal(
-      getConvexOrganizationMemberStatusLabel("suspended"),
-      "Suspended"
-    );
+    assert.equal(getConvexOrganizationMemberStatusLabel("suspended"), "Suspended");
   });
 
   it("detects the last active owner", () => {
@@ -92,16 +86,10 @@ describe("organization member helpers", () => {
 
   it("returns stable member mutation error copy", () => {
     assert.equal(
-      getConvexOrganizationMemberMutationErrorMessage(
-        new Error("Nope"),
-        "Fallback"
-      ),
-      "Nope"
+      getConvexOrganizationMemberMutationErrorMessage(new Error("Nope"), "Fallback"),
+      "Nope",
     );
-    assert.equal(
-      getConvexOrganizationMemberMutationErrorMessage("bad", "Fallback"),
-      "Fallback"
-    );
+    assert.equal(getConvexOrganizationMemberMutationErrorMessage("bad", "Fallback"), "Fallback");
   });
 
   it("uses an explicit invite role default before falling back to option order", () => {
@@ -110,13 +98,13 @@ describe("organization member helpers", () => {
         defaultInviteRoleTemplate: "member",
         roleOptions: ["owner", "member"],
       }),
-      "member"
+      "member",
     );
     assert.equal(
       resolveConvexOrganizationDefaultInviteRole({
         roleOptions: ["owner", "member"],
       }),
-      "owner"
+      "owner",
     );
   });
 });

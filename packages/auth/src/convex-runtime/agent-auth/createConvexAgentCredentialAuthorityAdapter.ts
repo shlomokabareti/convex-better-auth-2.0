@@ -7,9 +7,7 @@ import type {
 type VerificationMaterialInput = Parameters<
   AgentCredentialAuthorityAdapter["getVerificationMaterial"]
 >[0];
-type ConsumeCredentialInput = Parameters<
-  AgentCredentialAuthorityAdapter["consumeCredential"]
->[0];
+type ConsumeCredentialInput = Parameters<AgentCredentialAuthorityAdapter["consumeCredential"]>[0];
 
 export type ConvexAgentCredentialAuthorityAdapterConfig<
   TVerificationMaterialQueryReference,
@@ -17,11 +15,11 @@ export type ConvexAgentCredentialAuthorityAdapterConfig<
 > = {
   runQuery: (
     reference: TVerificationMaterialQueryReference,
-    args: VerificationMaterialInput
+    args: VerificationMaterialInput,
   ) => Promise<AgentCredentialVerificationMaterial | null>;
   runMutation: (
     reference: TConsumeCredentialMutationReference,
-    args: ConsumeCredentialInput
+    args: ConsumeCredentialInput,
   ) => Promise<AgentCredentialAuthorityResult>;
   refs: {
     getAgentVerificationMaterial: TVerificationMaterialQueryReference;
@@ -40,20 +38,14 @@ export function createConvexAgentCredentialAuthorityAdapter<
   config: ConvexAgentCredentialAuthorityAdapterConfig<
     TVerificationMaterialQueryReference,
     TConsumeCredentialMutationReference
-  >
+  >,
 ): AgentCredentialAuthorityAdapter {
   return {
     async getVerificationMaterial(input) {
-      return await config.runQuery(
-        config.refs.getAgentVerificationMaterial,
-        input
-      );
+      return await config.runQuery(config.refs.getAgentVerificationMaterial, input);
     },
     async consumeCredential(input) {
-      return await config.runMutation(
-        config.refs.consumeAgentCredential,
-        input
-      );
+      return await config.runMutation(config.refs.consumeAgentCredential, input);
     },
   };
 }

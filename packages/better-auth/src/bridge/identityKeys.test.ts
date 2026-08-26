@@ -24,11 +24,11 @@ describe("Better Auth identity keys", () => {
     assert.equal(getBetterAuthIdentityProvider(), "better-auth");
     assert.equal(
       buildBetterAuthIdentityId("user_123", issuer),
-      "better-auth|https://auth.example.com|user_123"
+      "better-auth|https://auth.example.com|user_123",
     );
     assert.equal(
       buildBetterAuthTokenIdentifier("user_123", issuer),
-      "https://auth.example.com|user_123"
+      "https://auth.example.com|user_123",
     );
   });
 
@@ -46,7 +46,7 @@ describe("Better Auth identity keys", () => {
         convexSiteUrl: "https://explicit-convex.example.com",
         env,
       }),
-      "https://explicit-issuer.example.com"
+      "https://explicit-issuer.example.com",
     );
     assert.equal(
       resolveBetterAuthIdentityIssuer({
@@ -54,14 +54,14 @@ describe("Better Auth identity keys", () => {
         convexSiteUrl: "https://explicit-convex.example.com",
         env,
       }),
-      "https://explicit-base.example.com"
+      "https://explicit-base.example.com",
     );
     assert.equal(
       resolveBetterAuthIdentityIssuer({
         convexSiteUrl: "https://explicit-convex.example.com/",
         env,
       }),
-      "https://explicit-convex.example.com"
+      "https://explicit-convex.example.com",
     );
   });
 
@@ -74,7 +74,7 @@ describe("Better Auth identity keys", () => {
           CONVEX_SITE_URL: "https://convex.example.com",
         },
       }),
-      "https://issuer.example.com"
+      "https://issuer.example.com",
     );
     assert.equal(
       resolveBetterAuthIdentityIssuer({
@@ -83,7 +83,7 @@ describe("Better Auth identity keys", () => {
           CONVEX_SITE_URL: "https://convex.example.com",
         },
       }),
-      "https://url.example.com"
+      "https://url.example.com",
     );
     assert.equal(
       resolveBetterAuthIdentityIssuer({
@@ -91,7 +91,7 @@ describe("Better Auth identity keys", () => {
           CONVEX_SITE_URL: "https://convex.example.com/",
         },
       }),
-      "https://convex.example.com"
+      "https://convex.example.com",
     );
   });
 
@@ -106,9 +106,9 @@ describe("Better Auth identity keys", () => {
           issuer: "https://auth.example.com/",
           tokenIdentifier: "https://auth.example.com|user_123",
         },
-        { env: { BETTER_AUTH_ISSUER: "https://auth.example.com" } }
+        { env: { BETTER_AUTH_ISSUER: "https://auth.example.com" } },
       ),
-      true
+      true,
     );
     assert.equal(
       isBetterAuthIdentity(
@@ -116,9 +116,9 @@ describe("Better Auth identity keys", () => {
           issuer: "https://legacy.accounts.test",
           tokenIdentifier: "user_legacy_123",
         },
-        { env: { BETTER_AUTH_ISSUER: "https://auth.example.com" } }
+        { env: { BETTER_AUTH_ISSUER: "https://auth.example.com" } },
       ),
-      false
+      false,
     );
   });
 

@@ -11,9 +11,7 @@ export type CreateAuthAuditEventInput = {
   metadata?: Record<string, unknown>;
 };
 
-export function createAuthAuditEvent(
-  input: CreateAuthAuditEventInput
-): AuthAuditEvent {
+export function createAuthAuditEvent(input: CreateAuthAuditEventInput): AuthAuditEvent {
   return {
     eventType: input.eventType,
     principalKind: input.context.principal.kind,

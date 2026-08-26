@@ -90,20 +90,14 @@ export function ConvexVerifyEmailScreen(props: ConvexVerifyEmailScreenProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { status, error, verifyEmail } = useConvexAuthVerifyEmail(
-    props.authClient
-  );
-  const { resend, isResending } = useConvexAuthResendVerification(
-    props.authClient
-  );
+  const { status, error, verifyEmail } = useConvexAuthVerifyEmail(props.authClient);
+  const { resend, isResending } = useConvexAuthResendVerification(props.authClient);
   const [resendResult, setResendResult] = useState<string | null>(null);
 
   const hasToken = props.token.length > 0;
   const isAvailable = props.authClient?.verifyEmail !== undefined;
   const canResend =
-    props.userEmail !== null &&
-    props.userEmail !== undefined &&
-    props.userEmail.length > 0;
+    props.userEmail !== null && props.userEmail !== undefined && props.userEmail.length > 0;
 
   useEffect(() => {
     if (!isAvailable || !hasToken) return undefined;
@@ -123,11 +117,7 @@ export function ConvexVerifyEmailScreen(props: ConvexVerifyEmailScreenProps) {
 
   async function handleResend() {
     setResendResult(null);
-    if (
-      props.userEmail === null ||
-      props.userEmail === undefined ||
-      props.userEmail.length === 0
-    ) {
+    if (props.userEmail === null || props.userEmail === undefined || props.userEmail.length === 0) {
       return;
     }
     const result = await resend({

@@ -63,10 +63,7 @@ describe("resolveApiKeyPrincipal", () => {
       ownerPermissions: ["org:read", "org:write"],
     });
     assert.equal(p.narrowedPermissions, null);
-    assert.deepEqual(p.effectivePermissions.toSorted(), [
-      "org:read",
-      "org:write",
-    ]);
+    assert.deepEqual(p.effectivePermissions.toSorted(), ["org:read", "org:write"]);
   });
 
   it("narrowedPermissions=[…] → effectivePermissions is the narrowed intersection", () => {

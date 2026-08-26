@@ -9,9 +9,7 @@ export type ApiKeyIpAllowlistDecision =
       requestIp: string | null;
     };
 
-export function getRequestIpFromHeaders(
-  headers: Pick<Headers, "get">
-): string | null {
+export function getRequestIpFromHeaders(headers: Pick<Headers, "get">): string | null {
   const forwarded = headers.get("x-forwarded-for");
   if (forwarded) {
     const firstIp = forwarded.split(",")[0]?.trim();

@@ -23,11 +23,7 @@ export {
   AvatarGroupCount,
   AvatarImage,
 } from "./components/avatar";
-export {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "./components/collapsible";
+export { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./components/collapsible";
 export {
   Dialog,
   DialogClose,
@@ -107,19 +103,8 @@ export {
 } from "./components/sidebar";
 export { Skeleton } from "./components/skeleton";
 export { Switch } from "./components/switch";
-export {
-  Tabs,
-  TabsContent,
-  TabsList,
-  tabsListVariants,
-  TabsTrigger,
-} from "./components/tabs";
-export {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./components/tooltip";
+export { Tabs, TabsContent, TabsList, tabsListVariants, TabsTrigger } from "./components/tabs";
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./components/tooltip";
 
 export {
   Sheet,

@@ -1,12 +1,9 @@
 import { normalizeBetterAuthIdentity } from "../bridge/normalizeBetterAuthIdentity";
 import { createBetterAuthBridgeState } from "./createBetterAuthBridgeState";
-import type {
-  BetterAuthRestoredSession,
-  BetterAuthSessionSnapshot,
-} from "./types";
+import type { BetterAuthRestoredSession, BetterAuthSessionSnapshot } from "./types";
 
 export function restoreBetterAuthSession(
-  snapshot: BetterAuthSessionSnapshot
+  snapshot: BetterAuthSessionSnapshot,
 ): BetterAuthRestoredSession {
   const bridgeState = createBetterAuthBridgeState({
     providerState: snapshot.providerState,
@@ -16,10 +13,7 @@ export function restoreBetterAuthSession(
   });
 
   return {
-    identity:
-      snapshot.identity === null
-        ? null
-        : normalizeBetterAuthIdentity(snapshot.identity),
+    identity: snapshot.identity === null ? null : normalizeBetterAuthIdentity(snapshot.identity),
     providerState: bridgeState.providerState,
     runtimeStatus: bridgeState.runtimeStatus,
   };

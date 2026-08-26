@@ -68,8 +68,7 @@ const DEFAULT_COPY: Required<ExpoResetPasswordFormCopy> = {
   confirmPasswordLabel: "Confirm new password",
   submit: "Set new password",
   submitting: "Saving…",
-  successMessage:
-    "Password updated. You can now sign in with your new password.",
+  successMessage: "Password updated. You can now sign in with your new password.",
   unavailable: "Password reset is not available on this auth client.",
   missingTokenMessage:
     "This reset link is missing or invalid. Request a new password reset email and try again.",
@@ -77,15 +76,11 @@ const DEFAULT_COPY: Required<ExpoResetPasswordFormCopy> = {
   minLengthMessage: "Password is too short.",
 };
 
-export function ConvexResetPasswordForm(
-  props: ExpoResetPasswordFormProps
-) {
+export function ConvexResetPasswordForm(props: ExpoResetPasswordFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const minLength = props.minPasswordLength ?? 12;
-  const { resetPassword, isResetting } = useExpoAuthResetPassword(
-    props.authClient
-  );
+  const { resetPassword, isResetting } = useExpoAuthResetPassword(props.authClient);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
@@ -120,15 +115,10 @@ export function ConvexResetPasswordForm(
     <View style={[styles.root, s.root]}>
       <View style={[styles.header, s.header]}>
         <Text style={[styles.title, s.title]}>{copy.title}</Text>
-        <Text style={[styles.description, s.description]}>
-          {copy.description}
-        </Text>
+        <Text style={[styles.description, s.description]}>{copy.description}</Text>
       </View>
       {!hasToken ? (
-        <Text
-          className="text-destructive"
-          style={[styles.errorState, s.errorState]}
-        >
+        <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
           {copy.missingTokenMessage}
         </Text>
       ) : (
@@ -145,9 +135,7 @@ export function ConvexResetPasswordForm(
             />
           </View>
           <View style={[styles.field, s.field]}>
-            <Text style={[styles.label, s.label]}>
-              {copy.confirmPasswordLabel}
-            </Text>
+            <Text style={[styles.label, s.label]}>{copy.confirmPasswordLabel}</Text>
             <TextInput
               value={confirm}
               onChangeText={setConfirm}
@@ -170,10 +158,7 @@ export function ConvexResetPasswordForm(
             <Text style={[styles.successState, s.successState]}>{success}</Text>
           ) : null}
           {error !== null ? (
-            <Text
-              className="text-destructive"
-              style={[styles.errorState, s.errorState]}
-            >
+            <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
               {error}
             </Text>
           ) : null}

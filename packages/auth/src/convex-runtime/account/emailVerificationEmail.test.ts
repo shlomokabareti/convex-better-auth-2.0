@@ -21,7 +21,7 @@ describe("email verification email helpers", () => {
         token: "token with spaces",
         templateUrl: "https://app.example.com/verify/{token}",
       }),
-      "https://app.example.com/verify/token%20with%20spaces"
+      "https://app.example.com/verify/token%20with%20spaces",
     );
   });
 
@@ -31,7 +31,7 @@ describe("email verification email helpers", () => {
         token: "abc123",
         appOrigin: "https://app.example.com/",
       }),
-      "https://app.example.com/verify-email?token=abc123"
+      "https://app.example.com/verify-email?token=abc123",
     );
   });
 
@@ -46,7 +46,7 @@ describe("email verification email helpers", () => {
         to: "user@example.com",
         verifyUrl: "https://app.example.com/verify-email?token=abc",
       }),
-      { status: "not_configured", reason: "missing_from_address" }
+      { status: "not_configured", reason: "missing_from_address" },
     );
 
     assert.deepStrictEqual(
@@ -55,7 +55,7 @@ describe("email verification email helpers", () => {
         to: "user@example.com",
         verifyUrl: null,
       }),
-      { status: "not_configured", reason: "missing_verify_url" }
+      { status: "not_configured", reason: "missing_verify_url" },
     );
   });
 
@@ -67,23 +67,19 @@ describe("email verification email helpers", () => {
       expiresAt: Date.UTC(2026, 0, 1),
     });
 
-    assert.equal(
-      "subject" in draft ? draft.subject : null,
-      "Verify your email"
-    );
+    assert.equal("subject" in draft ? draft.subject : null, "Verify your email");
     assert.equal("to" in draft ? draft.to : null, "user@example.com");
     assert.match("html" in draft ? draft.html : "", /token=a&amp;b/);
     assert.match("text" in draft ? draft.text : "", /token=a&b/);
     assert.match("html" in draft ? draft.html : "", /This link expires/);
     assert.match(
       "html" in draft ? draft.html : "",
-      /Confirm your email address to finish setting up your account\./
+      /Confirm your email address to finish setting up your account\./,
     );
     assert.match(
       "text" in draft ? draft.text : "",
-      /Verify your email: https:\/\/app\.example\.com\/verify-email\?token=a&b/
+      /Verify your email: https:\/\/app\.example\.com\/verify-email\?token=a&b/,
     );
-
   });
 
   it("maps Resend delivery events into verification delivery status", () => {
@@ -91,14 +87,14 @@ describe("email verification email helpers", () => {
       mapResendEventToVerificationEmailDelivery({
         event: { type: "email.sent" },
       }),
-      { status: "sent", eventType: "email.sent" }
+      { status: "sent", eventType: "email.sent" },
     );
 
     assert.deepStrictEqual(
       mapResendEventToVerificationEmailDelivery({
         event: { type: "email.delivered" },
       }),
-      { status: "delivered", eventType: "email.delivered" }
+      { status: "delivered", eventType: "email.delivered" },
     );
 
     assert.deepStrictEqual(
@@ -112,14 +108,14 @@ describe("email verification email helpers", () => {
         status: "bounced",
         eventType: "email.bounced",
         error: "Mailbox not found",
-      }
+      },
     );
 
     assert.deepStrictEqual(
       mapResendEventToVerificationEmailDelivery({
         event: { type: "email.failed", data: { failed: { reason: "denied" } } },
       }),
-      { status: "failed", eventType: "email.failed", error: "denied" }
+      { status: "failed", eventType: "email.failed", error: "denied" },
     );
   });
 
@@ -135,7 +131,7 @@ describe("email verification email helpers", () => {
         emailDeliveryEvent: "queued",
         emailDeliveryError: undefined,
         emailDeliveryUpdatedAt: 10,
-      }
+      },
     );
 
     assert.deepStrictEqual(
@@ -148,18 +144,15 @@ describe("email verification email helpers", () => {
         emailDeliveryEvent: "missing_verify_url",
         emailDeliveryError: undefined,
         emailDeliveryUpdatedAt: 20,
-      }
+      },
     );
 
-    assert.deepStrictEqual(
-      createEmailVerificationEmailFailedPatch({ reason: "boom", now: 30 }),
-      {
-        emailDeliveryStatus: "failed",
-        emailDeliveryEvent: "enqueue_failed",
-        emailDeliveryError: "boom",
-        emailDeliveryUpdatedAt: 30,
-      }
-    );
+    assert.deepStrictEqual(createEmailVerificationEmailFailedPatch({ reason: "boom", now: 30 }), {
+      emailDeliveryStatus: "failed",
+      emailDeliveryEvent: "enqueue_failed",
+      emailDeliveryError: "boom",
+      emailDeliveryUpdatedAt: 30,
+    });
 
     assert.deepStrictEqual(
       createEmailVerificationEmailEventPatch({
@@ -171,7 +164,7 @@ describe("email verification email helpers", () => {
         emailDeliveryEvent: "email.failed",
         emailDeliveryError: "denied",
         emailDeliveryUpdatedAt: 40,
-      }
+      },
     );
   });
 
@@ -181,19 +174,16 @@ describe("email verification email helpers", () => {
         primary: " Convex <auth@example.com> ",
         fallback: "Fallback <fallback@example.com>",
       }),
-      "Convex <auth@example.com>"
+      "Convex <auth@example.com>",
     );
     assert.equal(
       resolveEmailVerificationFromAddress({
         primary: " ",
         fallback: "Fallback <fallback@example.com>",
       }),
-      "Fallback <fallback@example.com>"
+      "Fallback <fallback@example.com>",
     );
-    assert.equal(
-      resolveEmailVerificationFromAddress({ primary: null, fallback: null }),
-      null
-    );
+    assert.equal(resolveEmailVerificationFromAddress({ primary: null, fallback: null }), null);
   });
 
   it("orchestrates send, render, and delivery recording", async () => {

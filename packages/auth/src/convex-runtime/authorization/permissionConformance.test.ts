@@ -39,7 +39,7 @@ describe("permission matcher conformance across machine principals and authorize
           isRestricted: false,
           restrictedReason: null,
         },
-        testCase.required
+        testCase.required,
       );
       const serviceAllowed = decision(
         {
@@ -51,7 +51,7 @@ describe("permission matcher conformance across machine principals and authorize
           isRestricted: false,
           restrictedReason: null,
         },
-        testCase.required
+        testCase.required,
       );
       const effectivePermissions = computeEffectiveApiKeyPermissions({
         ownerPermissions: ["*"],
@@ -70,7 +70,7 @@ describe("permission matcher conformance across machine principals and authorize
           isRestricted: false,
           restrictedReason: null,
         },
-        testCase.required
+        testCase.required,
       );
       const oauthAllowed = decision(
         {
@@ -85,7 +85,7 @@ describe("permission matcher conformance across machine principals and authorize
           isRestricted: false,
           restrictedReason: null,
         },
-        testCase.required
+        testCase.required,
       );
 
       assert.deepEqual(
@@ -95,7 +95,7 @@ describe("permission matcher conformance across machine principals and authorize
           serviceAllowed: testCase.expected,
           apiKeyAllowed: testCase.expected,
           oauthAllowed: testCase.expected,
-        }
+        },
       );
     });
   }
@@ -107,7 +107,7 @@ describe("permission matcher conformance across machine principals and authorize
           ownerPermissions: testCase.owner,
           apiKey: { permissions: [...testCase.narrowed] },
         }).toSorted(),
-        [...testCase.expected].toSorted()
+        [...testCase.expected].toSorted(),
       );
     });
   }

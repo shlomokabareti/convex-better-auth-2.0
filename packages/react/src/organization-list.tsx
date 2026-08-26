@@ -88,9 +88,7 @@ const defaultCopy: Required<ConvexOrgListCopy> = {
   expiresLabel: "Expires",
 };
 
-function resolveCopy(
-  copy: ConvexOrgListCopy | undefined
-): Required<ConvexOrgListCopy> {
+function resolveCopy(copy: ConvexOrgListCopy | undefined): Required<ConvexOrgListCopy> {
   return { ...defaultCopy, ...copy };
 }
 
@@ -130,7 +128,7 @@ export function ConvexOrganizationList(props: ConvexOrgListProps) {
       if (isLoading) return;
       await onSelectOrganization(id);
     },
-    [isLoading, onSelectOrganization]
+    [isLoading, onSelectOrganization],
   );
 
   const handleAccept = useCallback(
@@ -138,7 +136,7 @@ export function ConvexOrganizationList(props: ConvexOrgListProps) {
       if (isLoading) return;
       await onAcceptInvitation?.(id);
     },
-    [isLoading, onAcceptInvitation]
+    [isLoading, onAcceptInvitation],
   );
 
   const handleReject = useCallback(
@@ -146,7 +144,7 @@ export function ConvexOrganizationList(props: ConvexOrgListProps) {
       if (isLoading) return;
       await onRejectInvitation?.(id);
     },
-    [isLoading, onRejectInvitation]
+    [isLoading, onRejectInvitation],
   );
 
   const handleCreate = useCallback(async () => {
@@ -155,12 +153,7 @@ export function ConvexOrganizationList(props: ConvexOrgListProps) {
   }, [isLoading, onCreateOrganization]);
 
   return (
-    <div
-      className={cn(
-        "border-foreground/10 bg-foreground/5 rounded-lg border",
-        classNames?.card
-      )}
-    >
+    <div className={cn("border-foreground/10 bg-foreground/5 rounded-lg border", classNames?.card)}>
       <OrganizationListHeader classNames={classNames} copy={resolvedCopy} />
       <OrganizationMembershipSection
         classNames={classNames}
@@ -200,15 +193,8 @@ function OrganizationListHeader(args: {
 }) {
   return (
     <div className={cn("px-5 pt-5 pb-2", args.classNames?.header)}>
-      <h3 className={cn("text-base font-semibold", args.classNames?.title)}>
-        {args.copy.title}
-      </h3>
-      <p
-        className={cn(
-          "text-foreground/60 text-sm",
-          args.classNames?.description
-        )}
-      >
+      <h3 className={cn("text-base font-semibold", args.classNames?.title)}>{args.copy.title}</h3>
+      <p className={cn("text-foreground/60 text-sm", args.classNames?.description)}>
         {args.copy.description}
       </p>
     </div>
@@ -226,10 +212,7 @@ function OrganizationMembershipSection(args: {
   return (
     <>
       <div
-        className={cn(
-          "text-foreground/50 px-5 pb-2 text-xs font-medium",
-          args.classNames?.body
-        )}
+        className={cn("text-foreground/50 px-5 pb-2 text-xs font-medium", args.classNames?.body)}
       >
         {args.copy.membershipsLabel}
       </div>
@@ -246,10 +229,7 @@ function OrganizationMembershipSection(args: {
           />
         ))
       ) : (
-        <EmptyState
-          classNames={args.classNames}
-          label={args.copy.noOrganizationsLabel}
-        />
+        <EmptyState classNames={args.classNames} label={args.copy.noOrganizationsLabel} />
       )}
     </>
   );
@@ -272,7 +252,7 @@ function OrganizationRow(args: {
       className={cn(
         "flex items-center gap-3 px-5 py-2.5 transition-colors",
         isCurrent ? "bg-foreground/10" : "hover:bg-foreground/5 cursor-pointer",
-        isCurrent ? classNames?.orgItemActive : classNames?.orgItem
+        isCurrent ? classNames?.orgItemActive : classNames?.orgItem,
       )}
       onClick={select}
       role="button"
@@ -285,12 +265,7 @@ function OrganizationRow(args: {
         name={organization.name}
       />
       <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            "text-foreground truncate text-sm font-medium",
-            classNames?.orgName
-          )}
-        >
+        <p className={cn("text-foreground truncate text-sm font-medium", classNames?.orgName)}>
           {organization.name}
         </p>
         {organization.roleKey ? (
@@ -300,15 +275,13 @@ function OrganizationRow(args: {
         ) : null}
       </div>
       {isCurrent ? (
-        <span className="text-success text-xs font-medium">
-          {args.copy.currentLabel}
-        </span>
+        <span className="text-success text-xs font-medium">{args.copy.currentLabel}</span>
       ) : (
         <button
           type="button"
           className={cn(
             "bg-foreground text-background hover:bg-foreground/90 inline-flex h-7 items-center rounded-md px-3 text-xs font-medium transition-colors",
-            classNames?.primaryButton
+            classNames?.primaryButton,
           )}
           onClick={(event) => {
             event.stopPropagation();
@@ -323,10 +296,7 @@ function OrganizationRow(args: {
   );
 }
 
-function handleOrganizationRowKeyDown(
-  event: KeyboardEvent<HTMLDivElement>,
-  select: () => void
-) {
+function handleOrganizationRowKeyDown(event: KeyboardEvent<HTMLDivElement>, select: () => void) {
   if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
     select();
@@ -342,16 +312,13 @@ function OrganizationAvatar(args: {
     <img
       src={args.imageUrl}
       alt=""
-      className={cn(
-        "size-8 rounded-md object-cover",
-        args.classNames?.orgImage
-      )}
+      className={cn("size-8 rounded-md object-cover", args.classNames?.orgImage)}
     />
   ) : (
     <span
       className={cn(
         "bg-foreground/10 inline-flex size-8 items-center justify-center rounded-md text-xs font-medium",
-        args.classNames?.orgPlaceholder
+        args.classNames?.orgPlaceholder,
       )}
     >
       {args.name.slice(0, 1).toUpperCase()}
@@ -373,7 +340,7 @@ function CreateOrganizationButton(args: {
         onClick={args.onCreate}
         className={cn(
           "border-foreground/15 bg-foreground/5 text-foreground/80 hover:bg-foreground/10 inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-          args.classNames?.secondaryButton
+          args.classNames?.secondaryButton,
         )}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -395,33 +362,18 @@ function InvitationsSection(args: {
 }) {
   return (
     <>
+      <div className={cn("border-foreground/10 border-t", args.classNames?.divider)} />
       <div
-        className={cn(
-          "border-foreground/10 border-t",
-          args.classNames?.divider
-        )}
-      />
-      <div
-        className={cn(
-          "text-foreground/50 px-5 py-2 text-xs font-medium",
-          args.classNames?.body
-        )}
+        className={cn("text-foreground/50 px-5 py-2 text-xs font-medium", args.classNames?.body)}
       >
         {args.copy.invitationsLabel}
       </div>
       {args.invitations.length > 0 ? (
         args.invitations.map((invitation) => (
-          <InvitationRow
-            key={invitation._id}
-            invitation={invitation}
-            {...args}
-          />
+          <InvitationRow key={invitation._id} invitation={invitation} {...args} />
         ))
       ) : (
-        <EmptyState
-          classNames={args.classNames}
-          label={args.copy.noInvitationsLabel}
-        />
+        <EmptyState classNames={args.classNames} label={args.copy.noInvitationsLabel} />
       )}
     </>
   );
@@ -437,32 +389,17 @@ function InvitationRow(args: {
 }) {
   const { classNames, invitation } = args;
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 px-5 py-2.5",
-        classNames?.invitationItem
-      )}
-    >
+    <div className={cn("flex items-center gap-3 px-5 py-2.5", classNames?.invitationItem)}>
       <OrganizationAvatar
         classNames={classNames}
         imageUrl={invitation.organizationImageUrl}
         name={invitation.organizationName}
       />
       <div className="min-w-0 flex-1">
-        <p
-          className={cn(
-            "text-foreground truncate text-sm font-medium",
-            classNames?.orgName
-          )}
-        >
+        <p className={cn("text-foreground truncate text-sm font-medium", classNames?.orgName)}>
           {invitation.organizationName}
         </p>
-        <p
-          className={cn(
-            "text-foreground/40 text-xs",
-            classNames?.invitationMeta
-          )}
-        >
+        <p className={cn("text-foreground/40 text-xs", classNames?.invitationMeta)}>
           {formatInvitationMeta(invitation, args.copy)}
         </p>
       </div>
@@ -488,7 +425,7 @@ function InvitationRow(args: {
 
 function formatInvitationMeta(
   invitation: ConvexOrgListInvitation,
-  copy: ResolvedOrgListCopy
+  copy: ResolvedOrgListCopy,
 ): string {
   const role = invitation.roleKey ?? "";
   const expiry = invitation.expiresAt
@@ -516,7 +453,7 @@ function InvitationActionButton(args: {
       className={cn(
         "inline-flex h-7 items-center rounded-md px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
         toneClass,
-        args.className
+        args.className,
       )}
     >
       {args.label}
@@ -524,17 +461,9 @@ function InvitationActionButton(args: {
   );
 }
 
-function EmptyState(args: {
-  classNames?: ConvexOrgListClassNames;
-  label: string;
-}) {
+function EmptyState(args: { classNames?: ConvexOrgListClassNames; label: string }) {
   return (
-    <div
-      className={cn(
-        "text-foreground/40 px-5 py-4 text-sm",
-        args.classNames?.emptyState
-      )}
-    >
+    <div className={cn("text-foreground/40 px-5 py-4 text-sm", args.classNames?.emptyState)}>
       {args.label}
     </div>
   );

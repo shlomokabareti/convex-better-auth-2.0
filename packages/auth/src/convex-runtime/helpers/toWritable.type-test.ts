@@ -9,10 +9,7 @@
  * nested assignment below stops compiling — which is the point. Type-only, no runtime.
  */
 import { defineSchema, defineTable } from "convex/server";
-import type {
-  DataModelFromSchemaDefinition,
-  DocumentByName,
-} from "convex/server";
+import type { DataModelFromSchemaDefinition, DocumentByName } from "convex/server";
 import type { WithoutSystemFields } from "convex/server";
 import { v } from "convex/values";
 
@@ -22,12 +19,8 @@ import { toWritable } from "./index";
 const schema = defineSchema({
   merchants: defineTable({
     id: v.string(),
-    processorAccountRefs: v.array(
-      v.object({ provider: v.string(), objectId: v.string() })
-    ),
-    associatedIdentities: v.array(
-      v.object({ identityRoles: v.array(v.string()) })
-    ),
+    processorAccountRefs: v.array(v.object({ provider: v.string(), objectId: v.string() })),
+    associatedIdentities: v.array(v.object({ identityRoles: v.array(v.string()) })),
   }),
 });
 

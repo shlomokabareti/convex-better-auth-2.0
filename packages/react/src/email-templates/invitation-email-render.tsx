@@ -19,15 +19,7 @@ export async function renderAuthInvitationEmail(args: {
   acceptUrl: string;
   expiresAt: number;
 }): Promise<AuthInvitationEmailDraft> {
-  const {
-    from,
-    to,
-    organizationName,
-    roleName,
-    inviterLabel,
-    acceptUrl,
-    expiresAt,
-  } = args;
+  const { from, to, organizationName, roleName, inviterLabel, acceptUrl, expiresAt } = args;
   const template = (
     <AuthInvitationEmailTemplate
       organizationName={organizationName}
@@ -37,10 +29,7 @@ export async function renderAuthInvitationEmail(args: {
       expiresAt={new Date(expiresAt)}
     />
   );
-  const [html, text] = await Promise.all([
-    renderEmail(template),
-    renderEmailText(template),
-  ]);
+  const [html, text] = await Promise.all([renderEmail(template), renderEmailText(template)]);
 
   return {
     from,

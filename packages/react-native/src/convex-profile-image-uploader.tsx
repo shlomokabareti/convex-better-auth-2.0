@@ -83,17 +83,12 @@ const DEFAULT_COPY: Required<ExpoProfileImageUploaderCopy> = {
   unavailable: "Image upload is not available on this auth client.",
 };
 
-export function ConvexProfileImageUploader(
-  props: ExpoProfileImageUploaderProps
-) {
+export function ConvexProfileImageUploader(props: ExpoProfileImageUploaderProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { uploadAndSave, isUploading } = useExpoAuthUploadProfileImage(
-    props.authClient,
-    {
-      uploadFile: props.uploadFile,
-    }
-  );
+  const { uploadAndSave, isUploading } = useExpoAuthUploadProfileImage(props.authClient, {
+    uploadFile: props.uploadFile,
+  });
   const [currentImage, setCurrentImage] = useState(props.initialImage ?? null);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -121,16 +116,11 @@ export function ConvexProfileImageUploader(
     <View style={[styles.root, s.root]}>
       <View style={[styles.header, s.header]}>
         <Text style={[styles.title, s.title]}>{copy.title}</Text>
-        <Text style={[styles.description, s.description]}>
-          {copy.description}
-        </Text>
+        <Text style={[styles.description, s.description]}>{copy.description}</Text>
       </View>
       <View style={{ alignItems: "center", paddingHorizontal: 16 }}>
         {currentImage !== null ? (
-          <Image
-            source={{ uri: currentImage }}
-            style={[styles.preview, s.preview]}
-          />
+          <Image source={{ uri: currentImage }} style={[styles.preview, s.preview]} />
         ) : (
           <Text style={[styles.noPreview, s.noPreview]}>{copy.noImage}</Text>
         )}
@@ -147,10 +137,7 @@ export function ConvexProfileImageUploader(
           <Text style={[styles.successState, s.successState]}>{success}</Text>
         ) : null}
         {error !== null ? (
-          <Text
-            className="text-destructive"
-            style={[styles.errorState, s.errorState]}
-          >
+          <Text className="text-destructive" style={[styles.errorState, s.errorState]}>
             {error}
           </Text>
         ) : null}

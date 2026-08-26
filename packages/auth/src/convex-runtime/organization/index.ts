@@ -27,10 +27,7 @@ export * from "./invitationEmailTemplate";
 export * from "./membershipPolicy";
 export * from "./organizationAccess";
 export * from "./organizationSecurityPolicy";
-export {
-  defaultOrganizationRoleCatalog,
-  type OrganizationRoleDefinition,
-} from "./roleCatalog";
+export { defaultOrganizationRoleCatalog, type OrganizationRoleDefinition } from "./roleCatalog";
 export {
   assertCanInviteMember,
   assertOrganizationScope,

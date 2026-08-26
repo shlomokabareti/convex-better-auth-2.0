@@ -15,10 +15,7 @@ function isUserRow(row: unknown): row is GlueUserMinimum {
 
 function isAnchorRow(row: unknown): row is GlueAnchorMinimum {
   return (
-    typeof row === "object" &&
-    row !== null &&
-    "_id" in row &&
-    "convexAuthOrganizationId" in row
+    typeof row === "object" && row !== null && "_id" in row && "convexAuthOrganizationId" in row
   );
 }
 
@@ -39,9 +36,7 @@ function makeDb(rows: Record<string, Row[]>) {
       return {
         withIndex(
           index: string,
-          range: (q: {
-            eq: (field: string, value: unknown) => { eq: unknown };
-          }) => unknown
+          range: (q: { eq: (field: string, value: unknown) => { eq: unknown } }) => unknown,
         ) {
           call.index = index;
           range({
@@ -53,9 +48,7 @@ function makeDb(rows: Record<string, Row[]>) {
           return {
             async unique() {
               const [field, value] = call.eq ?? ["", undefined];
-              return (
-                (rows[table] ?? []).find((r) => r[field] === value) ?? null
-              );
+              return (rows[table] ?? []).find((r) => r[field] === value) ?? null;
             },
           };
         },
@@ -97,10 +90,7 @@ function ctxWith(db: unknown, identityCalls: { count: number }): GlueCtx {
 }
 
 const baseConfig = {
-  buildOrganization: (args: {
-    convexAuthOrganizationId: string;
-    name: string;
-  }) => ({
+  buildOrganization: (args: { convexAuthOrganizationId: string; name: string }) => ({
     name: args.name,
     slug: args.name.toLowerCase(),
     convexAuthOrganizationId: args.convexAuthOrganizationId,
@@ -118,10 +108,7 @@ describe("createConvexAuthBackendAdapters", () => {
     const identity = { count: 0 };
     const adapters = createConvexAuthBackendAdapters(baseConfig);
 
-    const user = await adapters.findUserByConvexAuthUserId(
-      ctxWith(db, identity),
-      "cu_1"
-    );
+    const user = await adapters.findUserByConvexAuthUserId(ctxWith(db, identity), "cu_1");
 
     assert.equal(user?._id, "u1");
     assert.deepEqual(calls, [
@@ -148,22 +135,15 @@ describe("createConvexAuthBackendAdapters", () => {
 
     await adapters.findUserByConvexAuthUserId(ctxWith(db, identity), "cu_1");
 
-    assert.equal(
-      identity.count,
-      0,
-      "adapter must not call ctx.auth.getUserIdentity"
-    );
+    assert.equal(identity.count, 0, "adapter must not call ctx.auth.getUserIdentity");
   });
 
   it("returns null when no local row carries the component id", async () => {
     const { db } = makeDb({ users: [] });
     const adapters = createConvexAuthBackendAdapters(baseConfig);
     assert.equal(
-      await adapters.findUserByConvexAuthUserId(
-        ctxWith(db, { count: 0 }),
-        "cu_missing"
-      ),
-      null
+      await adapters.findUserByConvexAuthUserId(ctxWith(db, { count: 0 }), "cu_missing"),
+      null,
     );
   });
 
@@ -175,7 +155,7 @@ describe("createConvexAuthBackendAdapters", () => {
 
     const anchor = await adapters.findAnchorByConvexAuthOrganizationId(
       ctxWith(db, { count: 0 }),
-      "co_1"
+      "co_1",
     );
 
     assert.equal(anchor?._id, "o1");
@@ -198,10 +178,7 @@ describe("createConvexAuthBackendAdapters", () => {
       },
     });
 
-    await adapters.findUserByConvexAuthUserId(
-      ctxWith(db, { count: 0 }),
-      "cu_1"
-    );
+    await adapters.findUserByConvexAuthUserId(ctxWith(db, { count: 0 }), "cu_1");
 
     assert.equal(calls[0]?.table, "app_users");
     assert.equal(calls[0]?.index, "by_component_user");
@@ -240,7 +217,7 @@ describe("createConvexAuthBackendAdapters", () => {
           name: "Acme",
           createdByConvexAuthUserId: "cu_1",
         }),
-      /must set convexAuthOrganizationId/
+      /must set convexAuthOrganizationId/,
     );
   });
 
@@ -250,11 +227,7 @@ describe("createConvexAuthBackendAdapters", () => {
     });
     const adapters = createConvexAuthBackendAdapters(baseConfig);
 
-    await adapters.setActiveOrganization(
-      ctxWith(db, { count: 0 }),
-      { _id: "u1" },
-      "co_1"
-    );
+    await adapters.setActiveOrganization(ctxWith(db, { count: 0 }), { _id: "u1" }, "co_1");
 
     assert.deepEqual(patched, [
       {
@@ -271,25 +244,18 @@ describe("createConvexAuthBackendAdapters", () => {
     const readOnlyDb = { query: () => ({}) };
     const adapters = createConvexAuthBackendAdapters(baseConfig);
 
-    await adapters.setActiveOrganization(
-      ctxWith(readOnlyDb, { count: 0 }),
-      { _id: "u1" },
-      "co_1"
-    );
+    await adapters.setActiveOrganization(ctxWith(readOnlyDb, { count: 0 }), { _id: "u1" }, "co_1");
   });
 
   it("omits expandPermissions unless the consumer supplies one", () => {
-    assert.equal(
-      "expandPermissions" in createConvexAuthBackendAdapters(baseConfig),
-      false
-    );
+    assert.equal("expandPermissions" in createConvexAuthBackendAdapters(baseConfig), false);
     assert.equal(
       "expandPermissions" in
         createConvexAuthBackendAdapters({
           ...baseConfig,
           expandPermissions: () => ["org:read"],
         }),
-      true
+      true,
     );
   });
 });

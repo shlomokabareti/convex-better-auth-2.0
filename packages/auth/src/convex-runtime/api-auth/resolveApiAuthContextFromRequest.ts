@@ -26,21 +26,18 @@ export type ResolveApiAuthContextFromRequestArgs = Omit<
   };
 
 export function parseApiCredentialFromHeaders(
-  args: ParseApiCredentialFromHeadersArgs
+  args: ParseApiCredentialFromHeadersArgs,
 ): ApiBearerCredential {
   const headers = resolveHeaders(args);
 
   return parseApiCredential({
-    authorizationHeader:
-      args.authorizationHeader ?? headers?.get("Authorization") ?? null,
+    authorizationHeader: args.authorizationHeader ?? headers?.get("Authorization") ?? null,
     apiKeyHeader: args.apiKeyHeader ?? headers?.get("X-API-Key") ?? null,
     apiKeyTokenPrefixes: args.apiKeyTokenPrefixes,
   });
 }
 
-export async function resolveApiAuthContextFromRequest(
-  args: ResolveApiAuthContextFromRequestArgs
-) {
+export async function resolveApiAuthContextFromRequest(args: ResolveApiAuthContextFromRequestArgs) {
   const headers = resolveHeaders(args);
   const credential = parseApiCredentialFromHeaders(args);
 
@@ -49,9 +46,7 @@ export async function resolveApiAuthContextFromRequest(
     credential,
     organizationHintId: args.organizationHintId,
     requestedOrganizationId: args.requestedOrganizationId,
-    requestIp:
-      args.requestIp ??
-      (headers === null ? null : getRequestIpFromHeaders(headers)),
+    requestIp: args.requestIp ?? (headers === null ? null : getRequestIpFromHeaders(headers)),
     resourceId: args.resourceId,
     resourceType: args.resourceType,
     verifier: args.verifier,

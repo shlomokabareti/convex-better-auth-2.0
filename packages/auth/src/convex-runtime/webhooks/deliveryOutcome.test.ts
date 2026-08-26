@@ -21,7 +21,7 @@ describe("webhook delivery outcomes", () => {
         status: "delivered",
         responseStatus: 204,
         responseBody: "ok",
-      }
+      },
     );
   });
 
@@ -38,7 +38,7 @@ describe("webhook delivery outcomes", () => {
         responseStatus: 429,
         responseBody: "slow down",
         failureKind: "rate_limited",
-      }
+      },
     );
   });
 
@@ -55,7 +55,7 @@ describe("webhook delivery outcomes", () => {
         responseStatus: 404,
         responseBody: "missing",
         failureKind: "client_error",
-      }
+      },
     );
   });
 
@@ -72,7 +72,7 @@ describe("webhook delivery outcomes", () => {
         responseStatus: 503,
         responseBody: "down",
         failureKind: "server_error",
-      }
+      },
     );
   });
 
@@ -87,7 +87,7 @@ describe("webhook delivery outcomes", () => {
         status: "pending",
         responseBody: "fetch failed",
         failureKind: "network_error",
-      }
+      },
     );
   });
 

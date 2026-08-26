@@ -43,7 +43,7 @@ describe("resolveActiveAgentPrincipal", () => {
         requestBinding: fixture.binding,
         now: NOW,
       }),
-      /replayed/
+      /replayed/,
     );
   });
 
@@ -57,7 +57,7 @@ describe("resolveActiveAgentPrincipal", () => {
         requestBinding: fixture.binding,
         now: NOW,
       }),
-      /signature verification failed|verification signature failed/i
+      /signature verification failed|verification signature failed/i,
     );
 
     await assert.rejects(
@@ -67,7 +67,7 @@ describe("resolveActiveAgentPrincipal", () => {
         requestBinding: fixture.binding,
         now: NOW,
       }),
-      /aud/i
+      /aud/i,
     );
 
     await assert.rejects(
@@ -77,7 +77,7 @@ describe("resolveActiveAgentPrincipal", () => {
         requestBinding: { ...fixture.binding, method: "DELETE" },
         now: NOW,
       }),
-      /request binding/
+      /request binding/,
     );
 
     await assert.rejects(
@@ -90,7 +90,7 @@ describe("resolveActiveAgentPrincipal", () => {
         requestBinding: fixture.binding,
         now: NOW,
       }),
-      /issued-at/
+      /issued-at/,
     );
   });
 
@@ -105,7 +105,7 @@ describe("resolveActiveAgentPrincipal", () => {
         requestBinding: fixture.binding,
         now: NOW,
       }),
-      /does not match verified key/
+      /does not match verified key/,
     );
   });
 
@@ -124,7 +124,7 @@ describe("resolveActiveAgentPrincipal", () => {
         audience: AUDIENCE,
         now: NOW,
       }),
-      /algorithm or type is invalid/
+      /algorithm or type is invalid/,
     );
     for (const [token, expected] of [
       [await fixture.sign({ issuer: "wrong-issuer" }), /iss/i],
@@ -151,15 +151,13 @@ describe("resolveActiveAgentPrincipal", () => {
           requestBinding: fixture.binding,
           now: NOW,
         }),
-        expected
+        expected,
       );
     }
   });
 });
 
-async function createFixture(overrides?: {
-  authority?: Partial<AgentCredentialAuthorityResult>;
-}) {
+async function createFixture(overrides?: { authority?: Partial<AgentCredentialAuthorityResult> }) {
   const { publicKey, privateKey } = await generateKeyPair("EdDSA");
   const publicJwk = await exportJWK(publicKey);
   const thumbprint = "key-thumbprint";
