@@ -1,5 +1,6 @@
 packages:
   - "packages/*"
+  - "site"
 
 overrides:
   vitest: 4.1.10

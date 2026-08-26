@@ -2,6 +2,8 @@
 
 A public, full-stack auth solution that bridges [Convex](https://convex.dev) and [Better Auth](https://www.better-auth.com).
 
+**Docs:** https://gregarious-perch-710.convex.site
+
 ## Why this exists
 
 Convex is building the future of auth, but it is not there yet. Better Auth has the most complete feature set today, but it is not designed around Convex's component, query, and mutation model. Most teams who try to combine the two end up rewriting the same glue and making the same security mistakes.
@@ -111,7 +113,7 @@ export function App() {
 
 ## Development
 
-This repo uses pnpm and [Vite+](https://github.com/voidzero-dev/vite-plus) (`vp`) for building, linting, and formatting.
+This repo uses pnpm and [Vite+](https://github.com/voidzero-dev/vite_plus) (`vp`) for building, linting, and formatting. Documentation is generated with [Blume](https://useblume.dev) and hosted via [`@convex-dev/static-hosting`](https://github.com/get-convex/static-hosting) from the `site/` workspace.
 
 ```bash
 pnpm install
@@ -126,7 +128,7 @@ pnpm run fix         # Auto-fix lint and formatting
 
 ## CI
 
-A GitHub Actions workflow is defined in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). It runs the full proof (`typecheck`, `check`, `build`, `test`) on Node 18 and Node 22.
+A GitHub Actions workflow is defined in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). It runs the full proof (`typecheck`, `check`, `build`, `test`) on Node 20.12+ and Node 22.
 
 ## License
 
