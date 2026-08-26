@@ -178,7 +178,6 @@ function isDurableCookieName(cookieName: string): boolean {
 function createDurableCookieFilteredStorage(storage: ExpoSecureStorage): ExpoSecureStorage {
   return {
     getItem: (name: string) => storage.getItem(name),
-    getItemAsync: (name: string) => Promise.resolve(storage.getItem(name)),
     setItem: (name: string, value: string) => {
       // Only the bundled cookie key (`<prefix>_cookie`) is filtered.
       // The separate `<prefix>_session_data` body cache passes through.
@@ -199,10 +198,6 @@ function createDurableCookieFilteredStorage(storage: ExpoSecureStorage): ExpoSec
         Object.entries(parsed).filter(([cookieName]) => isDurableCookieName(cookieName)),
       );
       return storage.setItem(name, JSON.stringify(filtered));
-    },
-    setItemAsync: (name: string, value: string) => {
-      Promise.resolve(storage.setItem(name, value));
-      return Promise.resolve();
     },
   };
 }

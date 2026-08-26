@@ -3,3 +3,11 @@ packages:
 
 overrides:
   vitest: 4.1.10
+  uuid: ^14.0.0
+  chromium-edge-launcher: ^2.0.1
+  babel-plugin-istanbul: ^8.0.2
+  test-exclude: ^8.0.0
+
+peerDependencyRules:
+  allowedVersions:
+    "@better-auth/utils": ">=0.4.2 <0.6.0"

@@ -161,9 +161,9 @@ describe("checkConsumerContract", () => {
     fixture.write(
       "writes.ts",
       [
-        "export const a = async (ctx: any) => {",
+        "export const a = async (ctx: unknown) => {",
         '  await ctx.db.insert("organization_members", { x: 1 });',
-        '  await ctx.db.replace("organization_roles" as any, id, {});',
+        '  await ctx.db.replace("organization_roles" as unknown, id, {});',
         '  await ctx.db.patch("api_keys", id, {});',
         '  await ctx.db.insert("organization_invitations", {});',
         "};",
@@ -255,13 +255,13 @@ describe("checkConsumerContract", () => {
     // These would otherwise be violations.
     fixture.write(
       "_generated/server.ts",
-      'export const x = async (ctx: any) => { await ctx.db.insert("organization_members", {}); };\n',
+      'export const x = async (ctx: unknown) => { await ctx.db.insert("organization_members", {}); };\n',
     );
     fixture.write(
       "things.test.ts",
       [
         "export async function ensureConvexAuthMember() {}",
-        'const _t = (ctx: any) => ctx.db.insert("api_keys", {});',
+        'const _t = (ctx: unknown) => ctx.db.insert("api_keys", {});',
         "",
       ].join("\n"),
     );
@@ -394,7 +394,7 @@ describe("checkConsumerContract", () => {
     fixture.write(
       "writes.ts",
       [
-        "export const a = async (ctx: any) => {",
+        "export const a = async (ctx: unknown) => {",
         "  // Historical note: previous code used to do",
         '  // ctx.db.insert("organization_members", ...) here.',
         "  return null;",
@@ -428,7 +428,7 @@ describe("checkConsumerContract", () => {
       "writes.ts",
       [
         '// Documentation: ctx.db.insert("organization_members", ...) is forbidden.',
-        "export const bad = async (ctx: any) => {",
+        "export const bad = async (ctx: unknown) => {",
         '  await ctx.db.insert("organization_members", { x: 1 });',
         "};",
         "",
