@@ -1,0 +1,15 @@
+{
+  "name": "convex-auth-tsconfig",
+  "version": "0.1.0-alpha.0",
+  "description": "Shared TypeScript configurations for convex-auth packages.",
+  "license": "Apache-2.0",
+  "files": [
+    "*.json"
+  ],
+  "exports": {
+    "./astro.json": "./astro.json",
+    "./base.json": "./base.json",
+    "./convex.json": "./convex.json",
+    "./react-library.json": "./react-library.json"
+  }
+}

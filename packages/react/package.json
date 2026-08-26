@@ -23,12 +23,11 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build": "tsup src/index.ts --format esm --dts --clean --out-dir dist"
+    "build": "tsup src/index.ts --format esm --dts --dts-resolve --clean --out-dir dist --external convex-auth-ui"
   },
   "dependencies": {
-    "clsx": "^2.1.1",
-    "react-dom": "^19.0.0",
-    "tailwind-merge": "^2.6.0"
+    "convex-auth-ui": "workspace:*",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@convex-dev/better-auth": "0.12.5",
