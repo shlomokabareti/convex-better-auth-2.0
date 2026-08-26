@@ -1,3 +1,4 @@
+import type { ApiTokenVerifier, VerifiedUserToken } from "convex-auth-core";
 import {
   createLocalJWKSet,
   createRemoteJWKSet,
@@ -7,22 +8,6 @@ import {
 } from "jose";
 
 import type { BetterAuthConvexAuthProvider } from "./createConvexAuthConfig";
-
-type VerifiedUserToken = {
-  credentialType: "userBearer";
-  provider: string;
-  issuer: string;
-  subject: string;
-  tokenIdentifier: string;
-  sessionId: string | null;
-  scopes: string[];
-  audience: string | null;
-  rawClaims: Record<string, unknown>;
-};
-
-export type ApiTokenVerifier = {
-  verifyUserBearerToken(token: string): Promise<VerifiedUserToken>;
-};
 
 export function assertWebhookHostIsDeliverable(hostname: string): void {
   const host = hostname.toLowerCase().replace(/^\[/, "").replace(/\]$/, "");

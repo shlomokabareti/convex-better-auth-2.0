@@ -136,6 +136,7 @@
     "build": "tsup src/index.ts src/convex.ts src/agent-auth-protocol-convex.ts src/agent-auth-protocol-http.ts src/better-auth.ts src/better-auth-client.ts src/better-auth-server.ts src/better-auth-convex.ts src/preflight.ts src/testing.ts src/component.ts src/consumer-contract.ts src/agent-auth-protocol.ts src/auth-md.ts src/waitlist.tsx src/react.ts src/react-native.ts --format esm --splitting false --dts --dts-resolve --clean --out-dir dist && tsup src/mcp.ts --format esm --dts --dts-resolve --out-dir dist && tsup --config tsup.scripts.config.ts"
   },
   "dependencies": {
+    "convex-auth-core": "workspace:*",
     "convex-auth-react": "workspace:*",
     "convex-auth-react-native": "workspace:*",
     "convex-helpers": "^0.1.80",

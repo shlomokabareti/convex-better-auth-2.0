@@ -17,7 +17,7 @@ type OrganizationDetailsPatch = Partial<
 > &
   Pick<Doc<"organizations">, "updatedAt">;
 
-const VORTEX_ORG_SECURITY_METADATA_KEY = "security";
+const ORGANIZATION_SECURITY_METADATA_KEY = "security";
 const SESSION_TIMEOUT_MIN = 15;
 const SESSION_TIMEOUT_MAX = 1440;
 
@@ -47,7 +47,7 @@ function parseSecurityFromMetadataJson(metadataJson: string | undefined): {
     if (!isMetadataRecord(parsed)) {
       return { requireMfa: false };
     }
-    const security = parsed[VORTEX_ORG_SECURITY_METADATA_KEY];
+    const security = parsed[ORGANIZATION_SECURITY_METADATA_KEY];
     if (!isMetadataRecord(security)) {
       return { requireMfa: false };
     }
@@ -87,8 +87,8 @@ function mergeSecurityIntoMetadataJson(
     }
   }
 
-  const current = isMetadataRecord(base[VORTEX_ORG_SECURITY_METADATA_KEY])
-    ? { ...base[VORTEX_ORG_SECURITY_METADATA_KEY] }
+  const current = isMetadataRecord(base[ORGANIZATION_SECURITY_METADATA_KEY])
+    ? { ...base[ORGANIZATION_SECURITY_METADATA_KEY] }
     : {};
 
   if ("requireMfa" in securityUpdate) {
@@ -115,9 +115,9 @@ function mergeSecurityIntoMetadataJson(
   }
 
   if (Object.keys(current).length === 0) {
-    delete base[VORTEX_ORG_SECURITY_METADATA_KEY];
+    delete base[ORGANIZATION_SECURITY_METADATA_KEY];
   } else {
-    base[VORTEX_ORG_SECURITY_METADATA_KEY] = current;
+    base[ORGANIZATION_SECURITY_METADATA_KEY] = current;
   }
 
   if (Object.keys(base).length === 0) {
@@ -354,7 +354,7 @@ const organizationBrandUpdateValidator = v.object({
   emailReplyTo: v.optional(v.union(v.string(), v.null())),
 });
 
-const VORTEX_ORG_BRAND_METADATA_KEY = "brand";
+const ORGANIZATION_BRAND_METADATA_KEY = "brand";
 
 function mergeBrandIntoMetadataJson(
   metadataJson: string | undefined,
@@ -378,8 +378,8 @@ function mergeBrandIntoMetadataJson(
     }
   }
 
-  const currentBrand = isMetadataRecord(base[VORTEX_ORG_BRAND_METADATA_KEY])
-    ? { ...base[VORTEX_ORG_BRAND_METADATA_KEY] }
+  const currentBrand = isMetadataRecord(base[ORGANIZATION_BRAND_METADATA_KEY])
+    ? { ...base[ORGANIZATION_BRAND_METADATA_KEY] }
     : {};
 
   const keys = [
@@ -402,9 +402,9 @@ function mergeBrandIntoMetadataJson(
   }
 
   if (Object.keys(currentBrand).length === 0) {
-    delete base[VORTEX_ORG_BRAND_METADATA_KEY];
+    delete base[ORGANIZATION_BRAND_METADATA_KEY];
   } else {
-    base[VORTEX_ORG_BRAND_METADATA_KEY] = currentBrand;
+    base[ORGANIZATION_BRAND_METADATA_KEY] = currentBrand;
   }
 
   if (Object.keys(base).length === 0) {

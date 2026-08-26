@@ -17,7 +17,7 @@ export type {
 export {
   mergeOrganizationBrandIntoMetadataJson,
   parseOrganizationBrandFromMetadataJson,
-  VORTEX_ORGANIZATION_BRAND_METADATA_KEY,
+  ORGANIZATION_BRAND_METADATA_KEY,
 } from "./organization-brand";
 export type {
   ConvexOrganizationSecurity,
@@ -26,9 +26,9 @@ export type {
 export {
   mergeOrganizationSecurityIntoMetadataJson,
   parseOrganizationSecurityFromMetadataJson,
-  VORTEX_ORGANIZATION_SECURITY_METADATA_KEY,
-  VORTEX_ORGANIZATION_SESSION_TIMEOUT_MAX,
-  VORTEX_ORGANIZATION_SESSION_TIMEOUT_MIN,
+  ORGANIZATION_SECURITY_METADATA_KEY,
+  ORGANIZATION_SESSION_TIMEOUT_MAX,
+  ORGANIZATION_SESSION_TIMEOUT_MIN,
 } from "./organization-security";
 
 // ─── Types ────────────────────────────────────────────────────────────────

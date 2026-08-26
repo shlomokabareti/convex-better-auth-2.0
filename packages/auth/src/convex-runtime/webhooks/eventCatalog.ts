@@ -7,7 +7,7 @@
  * `opportunity.updated`) remain consumer-local per the delivery-queue recipe;
  * this catalog only covers events convex-auth itself emits.
  */
-export const VORTEX_WEBHOOK_EVENT_TYPES = [
+export const WEBHOOK_EVENT_TYPES = [
   "user.created",
   "user.updated",
   "user.deleted",
@@ -23,10 +23,10 @@ export const VORTEX_WEBHOOK_EVENT_TYPES = [
 ] as const;
 
 export type ConvexWebhookEventType =
-  (typeof VORTEX_WEBHOOK_EVENT_TYPES)[number];
+  (typeof WEBHOOK_EVENT_TYPES)[number];
 
 const convexWebhookEventTypeSet: ReadonlySet<string> = new Set(
-  VORTEX_WEBHOOK_EVENT_TYPES
+  WEBHOOK_EVENT_TYPES
 );
 
 /**
@@ -39,7 +39,7 @@ export function isConvexWebhookEventType(
   return convexWebhookEventTypeSet.has(value);
 }
 
-export const VORTEX_WEBHOOK_SUBSCRIBE_ALL = "*" as const;
+export const WEBHOOK_SUBSCRIBE_ALL = "*" as const;
 
 /**
  * Decide whether an endpoint subscribed to `subscribedEventTypes` should
@@ -53,7 +53,7 @@ export function convexWebhookEndpointSubscribesTo(
 ): boolean {
   for (const subscribed of subscribedEventTypes) {
     if (
-      subscribed === VORTEX_WEBHOOK_SUBSCRIBE_ALL ||
+      subscribed === WEBHOOK_SUBSCRIBE_ALL ||
       subscribed === eventType
     ) {
       return true;
