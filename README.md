@@ -1,8 +1,25 @@
+<div align="center">
+
 # convex-better-auth-2.0
 
 A public, full-stack auth solution that bridges [Convex](https://convex.dev) and [Better Auth](https://www.better-auth.com).
 
-**Docs:** https://gregarious-perch-710.convex.site
+[![CI][ci-badge]][ci]
+[![Docs][docs-badge]][docs]
+[![License][license-badge]][license]
+[![Status][status-badge]][status]
+[![Node][node-badge]][node]
+[![pnpm][pnpm-badge]][pnpm]
+
+**[Docs](https://gregarious-perch-710.convex.site)** · **[Why this exists](#why-this-exists)** · **[Packages](#packages)** · **[Quick start](#quick-start)**
+
+</div>
+
+---
+
+## Status
+
+Alpha — APIs will change. The first packages are not yet on npm. Read the [docs](https://gregarious-perch-710.convex.site) for the current design and roadmap.
 
 ## Why this exists
 
@@ -18,49 +35,16 @@ Read the full rationale in [`docs/motivation.md`](docs/motivation.md) and the de
 
 ## Packages
 
-| Package                    | Path                    | Description                                                                                   |
-| -------------------------- | ----------------------- | --------------------------------------------------------------------------------------------- |
-| `convex-auth`              | `packages/auth`         | Convex auth component, control plane, and server integration. This is what most apps install. |
-| `convex-better-auth`       | `packages/better-auth`  | Better Auth ↔ Convex bridge (runtime + client).                                               |
-| `convex-auth-react`        | `packages/react`        | React UI and hooks.                                                                           |
-| `convex-auth-react-native` | `packages/react-native` | Expo / React Native client.                                                                   |
-| `convex-auth-core`         | `packages/core`         | Auth domain core (permissions, roles, scopes).                                                |
-| `convex-auth-ui`           | `packages/ui`           | Base shadcn-style UI primitives.                                                              |
+| Package                    | npm                        | Path                    | Description                                                                                   |
+| -------------------------- | -------------------------- | ----------------------- | --------------------------------------------------------------------------------------------- |
+| `convex-auth`              | `convex-auth`              | `packages/auth`         | Convex auth component, control plane, and server integration. This is what most apps install. |
+| `convex-better-auth`       | `convex-better-auth`       | `packages/better-auth`  | Better Auth ↔ Convex bridge (runtime + client).                                               |
+| `convex-auth-react`        | `convex-auth-react`        | `packages/react`        | React UI and hooks.                                                                           |
+| `convex-auth-react-native` | `convex-auth-react-native` | `packages/react-native` | Expo / React Native client.                                                                   |
+| `convex-auth-core`         | `convex-auth-core`         | `packages/core`         | Auth domain core (permissions, roles, scopes).                                                |
+| `convex-auth-ui`           | `convex-auth-ui`           | `packages/ui`           | Base shadcn-style UI primitives.                                                              |
 
 All packages are independently buildable and published under the Apache-2.0 license.
-
-## Installation
-
-Most Convex apps should start with `convex-auth` for the backend and `convex-auth-react` for the UI:
-
-```bash
-pnpm add convex-auth convex-auth-react
-```
-
-`convex-auth` re-exports the component, server helpers, and React entry points. If you are building a React app, install `convex-auth-react` separately so your bundler can tree-shake UI-only code.
-
-### Peer dependencies
-
-`convex-auth` requires `convex` and `better-auth` (and optionally `@convex-dev/better-auth`) as peers. Make sure they are installed in your app:
-
-```bash
-pnpm add convex better-auth
-```
-
-### React Native / Expo
-
-`convex-auth-react-native` is used for Expo and React Native apps. It has additional peer dependencies:
-
-- `react-native` `>=0.81.0`
-- `@better-auth/expo` `>=1.6.0 <1.7.0`
-- `better-auth` `>=1.6.11 <1.7.0`
-- `convex-better-auth` `>=0.1.0-alpha.0`
-
-Install it alongside the Expo Better Auth plugin:
-
-```bash
-pnpm add convex-auth-react-native @better-auth/expo
-```
 
 ## Quick start
 
@@ -130,6 +114,32 @@ pnpm run fix         # Auto-fix lint and formatting
 
 A GitHub Actions workflow is defined in [`.github/workflows/ci.yml`](.github/workflows/ci.yml). It runs the full proof (`typecheck`, `check`, `build`, `test`) on Node 20.12+ and Node 22.
 
+## Releasing
+
+Push a `v*` tag or trigger the workflow manually:
+
+```bash
+git tag v0.2.0-alpha.0
+git push origin v0.2.0-alpha.0
+```
+
+The `Release` workflow in [`.github/workflows/release.yml`](.github/workflows/release.yml) builds and publishes every public package to npm. It needs an `NPM_TOKEN` repository secret.
+
 ## License
 
 Apache-2.0 — see `LICENSE`.
+
+<!-- badges -->
+
+[ci-badge]: https://img.shields.io/github/actions/workflow/status/shlomokabareti/convex-better-auth-2.0/ci.yml?branch=main&style=for-the-badge&label=CI
+[ci]: https://github.com/shlomokabareti/convex-better-auth-2.0/actions/workflows/ci.yml
+[docs-badge]: https://img.shields.io/badge/docs-online-292a44?style=for-the-badge
+[docs]: https://gregarious-perch-710.convex.site
+[license-badge]: https://img.shields.io/badge/license-Apache--2.0-blue.svg?style=for-the-badge
+[license]: LICENSE
+[status-badge]: https://img.shields.io/badge/status-alpha-blueviolet.svg?style=for-the-badge
+[status]: #status
+[node-badge]: https://img.shields.io/badge/node->=20.12.0-brightgreen.svg?style=for-the-badge
+[node]: package.json
+[pnpm-badge]: https://img.shields.io/badge/pnpm-10.25.0-f69220.svg?style=for-the-badge
+[pnpm]: package.json
