@@ -1,4 +1,4 @@
-export type VortexExpoPlatformOS =
+export type ExpoPlatformOS =
   | "android"
   | "ios"
   | "web"
@@ -6,14 +6,14 @@ export type VortexExpoPlatformOS =
   | "windows"
   | "native";
 
-export type VortexExpoResolvedAuthConfig = {
+export type ExpoResolvedAuthConfig = {
   convexSiteUrl: string;
   convexUrl: string;
-  platformOS: VortexExpoPlatformOS;
+  platformOS: ExpoPlatformOS;
   scheme: string;
 };
 
-export type VortexExpoAuthClientMode =
+export type ExpoAuthClientMode =
   | {
       kind: "native";
       scheme: string;
@@ -25,29 +25,29 @@ export type VortexExpoAuthClientMode =
       storagePrefix: string;
     };
 
-export function resolveVortexExpoAuthConfig(args: {
+export function resolveExpoAuthConfig(args: {
   convexSiteUrl?: string | null;
   convexUrl?: string | null;
-  platformOS: VortexExpoPlatformOS;
+  platformOS: ExpoPlatformOS;
   scheme?: string | readonly string[] | null;
-}): VortexExpoResolvedAuthConfig {
-  const convexUrl = requireVortexExpoNonEmpty(
+}): ExpoResolvedAuthConfig {
+  const convexUrl = requireExpoNonEmpty(
     "EXPO_PUBLIC_CONVEX_URL",
     args.convexUrl
   );
 
   return {
     convexSiteUrl:
-      normalizeOptionalVortexExpoString(args.convexSiteUrl) ??
-      deriveVortexExpoConvexSiteUrl(convexUrl),
+      normalizeOptionalExpoString(args.convexSiteUrl) ??
+      deriveExpoConvexSiteUrl(convexUrl),
     convexUrl,
     platformOS: args.platformOS,
-    scheme: resolveVortexExpoScheme(args.scheme),
+    scheme: resolveExpoScheme(args.scheme),
   };
 }
 
-export function deriveVortexExpoConvexSiteUrl(convexUrl: string): string {
-  const normalized = requireVortexExpoNonEmpty(
+export function deriveExpoConvexSiteUrl(convexUrl: string): string {
+  const normalized = requireExpoNonEmpty(
     "EXPO_PUBLIC_CONVEX_URL",
     convexUrl
   );
@@ -57,22 +57,22 @@ export function deriveVortexExpoConvexSiteUrl(convexUrl: string): string {
   return normalized;
 }
 
-export function resolveVortexExpoScheme(
+export function resolveExpoScheme(
   scheme: string | readonly string[] | null | undefined
 ): string {
   const resolved = Array.isArray(scheme) ? scheme[0] : scheme;
-  return normalizeVortexExpoScheme(
-    requireVortexExpoNonEmpty("Expo scheme", resolved)
+  return normalizeExpoScheme(
+    requireExpoNonEmpty("Expo scheme", resolved)
   );
 }
 
-export function resolveVortexExpoAuthClientMode(args: {
-  platformOS?: VortexExpoPlatformOS;
+export function resolveExpoAuthClientMode(args: {
+  platformOS?: ExpoPlatformOS;
   scheme: string;
   storagePrefix?: string;
-}): VortexExpoAuthClientMode {
-  const scheme = normalizeVortexExpoScheme(args.scheme);
-  const storagePrefix = normalizeVortexExpoStoragePrefix(
+}): ExpoAuthClientMode {
+  const scheme = normalizeExpoScheme(args.scheme);
+  const storagePrefix = normalizeExpoStoragePrefix(
     args.storagePrefix ?? scheme
   );
 
@@ -83,16 +83,16 @@ export function resolveVortexExpoAuthClientMode(args: {
   };
 }
 
-export function normalizeVortexExpoTrustedOrigin(scheme: string): string {
-  return `${normalizeVortexExpoScheme(scheme)}://`;
+export function normalizeExpoTrustedOrigin(scheme: string): string {
+  return `${normalizeExpoScheme(scheme)}://`;
 }
 
-export function buildVortexExpoTrustedOrigins(args: {
+export function buildExpoTrustedOrigins(args: {
   includeExpoDevelopmentOrigins?: boolean;
   scheme: string;
   siteUrl?: string | null;
 }): string[] {
-  const origins = [normalizeVortexExpoTrustedOrigin(args.scheme)];
+  const origins = [normalizeExpoTrustedOrigin(args.scheme)];
   const siteUrl = args.siteUrl?.trim();
   if (siteUrl) {
     origins.push(siteUrl);
@@ -105,7 +105,7 @@ export function buildVortexExpoTrustedOrigins(args: {
   return Array.from(new Set(origins));
 }
 
-function normalizeVortexExpoScheme(scheme: string): string {
+function normalizeExpoScheme(scheme: string): string {
   const normalized = scheme.trim().replace(/:\/\/.*$/, "");
   if (!normalized) {
     throw new Error("Expo auth scheme is required.");
@@ -116,7 +116,7 @@ function normalizeVortexExpoScheme(scheme: string): string {
   return normalized;
 }
 
-function normalizeVortexExpoStoragePrefix(storagePrefix: string): string {
+function normalizeExpoStoragePrefix(storagePrefix: string): string {
   const normalized = storagePrefix.trim();
   if (!normalized) {
     throw new Error("Expo auth storagePrefix is required.");
@@ -124,20 +124,20 @@ function normalizeVortexExpoStoragePrefix(storagePrefix: string): string {
   return normalized;
 }
 
-function normalizeOptionalVortexExpoString(
+function normalizeOptionalExpoString(
   value: string | null | undefined
 ): string | undefined {
   const normalized = value?.trim();
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
-function requireVortexExpoNonEmpty(
+function requireExpoNonEmpty(
   label: string,
   value: string | null | undefined
 ): string {
-  const normalized = normalizeOptionalVortexExpoString(value);
+  const normalized = normalizeOptionalExpoString(value);
   if (normalized === undefined) {
-    throw new Error(`${label} is required for Vortex Auth Expo setup.`);
+    throw new Error(`${label} is required for Convex Auth Expo setup.`);
   }
   return normalized;
 }

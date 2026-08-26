@@ -322,7 +322,7 @@ async function dispatch<TContext>(
     if (agentPublicKey === undefined) {
       throw new ProtocolHttpError(
         "invalid_request",
-        "Vortex registration requires an inline agent_public_key"
+        "Convex registration requires an inline agent_public_key"
       );
     }
     const mode = readMode(body.mode);

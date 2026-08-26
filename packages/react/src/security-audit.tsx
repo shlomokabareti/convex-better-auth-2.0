@@ -1,7 +1,7 @@
 import { cn } from "./lib/ui";
 import type { ReactNode } from "react";
 
-export type VortexSecurityAuditListItem = {
+export type ConvexSecurityAuditListItem = {
   _id: string;
   action: string;
   description?: string;
@@ -21,7 +21,7 @@ export type VortexSecurityAuditListItem = {
   } | null;
 };
 
-export type VortexSecurityAuditListCopy = {
+export type ConvexSecurityAuditListCopy = {
   loadingMessage?: string;
   emptyMessage: string;
   beforeLabel?: string;
@@ -30,7 +30,7 @@ export type VortexSecurityAuditListCopy = {
   systemActorLabel?: string;
 };
 
-export type VortexSecurityAuditListClassNames = {
+export type ConvexSecurityAuditListClassNames = {
   list?: string;
   row?: string;
   rowHeader?: string;
@@ -44,10 +44,10 @@ export type VortexSecurityAuditListClassNames = {
   stateText?: string;
 };
 
-export type VortexSecurityAuditListProps = {
-  logs: readonly VortexSecurityAuditListItem[] | undefined;
-  copy: VortexSecurityAuditListCopy;
-  classNames?: VortexSecurityAuditListClassNames;
+export type ConvexSecurityAuditListProps = {
+  logs: readonly ConvexSecurityAuditListItem[] | undefined;
+  copy: ConvexSecurityAuditListCopy;
+  classNames?: ConvexSecurityAuditListClassNames;
   formatCreatedAt?: (createdAt: number) => string;
   renderBadge?: (args: {
     label: string;
@@ -55,10 +55,10 @@ export type VortexSecurityAuditListProps = {
   }) => ReactNode;
 };
 
-export type VortexSecurityAuditRowProps = {
-  log: VortexSecurityAuditListItem;
-  copy?: Partial<VortexSecurityAuditListCopy>;
-  classNames?: VortexSecurityAuditListClassNames;
+export type ConvexSecurityAuditRowProps = {
+  log: ConvexSecurityAuditListItem;
+  copy?: Partial<ConvexSecurityAuditListCopy>;
+  classNames?: ConvexSecurityAuditListClassNames;
   formatCreatedAt?: (createdAt: number) => string;
   renderBadge?: (args: {
     label: string;
@@ -72,11 +72,11 @@ const defaultCopy = {
   loadingMessage: "Loading audit log...",
   systemActorLabel: "System",
   userAgentLabel: "User agent",
-} satisfies Omit<VortexSecurityAuditListCopy, "emptyMessage">;
+} satisfies Omit<ConvexSecurityAuditListCopy, "emptyMessage">;
 
-export function getVortexSecurityAuditActorLabel(
+export function getConvexSecurityAuditActorLabel(
   log: Partial<
-    Pick<VortexSecurityAuditListItem, "actor" | "userEmail" | "userName">
+    Pick<ConvexSecurityAuditListItem, "actor" | "userEmail" | "userName">
   >,
   systemActorLabel = defaultCopy.systemActorLabel
 ): string {
@@ -89,17 +89,17 @@ export function getVortexSecurityAuditActorLabel(
   );
 }
 
-export function formatVortexSecurityAuditCreatedAt(createdAt: number): string {
+export function formatConvexSecurityAuditCreatedAt(createdAt: number): string {
   return new Date(createdAt).toLocaleString();
 }
 
-export function VortexSecurityAuditList({
+export function ConvexSecurityAuditList({
   classNames,
   copy,
-  formatCreatedAt = formatVortexSecurityAuditCreatedAt,
+  formatCreatedAt = formatConvexSecurityAuditCreatedAt,
   logs,
   renderBadge,
-}: VortexSecurityAuditListProps) {
+}: ConvexSecurityAuditListProps) {
   const resolvedCopy = resolveCopy(copy);
 
   if (logs === undefined) {
@@ -121,7 +121,7 @@ export function VortexSecurityAuditList({
   return (
     <div className={cn("space-y-3", classNames?.list)}>
       {logs.map((log) => (
-        <VortexSecurityAuditRow
+        <ConvexSecurityAuditRow
           classNames={classNames}
           copy={resolvedCopy}
           formatCreatedAt={formatCreatedAt}
@@ -134,13 +134,13 @@ export function VortexSecurityAuditList({
   );
 }
 
-export function VortexSecurityAuditRow({
+export function ConvexSecurityAuditRow({
   classNames,
   copy,
-  formatCreatedAt = formatVortexSecurityAuditCreatedAt,
+  formatCreatedAt = formatConvexSecurityAuditCreatedAt,
   log,
   renderBadge,
-}: VortexSecurityAuditRowProps) {
+}: ConvexSecurityAuditRowProps) {
   const resolvedCopy = resolveCopy({ emptyMessage: "", ...copy });
   const hasDetails = Boolean(log.oldValue || log.newValue || log.userAgent);
 
@@ -168,21 +168,21 @@ export function VortexSecurityAuditRow({
             <p
               className={cn("text-foreground/45 text-xs", classNames?.metadata)}
             >
-              {getVortexSecurityAuditActorLabel(
+              {getConvexSecurityAuditActorLabel(
                 log,
                 resolvedCopy.systemActorLabel
               )}{" "}
               - {formatCreatedAt(log.createdAt)}
             </p>
           </div>
-          <VortexSecurityAuditBadges
+          <ConvexSecurityAuditBadges
             classNames={classNames}
             log={log}
             renderBadge={renderBadge}
           />
         </div>
       </div>
-      <VortexSecurityAuditDetails
+      <ConvexSecurityAuditDetails
         classNames={classNames}
         copy={resolvedCopy}
         hasDetails={hasDetails}
@@ -192,16 +192,16 @@ export function VortexSecurityAuditRow({
   );
 }
 
-function VortexSecurityAuditDetails({
+function ConvexSecurityAuditDetails({
   classNames,
   copy,
   hasDetails,
   log,
 }: {
-  classNames?: VortexSecurityAuditListClassNames;
-  copy: Required<VortexSecurityAuditListCopy>;
+  classNames?: ConvexSecurityAuditListClassNames;
+  copy: Required<ConvexSecurityAuditListCopy>;
   hasDetails: boolean;
-  log: VortexSecurityAuditListItem;
+  log: ConvexSecurityAuditListItem;
 }) {
   if (!hasDetails) {
     return null;
@@ -229,14 +229,14 @@ function VortexSecurityAuditDetails({
   );
 }
 
-function VortexSecurityAuditBadges({
+function ConvexSecurityAuditBadges({
   classNames,
   log,
   renderBadge,
 }: {
-  classNames?: VortexSecurityAuditListClassNames;
-  log: VortexSecurityAuditListItem;
-  renderBadge?: VortexSecurityAuditRowProps["renderBadge"];
+  classNames?: ConvexSecurityAuditListClassNames;
+  log: ConvexSecurityAuditListItem;
+  renderBadge?: ConvexSecurityAuditRowProps["renderBadge"];
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -269,9 +269,9 @@ function VortexSecurityAuditBadges({
 }
 
 function renderAuditBadge(args: {
-  classNames: VortexSecurityAuditListClassNames | undefined;
+  classNames: ConvexSecurityAuditListClassNames | undefined;
   label: string;
-  renderBadge: VortexSecurityAuditRowProps["renderBadge"];
+  renderBadge: ConvexSecurityAuditRowProps["renderBadge"];
   tone: "default" | "secondary";
 }): ReactNode {
   if (args.renderBadge) {
@@ -296,8 +296,8 @@ function renderAuditBadge(args: {
 }
 
 function resolveCopy(
-  copy: Partial<VortexSecurityAuditListCopy> &
-    Pick<VortexSecurityAuditListCopy, "emptyMessage">
-): Required<VortexSecurityAuditListCopy> {
+  copy: Partial<ConvexSecurityAuditListCopy> &
+    Pick<ConvexSecurityAuditListCopy, "emptyMessage">
+): Required<ConvexSecurityAuditListCopy> {
   return { ...defaultCopy, ...copy, emptyMessage: copy.emptyMessage };
 }

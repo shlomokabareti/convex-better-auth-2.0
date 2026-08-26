@@ -1,11 +1,11 @@
 /**
- * VortexVerifyEmailScreen (RN) — drop-in landing screen for
+ * ConvexVerifyEmailScreen (RN) — drop-in landing screen for
  * verification email deep-links. Mirrors the web component.
  *
  * Consumer usage:
  *   const { token } = useLocalSearchParams<{ token?: string }>();
- *   <VortexVerifyEmailScreen
- *     authClient={vortexAuth.authClient}
+ *   <ConvexVerifyEmailScreen
+ *     authClient={convexAuth.authClient}
  *     token={token ?? ''}
  *     userEmail={user?.primaryEmailAddress?.emailAddress ?? null}
  *     resendCallbackUrl="pile://verify-email"
@@ -23,13 +23,13 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { VortexExpoBetterAuthClient } from "./client";
+import type { ExpoBetterAuthClient } from "./client";
 import {
-  useVortexExpoAuthResendVerification,
-  useVortexExpoAuthVerifyEmail,
+  useExpoAuthResendVerification,
+  useExpoAuthVerifyEmail,
 } from "./runtime";
 
-export type VortexExpoVerifyEmailScreenStyles = {
+export type ExpoVerifyEmailScreenStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -42,7 +42,7 @@ export type VortexExpoVerifyEmailScreenStyles = {
   resendButtonText?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoVerifyEmailScreenCopy = {
+export type ExpoVerifyEmailScreenCopy = {
   title?: string;
   description?: string;
   verifying?: string;
@@ -55,17 +55,17 @@ export type VortexExpoVerifyEmailScreenCopy = {
   unavailable?: string;
 };
 
-export type VortexExpoVerifyEmailScreenProps = {
-  authClient: VortexExpoBetterAuthClient | null;
+export type ExpoVerifyEmailScreenProps = {
+  authClient: ExpoBetterAuthClient | null;
   token: string;
   userEmail?: string | null;
   resendCallbackUrl?: string;
-  styles?: VortexExpoVerifyEmailScreenStyles;
-  copy?: VortexExpoVerifyEmailScreenCopy;
+  styles?: ExpoVerifyEmailScreenStyles;
+  copy?: ExpoVerifyEmailScreenCopy;
   onVerified?: () => void;
 };
 
-const DEFAULT_COPY: Required<VortexExpoVerifyEmailScreenCopy> = {
+const DEFAULT_COPY: Required<ExpoVerifyEmailScreenCopy> = {
   title: "Verify your email",
   description: "Hang tight while we confirm your email address.",
   verifying: "Verifying your email…",
@@ -79,15 +79,15 @@ const DEFAULT_COPY: Required<VortexExpoVerifyEmailScreenCopy> = {
   unavailable: "Email verification is not available on this auth client.",
 };
 
-export function VortexVerifyEmailScreen(
-  props: VortexExpoVerifyEmailScreenProps
+export function ConvexVerifyEmailScreen(
+  props: ExpoVerifyEmailScreenProps
 ) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { status, error, verifyEmail } = useVortexExpoAuthVerifyEmail(
+  const { status, error, verifyEmail } = useExpoAuthVerifyEmail(
     props.authClient
   );
-  const { resend, isResending } = useVortexExpoAuthResendVerification(
+  const { resend, isResending } = useExpoAuthResendVerification(
     props.authClient
   );
   const [resendResult, setResendResult] = useState<string | null>(null);

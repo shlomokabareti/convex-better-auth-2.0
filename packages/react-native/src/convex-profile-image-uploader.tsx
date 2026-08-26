@@ -1,9 +1,9 @@
 /**
- * VortexProfileImageUploader (RN) — drop-in profile avatar uploader.
+ * ConvexProfileImageUploader (RN) — drop-in profile avatar uploader.
  *
  * Consumer usage:
- *   <VortexProfileImageUploader
- *     authClient={vortexAuth.authClient}
+ *   <ConvexProfileImageUploader
+ *     authClient={convexAuth.authClient}
  *     pickImage={async () => {
  *       const r = await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
  *       return r.canceled ? null : r.assets[0]?.uri ?? null;
@@ -35,10 +35,10 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { VortexExpoBetterAuthClient } from "./client";
-import { useVortexExpoAuthUploadProfileImage } from "./runtime";
+import type { ExpoBetterAuthClient } from "./client";
+import { useExpoAuthUploadProfileImage } from "./runtime";
 
-export type VortexExpoProfileImageUploaderStyles = {
+export type ExpoProfileImageUploaderStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -51,7 +51,7 @@ export type VortexExpoProfileImageUploaderStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoProfileImageUploaderCopy = {
+export type ExpoProfileImageUploaderCopy = {
   title?: string;
   description?: string;
   pick?: string;
@@ -61,19 +61,19 @@ export type VortexExpoProfileImageUploaderCopy = {
   unavailable?: string;
 };
 
-export type VortexExpoProfileImageUploaderProps = {
-  authClient: VortexExpoBetterAuthClient | null;
+export type ExpoProfileImageUploaderProps = {
+  authClient: ExpoBetterAuthClient | null;
   /** Consumer-provided picker. Returns a local file URI or null if cancelled. */
   pickImage: () => Promise<string | Blob | null>;
   /** Consumer-provided uploader. Returns the canonical public URL. */
   uploadFile: (file: Blob | string) => Promise<string>;
   initialImage?: string | null;
-  styles?: VortexExpoProfileImageUploaderStyles;
-  copy?: VortexExpoProfileImageUploaderCopy;
+  styles?: ExpoProfileImageUploaderStyles;
+  copy?: ExpoProfileImageUploaderCopy;
   onUploaded?: (url: string) => void;
 };
 
-const DEFAULT_COPY: Required<VortexExpoProfileImageUploaderCopy> = {
+const DEFAULT_COPY: Required<ExpoProfileImageUploaderCopy> = {
   title: "Profile picture",
   description: "Pick an image to use as your avatar.",
   pick: "Choose image…",
@@ -83,12 +83,12 @@ const DEFAULT_COPY: Required<VortexExpoProfileImageUploaderCopy> = {
   unavailable: "Image upload is not available on this auth client.",
 };
 
-export function VortexProfileImageUploader(
-  props: VortexExpoProfileImageUploaderProps
+export function ConvexProfileImageUploader(
+  props: ExpoProfileImageUploaderProps
 ) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { uploadAndSave, isUploading } = useVortexExpoAuthUploadProfileImage(
+  const { uploadAndSave, isUploading } = useExpoAuthUploadProfileImage(
     props.authClient,
     {
       uploadFile: props.uploadFile,

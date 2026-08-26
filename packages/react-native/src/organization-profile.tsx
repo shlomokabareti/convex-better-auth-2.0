@@ -1,5 +1,5 @@
 /**
- * VortexOrganizationProfile (RN) — edit current org settings.
+ * ConvexOrganizationProfile (RN) — edit current org settings.
  * Mirrors the web component. Consumer brings the org data + the
  * update/delete callbacks.
  */
@@ -15,14 +15,14 @@ import {
   type ViewStyle,
 } from "react-native";
 
-export type VortexExpoOrgProfileOrganization = {
+export type ExpoOrgProfileOrganization = {
   _id: string;
   name: string;
   slug?: string;
   imageUrl?: string;
 };
 
-export type VortexExpoOrgProfileStyles = {
+export type ExpoOrgProfileStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -38,7 +38,7 @@ export type VortexExpoOrgProfileStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoOrgProfileCopy = {
+export type ExpoOrgProfileCopy = {
   title?: string;
   description?: string;
   nameLabel?: string;
@@ -51,10 +51,10 @@ export type VortexExpoOrgProfileCopy = {
   deleting?: string;
 };
 
-export type VortexExpoOrgProfileProps = {
-  organization: VortexExpoOrgProfileOrganization | null;
-  styles?: VortexExpoOrgProfileStyles;
-  copy?: VortexExpoOrgProfileCopy;
+export type ExpoOrgProfileProps = {
+  organization: ExpoOrgProfileOrganization | null;
+  styles?: ExpoOrgProfileStyles;
+  copy?: ExpoOrgProfileCopy;
   showSlugField?: boolean;
   onUpdate: (args: {
     name?: string;
@@ -64,7 +64,7 @@ export type VortexExpoOrgProfileProps = {
   onUpdated?: () => void;
 };
 
-const DEFAULT_COPY: Required<VortexExpoOrgProfileCopy> = {
+const DEFAULT_COPY: Required<ExpoOrgProfileCopy> = {
   title: "Workspace settings",
   description: "Update your workspace's display.",
   nameLabel: "Workspace name",
@@ -78,8 +78,8 @@ const DEFAULT_COPY: Required<VortexExpoOrgProfileCopy> = {
 };
 
 function OrganizationProfileHeader(props: {
-  copy: Required<VortexExpoOrgProfileCopy>;
-  styles: VortexExpoOrgProfileStyles;
+  copy: Required<ExpoOrgProfileCopy>;
+  styles: ExpoOrgProfileStyles;
 }) {
   return (
     <View style={[styles.header, props.styles.header]}>
@@ -92,10 +92,10 @@ function OrganizationProfileHeader(props: {
 }
 
 function OrganizationProfileDangerZone(props: {
-  copy: Required<VortexExpoOrgProfileCopy>;
+  copy: Required<ExpoOrgProfileCopy>;
   deleting: boolean;
   onDelete?: () => void;
-  styles: VortexExpoOrgProfileStyles;
+  styles: ExpoOrgProfileStyles;
 }) {
   if (props.onDelete === undefined) {
     return null;
@@ -123,7 +123,7 @@ function OrganizationProfileDangerZone(props: {
   );
 }
 
-export function VortexOrganizationProfile(props: VortexExpoOrgProfileProps) {
+export function ConvexOrganizationProfile(props: ExpoOrgProfileProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const showSlug = props.showSlugField ?? true;

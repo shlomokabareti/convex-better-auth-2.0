@@ -3,9 +3,9 @@ import type { ReactNode } from "react";
 
 const dayInMs = 24 * 60 * 60 * 1000;
 
-export type VortexApiKeyStatus = "active" | "revoked";
+export type ConvexApiKeyStatus = "active" | "revoked";
 
-export type VortexApiKeyListItem<
+export type ConvexApiKeyListItem<
   Scope extends string = string,
   ApiKeyId extends string = string,
 > = {
@@ -15,7 +15,7 @@ export type VortexApiKeyListItem<
   scopes: readonly Scope[];
   allowedIpRanges: readonly string[];
   expiresAt?: number;
-  status: VortexApiKeyStatus;
+  status: ConvexApiKeyStatus;
   lastUsedAt?: number;
   lastUsedIp?: string;
   createdAt: number;
@@ -27,19 +27,19 @@ export type VortexApiKeyListItem<
   } | null;
 };
 
-export type VortexApiKeyCreateFormState<Scope extends string = string> = {
+export type ConvexApiKeyCreateFormState<Scope extends string = string> = {
   name: string;
   scopes: readonly Scope[];
   ipAllowlist: string;
   expiresInDays: string;
 };
 
-export type VortexApiKeyExpirationOption = {
+export type ConvexApiKeyExpirationOption = {
   value: string;
   label: string;
 };
 
-export type VortexApiKeyCreateFormCopy = {
+export type ConvexApiKeyCreateFormCopy = {
   nameLabel?: string;
   namePlaceholder?: string;
   expirationLabel?: string;
@@ -49,7 +49,7 @@ export type VortexApiKeyCreateFormCopy = {
   creatingLabel?: string;
 };
 
-export type VortexApiKeyListCopy = {
+export type ConvexApiKeyListCopy = {
   loadingMessage?: string;
   emptyMessage: string;
   createdByLabel?: string;
@@ -61,7 +61,7 @@ export type VortexApiKeyListCopy = {
   revokeLabel?: string;
 };
 
-export type VortexApiKeyClassNames = {
+export type ConvexApiKeyClassNames = {
   createCard?: string;
   createContent?: string;
   label?: string;
@@ -91,28 +91,28 @@ export type VortexApiKeyClassNames = {
   stateText?: string;
 };
 
-export type VortexApiKeyCreateFormProps<Scope extends string = string> = {
+export type ConvexApiKeyCreateFormProps<Scope extends string = string> = {
   apiEnabled: boolean;
-  classNames?: VortexApiKeyClassNames;
-  copy?: VortexApiKeyCreateFormCopy;
+  classNames?: ConvexApiKeyClassNames;
+  copy?: ConvexApiKeyCreateFormCopy;
   creating: boolean;
-  expirationOptions?: readonly VortexApiKeyExpirationOption[];
+  expirationOptions?: readonly ConvexApiKeyExpirationOption[];
   onExpiresInDaysChange: (value: string) => void;
   onIpAllowlistChange: (value: string) => void;
   onNameChange: (value: string) => void;
   onScopesChange: (value: Scope[]) => void;
   onSubmit: () => void;
   scopeOptions: readonly Scope[];
-  state: VortexApiKeyCreateFormState<Scope>;
+  state: ConvexApiKeyCreateFormState<Scope>;
 };
 
-export type VortexApiKeyListProps<
+export type ConvexApiKeyListProps<
   Scope extends string = string,
   ApiKeyId extends string = string,
 > = {
-  apiKeys: readonly VortexApiKeyListItem<Scope, ApiKeyId>[] | undefined;
-  classNames?: VortexApiKeyClassNames;
-  copy: VortexApiKeyListCopy;
+  apiKeys: readonly ConvexApiKeyListItem<Scope, ApiKeyId>[] | undefined;
+  classNames?: ConvexApiKeyClassNames;
+  copy: ConvexApiKeyListCopy;
   formatTimestamp?: (timestamp: number) => string;
   onRevoke: (apiKeyId: ApiKeyId) => void;
   onRotate: (apiKeyId: ApiKeyId) => void;
@@ -128,7 +128,7 @@ const defaultCreateCopy = {
     "Optional. One per line or comma separated. Example: 203.0.113.10 or 203.0.113.0/24",
   nameLabel: "Key name",
   namePlaceholder: "Production sync",
-} satisfies Required<VortexApiKeyCreateFormCopy>;
+} satisfies Required<ConvexApiKeyCreateFormCopy>;
 
 const defaultListCopy = {
   createdByLabel: "Created by",
@@ -139,24 +139,24 @@ const defaultListCopy = {
   revokeLabel: "Revoke",
   rotateLabel: "Rotate",
   unknownCreatorLabel: "Unknown user",
-} satisfies Omit<VortexApiKeyListCopy, "emptyMessage">;
+} satisfies Omit<ConvexApiKeyListCopy, "emptyMessage">;
 
-export const defaultVortexApiKeyExpirationOptions = [
+export const defaultConvexApiKeyExpirationOptions = [
   { value: "none", label: "Never" },
   { value: "1", label: "1 day" },
   { value: "7", label: "7 days" },
   { value: "30", label: "30 days" },
   { value: "90", label: "90 days" },
-] satisfies readonly VortexApiKeyExpirationOption[];
+] satisfies readonly ConvexApiKeyExpirationOption[];
 
-export function parseVortexApiKeyAllowedIpRanges(value: string): string[] {
+export function parseConvexApiKeyAllowedIpRanges(value: string): string[] {
   return value
     .split(/\n|,/)
     .map((item) => item.trim())
     .filter(Boolean);
 }
 
-export function getVortexApiKeyExpiresAt(
+export function getConvexApiKeyExpiresAt(
   expiresInDays: string,
   now = Date.now()
 ): number | undefined {
@@ -172,7 +172,7 @@ export function getVortexApiKeyExpiresAt(
   return now + days * dayInMs;
 }
 
-export function canSubmitVortexApiKeyCreateForm({
+export function canSubmitConvexApiKeyCreateForm({
   apiEnabled,
   creating,
   name,
@@ -186,23 +186,23 @@ export function canSubmitVortexApiKeyCreateForm({
   return apiEnabled && !creating && name.trim().length > 0 && scopes.length > 0;
 }
 
-export function getVortexApiKeyCreatorLabel(
-  key: Pick<VortexApiKeyListItem, "createdBy">,
+export function getConvexApiKeyCreatorLabel(
+  key: Pick<ConvexApiKeyListItem, "createdBy">,
   unknownCreatorLabel = defaultListCopy.unknownCreatorLabel
 ): string {
   return key.createdBy?.name ?? key.createdBy?.email ?? unknownCreatorLabel;
 }
 
-export function formatVortexApiKeyTimestamp(timestamp: number): string {
+export function formatConvexApiKeyTimestamp(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
 }
 
-export function VortexApiKeyCreateForm<Scope extends string = string>({
+export function ConvexApiKeyCreateForm<Scope extends string = string>({
   apiEnabled,
   classNames,
   copy,
   creating,
-  expirationOptions = defaultVortexApiKeyExpirationOptions,
+  expirationOptions = defaultConvexApiKeyExpirationOptions,
   onExpiresInDaysChange,
   onIpAllowlistChange,
   onNameChange,
@@ -210,9 +210,9 @@ export function VortexApiKeyCreateForm<Scope extends string = string>({
   onSubmit,
   scopeOptions,
   state,
-}: VortexApiKeyCreateFormProps<Scope>) {
+}: ConvexApiKeyCreateFormProps<Scope>) {
   const resolvedCopy = resolveCreateCopy(copy);
-  const canCreate = canSubmitVortexApiKeyCreateForm({
+  const canCreate = canSubmitConvexApiKeyCreateForm({
     apiEnabled,
     creating,
     name: state.name,
@@ -242,14 +242,14 @@ export function VortexApiKeyCreateForm<Scope extends string = string>({
             value={state.name}
           />
         </label>
-        <VortexApiKeyScopeButtons
+        <ConvexApiKeyScopeButtons
           apiEnabled={apiEnabled}
           classNames={classNames}
           onScopesChange={onScopesChange}
           scopeOptions={scopeOptions}
           scopes={state.scopes}
         />
-        <VortexApiKeyCreateDetailsFields
+        <ConvexApiKeyCreateDetailsFields
           apiEnabled={apiEnabled}
           classNames={classNames}
           copy={resolvedCopy}
@@ -275,14 +275,14 @@ export function VortexApiKeyCreateForm<Scope extends string = string>({
   );
 }
 
-function VortexApiKeyCreateDetailsFields<Scope extends string>(props: {
+function ConvexApiKeyCreateDetailsFields<Scope extends string>(props: {
   apiEnabled: boolean;
-  classNames?: VortexApiKeyClassNames;
-  copy: Required<VortexApiKeyCreateFormCopy>;
-  expirationOptions: readonly VortexApiKeyExpirationOption[];
+  classNames?: ConvexApiKeyClassNames;
+  copy: Required<ConvexApiKeyCreateFormCopy>;
+  expirationOptions: readonly ConvexApiKeyExpirationOption[];
   onExpiresInDaysChange: (value: string) => void;
   onIpAllowlistChange: (value: string) => void;
-  state: VortexApiKeyCreateFormState<Scope>;
+  state: ConvexApiKeyCreateFormState<Scope>;
 }) {
   return (
     <div className="grid gap-3 md:grid-cols-2">
@@ -327,9 +327,9 @@ function VortexApiKeyCreateDetailsFields<Scope extends string>(props: {
   );
 }
 
-function VortexApiKeyScopeButtons<Scope extends string>(props: {
+function ConvexApiKeyScopeButtons<Scope extends string>(props: {
   apiEnabled: boolean;
-  classNames?: VortexApiKeyClassNames;
+  classNames?: ConvexApiKeyClassNames;
   onScopesChange: (value: Scope[]) => void;
   scopeOptions: readonly Scope[];
   scopes: readonly Scope[];
@@ -366,18 +366,18 @@ function VortexApiKeyScopeButtons<Scope extends string>(props: {
   );
 }
 
-export function VortexApiKeyList<
+export function ConvexApiKeyList<
   Scope extends string = string,
   ApiKeyId extends string = string,
 >({
   apiKeys,
   classNames,
   copy,
-  formatTimestamp = formatVortexApiKeyTimestamp,
+  formatTimestamp = formatConvexApiKeyTimestamp,
   onRevoke,
   onRotate,
   renderTag,
-}: VortexApiKeyListProps<Scope, ApiKeyId>) {
+}: ConvexApiKeyListProps<Scope, ApiKeyId>) {
   const resolvedCopy = resolveListCopy(copy);
 
   if (apiKeys === undefined) {
@@ -399,7 +399,7 @@ export function VortexApiKeyList<
   return (
     <div className={cn("space-y-3", classNames?.list)}>
       {apiKeys.map((key) => (
-        <VortexApiKeyCard
+        <ConvexApiKeyCard
           classNames={classNames}
           formatTimestamp={formatTimestamp}
           key={key._id}
@@ -414,7 +414,7 @@ export function VortexApiKeyList<
   );
 }
 
-function VortexApiKeyCard<
+function ConvexApiKeyCard<
   Scope extends string = string,
   ApiKeyId extends string = string,
 >({
@@ -426,13 +426,13 @@ function VortexApiKeyCard<
   resolvedCopy,
   value,
 }: {
-  classNames?: VortexApiKeyClassNames;
+  classNames?: ConvexApiKeyClassNames;
   formatTimestamp: (timestamp: number) => string;
   onRevoke: (apiKeyId: ApiKeyId) => void;
   onRotate: (apiKeyId: ApiKeyId) => void;
-  renderTag?: VortexApiKeyListProps<Scope, ApiKeyId>["renderTag"];
-  resolvedCopy: Required<VortexApiKeyListCopy>;
-  value: VortexApiKeyListItem<Scope, ApiKeyId>;
+  renderTag?: ConvexApiKeyListProps<Scope, ApiKeyId>["renderTag"];
+  resolvedCopy: Required<ConvexApiKeyListCopy>;
+  value: ConvexApiKeyListItem<Scope, ApiKeyId>;
 }) {
   return (
     <article
@@ -475,7 +475,7 @@ function VortexApiKeyCard<
               className={cn("text-foreground/45 text-xs", classNames?.metadata)}
             >
               {resolvedCopy.createdByLabel}{" "}
-              {getVortexApiKeyCreatorLabel(
+              {getConvexApiKeyCreatorLabel(
                 value,
                 resolvedCopy.unknownCreatorLabel
               )}
@@ -498,7 +498,7 @@ function VortexApiKeyCard<
                 : resolvedCopy.neverLabel}
             </p>
           </div>
-          <VortexApiKeyCardActions
+          <ConvexApiKeyCardActions
             classNames={classNames}
             onRevoke={() => onRevoke(value._id)}
             onRotate={() => onRotate(value._id)}
@@ -516,18 +516,18 @@ function VortexApiKeyCard<
   );
 }
 
-function VortexApiKeyCardActions({
+function ConvexApiKeyCardActions({
   classNames,
   onRevoke,
   onRotate,
   resolvedCopy,
   status,
 }: {
-  classNames?: VortexApiKeyClassNames;
+  classNames?: ConvexApiKeyClassNames;
   onRevoke: () => void;
   onRotate: () => void;
-  resolvedCopy: Required<VortexApiKeyListCopy>;
-  status: VortexApiKeyStatus;
+  resolvedCopy: Required<ConvexApiKeyListCopy>;
+  status: ConvexApiKeyStatus;
 }) {
   if (status !== "active") {
     return null;
@@ -572,8 +572,8 @@ function toggleScope<Scope extends string>(
 
 function renderApiKeyTag(
   label: string,
-  classNames: VortexApiKeyClassNames | undefined,
-  renderTag: VortexApiKeyListProps["renderTag"]
+  classNames: ConvexApiKeyClassNames | undefined,
+  renderTag: ConvexApiKeyListProps["renderTag"]
 ): ReactNode {
   if (renderTag) {
     return renderTag(label);
@@ -593,13 +593,13 @@ function renderApiKeyTag(
 }
 
 function resolveCreateCopy(
-  copy: VortexApiKeyCreateFormCopy | undefined
-): Required<VortexApiKeyCreateFormCopy> {
+  copy: ConvexApiKeyCreateFormCopy | undefined
+): Required<ConvexApiKeyCreateFormCopy> {
   return { ...defaultCreateCopy, ...copy };
 }
 
 function resolveListCopy(
-  copy: VortexApiKeyListCopy
-): Required<VortexApiKeyListCopy> {
+  copy: ConvexApiKeyListCopy
+): Required<ConvexApiKeyListCopy> {
   return { ...defaultListCopy, ...copy, emptyMessage: copy.emptyMessage };
 }

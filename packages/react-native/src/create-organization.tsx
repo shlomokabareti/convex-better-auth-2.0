@@ -1,5 +1,5 @@
 /**
- * VortexCreateOrganization (RN) — form to create a new organization.
+ * ConvexCreateOrganization (RN) — form to create a new organization.
  * Consumer brings the create mutation (typically Convex) via the
  * onCreate callback; the package owns the form UX + validation.
  */
@@ -15,7 +15,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-export type VortexExpoCreateOrgStyles = {
+export type ExpoCreateOrgStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -28,7 +28,7 @@ export type VortexExpoCreateOrgStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoCreateOrgCopy = {
+export type ExpoCreateOrgCopy = {
   title?: string;
   description?: string;
   nameLabel?: string;
@@ -39,9 +39,9 @@ export type VortexExpoCreateOrgCopy = {
   submitting?: string;
 };
 
-export type VortexExpoCreateOrgProps = {
-  styles?: VortexExpoCreateOrgStyles;
-  copy?: VortexExpoCreateOrgCopy;
+export type ExpoCreateOrgProps = {
+  styles?: ExpoCreateOrgStyles;
+  copy?: ExpoCreateOrgCopy;
   showSlugField?: boolean;
   onCreate: (args: {
     name: string;
@@ -50,7 +50,7 @@ export type VortexExpoCreateOrgProps = {
   onCreated?: (org: { name: string; slug?: string }) => void;
 };
 
-const DEFAULT_COPY: Required<VortexExpoCreateOrgCopy> = {
+const DEFAULT_COPY: Required<ExpoCreateOrgCopy> = {
   title: "Create workspace",
   description: "Give your workspace a name. You can change it later.",
   nameLabel: "Workspace name",
@@ -61,7 +61,7 @@ const DEFAULT_COPY: Required<VortexExpoCreateOrgCopy> = {
   submitting: "Creating…",
 };
 
-export function VortexCreateOrganization(props: VortexExpoCreateOrgProps) {
+export function ConvexCreateOrganization(props: ExpoCreateOrgProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const showSlug = props.showSlugField ?? false;

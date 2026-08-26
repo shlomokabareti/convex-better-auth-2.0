@@ -10,9 +10,13 @@ This repo is the pragmatic middle path:
 
 1. **Convex Auth 2.0 is still coming.** Until Convex ships a first-class, native auth system, teams need a production-grade option that does not block them.
 2. **Better Auth's plugin model and Convex's component system fight each other.** Better Auth assumes it owns the runtime and tables; Convex wants auth inside a versioned component with generated queries and mutations. Without a bridge, the two leak into each other.
-3. **Convex should eventually own the auth-specific work, but not by throwing Better Auth away.** Better Auth already covers password/email flows, OAuth, 2FA, organizations, API keys, webhooks, and more. The right move is to wrap those battle-tested primitives inside a Convex-native component, then replace pieces with native Convex auth as the platform catches up.
+3. **Convex should eventually own auth, but not by throwing Better Auth away.** Better Auth already covers password/email flows, OAuth, 2FA, organizations, API keys, webhooks, and more. The right move is to rebuild those plugin features as Convex-style components, queries, mutations, and actions, then replace pieces with native Convex auth as the platform catches up.
 
-Read the full rationale in [`docs/motivation.md`](docs/motivation.md).
+Read the full rationale in [`docs/motivation.md`](docs/motivation.md) and the design details in [`docs/better-auth-to-convex.md`](docs/better-auth-to-convex.md).
+
+## Origin
+
+This code was originally built for **Plasma**, then extracted and open-sourced after Plasma was sunsetted. The goal is to give Convex developers an out-of-the-box auth stack that covers the same surface area as Clerk or WorkOS, without giving up Convex's native database model.
 
 ## Packages
 

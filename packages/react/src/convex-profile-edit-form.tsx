@@ -1,13 +1,13 @@
 /**
- * VortexProfileEditForm — drop-in profile editor for consumers.
+ * ConvexProfileEditForm — drop-in profile editor for consumers.
  *
  * Replaces the per-consumer provider-style name + image form that pile
  * had to hand-write against `user.update({firstName, lastName})` +
- * `user.reload()`. Uses the package's useVortexAuthUpdateProfile
+ * `user.reload()`. Uses the package's useConvexAuthUpdateProfile
  * hook so the component is purely presentational.
  *
  * Consumer usage:
- *   <VortexProfileEditForm
+ *   <ConvexProfileEditForm
  *     authClient={authClient}
  *     initialName={user?.name ?? ''}
  *     onUpdated={() => router.invalidate()}
@@ -20,8 +20,8 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import {
-  useVortexAuthUpdateProfile,
-  type VortexBetterAuthClient,
+  useConvexAuthUpdateProfile,
+  type ConvexBetterAuthClient,
 } from "./better-auth-runtime";
 import {
   AuthCard,
@@ -32,7 +32,7 @@ import {
   AuthLabel,
 } from "./ui";
 
-export type VortexProfileEditFormClassNames = {
+export type ConvexProfileEditFormClassNames = {
   root?: string;
   form?: string;
   field?: string;
@@ -43,7 +43,7 @@ export type VortexProfileEditFormClassNames = {
   errorState?: string;
 };
 
-export type VortexProfileEditFormCopy = {
+export type ConvexProfileEditFormCopy = {
   title?: string;
   description?: string;
   nameLabel?: string;
@@ -54,8 +54,8 @@ export type VortexProfileEditFormCopy = {
   unavailable?: string;
 };
 
-export type VortexProfileEditFormProps = {
-  authClient: VortexBetterAuthClient | null;
+export type ConvexProfileEditFormProps = {
+  authClient: ConvexBetterAuthClient | null;
   initialName?: string;
   initialImage?: string;
   /**
@@ -63,12 +63,12 @@ export type VortexProfileEditFormProps = {
    * false for consumers that don't surface avatar editing.
    */
   showImageField?: boolean;
-  classNames?: VortexProfileEditFormClassNames;
-  copy?: VortexProfileEditFormCopy;
+  classNames?: ConvexProfileEditFormClassNames;
+  copy?: ConvexProfileEditFormCopy;
   onUpdated?: (next: { name?: string; image?: string }) => void;
 };
 
-const DEFAULT_COPY: Required<VortexProfileEditFormCopy> = {
+const DEFAULT_COPY: Required<ConvexProfileEditFormCopy> = {
   title: "Profile",
   description: "Update your display name and avatar.",
   nameLabel: "Display name",
@@ -79,11 +79,11 @@ const DEFAULT_COPY: Required<VortexProfileEditFormCopy> = {
   unavailable: "Profile update is not available on this auth client.",
 };
 
-export function VortexProfileEditForm(props: VortexProfileEditFormProps) {
+export function ConvexProfileEditForm(props: ConvexProfileEditFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { updateProfile, isUpdating } = useVortexAuthUpdateProfile(
+  const { updateProfile, isUpdating } = useConvexAuthUpdateProfile(
     props.authClient
   );
   const [name, setName] = useState(props.initialName ?? "");
@@ -127,11 +127,11 @@ export function VortexProfileEditForm(props: VortexProfileEditFormProps) {
         {isAvailable ? (
           <form onSubmit={handleSubmit} className={cn.form}>
             <AuthField className={cn.field}>
-              <AuthLabel htmlFor="vortex-profile-name" className={cn.label}>
+              <AuthLabel htmlFor="convex-profile-name" className={cn.label}>
                 {copy.nameLabel}
               </AuthLabel>
               <AuthInput
-                id="vortex-profile-name"
+                id="convex-profile-name"
                 value={name}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
                   setName(e.target.value)
@@ -141,11 +141,11 @@ export function VortexProfileEditForm(props: VortexProfileEditFormProps) {
             </AuthField>
             {showImageField ? (
               <AuthField className={cn.field}>
-                <AuthLabel htmlFor="vortex-profile-image" className={cn.label}>
+                <AuthLabel htmlFor="convex-profile-image" className={cn.label}>
                   {copy.imageLabel}
                 </AuthLabel>
                 <AuthInput
-                  id="vortex-profile-image"
+                  id="convex-profile-image"
                   type="url"
                   value={image}
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>

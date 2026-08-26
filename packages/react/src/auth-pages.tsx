@@ -12,11 +12,11 @@ import type { AuthFormClassNames } from "./auth-forms";
 import {
   AuthLoadedBoundaryView,
   AuthLoadingBoundaryView,
-  type VortexAuthSocialProvider,
-  type VortexAuthState,
-  type VortexBetterAuthClient,
-  VortexAuthSignInScreen,
-  VortexAuthSignUpScreen,
+  type ConvexAuthSocialProvider,
+  type ConvexAuthState,
+  type ConvexBetterAuthClient,
+  ConvexAuthSignInScreen,
+  ConvexAuthSignUpScreen,
 } from "./better-auth-runtime";
 import {
   getAfterSignUpPath,
@@ -25,16 +25,16 @@ import {
 } from "./invite-sign-up";
 import {
   type SelectableOrganization,
-  useVortexPostSignUpFlow,
+  useConvexPostSignUpFlow,
 } from "./post-sign-up";
 
-export type VortexAuthSurfaceFeature = {
+export type ConvexAuthSurfaceFeature = {
   title: string;
   body: string;
   icon?: ReactNode;
 };
 
-export type VortexAuthSurfaceClassNames = {
+export type ConvexAuthSurfaceClassNames = {
   root?: string;
   grid?: string;
   sidebar?: string;
@@ -49,20 +49,20 @@ export type VortexAuthSurfaceClassNames = {
   description?: string;
 };
 
-export type VortexAuthSurfaceProps = {
+export type ConvexAuthSurfaceProps = {
   children: ReactNode;
   title: string;
   description: string;
   eyebrow?: string;
   sidebarTitle?: string;
   sidebarBody?: string;
-  features?: readonly VortexAuthSurfaceFeature[];
+  features?: readonly ConvexAuthSurfaceFeature[];
   footer?: ReactNode;
   className?: string;
-  classNames?: VortexAuthSurfaceClassNames;
+  classNames?: ConvexAuthSurfaceClassNames;
 };
 
-export type VortexAuthPageCopy = {
+export type ConvexAuthPageCopy = {
   title?: string;
   description?: string;
   loadingTitle?: string;
@@ -71,66 +71,66 @@ export type VortexAuthPageCopy = {
   unavailableDescription?: string;
 };
 
-export type VortexAuthPageClassNames = {
-  surface?: VortexAuthSurfaceClassNames;
+export type ConvexAuthPageClassNames = {
+  surface?: ConvexAuthSurfaceClassNames;
   form?: AuthFormClassNames;
 };
 
-export type VortexAuthSignInPageProps = VortexAuthPageCopy & {
-  auth: VortexAuthState;
-  authClient: VortexBetterAuthClient | null;
+export type ConvexAuthSignInPageProps = ConvexAuthPageCopy & {
+  auth: ConvexAuthState;
+  authClient: ConvexBetterAuthClient | null;
   signUpUrl: string;
   forceRedirectUrl: string;
   /** When set, AuthSignInForm renders a forgot-password link to this href. */
   forgotPasswordHref?: string;
   onOpened?: () => void;
   onRuntimeUnavailable?: () => void;
-  classNames?: VortexAuthPageClassNames;
-  socialProviders?: readonly VortexAuthSocialProvider[];
+  classNames?: ConvexAuthPageClassNames;
+  socialProviders?: readonly ConvexAuthSocialProvider[];
 };
 
-export type VortexAuthSignUpPageProps = VortexAuthPageCopy & {
-  auth: VortexAuthState;
-  authClient: VortexBetterAuthClient | null;
+export type ConvexAuthSignUpPageProps = ConvexAuthPageCopy & {
+  auth: ConvexAuthState;
+  authClient: ConvexBetterAuthClient | null;
   signInUrl: string;
   forceRedirectUrl: string;
   onOpened?: () => void;
   onRuntimeUnavailable?: () => void;
-  classNames?: VortexAuthPageClassNames;
-  socialProviders?: readonly VortexAuthSocialProvider[];
+  classNames?: ConvexAuthPageClassNames;
+  socialProviders?: readonly ConvexAuthSocialProvider[];
 };
 
-export type VortexAuthInviteFailureReason =
+export type ConvexAuthInviteFailureReason =
   | "missing_ticket"
   | "redirect_failed"
   | "exception"
   | "retry_redirect_failed"
   | "retry_exception";
 
-export type VortexAuthInviteFailureEvent = {
+export type ConvexAuthInviteFailureEvent = {
   hasTicket: boolean;
-  reason: VortexAuthInviteFailureReason;
+  reason: ConvexAuthInviteFailureReason;
   redirectPath?: string;
 };
 
-export type VortexAuthInviteOpenedEvent = {
+export type ConvexAuthInviteOpenedEvent = {
   invitationToken: string;
   redirectPath?: string;
 };
 
-export type VortexAuthInviteRedirectedEvent = {
+export type ConvexAuthInviteRedirectedEvent = {
   invitationToken: string;
   redirectPath?: string;
   signUpUrl: string;
 };
 
-export type VortexAuthInviteExceptionEvent = {
+export type ConvexAuthInviteExceptionEvent = {
   error: unknown;
   hasTicket: boolean;
   step: "redirect-to-sign-up" | "retry-sign-up";
 };
 
-export type VortexAuthAcceptInvitePageProps = {
+export type ConvexAuthAcceptInvitePageProps = {
   buildSignUpUrl: () => string;
   redirectToSignIn: (options?: {
     signInForceRedirectUrl?: string;
@@ -143,10 +143,10 @@ export type VortexAuthAcceptInvitePageProps = {
     params: URLSearchParams
   ) => Promise<string | null>;
   toSafeRedirectPath?: (url: string) => string | undefined;
-  onOpened?: (event: VortexAuthInviteOpenedEvent) => void;
-  onRedirected?: (event: VortexAuthInviteRedirectedEvent) => void;
-  onFailed?: (event: VortexAuthInviteFailureEvent) => void;
-  onException?: (event: VortexAuthInviteExceptionEvent) => void;
+  onOpened?: (event: ConvexAuthInviteOpenedEvent) => void;
+  onRedirected?: (event: ConvexAuthInviteRedirectedEvent) => void;
+  onFailed?: (event: ConvexAuthInviteFailureEvent) => void;
+  onException?: (event: ConvexAuthInviteExceptionEvent) => void;
   title?: string;
   description?: string;
   eyebrow?: string;
@@ -158,7 +158,7 @@ export type VortexAuthAcceptInvitePageProps = {
   inviteRetryFailureError?: string;
 };
 
-export type VortexAuthPostSignUpPageProps = {
+export type ConvexAuthPostSignUpPageProps = {
   currentOrganization: unknown;
   availableOrganizations: readonly SelectableOrganization[] | null | undefined;
   invitationToken: string | null;
@@ -178,22 +178,22 @@ export type VortexAuthPostSignUpPageProps = {
   openOrganizationSetupLabel?: string;
 };
 
-export type VortexAuthOrganizationChooserItem = SelectableOrganization & {
+export type ConvexAuthOrganizationChooserItem = SelectableOrganization & {
   _id: string;
   name: string;
   roleTemplate?: string | null;
 };
 
-export type VortexAuthCurrentOrganization = {
+export type ConvexAuthCurrentOrganization = {
   _id: string;
   name?: string | null;
 };
 
-export type VortexAuthOrganizationChooserPageProps = {
-  currentOrganization?: VortexAuthCurrentOrganization | null;
-  organizations: readonly VortexAuthOrganizationChooserItem[] | undefined;
+export type ConvexAuthOrganizationChooserPageProps = {
+  currentOrganization?: ConvexAuthCurrentOrganization | null;
+  organizations: readonly ConvexAuthOrganizationChooserItem[] | undefined;
   onSelectOrganization: (
-    organization: VortexAuthOrganizationChooserItem
+    organization: ConvexAuthOrganizationChooserItem
   ) => Promise<void>;
   title?: string;
   description?: string;
@@ -208,7 +208,7 @@ export type VortexAuthOrganizationChooserPageProps = {
   selectErrorDescription?: string;
 };
 
-const defaultFeatures: readonly VortexAuthSurfaceFeature[] = [
+const defaultFeatures: readonly ConvexAuthSurfaceFeature[] = [
   {
     title: "Protected sign-in",
     body: "Auth and Convex stay inside one access flow.",
@@ -223,7 +223,7 @@ const defaultFeatures: readonly VortexAuthSurfaceFeature[] = [
   },
 ];
 
-export function VortexAuthSurface({
+export function ConvexAuthSurface({
   children,
   title,
   description,
@@ -234,7 +234,7 @@ export function VortexAuthSurface({
   footer,
   className,
   classNames,
-}: VortexAuthSurfaceProps) {
+}: ConvexAuthSurfaceProps) {
   return (
     <div
       className={cn(
@@ -249,7 +249,7 @@ export function VortexAuthSurface({
           classNames?.grid
         )}
       >
-        <VortexAuthSurfaceSidebar
+        <ConvexAuthSurfaceSidebar
           classNames={classNames}
           eyebrow={eyebrow}
           features={features}
@@ -257,23 +257,23 @@ export function VortexAuthSurface({
           sidebarBody={sidebarBody}
           sidebarTitle={sidebarTitle}
         />
-        <VortexAuthSurfaceMain
+        <ConvexAuthSurfaceMain
           classNames={classNames}
           description={description}
           eyebrow={eyebrow}
           title={title}
         >
           {children}
-        </VortexAuthSurfaceMain>
+        </ConvexAuthSurfaceMain>
       </div>
     </div>
   );
 }
 
-function VortexAuthSurfaceSidebar(args: {
-  classNames?: VortexAuthSurfaceClassNames;
+function ConvexAuthSurfaceSidebar(args: {
+  classNames?: ConvexAuthSurfaceClassNames;
   eyebrow: string;
-  features: readonly VortexAuthSurfaceFeature[];
+  features: readonly ConvexAuthSurfaceFeature[];
   footer?: ReactNode;
   sidebarBody: string;
   sidebarTitle: string;
@@ -286,8 +286,8 @@ function VortexAuthSurfaceSidebar(args: {
       )}
     >
       <div className="space-y-8">
-        <VortexAuthSurfaceSidebarIntro {...args} />
-        <VortexAuthSurfaceFeatureList features={args.features} />
+        <ConvexAuthSurfaceSidebarIntro {...args} />
+        <ConvexAuthSurfaceFeatureList features={args.features} />
       </div>
       {args.footer ? (
         <div
@@ -303,8 +303,8 @@ function VortexAuthSurfaceSidebar(args: {
   );
 }
 
-function VortexAuthSurfaceSidebarIntro(args: {
-  classNames?: VortexAuthSurfaceClassNames;
+function ConvexAuthSurfaceSidebarIntro(args: {
+  classNames?: ConvexAuthSurfaceClassNames;
   eyebrow: string;
   sidebarBody: string;
   sidebarTitle: string;
@@ -341,23 +341,23 @@ function VortexAuthSurfaceSidebarIntro(args: {
   );
 }
 
-function VortexAuthSurfaceFeatureList(args: {
-  features: readonly VortexAuthSurfaceFeature[];
+function ConvexAuthSurfaceFeatureList(args: {
+  features: readonly ConvexAuthSurfaceFeature[];
 }) {
   if (args.features.length === 0) return null;
 
   return (
     <ul role="list" className="space-y-4">
       {args.features.map((feature) => (
-        <VortexAuthSurfaceFeatureItem key={feature.title} feature={feature} />
+        <ConvexAuthSurfaceFeatureItem key={feature.title} feature={feature} />
       ))}
     </ul>
   );
 }
 
-function VortexAuthSurfaceMain(args: {
+function ConvexAuthSurfaceMain(args: {
   children: ReactNode;
-  classNames?: VortexAuthSurfaceClassNames;
+  classNames?: ConvexAuthSurfaceClassNames;
   description: string;
   eyebrow: string;
   title: string;
@@ -372,15 +372,15 @@ function VortexAuthSurfaceMain(args: {
       <div
         className={cn("w-full max-w-md space-y-6", args.classNames?.mainInner)}
       >
-        <VortexAuthSurfaceHeader {...args} />
+        <ConvexAuthSurfaceHeader {...args} />
         {args.children}
       </div>
     </main>
   );
 }
 
-function VortexAuthSurfaceHeader(args: {
-  classNames?: VortexAuthSurfaceClassNames;
+function ConvexAuthSurfaceHeader(args: {
+  classNames?: ConvexAuthSurfaceClassNames;
   description: string;
   eyebrow: string;
   title: string;
@@ -412,7 +412,7 @@ function VortexAuthSurfaceHeader(args: {
   );
 }
 
-export function VortexAuthLoadingCard({
+export function ConvexAuthLoadingCard({
   title,
   description,
 }: {
@@ -420,7 +420,7 @@ export function VortexAuthLoadingCard({
   description: string;
 }) {
   return (
-    <VortexAuthStatusCard
+    <ConvexAuthStatusCard
       title={title}
       description={description}
       icon={
@@ -431,7 +431,7 @@ export function VortexAuthLoadingCard({
   );
 }
 
-export function VortexAuthUnavailableCard({
+export function ConvexAuthUnavailableCard({
   title,
   description,
   actions,
@@ -441,7 +441,7 @@ export function VortexAuthUnavailableCard({
   actions?: ReactNode;
 }) {
   return (
-    <VortexAuthStatusCard
+    <ConvexAuthStatusCard
       title={title}
       description={description}
       icon={<span className="text-foreground/90 text-lg leading-none">!</span>}
@@ -451,7 +451,7 @@ export function VortexAuthUnavailableCard({
   );
 }
 
-export function VortexAuthActionButton({
+export function ConvexAuthActionButton({
   children,
   variant = "primary",
   onClick,
@@ -479,7 +479,7 @@ export function VortexAuthActionButton({
   );
 }
 
-export function VortexAuthSignInPage(args: VortexAuthSignInPageProps) {
+export function ConvexAuthSignInPage(args: ConvexAuthSignInPageProps) {
   const title = args.title ?? "Sign in";
   const description =
     args.description ??
@@ -489,33 +489,33 @@ export function VortexAuthSignInPage(args: VortexAuthSignInPageProps) {
   useRuntimeUnavailableEffect(args.authClient, args.onRuntimeUnavailable);
 
   return (
-    <VortexAuthSurface
+    <ConvexAuthSurface
       title={title}
       description={description}
       classNames={args.classNames?.surface}
     >
       {args.authClient === null ? (
-        <VortexAuthUnavailableCard
+        <ConvexAuthUnavailableCard
           title={args.unavailableTitle ?? "Sign-in is unavailable"}
           description={
             args.unavailableDescription ??
             "This app could not load the Better Auth runtime for this page."
           }
           actions={
-            <VortexAuthActionButton
+            <ConvexAuthActionButton
               variant="secondary"
               onClick={() => {
                 window.location.reload();
               }}
             >
               Try again
-            </VortexAuthActionButton>
+            </ConvexAuthActionButton>
           }
         />
       ) : (
         <>
           <AuthLoadingBoundaryView auth={args.auth}>
-            <VortexAuthLoadingCard
+            <ConvexAuthLoadingCard
               title={args.loadingTitle ?? "Loading sign-in"}
               description={
                 args.loadingDescription ??
@@ -524,7 +524,7 @@ export function VortexAuthSignInPage(args: VortexAuthSignInPageProps) {
             />
           </AuthLoadingBoundaryView>
           <AuthLoadedBoundaryView auth={args.auth}>
-            <VortexAuthSignInScreen
+            <ConvexAuthSignInScreen
               authClient={args.authClient}
               classNames={args.classNames?.form}
               description={description}
@@ -537,11 +537,11 @@ export function VortexAuthSignInPage(args: VortexAuthSignInPageProps) {
           </AuthLoadedBoundaryView>
         </>
       )}
-    </VortexAuthSurface>
+    </ConvexAuthSurface>
   );
 }
 
-export function VortexAuthSignUpPage(args: VortexAuthSignUpPageProps) {
+export function ConvexAuthSignUpPage(args: ConvexAuthSignUpPageProps) {
   const title = args.title ?? "Create account";
   const description =
     args.description ?? "Create your account, then continue into setup.";
@@ -550,33 +550,33 @@ export function VortexAuthSignUpPage(args: VortexAuthSignUpPageProps) {
   useRuntimeUnavailableEffect(args.authClient, args.onRuntimeUnavailable);
 
   return (
-    <VortexAuthSurface
+    <ConvexAuthSurface
       title={title}
       description={description}
       classNames={args.classNames?.surface}
     >
       {args.authClient === null ? (
-        <VortexAuthUnavailableCard
+        <ConvexAuthUnavailableCard
           title={args.unavailableTitle ?? "Sign-up is unavailable"}
           description={
             args.unavailableDescription ??
             "This app could not load the Better Auth runtime for this page."
           }
           actions={
-            <VortexAuthActionButton
+            <ConvexAuthActionButton
               variant="secondary"
               onClick={() => {
                 window.location.reload();
               }}
             >
               Try again
-            </VortexAuthActionButton>
+            </ConvexAuthActionButton>
           }
         />
       ) : (
         <>
           <AuthLoadingBoundaryView auth={args.auth}>
-            <VortexAuthLoadingCard
+            <ConvexAuthLoadingCard
               title={args.loadingTitle ?? "Loading sign-up"}
               description={
                 args.loadingDescription ??
@@ -585,7 +585,7 @@ export function VortexAuthSignUpPage(args: VortexAuthSignUpPageProps) {
             />
           </AuthLoadingBoundaryView>
           <AuthLoadedBoundaryView auth={args.auth}>
-            <VortexAuthSignUpScreen
+            <ConvexAuthSignUpScreen
               authClient={args.authClient}
               classNames={args.classNames?.form}
               description={description}
@@ -597,12 +597,12 @@ export function VortexAuthSignUpPage(args: VortexAuthSignUpPageProps) {
           </AuthLoadedBoundaryView>
         </>
       )}
-    </VortexAuthSurface>
+    </ConvexAuthSurface>
   );
 }
 
-export function VortexAuthAcceptInvitePage(
-  args: VortexAuthAcceptInvitePageProps
+export function ConvexAuthAcceptInvitePage(
+  args: ConvexAuthAcceptInvitePageProps
 ) {
   const title = args.title ?? "You're invited";
   const description =
@@ -614,17 +614,17 @@ export function VortexAuthAcceptInvitePage(
   const inviteRuntime = useInviteAcceptRuntime(args, inviteRecoveryError);
 
   return (
-    <VortexAuthSurface
+    <ConvexAuthSurface
       title={title}
       description={description}
       eyebrow={args.eyebrow}
     >
       {inviteRuntime.error ? (
-        <VortexAuthUnavailableCard
+        <ConvexAuthUnavailableCard
           title={args.unavailableTitle ?? "Unable to start sign-up"}
           description={inviteRuntime.error}
           actions={
-            <VortexAuthInviteErrorActions
+            <ConvexAuthInviteErrorActions
               onOpenSignUp={inviteRuntime.retryInviteSignUp}
               onSignIn={() => {
                 void args.redirectToSignIn({
@@ -635,7 +635,7 @@ export function VortexAuthAcceptInvitePage(
           }
         />
       ) : (
-        <VortexAuthLoadingCard
+        <ConvexAuthLoadingCard
           title={args.loadingTitle ?? "Preparing your invitation"}
           description={
             args.loadingDescription ??
@@ -643,12 +643,12 @@ export function VortexAuthAcceptInvitePage(
           }
         />
       )}
-    </VortexAuthSurface>
+    </ConvexAuthSurface>
   );
 }
 
 function useInviteAcceptRuntime(
-  args: VortexAuthAcceptInvitePageProps,
+  args: ConvexAuthAcceptInvitePageProps,
   inviteRecoveryError: string
 ) {
   const [error, setError] = useState<string | null>(null);
@@ -710,7 +710,7 @@ function useInviteAfterSignUpPath(postSignUpPath: string): string {
 }
 
 function useInviteSignUpNavigator(
-  args: VortexAuthAcceptInvitePageProps,
+  args: ConvexAuthAcceptInvitePageProps,
   afterSignUpPath: string
 ) {
   const {
@@ -769,9 +769,9 @@ type InviteOpenEffectArgs = {
   inviteOpenFailureError?: string;
   inviteRecoveryError: string;
   navigateToInviteSignUp: InviteSignUpNavigator;
-  onException?: (event: VortexAuthInviteExceptionEvent) => void;
-  onFailed?: (event: VortexAuthInviteFailureEvent) => void;
-  onOpened?: (event: VortexAuthInviteOpenedEvent) => void;
+  onException?: (event: ConvexAuthInviteExceptionEvent) => void;
+  onFailed?: (event: ConvexAuthInviteFailureEvent) => void;
+  onOpened?: (event: ConvexAuthInviteOpenedEvent) => void;
   openedRef: { current: boolean };
   setError: (error: string | null) => void;
   signUpPath: string;
@@ -897,8 +897,8 @@ async function retryInviteSignUpRedirect(args: {
   inviteRecoveryError: string;
   inviteRetryFailureError?: string;
   navigateToInviteSignUp: InviteSignUpNavigator;
-  onException?: (event: VortexAuthInviteExceptionEvent) => void;
-  onFailed?: (event: VortexAuthInviteFailureEvent) => void;
+  onException?: (event: ConvexAuthInviteExceptionEvent) => void;
+  onFailed?: (event: ConvexAuthInviteFailureEvent) => void;
   setError: (error: string | null) => void;
   toSafeRedirectPath?: (url: string) => string | undefined;
 }): Promise<void> {
@@ -937,31 +937,31 @@ function navigateBrowserTo(
   window.location.assign(signUpUrl);
 }
 
-function VortexAuthInviteErrorActions(args: {
+function ConvexAuthInviteErrorActions(args: {
   onOpenSignUp: () => Promise<void>;
   onSignIn: () => void;
 }) {
   return (
     <>
-      <VortexAuthActionButton
+      <ConvexAuthActionButton
         onClick={() => {
           void args.onOpenSignUp();
         }}
       >
         Open sign-up
-      </VortexAuthActionButton>
-      <VortexAuthActionButton variant="secondary" onClick={args.onSignIn}>
+      </ConvexAuthActionButton>
+      <ConvexAuthActionButton variant="secondary" onClick={args.onSignIn}>
         Go to sign-in
-      </VortexAuthActionButton>
+      </ConvexAuthActionButton>
     </>
   );
 }
 
-export function VortexAuthPostSignUpPage(args: VortexAuthPostSignUpPageProps) {
+export function ConvexAuthPostSignUpPage(args: ConvexAuthPostSignUpPageProps) {
   const title = args.title ?? "Finalizing your workspace";
   const description =
     args.description ?? "We're finishing your organization access.";
-  const flow = useVortexPostSignUpFlow({
+  const flow = useConvexPostSignUpFlow({
     currentOrganization: args.currentOrganization,
     availableOrganizations: args.availableOrganizations,
     invitationToken: args.invitationToken,
@@ -972,13 +972,13 @@ export function VortexAuthPostSignUpPage(args: VortexAuthPostSignUpPageProps) {
   });
 
   return (
-    <VortexAuthSurface
+    <ConvexAuthSurface
       title={title}
       description={description}
       eyebrow={args.eyebrow}
     >
       {flow.hasTimedOut ? (
-        <VortexAuthUnavailableCard
+        <ConvexAuthUnavailableCard
           title={
             args.timedOutTitle ??
             "Workspace setup is taking longer than expected"
@@ -989,7 +989,7 @@ export function VortexAuthPostSignUpPage(args: VortexAuthPostSignUpPageProps) {
           }
           actions={
             <>
-              <VortexAuthActionButton
+              <ConvexAuthActionButton
                 variant="secondary"
                 onClick={() => {
                   if (args.onRefresh) {
@@ -1001,29 +1001,29 @@ export function VortexAuthPostSignUpPage(args: VortexAuthPostSignUpPageProps) {
                 }}
               >
                 {args.refreshLabel ?? "Refresh"}
-              </VortexAuthActionButton>
-              <VortexAuthActionButton
+              </ConvexAuthActionButton>
+              <ConvexAuthActionButton
                 onClick={() => {
                   void args.onOpenOrganizationSetup();
                 }}
               >
                 {args.openOrganizationSetupLabel ?? "Open organization setup"}
-              </VortexAuthActionButton>
+              </ConvexAuthActionButton>
             </>
           }
         />
       ) : (
-        <VortexAuthLoadingCard
+        <ConvexAuthLoadingCard
           title={args.loadingTitle ?? "Finalizing your workspace"}
           description={flow.statusDescription}
         />
       )}
-    </VortexAuthSurface>
+    </ConvexAuthSurface>
   );
 }
 
-export function VortexAuthOrganizationChooserPage(
-  args: VortexAuthOrganizationChooserPageProps
+export function ConvexAuthOrganizationChooserPage(
+  args: ConvexAuthOrganizationChooserPageProps
 ) {
   const title = args.title ?? "Choose organization";
   const description =
@@ -1036,49 +1036,49 @@ export function VortexAuthOrganizationChooserPage(
 
   if (args.organizations === undefined) {
     return (
-      <VortexAuthSurface
+      <ConvexAuthSurface
         title={title}
         description={description}
         eyebrow={args.eyebrow}
       >
-        <VortexAuthLoadingCard
+        <ConvexAuthLoadingCard
           title={args.loadingTitle ?? "Loading organizations"}
           description={
             args.loadingDescription ??
             "We're loading the workspaces attached to your account."
           }
         />
-      </VortexAuthSurface>
+      </ConvexAuthSurface>
     );
   }
 
   if (args.organizations.length === 0) {
     return (
-      <VortexAuthSurface
+      <ConvexAuthSurface
         title={title}
         description={description}
         eyebrow={args.eyebrow}
       >
-        <VortexAuthUnavailableCard
+        <ConvexAuthUnavailableCard
           title={args.emptyTitle ?? "No organizations available"}
           description={
             args.emptyDescription ??
             "Your account is authenticated but does not have a selectable organization yet."
           }
         />
-      </VortexAuthSurface>
+      </ConvexAuthSurface>
     );
   }
 
   return (
-    <VortexAuthSurface
+    <ConvexAuthSurface
       title={title}
       description={description}
       eyebrow={args.eyebrow}
     >
       <div className="space-y-3">
         {selectionFailed ? (
-          <VortexAuthUnavailableCard
+          <ConvexAuthUnavailableCard
             title={args.selectErrorTitle ?? "Unable to switch organization"}
             description={
               args.selectErrorDescription ??
@@ -1139,14 +1139,14 @@ export function VortexAuthOrganizationChooserPage(
           })}
         </div>
       </div>
-    </VortexAuthSurface>
+    </ConvexAuthSurface>
   );
 }
 
-function VortexAuthSurfaceFeatureItem({
+function ConvexAuthSurfaceFeatureItem({
   feature,
 }: {
-  feature: VortexAuthSurfaceFeature;
+  feature: ConvexAuthSurfaceFeature;
 }) {
   return (
     <li className="flex items-start gap-3">
@@ -1174,7 +1174,7 @@ function searchHasInvitationToken(currentSearch: string): boolean {
   return getInvitationToken(new URLSearchParams(currentSearch)) !== null;
 }
 
-function VortexAuthStatusCard({
+function ConvexAuthStatusCard({
   title,
   description,
   icon,
@@ -1220,7 +1220,7 @@ function useOnce(callback: (() => void) | undefined): void {
 }
 
 function useRuntimeUnavailableEffect(
-  authClient: VortexBetterAuthClient | null,
+  authClient: ConvexBetterAuthClient | null,
   callback: (() => void) | undefined
 ): void {
   const callbackRef = useRef(callback);

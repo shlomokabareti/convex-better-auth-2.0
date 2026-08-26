@@ -2009,7 +2009,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "query",
         "internal",
         {},
-        { component: "vortexAuth"; schemaVersion: number },
+        { component: "convexAuth"; schemaVersion: number },
         Name
       >;
     };

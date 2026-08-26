@@ -852,7 +852,7 @@ async function hashLoginHint(value: string): Promise<string> {
     normalized.length > 254 ||
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(normalized)
   ) {
-    throw new TypeError("Vortex user email is invalid");
+    throw new TypeError("Convex user email is invalid");
   }
   const digest = await crypto.subtle.digest(
     "SHA-256",

@@ -655,7 +655,7 @@ function resolveListLimit(limit: number | undefined): number {
  * Everything this needs already existed in the package and had never been assembled:
  * `by_key_prefix` finds the candidate, `hashApiKeySecret` + `timingSafeEqualString`
  * compare it. Without this, every consumer reimplements the hash-and-compare itself --
- * which is exactly what vortex-payments did, and how its own auth layer drifted.
+ * which is exactly what convex-payments did, and how its own auth layer drifted.
  *
  * Modelled on better-auth's `@better-auth/api-key` `verifyApiKey`, with one deliberate
  * difference: `environment` is a typed column here rather than free-form metadata,
@@ -832,7 +832,7 @@ function evaluateApiKeyLimits(
  *
  * Generation lives HERE rather than in each consumer because the format is part of the
  * auth contract: the prefix is what `verifyApiKey` indexes on, and a consumer that
- * invents its own layout silently breaks that lookup. vortex-payments generated
+ * invents its own layout silently breaks that lookup. convex-payments generated
  * `vb_test_*`/`vb_live_*` itself for exactly as long as it owned its own auth.
  *
  * The plaintext is returned ONCE and never stored -- `keyStart` keeps just enough of it
@@ -940,7 +940,7 @@ async function generateIssuedApiKeyMaterial(
  *
  * This is the issuance path for keys that belong to an organization with no human
  * attached -- an operator minting a merchant org's API key before that org has any
- * users (vortex-payments), or a service issuing for itself. Without it, a consumer in
+ * users (convex-payments), or a service issuing for itself. Without it, a consumer in
  * that position is pushed to `upsertServiceOwnedApiKey`, which accepts a caller-supplied
  * hash -- i.e. local key generation, the exact drift `verifyApiKey` exists to end.
  */

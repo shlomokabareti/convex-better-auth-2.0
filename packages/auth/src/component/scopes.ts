@@ -6,7 +6,7 @@
  * nothing. The blast radius of a leak stops being "what that key could do" and
  * becomes "everything, forever".
  *
- * The defence has to live at issuance, not at the route. vortex-payments closed
+ * The defence has to live at issuance, not at the route. convex-payments closed
  * its own instance of this by deleting the mint route outright (#132), but a
  * deleted route is a per-consumer fix that the next consumer will not inherit,
  * and re-adding the route silently restores the hole. Refusing the scope at the

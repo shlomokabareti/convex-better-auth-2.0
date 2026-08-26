@@ -74,15 +74,15 @@ type BetterAuthResponse = {
   // When two-factor is enabled for the account, sign-in does NOT
   // complete — Better Auth returns `data.twoFactorRedirect: true` and
   // sets a short-lived 2FA-pending cookie. Consumers check this flag to
-  // route into <VortexVerifyTwoFactorForm>. Absent on every non-2FA flow.
+  // route into <ConvexVerifyTwoFactorForm>. Absent on every non-2FA flow.
   //
   // The `& Record<string, unknown>` is load-bearing: the real Better
   // Auth `signIn.email` success payload carries `{ token, redirect, url,
   // … }`, so a narrow `{ twoFactorRedirect?: boolean }` would make the
-  // real client NON-assignable to VortexBetterAuthClient (every consumer
+  // real client NON-assignable to ConvexBetterAuthClient (every consumer
   // casts to this type). Keeping it open keeps the cast valid while
   // still surfacing the one field we care about. See the assignability
-  // proof in packages/vortex-auth (better-auth-client-contract.test.ts).
+  // proof in packages/convex-auth (better-auth-client-contract.test.ts).
   data?: ({ twoFactorRedirect?: boolean } & Record<string, unknown>) | null;
   error: {
     message?: string | null;
@@ -95,7 +95,7 @@ type BetterAuthConvexTokenResponse = {
   } | null;
 };
 
-export type VortexBetterAuthClient = {
+export type ConvexBetterAuthClient = {
   useSession(): BetterAuthSessionState;
   signOut(args?: {
     fetchOptions?: Omit<RequestInit, "body"> & { body?: never };
@@ -128,7 +128,7 @@ export type VortexBetterAuthClient = {
   // every consumer cast of this type provides them — the package's
   // session hooks return null/no-op if the methods are absent.
   listSessions?: () => Promise<{
-    data?: VortexAuthSessionListItem[] | null;
+    data?: ConvexAuthSessionListItem[] | null;
     error?: unknown;
   }>;
   revokeSession?: (args: { token: string }) => Promise<{
@@ -181,14 +181,14 @@ export type VortexBetterAuthClient = {
   // (the package's client factories add it automatically). Optional like
   // every other method group — hooks return a clear "not available"
   // error rather than crashing when it's absent.
-  twoFactor?: VortexBetterAuthTwoFactorApi;
+  twoFactor?: ConvexBetterAuthTwoFactorApi;
 };
 
 // Method shapes mirror Better Auth's `twoFactorClient` plugin exactly
 // (better-auth/plugins two-factor). `enable` returns the otpauth URI +
 // one-time backup codes; the user is NOT fully enrolled until a TOTP
 // code is confirmed via `verifyTotp`.
-export type VortexBetterAuthTwoFactorApi = {
+export type ConvexBetterAuthTwoFactorApi = {
   enable: (args: { password: string; issuer?: string }) => Promise<{
     data?: { totpURI: string; backupCodes: string[] } | null;
     error?: { message?: string | null } | null;
@@ -213,7 +213,7 @@ export type VortexBetterAuthTwoFactorApi = {
 
 // Public shape of one entry returned by listSessions. Mirrors
 // Better-Auth's Session row, minus internals consumers shouldn't depend on.
-export type VortexAuthSessionListItem = {
+export type ConvexAuthSessionListItem = {
   id: string;
   token: string;
   userId: string;
@@ -224,19 +224,19 @@ export type VortexAuthSessionListItem = {
   updatedAt: string | Date;
 };
 
-export type VortexAuthState = {
+export type ConvexAuthState = {
   isLoaded: boolean;
   isSignedIn: boolean;
 };
 
-export type VortexAuthSocialProvider = {
+export type ConvexAuthSocialProvider = {
   provider: string;
   label: string;
   icon?: ReactNode;
   disabled?: boolean;
 };
 
-export type VortexAuthUserState = {
+export type ConvexAuthUserState = {
   user: {
     id: string;
     username: string | null;
@@ -254,7 +254,7 @@ export type VortexAuthUserState = {
   isSignedIn: boolean;
 };
 
-export type VortexAuthRuntimeWindow = Window & {
+export type ConvexAuthRuntimeWindow = Window & {
   __authRuntime?: {
     getConvexToken: (args?: {
       forceRefreshToken?: boolean;
@@ -262,7 +262,7 @@ export type VortexAuthRuntimeWindow = Window & {
   };
 };
 
-export type VortexAuthCaptureException = (
+export type ConvexAuthCaptureException = (
   error: unknown,
   context?: {
     tags?: Record<string, string>;
@@ -272,7 +272,7 @@ export type VortexAuthCaptureException = (
 ) => void;
 
 export async function getBetterAuthConvexBearerToken(args: {
-  authClient?: Pick<VortexBetterAuthClient, "convex"> | null;
+  authClient?: Pick<ConvexBetterAuthClient, "convex"> | null;
   betterAuthBaseUrl?: string | null;
   fetchImpl?: typeof fetch;
   cachedToken?: string | null;
@@ -281,16 +281,16 @@ export async function getBetterAuthConvexBearerToken(args: {
   return await fetchBetterAuthConvexBearerToken(args);
 }
 
-export function VortexAuthRuntimeProvider(args: {
+export function ConvexAuthRuntimeProvider(args: {
   children: ReactNode;
   convex: ConvexClientLike;
-  authClient: VortexBetterAuthClient | null;
+  authClient: ConvexBetterAuthClient | null;
   betterAuthBaseUrl?: string | null;
   captureAuthEvent?: (
     eventName: string,
     properties: { surface: "runtime" } & Record<string, unknown>
   ) => void;
-  captureException?: VortexAuthCaptureException;
+  captureException?: ConvexAuthCaptureException;
   identityProvisioner?: ReactNode;
 }) {
   const runtimeTokenCache = useRef<ReturnType<
@@ -341,7 +341,7 @@ export function VortexAuthRuntimeProvider(args: {
       return undefined;
     }
 
-    const runtimeWindow = window as VortexAuthRuntimeWindow;
+    const runtimeWindow = window as ConvexAuthRuntimeWindow;
     runtimeWindow.__authRuntime = {
       getConvexToken: async (options) =>
         (await runtimeTokenCache.current?.getToken({
@@ -386,7 +386,7 @@ const SIGNED_OUT_RUNTIME_STATUS: AuthRuntimeStatus = {
 
 function ObservedAuthRuntimeStatusProvider(args: {
   children: ReactNode;
-  authClient: VortexBetterAuthClient;
+  authClient: ConvexBetterAuthClient;
   captureAuthEvent?: (
     eventName: string,
     properties: { surface: "runtime" } & Record<string, unknown>
@@ -487,9 +487,9 @@ function mapRuntimeReadiness(args: {
   return "convexReady";
 }
 
-export function useVortexAuth(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthState {
+export function useAuthState(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthState {
   if (authClient === null) {
     return {
       isLoaded: false,
@@ -504,9 +504,9 @@ export function useVortexAuth(
   };
 }
 
-export function useVortexAuthUser(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthUserState {
+export function useConvexAuthUser(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthUserState {
   if (authClient === null) {
     return {
       user: null,
@@ -535,8 +535,8 @@ export function useVortexAuthUser(
   };
 }
 
-export function getVortexAuthActions(args: {
-  authClient: VortexBetterAuthClient | null;
+export function getConvexAuthActions(args: {
+  authClient: ConvexBetterAuthClient | null;
   signInPath: string;
   signUpPath: string;
   assignLocation?: (url: string) => void;
@@ -582,7 +582,7 @@ export function getVortexAuthActions(args: {
 }
 
 export function toAuthProviderOptions(
-  socialProviders: readonly VortexAuthSocialProvider[] | undefined
+  socialProviders: readonly ConvexAuthSocialProvider[] | undefined
 ): readonly AuthProviderOption[] | undefined {
   if (socialProviders === undefined || socialProviders.length === 0) {
     return undefined;
@@ -596,14 +596,14 @@ export function toAuthProviderOptions(
 }
 
 export function AuthSignedInBoundary(args: {
-  auth: VortexAuthState;
+  auth: ConvexAuthState;
   children: ReactNode;
 }) {
   return args.auth.isSignedIn ? <>{args.children}</> : null;
 }
 
 export function AuthSignedOutBoundary(args: {
-  auth: VortexAuthState;
+  auth: ConvexAuthState;
   children: ReactNode;
 }) {
   return args.auth.isLoaded && !args.auth.isSignedIn ? (
@@ -612,28 +612,28 @@ export function AuthSignedOutBoundary(args: {
 }
 
 export function AuthLoadingBoundaryView(args: {
-  auth: VortexAuthState;
+  auth: ConvexAuthState;
   children: ReactNode;
 }) {
   return args.auth.isLoaded ? null : <>{args.children}</>;
 }
 
 export function AuthLoadedBoundaryView(args: {
-  auth: VortexAuthState;
+  auth: ConvexAuthState;
   children: ReactNode;
 }) {
   return args.auth.isLoaded ? <>{args.children}</> : null;
 }
 
 export function AuthFailedBoundaryView(args: {
-  authClient: VortexBetterAuthClient | null;
+  authClient: ConvexBetterAuthClient | null;
   children: ReactNode;
 }) {
   return args.authClient === null ? <>{args.children}</> : null;
 }
 
-export function VortexAuthSignInScreen(args: {
-  authClient: VortexBetterAuthClient | null;
+export function ConvexAuthSignInScreen(args: {
+  authClient: ConvexBetterAuthClient | null;
   signUpUrl: string;
   forceRedirectUrl: string;
   /** When set, AuthSignInForm renders a forgot-password link to this href. */
@@ -642,7 +642,7 @@ export function VortexAuthSignInScreen(args: {
   title?: string;
   missingConfigLabel?: string;
   classNames?: AuthFormClassNames;
-  socialProviders?: readonly VortexAuthSocialProvider[];
+  socialProviders?: readonly ConvexAuthSocialProvider[];
 }) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -665,7 +665,7 @@ export function VortexAuthSignInScreen(args: {
 
   if (twoFactorPending) {
     return (
-      <VortexInlineTwoFactorStepUp
+      <ConvexInlineTwoFactorStepUp
         authClient={authClient}
         onVerified={() => {
           if (typeof window !== "undefined") {
@@ -745,21 +745,21 @@ export function VortexAuthSignInScreen(args: {
   );
 }
 
-// Inline 2FA step-up rendered by VortexAuthSignInScreen when sign-in
+// Inline 2FA step-up rendered by ConvexAuthSignInScreen when sign-in
 // returns `twoFactorRedirect`. Lives here (not as the standalone
-// VortexVerifyTwoFactorForm) purely to avoid a circular import: the
+// ConvexVerifyTwoFactorForm) purely to avoid a circular import: the
 // standalone component imports this module's hooks, so this module
 // can't import it back. Behavior is identical — TOTP or backup code,
 // optional trust-device.
-function VortexInlineTwoFactorStepUp(args: {
-  authClient: VortexBetterAuthClient;
+function ConvexInlineTwoFactorStepUp(args: {
+  authClient: ConvexBetterAuthClient;
   onVerified: () => void;
 }) {
-  const { verifyTotp, isVerifying: isVerifyingTotp } = useVortexAuthVerifyTotp(
+  const { verifyTotp, isVerifying: isVerifyingTotp } = useConvexAuthVerifyTotp(
     args.authClient
   );
   const { verifyBackupCode, isVerifying: isVerifyingBackup } =
-    useVortexAuthVerifyBackupCode(args.authClient);
+    useConvexAuthVerifyBackupCode(args.authClient);
   const [mode, setMode] = useState<"totp" | "backup">("totp");
   const [code, setCode] = useState("");
   const [trustDevice, setTrustDevice] = useState(false);
@@ -796,11 +796,11 @@ function VortexInlineTwoFactorStepUp(args: {
           }}
         >
           <AuthField>
-            <AuthLabel htmlFor="vortex-signin-2fa-code">
+            <AuthLabel htmlFor="convex-signin-2fa-code">
               {mode === "totp" ? "Authentication code" : "Backup code"}
             </AuthLabel>
             <AuthInput
-              id="vortex-signin-2fa-code"
+              id="convex-signin-2fa-code"
               inputMode={mode === "totp" ? "numeric" : "text"}
               autoComplete="one-time-code"
               value={code}
@@ -838,15 +838,15 @@ function VortexInlineTwoFactorStepUp(args: {
   );
 }
 
-export function VortexAuthSignUpScreen(args: {
-  authClient: VortexBetterAuthClient | null;
+export function ConvexAuthSignUpScreen(args: {
+  authClient: ConvexBetterAuthClient | null;
   signInUrl: string;
   forceRedirectUrl: string;
   description?: string;
   title?: string;
   missingConfigLabel?: string;
   classNames?: AuthFormClassNames;
-  socialProviders?: readonly VortexAuthSocialProvider[];
+  socialProviders?: readonly ConvexAuthSocialProvider[];
 }) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -922,8 +922,8 @@ export function VortexAuthSignUpScreen(args: {
   );
 }
 
-export function VortexBetterAuthIdentityProvisioner(args: {
-  auth: VortexAuthState;
+export function ConvexBetterAuthIdentityProvisioner(args: {
+  auth: ConvexAuthState;
   currentUser: unknown;
   sessionSubject: string | null;
   provisionCurrentUser: () => Promise<unknown>;
@@ -966,22 +966,22 @@ export function VortexBetterAuthIdentityProvisioner(args: {
 // ── Session management hooks (PR A of #3) ─────────────────────────────
 //
 // Three hooks the package exposes to consumers AND that the upcoming
-// VortexSessionList + VortexProfileEditForm components consume
+// ConvexSessionList + ConvexProfileEditForm components consume
 // internally. Web-first; RN exports symmetric hooks via runtime.tsx.
 
-export type VortexAuthSessionListState = {
+export type ConvexAuthSessionListState = {
   /** All active sessions for the current user. null until loaded. */
-  sessions: VortexAuthSessionListItem[] | null;
+  sessions: ConvexAuthSessionListItem[] | null;
   isLoading: boolean;
   error: string | null;
   /** Re-fetch the list (e.g. after a revoke). */
   refetch: () => Promise<void>;
 };
 
-export function useVortexAuthSessionList(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthSessionListState {
-  const [sessions, setSessions] = useState<VortexAuthSessionListItem[] | null>(
+export function useConvexAuthSessionList(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthSessionListState {
+  const [sessions, setSessions] = useState<ConvexAuthSessionListItem[] | null>(
     null
   );
   const [isLoading, setIsLoading] = useState(true);
@@ -1023,7 +1023,7 @@ export function useVortexAuthSessionList(
   return { sessions, isLoading, error, refetch };
 }
 
-export type VortexAuthRevokeSessionState = {
+export type ConvexAuthRevokeSessionState = {
   revokeSession: (args: {
     token: string;
   }) => Promise<{ ok: boolean; error: string | null }>;
@@ -1031,9 +1031,9 @@ export type VortexAuthRevokeSessionState = {
   isRevoking: boolean;
 };
 
-export function useVortexAuthRevokeSession(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthRevokeSessionState {
+export function useConvexAuthRevokeSession(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthRevokeSessionState {
   const [isRevoking, setIsRevoking] = useState(false);
 
   const revokeSession = useCallback(
@@ -1098,7 +1098,7 @@ export function useVortexAuthRevokeSession(
   return { revokeSession, revokeOtherSessions, isRevoking };
 }
 
-export type VortexAuthUpdateProfileState = {
+export type ConvexAuthUpdateProfileState = {
   updateProfile: (args: {
     name?: string;
     image?: string;
@@ -1106,9 +1106,9 @@ export type VortexAuthUpdateProfileState = {
   isUpdating: boolean;
 };
 
-export function useVortexAuthUpdateProfile(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthUpdateProfileState {
+export function useConvexAuthUpdateProfile(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthUpdateProfileState {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const updateProfile = useCallback(
@@ -1147,10 +1147,10 @@ export function useVortexAuthUpdateProfile(
 
 // ---- Password-recovery hooks (PR D) ----
 
-export type VortexAuthForgotPasswordState = {
+export type ConvexAuthForgotPasswordState = {
   /**
    * Request a password-reset email. The token in the email links to a
-   * page that calls `useVortexAuthResetPassword().resetPassword(...)`.
+   * page that calls `useConvexAuthResetPassword().resetPassword(...)`.
    * `redirectTo` is the absolute URL of that reset page on this app.
    */
   requestReset: (args: {
@@ -1160,9 +1160,9 @@ export type VortexAuthForgotPasswordState = {
   isRequesting: boolean;
 };
 
-export function useVortexAuthForgotPassword(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthForgotPasswordState {
+export function useConvexAuthForgotPassword(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthForgotPasswordState {
   const [isRequesting, setIsRequesting] = useState(false);
 
   const requestReset = useCallback(
@@ -1199,7 +1199,7 @@ export function useVortexAuthForgotPassword(
   return { requestReset, isRequesting };
 }
 
-export type VortexAuthResetPasswordState = {
+export type ConvexAuthResetPasswordState = {
   /**
    * Complete a password reset using a token from the recovery email.
    * The token is typically in the URL search params on the reset page.
@@ -1211,9 +1211,9 @@ export type VortexAuthResetPasswordState = {
   isResetting: boolean;
 };
 
-export function useVortexAuthResetPassword(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthResetPasswordState {
+export function useConvexAuthResetPassword(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthResetPasswordState {
   const [isResetting, setIsResetting] = useState(false);
 
   const resetPassword = useCallback(
@@ -1252,24 +1252,24 @@ export function useVortexAuthResetPassword(
 
 // ---- Email-verification hooks ----
 
-export type VortexAuthVerifyEmailStatus =
+export type ConvexAuthVerifyEmailStatus =
   | "idle"
   | "verifying"
   | "verified"
   | "error";
 
-export type VortexAuthVerifyEmailState = {
-  status: VortexAuthVerifyEmailStatus;
+export type ConvexAuthVerifyEmailState = {
+  status: ConvexAuthVerifyEmailStatus;
   error: string | null;
   verifyEmail: (args: {
     token: string;
   }) => Promise<{ ok: boolean; error: string | null }>;
 };
 
-export function useVortexAuthVerifyEmail(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthVerifyEmailState {
-  const [status, setStatus] = useState<VortexAuthVerifyEmailStatus>("idle");
+export function useConvexAuthVerifyEmail(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthVerifyEmailState {
+  const [status, setStatus] = useState<ConvexAuthVerifyEmailStatus>("idle");
   const [error, setError] = useState<string | null>(null);
 
   const verifyEmail = useCallback(
@@ -1310,7 +1310,7 @@ export function useVortexAuthVerifyEmail(
   return { status, error, verifyEmail };
 }
 
-export type VortexAuthResendVerificationState = {
+export type ConvexAuthResendVerificationState = {
   resend: (args: {
     email: string;
     callbackURL?: string;
@@ -1318,9 +1318,9 @@ export type VortexAuthResendVerificationState = {
   isResending: boolean;
 };
 
-export function useVortexAuthResendVerification(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthResendVerificationState {
+export function useConvexAuthResendVerification(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthResendVerificationState {
   const [isResending, setIsResending] = useState(false);
 
   const resend = useCallback(
@@ -1359,7 +1359,7 @@ export function useVortexAuthResendVerification(
 
 // ---- Email-change hooks ----
 
-export type VortexAuthChangeEmailState = {
+export type ConvexAuthChangeEmailState = {
   requestChange: (args: {
     newEmail: string;
     callbackURL?: string;
@@ -1367,9 +1367,9 @@ export type VortexAuthChangeEmailState = {
   isRequesting: boolean;
 };
 
-export function useVortexAuthChangeEmail(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthChangeEmailState {
+export function useConvexAuthChangeEmail(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthChangeEmailState {
   const [isRequesting, setIsRequesting] = useState(false);
 
   const requestChange = useCallback(
@@ -1416,7 +1416,7 @@ export function useVortexAuthChangeEmail(
 // package keeps that wiring out of the auth surface so consumers
 // can swap storage without touching auth.
 
-export type VortexAuthUploadProfileImageState = {
+export type ConvexAuthUploadProfileImageState = {
   /**
    * Pick a file → upload via the provided strategy → write the
    * resulting URL onto the user's image. The whole flow flips a
@@ -1429,10 +1429,10 @@ export type VortexAuthUploadProfileImageState = {
   isUploading: boolean;
 };
 
-export function useVortexAuthUploadProfileImage(
-  authClient: VortexBetterAuthClient | null,
+export function useConvexAuthUploadProfileImage(
+  authClient: ConvexBetterAuthClient | null,
   options: { uploadFile: (file: File | Blob) => Promise<string> }
-): VortexAuthUploadProfileImageState {
+): ConvexAuthUploadProfileImageState {
   const [isUploading, setIsUploading] = useState(false);
   const { uploadFile } = options;
 
@@ -1486,7 +1486,7 @@ export function useVortexAuthUploadProfileImage(
 const TWO_FACTOR_UNAVAILABLE =
   "Two-factor authentication is not available on this auth client";
 
-export type VortexAuthEnableTwoFactorResult = {
+export type ConvexAuthEnableTwoFactorResult = {
   ok: boolean;
   /** otpauth:// URI to render as a QR code. null on failure. */
   totpURI: string | null;
@@ -1495,22 +1495,22 @@ export type VortexAuthEnableTwoFactorResult = {
   error: string | null;
 };
 
-export type VortexAuthEnableTwoFactorState = {
+export type ConvexAuthEnableTwoFactorState = {
   /**
    * Begin enrollment: re-authenticates with the password, then returns
    * the otpauth URI + backup codes. 2FA is not yet active — the user
-   * must confirm a TOTP code via `useVortexAuthVerifyTotp` first.
+   * must confirm a TOTP code via `useConvexAuthVerifyTotp` first.
    */
   enable: (args: {
     password: string;
     issuer?: string;
-  }) => Promise<VortexAuthEnableTwoFactorResult>;
+  }) => Promise<ConvexAuthEnableTwoFactorResult>;
   isEnabling: boolean;
 };
 
-export function useVortexAuthEnableTwoFactor(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthEnableTwoFactorState {
+export function useConvexAuthEnableTwoFactor(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthEnableTwoFactorState {
   const [isEnabling, setIsEnabling] = useState(false);
 
   const enable = useCallback(
@@ -1558,7 +1558,7 @@ export function useVortexAuthEnableTwoFactor(
   return { enable, isEnabling };
 }
 
-export type VortexAuthVerifyTotpState = {
+export type ConvexAuthVerifyTotpState = {
   /**
    * Confirm a 6-digit TOTP code. Used BOTH to finish enrollment and to
    * satisfy the 2FA step-up during sign-in. `trustDevice` skips 2FA on
@@ -1571,9 +1571,9 @@ export type VortexAuthVerifyTotpState = {
   isVerifying: boolean;
 };
 
-export function useVortexAuthVerifyTotp(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthVerifyTotpState {
+export function useConvexAuthVerifyTotp(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthVerifyTotpState {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const verifyTotp = useCallback(
@@ -1603,7 +1603,7 @@ export function useVortexAuthVerifyTotp(
   return { verifyTotp, isVerifying };
 }
 
-export type VortexAuthVerifyBackupCodeState = {
+export type ConvexAuthVerifyBackupCodeState = {
   /** Satisfy 2FA step-up with a one-time backup code instead of TOTP. */
   verifyBackupCode: (args: {
     code: string;
@@ -1612,9 +1612,9 @@ export type VortexAuthVerifyBackupCodeState = {
   isVerifying: boolean;
 };
 
-export function useVortexAuthVerifyBackupCode(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthVerifyBackupCodeState {
+export function useConvexAuthVerifyBackupCode(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthVerifyBackupCodeState {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const verifyBackupCode = useCallback(
@@ -1647,7 +1647,7 @@ export function useVortexAuthVerifyBackupCode(
   return { verifyBackupCode, isVerifying };
 }
 
-export type VortexAuthDisableTwoFactorState = {
+export type ConvexAuthDisableTwoFactorState = {
   /** Turn 2FA off. Requires re-authentication with the password. */
   disable: (args: {
     password: string;
@@ -1655,9 +1655,9 @@ export type VortexAuthDisableTwoFactorState = {
   isDisabling: boolean;
 };
 
-export function useVortexAuthDisableTwoFactor(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthDisableTwoFactorState {
+export function useConvexAuthDisableTwoFactor(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthDisableTwoFactorState {
   const [isDisabling, setIsDisabling] = useState(false);
 
   const disable = useCallback(
@@ -1691,7 +1691,7 @@ export function useVortexAuthDisableTwoFactor(
   return { disable, isDisabling };
 }
 
-export type VortexAuthGenerateBackupCodesState = {
+export type ConvexAuthGenerateBackupCodesState = {
   /**
    * Regenerate the one-time recovery codes (invalidates the old set).
    * Requires re-authentication with the password.
@@ -1704,9 +1704,9 @@ export type VortexAuthGenerateBackupCodesState = {
   isGenerating: boolean;
 };
 
-export function useVortexAuthGenerateBackupCodes(
-  authClient: VortexBetterAuthClient | null
-): VortexAuthGenerateBackupCodesState {
+export function useConvexAuthGenerateBackupCodes(
+  authClient: ConvexBetterAuthClient | null
+): ConvexAuthGenerateBackupCodesState {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateBackupCodes = useCallback(

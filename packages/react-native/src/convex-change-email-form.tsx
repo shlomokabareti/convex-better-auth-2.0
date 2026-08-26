@@ -1,10 +1,10 @@
 /**
- * VortexChangeEmailForm (RN) — drop-in change-email form for Expo
+ * ConvexChangeEmailForm (RN) — drop-in change-email form for Expo
  * consumers. Mirrors the web component.
  *
  * Consumer usage:
- *   <VortexChangeEmailForm
- *     authClient={vortexAuth.authClient}
+ *   <ConvexChangeEmailForm
+ *     authClient={convexAuth.authClient}
  *     currentEmail={user?.email ?? null}
  *     verifyCallbackUrl="pile://verify-email"
  *   />
@@ -21,10 +21,10 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { VortexExpoBetterAuthClient } from "./client";
-import { useVortexExpoAuthChangeEmail } from "./runtime";
+import type { ExpoBetterAuthClient } from "./client";
+import { useExpoAuthChangeEmail } from "./runtime";
 
-export type VortexExpoChangeEmailFormStyles = {
+export type ExpoChangeEmailFormStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -39,7 +39,7 @@ export type VortexExpoChangeEmailFormStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoChangeEmailFormCopy = {
+export type ExpoChangeEmailFormCopy = {
   title?: string;
   description?: string;
   currentEmailLabel?: string;
@@ -52,16 +52,16 @@ export type VortexExpoChangeEmailFormCopy = {
   sameAsCurrentMessage?: string;
 };
 
-export type VortexExpoChangeEmailFormProps = {
-  authClient: VortexExpoBetterAuthClient | null;
+export type ExpoChangeEmailFormProps = {
+  authClient: ExpoBetterAuthClient | null;
   currentEmail?: string | null;
   verifyCallbackUrl?: string;
-  styles?: VortexExpoChangeEmailFormStyles;
-  copy?: VortexExpoChangeEmailFormCopy;
+  styles?: ExpoChangeEmailFormStyles;
+  copy?: ExpoChangeEmailFormCopy;
   onRequested?: (newEmail: string) => void;
 };
 
-const DEFAULT_COPY: Required<VortexExpoChangeEmailFormCopy> = {
+const DEFAULT_COPY: Required<ExpoChangeEmailFormCopy> = {
   title: "Change email",
   description: "We'll send a confirmation link to the new address.",
   currentEmailLabel: "Current email",
@@ -75,10 +75,10 @@ const DEFAULT_COPY: Required<VortexExpoChangeEmailFormCopy> = {
   sameAsCurrentMessage: "New email is the same as your current email.",
 };
 
-export function VortexChangeEmailForm(props: VortexExpoChangeEmailFormProps) {
+export function ConvexChangeEmailForm(props: ExpoChangeEmailFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { requestChange, isRequesting } = useVortexExpoAuthChangeEmail(
+  const { requestChange, isRequesting } = useExpoAuthChangeEmail(
     props.authClient
   );
   const [newEmail, setNewEmail] = useState("");

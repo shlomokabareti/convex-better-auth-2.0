@@ -1,12 +1,12 @@
 /**
  * Suite organization security policy (VOR-183).
  *
- * Stored on the vortex-auth organization as `metadataJson.security` so every
+ * Stored on the convex-auth organization as `metadataJson.security` so every
  * consumer reads/writes the same shape. Seal-only API IP allowlist /
  * allowApiAccess stay on the consumer org row.
  */
 
-export type VortexOrganizationSecurity = {
+export type ConvexOrganizationSecurity = {
   /** When true, members must have account TOTP enabled to use this org. */
   requireMfa?: boolean;
   /**
@@ -49,11 +49,11 @@ function optionalTimeoutMinutes(value: unknown): number | undefined {
 
 function parseSecurityObject(
   value: unknown
-): VortexOrganizationSecurity | undefined {
+): ConvexOrganizationSecurity | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
-  const security: VortexOrganizationSecurity = {
+  const security: ConvexOrganizationSecurity = {
     ...(optionalBoolean(value.requireMfa) !== undefined
       ? { requireMfa: optionalBoolean(value.requireMfa) }
       : {}),
@@ -73,7 +73,7 @@ function parseSecurityObject(
  */
 export function parseOrganizationSecurityFromMetadataJson(
   metadataJson: string | null | undefined
-): VortexOrganizationSecurity | undefined {
+): ConvexOrganizationSecurity | undefined {
   if (!metadataJson || metadataJson.trim() === "") {
     return undefined;
   }
@@ -90,16 +90,16 @@ export function parseOrganizationSecurityFromMetadataJson(
   }
 }
 
-export type VortexOrganizationSecurityUpdate = {
+export type ConvexOrganizationSecurityUpdate = {
   requireMfa?: boolean | null;
   sessionTimeoutMinutes?: number | null;
 };
 
 function applySecurityUpdate(
-  current: VortexOrganizationSecurity | undefined,
-  update: VortexOrganizationSecurityUpdate
-): VortexOrganizationSecurity | undefined {
-  const next: VortexOrganizationSecurity = { ...current };
+  current: ConvexOrganizationSecurity | undefined,
+  update: ConvexOrganizationSecurityUpdate
+): ConvexOrganizationSecurity | undefined {
+  const next: ConvexOrganizationSecurity = { ...current };
 
   if ("requireMfa" in update) {
     if (update.requireMfa === null || update.requireMfa === undefined) {
@@ -136,7 +136,7 @@ function applySecurityUpdate(
  */
 export function mergeOrganizationSecurityIntoMetadataJson(
   metadataJson: string | null | undefined,
-  securityUpdate: VortexOrganizationSecurityUpdate
+  securityUpdate: ConvexOrganizationSecurityUpdate
 ): string | undefined {
   let base: MetadataRecord = {};
   if (metadataJson && metadataJson.trim() !== "") {

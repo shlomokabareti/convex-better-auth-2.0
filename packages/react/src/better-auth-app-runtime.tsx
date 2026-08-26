@@ -3,34 +3,34 @@ import type { FunctionReference } from "convex/server";
 import { useCallback, useEffect, useMemo, type ReactNode } from "react";
 
 import type {
-  VortexAuthEventCapture,
-  VortexAuthPendingFlow,
-  VortexAuthPendingFlowState,
+  ConvexAuthEventCapture,
+  ConvexAuthPendingFlow,
+  ConvexAuthPendingFlowState,
 } from "./auth-flow";
 import {
-  VortexAuthAcceptInvitePage,
-  VortexAuthOrganizationChooserPage,
-  VortexAuthPostSignUpPage,
-  VortexAuthSignInPage,
-  VortexAuthSignUpPage,
-  type VortexAuthInviteExceptionEvent,
-  type VortexAuthInviteFailureEvent,
-  type VortexAuthInviteOpenedEvent,
-  type VortexAuthInviteRedirectedEvent,
+  ConvexAuthAcceptInvitePage,
+  ConvexAuthOrganizationChooserPage,
+  ConvexAuthPostSignUpPage,
+  ConvexAuthSignInPage,
+  ConvexAuthSignUpPage,
+  type ConvexAuthInviteExceptionEvent,
+  type ConvexAuthInviteFailureEvent,
+  type ConvexAuthInviteOpenedEvent,
+  type ConvexAuthInviteRedirectedEvent,
 } from "./auth-pages";
 import {
   AuthSignedInBoundary,
   AuthSignedOutBoundary,
-  getVortexAuthActions,
-  useVortexAuth,
-  useVortexAuthUser,
-  VortexBetterAuthIdentityProvisioner,
-  VortexAuthRuntimeProvider,
-  type VortexAuthCaptureException,
-  type VortexAuthSocialProvider,
-  type VortexBetterAuthClient,
-  type VortexAuthState,
-  type VortexAuthUserState,
+  getConvexAuthActions,
+  useAuthState,
+  useConvexAuthUser,
+  ConvexBetterAuthIdentityProvisioner,
+  ConvexAuthRuntimeProvider,
+  type ConvexAuthCaptureException,
+  type ConvexAuthSocialProvider,
+  type ConvexBetterAuthClient,
+  type ConvexAuthState,
+  type ConvexAuthUserState,
 } from "./better-auth-runtime";
 import { getAfterSignUpPath } from "./invite-sign-up";
 import { useGuardedProtectedWrite } from "./protected-writes";
@@ -43,21 +43,21 @@ type ConvexClientLike = {
 };
 
 type EmptyArgs = Record<string, never>;
-type PendingAuthFlow = VortexAuthPendingFlow;
+type PendingAuthFlow = ConvexAuthPendingFlow;
 
 type NavigateTo = (args: {
   to: string;
   replace?: boolean;
 }) => void | Promise<void>;
 
-type CaptureAuthEvent = VortexAuthEventCapture;
+type CaptureAuthEvent = ConvexAuthEventCapture;
 
 type MarkPendingAuthFlow = (
   flow: PendingAuthFlow,
-  state?: VortexAuthPendingFlowState
+  state?: ConvexAuthPendingFlowState
 ) => void;
 
-type CaptureException = VortexAuthCaptureException;
+type CaptureException = ConvexAuthCaptureException;
 
 type CurrentOrganizationRecord = {
   _id: string;
@@ -77,9 +77,9 @@ type InvitationLookupResult = {
   status?: string | null;
 } | null;
 
-export type VortexBetterAuthConvexIdentityProvisionerProps = {
-  auth: VortexAuthState;
-  authClient: VortexBetterAuthClient | null;
+export type ConvexBetterAuthConvexIdentityProvisionerProps = {
+  auth: ConvexAuthState;
+  authClient: ConvexBetterAuthClient | null;
   getCurrentUser: FunctionReference<"query", "public", EmptyArgs, unknown>;
   provisionCurrentUser: FunctionReference<
     "mutation",
@@ -89,12 +89,12 @@ export type VortexBetterAuthConvexIdentityProvisionerProps = {
   >;
 };
 
-export type VortexBetterAuthRuntimeConvexIdentityProvisionerProps = Omit<
-  VortexBetterAuthConvexIdentityProvisionerProps,
+export type ConvexBetterAuthRuntimeConvexIdentityProvisionerProps = Omit<
+  ConvexBetterAuthConvexIdentityProvisionerProps,
   "auth" | "authClient"
 >;
 
-export type VortexBetterAuthRuntimeCopy = {
+export type ConvexBetterAuthRuntimeCopy = {
   signInTitle?: string;
   signInDescription?: string;
   signInUnavailableTitle?: string;
@@ -105,7 +105,7 @@ export type VortexBetterAuthRuntimeCopy = {
   signUpUnavailableDescription?: string;
 };
 
-export type VortexBetterAuthSignInRoutePageProps = {
+export type ConvexBetterAuthSignInRoutePageProps = {
   signUpPath: string;
   postSignInPath: string;
   /** When set, sign-in form renders a forgot-password link to this href. */
@@ -115,7 +115,7 @@ export type VortexBetterAuthSignInRoutePageProps = {
   captureException?: CaptureException;
 };
 
-export type VortexBetterAuthSignUpRoutePageProps = {
+export type ConvexBetterAuthSignUpRoutePageProps = {
   signInPath: string;
   postSignUpPath: string;
   markPendingAuthFlow?: MarkPendingAuthFlow;
@@ -123,7 +123,7 @@ export type VortexBetterAuthSignUpRoutePageProps = {
   captureAuthEvent?: CaptureAuthEvent;
 };
 
-export type VortexBetterAuthAcceptInviteRoutePageProps = {
+export type ConvexBetterAuthAcceptInviteRoutePageProps = {
   getInvitationByToken: FunctionReference<
     "action",
     "public",
@@ -141,7 +141,7 @@ export type VortexBetterAuthAcceptInviteRoutePageProps = {
   eyebrow?: string;
 };
 
-export type VortexBetterAuthPostSignUpRoutePageProps = {
+export type ConvexBetterAuthPostSignUpRoutePageProps = {
   getDefaultOrganization: FunctionReference<
     "query",
     "public",
@@ -180,7 +180,7 @@ export type VortexBetterAuthPostSignUpRoutePageProps = {
   timeoutMs?: number;
 };
 
-export type VortexBetterAuthOrganizationChooserRoutePageProps = {
+export type ConvexBetterAuthOrganizationChooserRoutePageProps = {
   getDefaultOrganization: FunctionReference<
     "query",
     "public",
@@ -209,12 +209,12 @@ export type VortexBetterAuthOrganizationChooserRoutePageProps = {
   emptyDescription?: string;
 };
 
-export type VortexBetterAuthAuthenticatedRouteGateRenderArgs = {
+export type ConvexBetterAuthAuthenticatedRouteGateRenderArgs = {
   organization: CurrentOrganizationRecord | null;
   isPostSignUpRoute: boolean;
 };
 
-export type VortexBetterAuthAuthenticatedRouteGateProps = {
+export type ConvexBetterAuthAuthenticatedRouteGateProps = {
   getDefaultOrganization: FunctionReference<
     "query",
     "public",
@@ -227,7 +227,7 @@ export type VortexBetterAuthAuthenticatedRouteGateProps = {
   postSignUpPath: string;
   navigate: NavigateTo;
   children: (
-    args: VortexBetterAuthAuthenticatedRouteGateRenderArgs
+    args: ConvexBetterAuthAuthenticatedRouteGateRenderArgs
   ) => ReactNode;
   renderLoading: () => ReactNode;
   renderOrganizationRequired: (args: {
@@ -241,34 +241,34 @@ export type VortexBetterAuthAuthenticatedRouteGateProps = {
   toSafeRedirectPath?: (url: string) => string | undefined;
 };
 
-type VortexBetterAuthRuntimeCreateArgs = {
-  authClient: VortexBetterAuthClient | null;
+type ConvexBetterAuthRuntimeCreateArgs = {
+  authClient: ConvexBetterAuthClient | null;
   betterAuthBaseUrl?: string | null;
   captureAuthEvent?: CaptureAuthEvent;
   captureException?: CaptureException;
   signInPath: string;
   signUpPath: string;
-  copy?: VortexBetterAuthRuntimeCopy;
-  socialProviders?: readonly VortexAuthSocialProvider[];
+  copy?: ConvexBetterAuthRuntimeCopy;
+  socialProviders?: readonly ConvexAuthSocialProvider[];
 };
 
-type VortexBetterAuthRuntimeHooks = ReturnType<
-  typeof createVortexBetterAuthRuntimeHooks
+type ConvexBetterAuthRuntimeHooks = ReturnType<
+  typeof createConvexBetterAuthRuntimeHooks
 >;
-type VortexBetterAuthRuntimeScreens = ReturnType<
-  typeof createVortexBetterAuthRuntimeScreens
+type ConvexBetterAuthRuntimeScreens = ReturnType<
+  typeof createConvexBetterAuthRuntimeScreens
 >;
 
-export function createVortexBetterAuthRuntime(
-  args: VortexBetterAuthRuntimeCreateArgs
+export function createConvexBetterAuthRuntime(
+  args: ConvexBetterAuthRuntimeCreateArgs
 ) {
-  const hooks = createVortexBetterAuthRuntimeHooks(args);
-  const providers = createVortexBetterAuthProviderComponents(args, hooks);
-  const screens = createVortexBetterAuthRuntimeScreens(args, hooks);
-  const entryRoutes = createVortexBetterAuthEntryRoutePages(hooks, screens);
-  const workspaceRoutes = createVortexBetterAuthWorkspaceRoutePages();
+  const hooks = createConvexBetterAuthRuntimeHooks(args);
+  const providers = createConvexBetterAuthProviderComponents(args, hooks);
+  const screens = createConvexBetterAuthRuntimeScreens(args, hooks);
+  const entryRoutes = createConvexBetterAuthEntryRoutePages(hooks, screens);
+  const workspaceRoutes = createConvexBetterAuthWorkspaceRoutePages();
   const AuthenticatedRouteGate =
-    createVortexBetterAuthAuthenticatedRouteGate(hooks);
+    createConvexBetterAuthAuthenticatedRouteGate(hooks);
 
   return {
     AuthRuntimeProvider: providers.RuntimeProvider,
@@ -293,19 +293,19 @@ export function createVortexBetterAuthRuntime(
   };
 }
 
-function createVortexBetterAuthRuntimeHooks(
-  args: VortexBetterAuthRuntimeCreateArgs
+function createConvexBetterAuthRuntimeHooks(
+  args: ConvexBetterAuthRuntimeCreateArgs
 ) {
   function useAuth() {
-    return useVortexAuth(args.authClient);
+    return useAuthState(args.authClient);
   }
 
-  function useUser(): VortexAuthUserState {
-    return useVortexAuthUser(args.authClient);
+  function useUser(): ConvexAuthUserState {
+    return useConvexAuthUser(args.authClient);
   }
 
   function useAuthActions() {
-    return getVortexAuthActions({
+    return getConvexAuthActions({
       authClient: args.authClient,
       signInPath: args.signInPath,
       signUpPath: args.signUpPath,
@@ -315,9 +315,9 @@ function createVortexBetterAuthRuntimeHooks(
   return { useAuth, useAuthActions, useUser };
 }
 
-function createVortexBetterAuthProviderComponents(
-  args: VortexBetterAuthRuntimeCreateArgs,
-  hooks: VortexBetterAuthRuntimeHooks
+function createConvexBetterAuthProviderComponents(
+  args: ConvexBetterAuthRuntimeCreateArgs,
+  hooks: ConvexBetterAuthRuntimeHooks
 ) {
   function RuntimeProvider(props: {
     children: ReactNode;
@@ -325,7 +325,7 @@ function createVortexBetterAuthProviderComponents(
     identityProvisioner?: ReactNode;
   }) {
     return (
-      <VortexAuthRuntimeProvider
+      <ConvexAuthRuntimeProvider
         authClient={args.authClient}
         betterAuthBaseUrl={args.betterAuthBaseUrl}
         captureAuthEvent={args.captureAuthEvent}
@@ -334,7 +334,7 @@ function createVortexBetterAuthProviderComponents(
         identityProvisioner={props.identityProvisioner}
       >
         {props.children}
-      </VortexAuthRuntimeProvider>
+      </ConvexAuthRuntimeProvider>
     );
   }
 
@@ -355,10 +355,10 @@ function createVortexBetterAuthProviderComponents(
   }
 
   function RuntimeConvexIdentityProvisioner(
-    props: VortexBetterAuthRuntimeConvexIdentityProvisionerProps
+    props: ConvexBetterAuthRuntimeConvexIdentityProvisionerProps
   ) {
     return (
-      <VortexBetterAuthConvexIdentityProvisioner
+      <ConvexBetterAuthConvexIdentityProvisioner
         auth={hooks.useAuth()}
         authClient={args.authClient}
         getCurrentUser={props.getCurrentUser}
@@ -375,9 +375,9 @@ function createVortexBetterAuthProviderComponents(
   };
 }
 
-function createVortexBetterAuthRuntimeScreens(
-  args: VortexBetterAuthRuntimeCreateArgs,
-  hooks: VortexBetterAuthRuntimeHooks
+function createConvexBetterAuthRuntimeScreens(
+  args: ConvexBetterAuthRuntimeCreateArgs,
+  hooks: ConvexBetterAuthRuntimeHooks
 ) {
   function SignInScreen(props: {
     signUpUrl: string;
@@ -387,7 +387,7 @@ function createVortexBetterAuthRuntimeScreens(
     onRuntimeUnavailable?: () => void;
   }) {
     return (
-      <VortexAuthSignInPage
+      <ConvexAuthSignInPage
         auth={hooks.useAuth()}
         authClient={args.authClient}
         description={args.copy?.signInDescription}
@@ -411,7 +411,7 @@ function createVortexBetterAuthRuntimeScreens(
     onRuntimeUnavailable?: () => void;
   }) {
     return (
-      <VortexAuthSignUpPage
+      <ConvexAuthSignUpPage
         auth={hooks.useAuth()}
         authClient={args.authClient}
         description={args.copy?.signUpDescription}
@@ -430,11 +430,11 @@ function createVortexBetterAuthRuntimeScreens(
   return { SignInScreen, SignUpScreen };
 }
 
-function createVortexBetterAuthEntryRoutePages(
-  hooks: VortexBetterAuthRuntimeHooks,
-  screens: VortexBetterAuthRuntimeScreens
+function createConvexBetterAuthEntryRoutePages(
+  hooks: ConvexBetterAuthRuntimeHooks,
+  screens: ConvexBetterAuthRuntimeScreens
 ) {
-  const SignInRoutePage = (props: VortexBetterAuthSignInRoutePageProps) => {
+  const SignInRoutePage = (props: ConvexBetterAuthSignInRoutePageProps) => {
     const Screen = screens.SignInScreen;
     return (
       <Screen
@@ -460,7 +460,7 @@ function createVortexBetterAuthEntryRoutePages(
     );
   };
 
-  const SignUpRoutePage = (props: VortexBetterAuthSignUpRoutePageProps) => {
+  const SignUpRoutePage = (props: ConvexBetterAuthSignUpRoutePageProps) => {
     const Screen = screens.SignUpScreen;
     const redirectPath = useMemo(() => {
       if (typeof window === "undefined") {
@@ -487,14 +487,14 @@ function createVortexBetterAuthEntryRoutePages(
   };
 
   function AcceptInviteRoutePage(
-    props: VortexBetterAuthAcceptInviteRoutePageProps
+    props: ConvexBetterAuthAcceptInviteRoutePageProps
   ) {
     const { redirectToSignIn, buildSignUpUrl } = hooks.useAuthActions();
     const getInvitation = useAction(props.getInvitationByToken);
     const getInviteEmailAddress = useInviteEmailAddress(getInvitation);
 
     return (
-      <VortexAuthAcceptInvitePage
+      <ConvexAuthAcceptInvitePage
         buildSignUpUrl={buildSignUpUrl}
         redirectToSignIn={redirectToSignIn}
         signInPath={props.signInPath}
@@ -548,9 +548,9 @@ function useInviteEmailAddress(
   );
 }
 
-function createVortexBetterAuthWorkspaceRoutePages() {
+function createConvexBetterAuthWorkspaceRoutePages() {
   function PostSignUpRoutePage(
-    props: VortexBetterAuthPostSignUpRoutePageProps
+    props: ConvexBetterAuthPostSignUpRoutePageProps
   ) {
     const currentOrganization = useQuery(props.getDefaultOrganization, {});
     const availableOrganizations = useQuery(
@@ -570,7 +570,7 @@ function createVortexBetterAuthWorkspaceRoutePages() {
     useSignUpSuccessCapture(props);
 
     return (
-      <VortexAuthPostSignUpPage
+      <ConvexAuthPostSignUpPage
         currentOrganization={currentOrganization}
         availableOrganizations={availableOrganizations}
         invitationToken={invitationToken}
@@ -589,7 +589,7 @@ function createVortexBetterAuthWorkspaceRoutePages() {
   }
 
   function OrganizationChooserRoutePage(
-    props: VortexBetterAuthOrganizationChooserRoutePageProps
+    props: ConvexBetterAuthOrganizationChooserRoutePageProps
   ) {
     const currentOrganization = useQuery(props.getDefaultOrganization, {});
     const organizations = useQuery(props.getAvailableOrganizations, {});
@@ -600,7 +600,7 @@ function createVortexBetterAuthWorkspaceRoutePages() {
     useOrganizationChooserOpenedCapture(props);
 
     return (
-      <VortexAuthOrganizationChooserPage
+      <ConvexAuthOrganizationChooserPage
         currentOrganization={currentOrganization}
         organizations={organizations}
         onSelectOrganization={async (item) => {
@@ -636,7 +636,7 @@ function useInvitationToken(): string | null {
 }
 
 function useCurrentOrganizationReadyHandler(
-  props: VortexBetterAuthPostSignUpRoutePageProps
+  props: ConvexBetterAuthPostSignUpRoutePageProps
 ) {
   const { clearPendingPostSignUpSync, navigate, postSignInPath } = props;
 
@@ -647,7 +647,7 @@ function useCurrentOrganizationReadyHandler(
 }
 
 function useSignUpSuccessCapture(
-  props: VortexBetterAuthPostSignUpRoutePageProps
+  props: ConvexBetterAuthPostSignUpRoutePageProps
 ): void {
   const { captureAuthEvent, consumePendingAuthFlow, postSignInPath } = props;
 
@@ -663,14 +663,14 @@ function useSignUpSuccessCapture(
 }
 
 function openOrganizationSetup(
-  props: VortexBetterAuthPostSignUpRoutePageProps
+  props: ConvexBetterAuthPostSignUpRoutePageProps
 ): void {
   props.clearPendingPostSignUpSync?.();
   void props.navigate({ to: props.chooseOrganizationPath });
 }
 
 function useOrganizationChooserOpenedCapture(
-  props: VortexBetterAuthOrganizationChooserRoutePageProps
+  props: ConvexBetterAuthOrganizationChooserRoutePageProps
 ): void {
   const { captureAuthEvent, markPendingAuthFlow, postChooseOrganizationPath } =
     props;
@@ -686,11 +686,11 @@ function useOrganizationChooserOpenedCapture(
   }, [captureAuthEvent, markPendingAuthFlow, postChooseOrganizationPath]);
 }
 
-function createVortexBetterAuthAuthenticatedRouteGate(
-  hooks: VortexBetterAuthRuntimeHooks
+function createConvexBetterAuthAuthenticatedRouteGate(
+  hooks: ConvexBetterAuthRuntimeHooks
 ) {
   function AuthenticatedRouteGate(
-    props: VortexBetterAuthAuthenticatedRouteGateProps
+    props: ConvexBetterAuthAuthenticatedRouteGateProps
   ) {
     const auth = hooks.useAuth();
     const organization = useQuery(
@@ -720,8 +720,8 @@ function createVortexBetterAuthAuthenticatedRouteGate(
 }
 
 function createAuthenticatedRouteState(
-  props: VortexBetterAuthAuthenticatedRouteGateProps,
-  auth: VortexAuthState,
+  props: ConvexBetterAuthAuthenticatedRouteGateProps,
+  auth: ConvexAuthState,
   organization: CurrentOrganizationRecord | null | undefined
 ) {
   const isPostSignUpRoute = props.pathname.startsWith(props.postSignUpPath);
@@ -733,13 +733,13 @@ function createAuthenticatedRouteState(
   return {
     isOrganizationLoading,
     isPostSignUpRoute,
-    showLoading: shouldShowVortexAuthenticatedRouteLoading({
+    showLoading: shouldShowConvexAuthenticatedRouteLoading({
       isAuthLoaded: auth.isLoaded,
       isOrganizationLoading,
       isPostSignUpRoute,
     }),
     showOrganizationRequired:
-      shouldShowVortexAuthenticatedRouteOrganizationRequired({
+      shouldShowConvexAuthenticatedRouteOrganizationRequired({
         hasOrganization: Boolean(organization),
         isChooseOrganizationRoute,
         isPostSignUpRoute,
@@ -748,8 +748,8 @@ function createAuthenticatedRouteState(
 }
 
 function useSignedOutRedirectEffect(
-  props: VortexBetterAuthAuthenticatedRouteGateProps,
-  auth: VortexAuthState
+  props: ConvexBetterAuthAuthenticatedRouteGateProps,
+  auth: ConvexAuthState
 ): void {
   const { navigate, signInPath } = props;
 
@@ -761,8 +761,8 @@ function useSignedOutRedirectEffect(
 }
 
 function useAuthenticatedRouteSuccessCapture(
-  props: VortexBetterAuthAuthenticatedRouteGateProps,
-  auth: VortexAuthState,
+  props: ConvexBetterAuthAuthenticatedRouteGateProps,
+  auth: ConvexAuthState,
   organization: CurrentOrganizationRecord | null | undefined,
   routeState: ReturnType<typeof createAuthenticatedRouteState>
 ): void {
@@ -776,7 +776,7 @@ function useAuthenticatedRouteSuccessCapture(
 
   useEffect(() => {
     if (
-      !shouldCaptureVortexAuthenticatedRouteSuccess({
+      !shouldCaptureConvexAuthenticatedRouteSuccess({
         isAuthLoaded: auth.isLoaded,
         isSignedIn: auth.isSignedIn,
         isOrganizationLoading,
@@ -808,7 +808,7 @@ function useAuthenticatedRouteSuccessCapture(
 
 function captureAuthenticatedRouteSuccess(
   props: Pick<
-    VortexBetterAuthAuthenticatedRouteGateProps,
+    ConvexBetterAuthAuthenticatedRouteGateProps,
     | "captureAuthEvent"
     | "consumePendingAuthFlow"
     | "pathname"
@@ -842,8 +842,8 @@ function captureAuthenticatedRouteSuccess(
   });
 }
 
-export function VortexBetterAuthConvexIdentityProvisioner(
-  args: VortexBetterAuthConvexIdentityProvisionerProps
+export function ConvexBetterAuthConvexIdentityProvisioner(
+  args: ConvexBetterAuthConvexIdentityProvisionerProps
 ) {
   const currentUser = useQuery(
     args.getCurrentUser,
@@ -855,7 +855,7 @@ export function VortexBetterAuthConvexIdentityProvisioner(
   const session = args.authClient?.useSession();
 
   return (
-    <VortexBetterAuthIdentityProvisioner
+    <ConvexBetterAuthIdentityProvisioner
       auth={args.auth}
       currentUser={currentUser}
       provisionCurrentUser={async () => await provisionMutation({})}
@@ -866,7 +866,7 @@ export function VortexBetterAuthConvexIdentityProvisioner(
 
 function captureInviteOpenedEvent(
   captureAuthEvent: CaptureAuthEvent | undefined,
-  event: VortexAuthInviteOpenedEvent
+  event: ConvexAuthInviteOpenedEvent
 ) {
   captureAuthEvent?.("auth_invite_opened", {
     surface: "invite",
@@ -877,7 +877,7 @@ function captureInviteOpenedEvent(
 
 function captureInviteRedirectedEvent(
   captureAuthEvent: CaptureAuthEvent | undefined,
-  event: VortexAuthInviteRedirectedEvent
+  event: ConvexAuthInviteRedirectedEvent
 ) {
   captureAuthEvent?.("auth_invite_redirected", {
     surface: "invite",
@@ -888,7 +888,7 @@ function captureInviteRedirectedEvent(
 
 function captureInviteFailedEvent(
   captureAuthEvent: CaptureAuthEvent | undefined,
-  event: VortexAuthInviteFailureEvent
+  event: ConvexAuthInviteFailureEvent
 ) {
   captureAuthEvent?.("auth_invite_failed", {
     surface: "invite",
@@ -900,7 +900,7 @@ function captureInviteFailedEvent(
 
 function captureInviteException(
   captureException: CaptureException | undefined,
-  event: VortexAuthInviteExceptionEvent
+  event: ConvexAuthInviteExceptionEvent
 ) {
   captureException?.(event.error, {
     tags: {
@@ -934,7 +934,7 @@ function isRedeemableInvitationLookupResult(
   return typeof result.expiresAt !== "number" || result.expiresAt > Date.now();
 }
 
-export function shouldShowVortexAuthenticatedRouteOrganizationRequired(args: {
+export function shouldShowConvexAuthenticatedRouteOrganizationRequired(args: {
   hasOrganization: boolean;
   isChooseOrganizationRoute: boolean;
   isPostSignUpRoute: boolean;
@@ -946,7 +946,7 @@ export function shouldShowVortexAuthenticatedRouteOrganizationRequired(args: {
   );
 }
 
-export function shouldShowVortexAuthenticatedRouteLoading(args: {
+export function shouldShowConvexAuthenticatedRouteLoading(args: {
   isAuthLoaded: boolean;
   isOrganizationLoading: boolean;
   isPostSignUpRoute: boolean;
@@ -957,7 +957,7 @@ export function shouldShowVortexAuthenticatedRouteLoading(args: {
   );
 }
 
-export function shouldCaptureVortexAuthenticatedRouteSuccess(args: {
+export function shouldCaptureConvexAuthenticatedRouteSuccess(args: {
   isAuthLoaded: boolean;
   isSignedIn: boolean;
   isOrganizationLoading: boolean;
@@ -965,7 +965,7 @@ export function shouldCaptureVortexAuthenticatedRouteSuccess(args: {
   return args.isAuthLoaded && args.isSignedIn && !args.isOrganizationLoading;
 }
 
-export function getVortexAuthenticatedRouteRedirectPath(args: {
+export function getConvexAuthenticatedRouteRedirectPath(args: {
   pathname: string;
   search?: string;
   hash?: string;
@@ -978,7 +978,7 @@ function getBrowserCurrentRedirectPath(fallbackPathname: string): string {
     return fallbackPathname;
   }
 
-  return getVortexAuthenticatedRouteRedirectPath({
+  return getConvexAuthenticatedRouteRedirectPath({
     pathname: window.location.pathname,
     search: window.location.search,
     hash: window.location.hash,

@@ -1,12 +1,12 @@
 /**
- * VortexVerifyTwoFactorForm (RN) — drop-in 2FA step-up for sign-in.
+ * ConvexVerifyTwoFactorForm (RN) — drop-in 2FA step-up for sign-in.
  * Mirrors the web component: when `signIn.email` returns
  * `data.twoFactorRedirect`, render this to collect a TOTP code (default)
  * or a one-time backup code, then call `onVerified`.
  *
  * Consumer usage:
- *   <VortexVerifyTwoFactorForm
- *     authClient={vortexAuth.authClient}
+ *   <ConvexVerifyTwoFactorForm
+ *     authClient={convexAuth.authClient}
  *     onVerified={() => router.replace('/app')}
  *   />
  */
@@ -23,13 +23,13 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { VortexExpoBetterAuthClient } from "./client";
+import type { ExpoBetterAuthClient } from "./client";
 import {
-  useVortexExpoAuthVerifyBackupCode,
-  useVortexExpoAuthVerifyTotp,
+  useExpoAuthVerifyBackupCode,
+  useExpoAuthVerifyTotp,
 } from "./runtime";
 
-export type VortexExpoVerifyTwoFactorFormStyles = {
+export type ExpoVerifyTwoFactorFormStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -46,7 +46,7 @@ export type VortexExpoVerifyTwoFactorFormStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoVerifyTwoFactorFormCopy = {
+export type ExpoVerifyTwoFactorFormCopy = {
   title?: string;
   description?: string;
   codeLabel?: string;
@@ -61,15 +61,15 @@ export type VortexExpoVerifyTwoFactorFormCopy = {
   unavailable?: string;
 };
 
-export type VortexExpoVerifyTwoFactorFormProps = {
-  authClient: VortexExpoBetterAuthClient | null;
+export type ExpoVerifyTwoFactorFormProps = {
+  authClient: ExpoBetterAuthClient | null;
   showTrustDevice?: boolean;
-  styles?: VortexExpoVerifyTwoFactorFormStyles;
-  copy?: VortexExpoVerifyTwoFactorFormCopy;
+  styles?: ExpoVerifyTwoFactorFormStyles;
+  copy?: ExpoVerifyTwoFactorFormCopy;
   onVerified?: () => void;
 };
 
-const DEFAULT_COPY: Required<VortexExpoVerifyTwoFactorFormCopy> = {
+const DEFAULT_COPY: Required<ExpoVerifyTwoFactorFormCopy> = {
   title: "Two-factor authentication",
   description: "Enter the 6-digit code from your authenticator app.",
   codeLabel: "Authentication code",
@@ -87,17 +87,17 @@ const DEFAULT_COPY: Required<VortexExpoVerifyTwoFactorFormCopy> = {
 
 type Mode = "totp" | "backup";
 
-export function VortexVerifyTwoFactorForm(
-  props: VortexExpoVerifyTwoFactorFormProps
+export function ConvexVerifyTwoFactorForm(
+  props: ExpoVerifyTwoFactorFormProps
 ) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const showTrustDevice = props.showTrustDevice ?? true;
 
   const { verifyTotp, isVerifying: isVerifyingTotp } =
-    useVortexExpoAuthVerifyTotp(props.authClient);
+    useExpoAuthVerifyTotp(props.authClient);
   const { verifyBackupCode, isVerifying: isVerifyingBackup } =
-    useVortexExpoAuthVerifyBackupCode(props.authClient);
+    useExpoAuthVerifyBackupCode(props.authClient);
 
   const [mode, setMode] = useState<Mode>("totp");
   const [code, setCode] = useState("");

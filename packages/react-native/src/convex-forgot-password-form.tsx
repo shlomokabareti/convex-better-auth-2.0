@@ -1,10 +1,10 @@
 /**
- * VortexForgotPasswordForm (RN) — drop-in "request a password reset
+ * ConvexForgotPasswordForm (RN) — drop-in "request a password reset
  * email" form for Expo consumers. Mirrors the web component's API.
  *
  * Consumer usage:
- *   <VortexForgotPasswordForm
- *     authClient={vortexAuth.authClient}
+ *   <ConvexForgotPasswordForm
+ *     authClient={convexAuth.authClient}
  *     resetPasswordUrl="pile://reset-password"
  *   />
  *
@@ -23,10 +23,10 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { VortexExpoBetterAuthClient } from "./client";
-import { useVortexExpoAuthForgotPassword } from "./runtime";
+import type { ExpoBetterAuthClient } from "./client";
+import { useExpoAuthForgotPassword } from "./runtime";
 
-export type VortexExpoForgotPasswordFormStyles = {
+export type ExpoForgotPasswordFormStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -40,7 +40,7 @@ export type VortexExpoForgotPasswordFormStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoForgotPasswordFormCopy = {
+export type ExpoForgotPasswordFormCopy = {
   title?: string;
   description?: string;
   emailLabel?: string;
@@ -51,15 +51,15 @@ export type VortexExpoForgotPasswordFormCopy = {
   unavailable?: string;
 };
 
-export type VortexExpoForgotPasswordFormProps = {
-  authClient: VortexExpoBetterAuthClient | null;
+export type ExpoForgotPasswordFormProps = {
+  authClient: ExpoBetterAuthClient | null;
   resetPasswordUrl: string;
-  styles?: VortexExpoForgotPasswordFormStyles;
-  copy?: VortexExpoForgotPasswordFormCopy;
+  styles?: ExpoForgotPasswordFormStyles;
+  copy?: ExpoForgotPasswordFormCopy;
   onRequested?: (email: string) => void;
 };
 
-const DEFAULT_COPY: Required<VortexExpoForgotPasswordFormCopy> = {
+const DEFAULT_COPY: Required<ExpoForgotPasswordFormCopy> = {
   title: "Forgot your password?",
   description: "Enter your email and we'll send you a reset link.",
   emailLabel: "Email",
@@ -71,12 +71,12 @@ const DEFAULT_COPY: Required<VortexExpoForgotPasswordFormCopy> = {
   unavailable: "Password recovery is not available on this auth client.",
 };
 
-export function VortexForgotPasswordForm(
-  props: VortexExpoForgotPasswordFormProps
+export function ConvexForgotPasswordForm(
+  props: ExpoForgotPasswordFormProps
 ) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { requestReset, isRequesting } = useVortexExpoAuthForgotPassword(
+  const { requestReset, isRequesting } = useExpoAuthForgotPassword(
     props.authClient
   );
   const [email, setEmail] = useState("");

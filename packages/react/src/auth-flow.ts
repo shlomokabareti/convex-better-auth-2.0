@@ -5,31 +5,31 @@ import {
   type PostSignUpStorageLike,
 } from "./post-sign-up";
 
-export type VortexAuthEventSurface =
+export type ConvexAuthEventSurface =
   | "sign-in"
   | "sign-up"
   | "invite"
   | "choose-organization"
   | "runtime";
 
-export type VortexAuthPendingFlow =
+export type ConvexAuthPendingFlow =
   | "sign-in"
   | "sign-up"
   | "choose-organization";
 
-export type VortexAuthPendingFlowState = {
+export type ConvexAuthPendingFlowState = {
   redirectPath?: string;
 };
 
-export type VortexAuthStorageLike = PostSignUpStorageLike &
+export type ConvexAuthStorageLike = PostSignUpStorageLike &
   Pick<Storage, "getItem" | "removeItem" | "setItem">;
 
-export type VortexAuthEventCapture = (
+export type ConvexAuthEventCapture = (
   eventName: string,
-  properties: { surface: VortexAuthEventSurface } & Record<string, unknown>
+  properties: { surface: ConvexAuthEventSurface } & Record<string, unknown>
 ) => void;
 
-export type VortexAuthRoutePaths = {
+export type ConvexAuthRoutePaths = {
   signInPath: string;
   signUpPath: string;
   acceptInvitePath: string;
@@ -38,14 +38,14 @@ export type VortexAuthRoutePaths = {
   chooseOrganizationPath: string;
 };
 
-export type VortexAuthFlowStorage = {
+export type ConvexAuthFlowStorage = {
   markPendingAuthFlow: (
-    flow: VortexAuthPendingFlow,
-    state?: VortexAuthPendingFlowState
+    flow: ConvexAuthPendingFlow,
+    state?: ConvexAuthPendingFlowState
   ) => void;
   consumePendingAuthFlow: (
-    flow: VortexAuthPendingFlow
-  ) => VortexAuthPendingFlowState | null;
+    flow: ConvexAuthPendingFlow
+  ) => ConvexAuthPendingFlowState | null;
   markPendingPostSignUpSync: () => void;
   clearPendingPostSignUpSync: () => void;
   toSafeRedirectPath: (
@@ -60,35 +60,35 @@ export const VORTEX_AUTH_DEFAULT_ROUTE_PATHS = {
   postSignInPath: "/app",
   postSignUpPath: "/post-sign-up",
   chooseOrganizationPath: "/onboarding/choose-organization",
-} as const satisfies VortexAuthRoutePaths;
+} as const satisfies ConvexAuthRoutePaths;
 
-const DEFAULT_STORAGE_KEY_PREFIX = "vortex.auth";
+const DEFAULT_STORAGE_KEY_PREFIX = "convex.auth";
 
-export function createVortexAuthRoutePaths(
-  overrides: Partial<VortexAuthRoutePaths> = {}
-): VortexAuthRoutePaths {
+export function createConvexAuthRoutePaths(
+  overrides: Partial<ConvexAuthRoutePaths> = {}
+): ConvexAuthRoutePaths {
   return {
     ...VORTEX_AUTH_DEFAULT_ROUTE_PATHS,
     ...overrides,
   };
 }
 
-export function createVortexAuthFlowStorage(
+export function createConvexAuthFlowStorage(
   args: {
-    storage?: VortexAuthStorageLike;
+    storage?: ConvexAuthStorageLike;
     storageKeyPrefix?: string;
     currentOrigin?: string;
   } = {}
-): VortexAuthFlowStorage {
+): ConvexAuthFlowStorage {
   const storageKeyPrefix = args.storageKeyPrefix ?? DEFAULT_STORAGE_KEY_PREFIX;
 
-  function getStorage(): VortexAuthStorageLike | undefined {
+  function getStorage(): ConvexAuthStorageLike | undefined {
     return args.storage ?? getBrowserSessionStorage();
   }
 
   return {
     markPendingAuthFlow(flow, state = {}) {
-      markVortexPendingAuthFlow({
+      markConvexPendingAuthFlow({
         flow,
         state,
         storage: getStorage(),
@@ -96,7 +96,7 @@ export function createVortexAuthFlowStorage(
       });
     },
     consumePendingAuthFlow(flow) {
-      return consumeVortexPendingAuthFlow({
+      return consumeConvexPendingAuthFlow({
         flow,
         storage: getStorage(),
         storageKeyPrefix,
@@ -105,34 +105,34 @@ export function createVortexAuthFlowStorage(
     markPendingPostSignUpSync() {
       markPendingPostSignUpSyncStorage({
         storage: getStorage(),
-        pendingKey: getVortexPendingPostSignUpStorageKey(storageKeyPrefix),
+        pendingKey: getConvexPendingPostSignUpStorageKey(storageKeyPrefix),
       });
     },
     clearPendingPostSignUpSync() {
       clearPendingPostSignUpSyncStorage({
         storage: getStorage(),
-        pendingKey: getVortexPendingPostSignUpStorageKey(storageKeyPrefix),
-        failureKey: getVortexPostSignUpFailureStorageKey(storageKeyPrefix),
+        pendingKey: getConvexPendingPostSignUpStorageKey(storageKeyPrefix),
+        failureKey: getConvexPostSignUpFailureStorageKey(storageKeyPrefix),
       });
     },
     toSafeRedirectPath(redirectUrl) {
-      return toSafeVortexRedirectPath(redirectUrl, args.currentOrigin);
+      return toSafeConvexRedirectPath(redirectUrl, args.currentOrigin);
     },
   };
 }
 
-export function createVortexAuthEventCapture(
+export function createConvexAuthEventCapture(
   captureEvent: (
     eventName: string,
-    properties: { surface: VortexAuthEventSurface } & Record<string, unknown>
+    properties: { surface: ConvexAuthEventSurface } & Record<string, unknown>
   ) => void
-): VortexAuthEventCapture {
+): ConvexAuthEventCapture {
   return (eventName, properties) => {
     captureEvent(eventName, properties);
   };
 }
 
-export function toSafeVortexRedirectPath(
+export function toSafeConvexRedirectPath(
   redirectUrl: string | null | undefined,
   currentOrigin = getBrowserOrigin()
 ): string | undefined {
@@ -163,38 +163,38 @@ export function toSafeVortexRedirectPath(
   }
 }
 
-export function getVortexPendingAuthFlowStorageKey(args: {
-  flow: VortexAuthPendingFlow;
+export function getConvexPendingAuthFlowStorageKey(args: {
+  flow: ConvexAuthPendingFlow;
   storageKeyPrefix?: string;
 }): string {
   return `${args.storageKeyPrefix ?? DEFAULT_STORAGE_KEY_PREFIX}.pending.${args.flow}`;
 }
 
-export function getVortexPendingPostSignUpStorageKey(
+export function getConvexPendingPostSignUpStorageKey(
   storageKeyPrefix?: string
 ): string {
   return `${storageKeyPrefix ?? DEFAULT_STORAGE_KEY_PREFIX}.pending-post-sign-up`;
 }
 
-export function getVortexPostSignUpFailureStorageKey(
+export function getConvexPostSignUpFailureStorageKey(
   storageKeyPrefix?: string
 ): string {
   return `${storageKeyPrefix ?? DEFAULT_STORAGE_KEY_PREFIX}.post-sign-up-failure`;
 }
 
-function markVortexPendingAuthFlow(args: {
-  flow: VortexAuthPendingFlow;
-  state: VortexAuthPendingFlowState;
-  storage?: VortexAuthStorageLike;
+function markConvexPendingAuthFlow(args: {
+  flow: ConvexAuthPendingFlow;
+  state: ConvexAuthPendingFlowState;
+  storage?: ConvexAuthStorageLike;
   storageKeyPrefix?: string;
 }): void {
-  const payload: VortexAuthPendingFlowState = {};
+  const payload: ConvexAuthPendingFlowState = {};
   if (args.state.redirectPath) {
     payload.redirectPath = args.state.redirectPath;
   }
 
   args.storage?.setItem(
-    getVortexPendingAuthFlowStorageKey({
+    getConvexPendingAuthFlowStorageKey({
       flow: args.flow,
       storageKeyPrefix: args.storageKeyPrefix,
     }),
@@ -202,12 +202,12 @@ function markVortexPendingAuthFlow(args: {
   );
 }
 
-function consumeVortexPendingAuthFlow(args: {
-  flow: VortexAuthPendingFlow;
-  storage?: VortexAuthStorageLike;
+function consumeConvexPendingAuthFlow(args: {
+  flow: ConvexAuthPendingFlow;
+  storage?: ConvexAuthStorageLike;
   storageKeyPrefix?: string;
-}): VortexAuthPendingFlowState | null {
-  const storageKey = getVortexPendingAuthFlowStorageKey({
+}): ConvexAuthPendingFlowState | null {
+  const storageKey = getConvexPendingAuthFlowStorageKey({
     flow: args.flow,
     storageKeyPrefix: args.storageKeyPrefix,
   });

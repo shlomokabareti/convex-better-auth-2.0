@@ -1,10 +1,10 @@
 /**
- * VortexResetPasswordForm (RN) — drop-in "set a new password" form
+ * ConvexResetPasswordForm (RN) — drop-in "set a new password" form
  * for Expo consumers. Mirrors the web component's API.
  *
  * Consumer usage (on the screen the deep-link points at):
- *   <VortexResetPasswordForm
- *     authClient={vortexAuth.authClient}
+ *   <ConvexResetPasswordForm
+ *     authClient={convexAuth.authClient}
  *     token={tokenFromDeepLink}
  *     onReset={() => router.replace('/sign-in')}
  *   />
@@ -21,10 +21,10 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { VortexExpoBetterAuthClient } from "./client";
-import { useVortexExpoAuthResetPassword } from "./runtime";
+import type { ExpoBetterAuthClient } from "./client";
+import { useExpoAuthResetPassword } from "./runtime";
 
-export type VortexExpoResetPasswordFormStyles = {
+export type ExpoResetPasswordFormStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -38,7 +38,7 @@ export type VortexExpoResetPasswordFormStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoResetPasswordFormCopy = {
+export type ExpoResetPasswordFormCopy = {
   title?: string;
   description?: string;
   passwordLabel?: string;
@@ -52,16 +52,16 @@ export type VortexExpoResetPasswordFormCopy = {
   minLengthMessage?: string;
 };
 
-export type VortexExpoResetPasswordFormProps = {
-  authClient: VortexExpoBetterAuthClient | null;
+export type ExpoResetPasswordFormProps = {
+  authClient: ExpoBetterAuthClient | null;
   token: string;
   minPasswordLength?: number;
-  styles?: VortexExpoResetPasswordFormStyles;
-  copy?: VortexExpoResetPasswordFormCopy;
+  styles?: ExpoResetPasswordFormStyles;
+  copy?: ExpoResetPasswordFormCopy;
   onReset?: () => void;
 };
 
-const DEFAULT_COPY: Required<VortexExpoResetPasswordFormCopy> = {
+const DEFAULT_COPY: Required<ExpoResetPasswordFormCopy> = {
   title: "Set a new password",
   description: "Pick something you'll remember this time.",
   passwordLabel: "New password",
@@ -77,13 +77,13 @@ const DEFAULT_COPY: Required<VortexExpoResetPasswordFormCopy> = {
   minLengthMessage: "Password is too short.",
 };
 
-export function VortexResetPasswordForm(
-  props: VortexExpoResetPasswordFormProps
+export function ConvexResetPasswordForm(
+  props: ExpoResetPasswordFormProps
 ) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const minLength = props.minPasswordLength ?? 12;
-  const { resetPassword, isResetting } = useVortexExpoAuthResetPassword(
+  const { resetPassword, isResetting } = useExpoAuthResetPassword(
     props.authClient
   );
   const [password, setPassword] = useState("");

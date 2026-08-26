@@ -164,7 +164,7 @@ function verifyTemporalAndAudience(
     throw new Error("JWT issued-at time is too far in the future");
   }
   if (claims.exp - claims.iat > maxLifetimeSeconds) {
-    throw new Error("JWT lifetime exceeds the Vortex server profile");
+    throw new Error("JWT lifetime exceeds the Convex server profile");
   }
   return {
     clockSkewSeconds,

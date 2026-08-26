@@ -3,7 +3,7 @@ import { useCallback, type KeyboardEvent } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
-export type VortexOrgListOrganization = {
+export type ConvexOrgListOrganization = {
   _id: string;
   name: string;
   slug?: string;
@@ -11,7 +11,7 @@ export type VortexOrgListOrganization = {
   roleKey?: string;
 };
 
-export type VortexOrgListInvitation = {
+export type ConvexOrgListInvitation = {
   _id: string;
   organizationName: string;
   organizationImageUrl?: string;
@@ -20,7 +20,7 @@ export type VortexOrgListInvitation = {
   expiresAt?: number;
 };
 
-export type VortexOrgListClassNames = {
+export type ConvexOrgListClassNames = {
   card?: string;
   header?: string;
   title?: string;
@@ -42,7 +42,7 @@ export type VortexOrgListClassNames = {
   emptyState?: string;
 };
 
-export type VortexOrgListCopy = {
+export type ConvexOrgListCopy = {
   title?: string;
   description?: string;
   membershipsLabel?: string;
@@ -57,12 +57,12 @@ export type VortexOrgListCopy = {
   expiresLabel?: string;
 };
 
-export type VortexOrgListProps = {
-  organizations: readonly VortexOrgListOrganization[];
-  invitations?: readonly VortexOrgListInvitation[];
+export type ConvexOrgListProps = {
+  organizations: readonly ConvexOrgListOrganization[];
+  invitations?: readonly ConvexOrgListInvitation[];
   currentOrganizationId?: string | null;
-  classNames?: VortexOrgListClassNames;
-  copy?: VortexOrgListCopy;
+  classNames?: ConvexOrgListClassNames;
+  copy?: ConvexOrgListCopy;
   isLoading?: boolean;
   onSelectOrganization: (organizationId: string) => void | Promise<void>;
   onAcceptInvitation?: (invitationId: string) => void | Promise<void>;
@@ -73,7 +73,7 @@ export type VortexOrgListProps = {
 
 // ─── Default copy ──────────────────────────────────────────────────────────
 
-const defaultCopy: Required<VortexOrgListCopy> = {
+const defaultCopy: Required<ConvexOrgListCopy> = {
   title: "Workspaces",
   description: "Select a workspace or manage invitations.",
   membershipsLabel: "Your workspaces",
@@ -89,8 +89,8 @@ const defaultCopy: Required<VortexOrgListCopy> = {
 };
 
 function resolveCopy(
-  copy: VortexOrgListCopy | undefined
-): Required<VortexOrgListCopy> {
+  copy: ConvexOrgListCopy | undefined
+): Required<ConvexOrgListCopy> {
   return { ...defaultCopy, ...copy };
 }
 
@@ -108,7 +108,7 @@ function formatDate(ts?: number): string {
 
 // ─── Component ────────────────────────────────────────────────────────────
 
-export function VortexOrganizationList(props: VortexOrgListProps) {
+export function ConvexOrganizationList(props: ConvexOrgListProps) {
   const {
     organizations,
     invitations = [],
@@ -192,10 +192,10 @@ export function VortexOrganizationList(props: VortexOrgListProps) {
   );
 }
 
-type ResolvedOrgListCopy = Required<VortexOrgListCopy>;
+type ResolvedOrgListCopy = Required<ConvexOrgListCopy>;
 
 function OrganizationListHeader(args: {
-  classNames?: VortexOrgListClassNames;
+  classNames?: ConvexOrgListClassNames;
   copy: ResolvedOrgListCopy;
 }) {
   return (
@@ -216,12 +216,12 @@ function OrganizationListHeader(args: {
 }
 
 function OrganizationMembershipSection(args: {
-  classNames?: VortexOrgListClassNames;
+  classNames?: ConvexOrgListClassNames;
   copy: ResolvedOrgListCopy;
   currentOrganizationId?: string | null;
   isLoading?: boolean;
   onSelect: (organizationId: string) => void;
-  organizations: readonly VortexOrgListOrganization[];
+  organizations: readonly ConvexOrgListOrganization[];
 }) {
   return (
     <>
@@ -256,12 +256,12 @@ function OrganizationMembershipSection(args: {
 }
 
 function OrganizationRow(args: {
-  classNames?: VortexOrgListClassNames;
+  classNames?: ConvexOrgListClassNames;
   copy: ResolvedOrgListCopy;
   isCurrent: boolean;
   isLoading?: boolean;
   onSelect: (organizationId: string) => void;
-  organization: VortexOrgListOrganization;
+  organization: ConvexOrgListOrganization;
 }) {
   const { classNames, isCurrent, organization } = args;
   const select = () => {
@@ -334,7 +334,7 @@ function handleOrganizationRowKeyDown(
 }
 
 function OrganizationAvatar(args: {
-  classNames?: VortexOrgListClassNames;
+  classNames?: ConvexOrgListClassNames;
   imageUrl?: string;
   name: string;
 }) {
@@ -360,7 +360,7 @@ function OrganizationAvatar(args: {
 }
 
 function CreateOrganizationButton(args: {
-  classNames?: VortexOrgListClassNames;
+  classNames?: ConvexOrgListClassNames;
   copy: ResolvedOrgListCopy;
   isLoading?: boolean;
   onCreate: () => void;
@@ -386,9 +386,9 @@ function CreateOrganizationButton(args: {
 }
 
 function InvitationsSection(args: {
-  classNames?: VortexOrgListClassNames;
+  classNames?: ConvexOrgListClassNames;
   copy: ResolvedOrgListCopy;
-  invitations: readonly VortexOrgListInvitation[];
+  invitations: readonly ConvexOrgListInvitation[];
   isLoading?: boolean;
   onAccept: (invitationId: string) => void;
   onReject: (invitationId: string) => void;
@@ -428,9 +428,9 @@ function InvitationsSection(args: {
 }
 
 function InvitationRow(args: {
-  classNames?: VortexOrgListClassNames;
+  classNames?: ConvexOrgListClassNames;
   copy: ResolvedOrgListCopy;
-  invitation: VortexOrgListInvitation;
+  invitation: ConvexOrgListInvitation;
   isLoading?: boolean;
   onAccept: (invitationId: string) => void;
   onReject: (invitationId: string) => void;
@@ -487,7 +487,7 @@ function InvitationRow(args: {
 }
 
 function formatInvitationMeta(
-  invitation: VortexOrgListInvitation,
+  invitation: ConvexOrgListInvitation,
   copy: ResolvedOrgListCopy
 ): string {
   const role = invitation.roleKey ?? "";
@@ -525,7 +525,7 @@ function InvitationActionButton(args: {
 }
 
 function EmptyState(args: {
-  classNames?: VortexOrgListClassNames;
+  classNames?: ConvexOrgListClassNames;
   label: string;
 }) {
   return (

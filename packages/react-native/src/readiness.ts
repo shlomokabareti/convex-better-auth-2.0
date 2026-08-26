@@ -1,19 +1,19 @@
 import type { AuthRuntimeStatus } from "convex-better-auth";
 
-export type VortexExpoSessionState = {
+export type ExpoSessionState = {
   data?: unknown;
   error?: unknown;
   isPending: boolean;
 };
 
-export type VortexExpoConvexAuthState = {
+export type ExpoConvexAuthState = {
   isAuthenticated: boolean;
   isLoading: boolean;
 };
 
-export function mapVortexExpoAuthReadiness(args: {
-  convex: VortexExpoConvexAuthState;
-  session: VortexExpoSessionState;
+export function mapExpoAuthReadiness(args: {
+  convex: ExpoConvexAuthState;
+  session: ExpoSessionState;
 }): AuthRuntimeStatus {
   const providerAuthenticated =
     args.session.data !== null && args.session.data !== undefined;

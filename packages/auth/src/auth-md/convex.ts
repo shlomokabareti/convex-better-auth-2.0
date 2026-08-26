@@ -6,7 +6,7 @@ import type {
   GenericQueryCtx,
 } from "convex/server";
 
-import type { ComponentApi as VortexAuthComponentApi } from "../component/_generated/component";
+import type { ComponentApi as ConvexAuthComponentApi } from "../component/_generated/component";
 import {
   AUTH_MD_CLAIM_ENDPOINT_PATH,
   AUTH_MD_CLAIM_GRANT,
@@ -34,7 +34,7 @@ const BETTER_AUTH_IDENTITY_PROVIDER = "better-auth";
 /**
  * Exactly the component functions this runtime calls -- not three whole namespaces.
  *
- * The broader `Pick<VortexAuthComponentApi, "authMd"|"identity"|"mcp">` obliged every
+ * The broader `Pick<ConvexAuthComponentApi, "authMd"|"identity"|"mcp">` obliged every
  * caller and every test double to supply all 23 functions in those namespaces to satisfy
  * a runtime that uses 10, which is why the harness had to cast. Narrowing it makes a
  * complete double possible by construction, and adding a component function no longer
@@ -43,14 +43,14 @@ const BETTER_AUTH_IDENTITY_PROVIDER = "better-auth";
 /**
  * Exactly the component functions this runtime calls, at either visibility.
  *
- * Two things were wrong with `Pick<VortexAuthComponentApi, "authMd"|"identity"|"mcp">`.
+ * Two things were wrong with `Pick<ConvexAuthComponentApi, "authMd"|"identity"|"mcp">`.
  * It obliged every caller to supply all 23 functions in those namespaces for a runtime
  * that uses 10. And it pinned visibility to `"internal"` -- how a HOST sees a mounted
  * component -- which made the component's own `api` (public inside the component)
  * unassignable, so in-package tests had to fake references and cast.
  *
  * The runtime only ever passes these to `runQuery`/`runMutation`; visibility is not
- * something it can act on. Accepting either lets a host pass `components.vortexAuth`
+ * something it can act on. Accepting either lets a host pass `components.convexAuth`
  * and a test pass the real `api`, with no cast at either end. Argument and return
  * types still come from the generated API, so drift is still a compile error.
  */
@@ -71,7 +71,7 @@ type PickedRefs<Namespace, Keys extends keyof Namespace> = {
 
 export type AuthMdServiceAuthComponentHandle = {
   readonly authMd: PickedRefs<
-    VortexAuthComponentApi["authMd"],
+    ConvexAuthComponentApi["authMd"],
     | "registerServiceAuth"
     | "completeServiceAuthClaim"
     | "pollServiceAuthClaim"
@@ -82,11 +82,11 @@ export type AuthMdServiceAuthComponentHandle = {
     | "revokeServiceAuthRegistration"
   >;
   readonly identity: PickedRefs<
-    VortexAuthComponentApi["identity"],
+    ConvexAuthComponentApi["identity"],
     "getByIdentity"
   >;
   readonly mcp: PickedRefs<
-    VortexAuthComponentApi["mcp"],
+    ConvexAuthComponentApi["mcp"],
     "getSigningKey" | "listSigningKeys"
   >;
 };
@@ -456,10 +456,10 @@ async function requireAuthenticatedComponentUser(
 ): Promise<string> {
   const identity = await ctx.auth.getUserIdentity();
   if (identity === null) {
-    throw new Error("auth.md claim requires an authenticated Vortex account");
+    throw new Error("auth.md claim requires an authenticated Convex account");
   }
   if (identity.emailVerified !== true) {
-    throw new Error("auth.md claim requires a verified Vortex account");
+    throw new Error("auth.md claim requires a verified Convex account");
   }
   const linked = await ctx.runQuery(component.identity.getByIdentity, {
     provider,
@@ -467,7 +467,7 @@ async function requireAuthenticatedComponentUser(
     subject: identity.subject,
   });
   if (linked === null || !linked.emailVerified) {
-    throw new Error("auth.md claim account is not linked to Vortex Auth");
+    throw new Error("auth.md claim account is not linked to Convex Auth");
   }
   return linked.userId;
 }

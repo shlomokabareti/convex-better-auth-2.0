@@ -5,9 +5,6 @@
     "declarationMap": true,
     "noEmit": false,
     "outDir": "dist/component",
-    "paths": {
-      "@vortexnyc/auth/mcp": ["./packages/vortex-auth/dist/mcp.d.ts"]
-    },
     "rootDir": "src/component",
     "sourceMap": true,
     "types": ["node"]

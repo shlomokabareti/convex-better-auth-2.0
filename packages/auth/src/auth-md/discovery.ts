@@ -83,13 +83,13 @@ export type CreateAuthMdDiscoveryDocumentsArgs = {
   identityTypesSupported: readonly AuthMdIdentityType[];
 };
 
-export type CreateVortexAuthMdDiscoveryDocumentsArgs = Omit<
+export type CreateConvexAuthMdDiscoveryDocumentsArgs = Omit<
   CreateAuthMdDiscoveryDocumentsArgs,
   "identityTypesSupported"
 >;
 
-export function createVortexAuthMdDiscoveryDocuments(
-  args: CreateVortexAuthMdDiscoveryDocumentsArgs
+export function createConvexAuthMdDiscoveryDocuments(
+  args: CreateConvexAuthMdDiscoveryDocumentsArgs
 ): AuthMdDiscoveryDocuments {
   return createAuthMdDiscoveryDocuments({
     ...args,

@@ -8,101 +8,101 @@ import { twoFactorClient } from "better-auth/client/plugins";
 import { createAuthClient, type ReactAuthClient } from "better-auth/react";
 
 import {
-  resolveVortexExpoAuthClientMode,
-  type VortexExpoPlatformOS,
+  resolveExpoAuthClientMode,
+  type ExpoPlatformOS,
 } from "./config";
 
-export type VortexExpoBetterAuthClientFactoryOptions = NonNullable<
+export type ExpoBetterAuthClientFactoryOptions = NonNullable<
   Parameters<typeof createAuthClient>[0]
 >;
 
-type VortexExpoRuntimePlugin<
-  PlatformOS extends VortexExpoPlatformOS | undefined,
+type ExpoRuntimePlugin<
+  PlatformOS extends ExpoPlatformOS | undefined,
 > = PlatformOS extends "web"
   ? ReturnType<typeof crossDomainClient>
   : ReturnType<typeof expoClient>;
 
-type VortexExpoBuiltInPlugin<
-  PlatformOS extends VortexExpoPlatformOS | undefined,
+type ExpoBuiltInPlugin<
+  PlatformOS extends ExpoPlatformOS | undefined,
 > =
-  | VortexExpoRuntimePlugin<PlatformOS>
+  | ExpoRuntimePlugin<PlatformOS>
   | ReturnType<typeof convexClient>
   | ReturnType<typeof twoFactorClient>;
 
-type VortexExpoConcreteCustomPlugin<
+type ExpoConcreteCustomPlugin<
   Plugins extends readonly BetterAuthClientPlugin[],
 > = BetterAuthClientPlugin extends Plugins[number] ? never : Plugins[number];
 
-type VortexExpoBetterAuthClientConfig<
-  PlatformOS extends VortexExpoPlatformOS | undefined,
+type ExpoBetterAuthClientConfig<
+  PlatformOS extends ExpoPlatformOS | undefined,
   Plugins extends readonly BetterAuthClientPlugin[],
-> = Omit<VortexExpoBetterAuthClientFactoryOptions, "plugins"> & {
+> = Omit<ExpoBetterAuthClientFactoryOptions, "plugins"> & {
   plugins: Array<
-    | VortexExpoBuiltInPlugin<PlatformOS>
-    | VortexExpoConcreteCustomPlugin<Plugins>
+    | ExpoBuiltInPlugin<PlatformOS>
+    | ExpoConcreteCustomPlugin<Plugins>
   >;
 };
 
-export type VortexExpoBetterAuthClient<
-  PlatformOS extends VortexExpoPlatformOS | undefined =
-    | VortexExpoPlatformOS
+export type ExpoBetterAuthClient<
+  PlatformOS extends ExpoPlatformOS | undefined =
+    | ExpoPlatformOS
     | undefined,
   Plugins extends readonly BetterAuthClientPlugin[] = readonly [],
-> = PlatformOS extends VortexExpoPlatformOS | undefined
-  ? ReactAuthClient<VortexExpoBetterAuthClientConfig<PlatformOS, Plugins>>
+> = PlatformOS extends ExpoPlatformOS | undefined
+  ? ReactAuthClient<ExpoBetterAuthClientConfig<PlatformOS, Plugins>>
   : never;
 
-export type VortexExpoSecureStorage = Parameters<
+export type ExpoSecureStorage = Parameters<
   typeof expoClient
 >[0]["storage"];
-export type VortexExpoCookiePrefix = Parameters<
+export type ExpoCookiePrefix = Parameters<
   typeof expoClient
 >[0]["cookiePrefix"];
-export type VortexExpoWebBrowserOptions = Parameters<
+export type ExpoWebBrowserOptions = Parameters<
   typeof expoClient
 >[0]["webBrowserOptions"];
 
-export type VortexExpoBetterAuthClientOptions<
+export type ExpoBetterAuthClientOptions<
   Plugins extends readonly BetterAuthClientPlugin[] =
     readonly BetterAuthClientPlugin[],
-> = Omit<VortexExpoBetterAuthClientFactoryOptions, "plugins"> & {
-  cookiePrefix?: VortexExpoCookiePrefix;
+> = Omit<ExpoBetterAuthClientFactoryOptions, "plugins"> & {
+  cookiePrefix?: ExpoCookiePrefix;
   disableCache?: boolean;
-  platformOS?: VortexExpoPlatformOS;
+  platformOS?: ExpoPlatformOS;
   plugins?: Plugins;
   scheme: string;
-  storage?: VortexExpoSecureStorage;
+  storage?: ExpoSecureStorage;
   storagePrefix?: string;
-  webBrowserOptions?: VortexExpoWebBrowserOptions;
+  webBrowserOptions?: ExpoWebBrowserOptions;
 };
 
-export function createVortexExpoBetterAuthClient<
+export function createExpoBetterAuthClient<
   const Plugins extends readonly BetterAuthClientPlugin[] = readonly [],
 >(
-  options: VortexExpoBetterAuthClientOptions<Plugins> & { platformOS: "web" }
-): VortexExpoBetterAuthClient<"web", Plugins>;
-export function createVortexExpoBetterAuthClient<
+  options: ExpoBetterAuthClientOptions<Plugins> & { platformOS: "web" }
+): ExpoBetterAuthClient<"web", Plugins>;
+export function createExpoBetterAuthClient<
   const Plugins extends readonly BetterAuthClientPlugin[] = readonly [],
 >(
-  options: VortexExpoBetterAuthClientOptions<Plugins> & {
-    platformOS?: Exclude<VortexExpoPlatformOS, "web">;
+  options: ExpoBetterAuthClientOptions<Plugins> & {
+    platformOS?: Exclude<ExpoPlatformOS, "web">;
   }
-): VortexExpoBetterAuthClient<undefined, Plugins>;
-export function createVortexExpoBetterAuthClient<
+): ExpoBetterAuthClient<undefined, Plugins>;
+export function createExpoBetterAuthClient<
   const Plugins extends readonly BetterAuthClientPlugin[] = readonly [],
 >(
-  options: VortexExpoBetterAuthClientOptions<Plugins>
-): VortexExpoBetterAuthClient<VortexExpoPlatformOS | undefined, Plugins>;
-export function createVortexExpoBetterAuthClient<
+  options: ExpoBetterAuthClientOptions<Plugins>
+): ExpoBetterAuthClient<ExpoPlatformOS | undefined, Plugins>;
+export function createExpoBetterAuthClient<
   const Plugins extends readonly BetterAuthClientPlugin[] = readonly [],
->(options: VortexExpoBetterAuthClientOptions<Plugins>) {
+>(options: ExpoBetterAuthClientOptions<Plugins>) {
   const { pluginOptions, clientOptions } =
-    splitVortexExpoBetterAuthClientOptions(options);
-  const mode = resolveVortexExpoAuthClientMode(pluginOptions);
+    splitExpoBetterAuthClientOptions(options);
+  const mode = resolveExpoAuthClientMode(pluginOptions);
   const suppliedPlugins = options.plugins ?? [];
 
   if (mode.kind === "web") {
-    const plugins = addVortexExpoBuiltInPlugins(
+    const plugins = addExpoBuiltInPlugins(
       suppliedPlugins,
       crossDomainClient()
     );
@@ -112,14 +112,14 @@ export function createVortexExpoBetterAuthClient<
     });
   }
 
-  const plugins = addVortexExpoBuiltInPlugins(
+  const plugins = addExpoBuiltInPlugins(
     suppliedPlugins,
     expoClient({
       cookiePrefix: pluginOptions.cookiePrefix,
       disableCache: pluginOptions.disableCache,
       scheme: mode.scheme,
       storage: createDurableCookieFilteredStorage(
-        requireVortexExpoSecureStorage(pluginOptions.storage)
+        requireExpoSecureStorage(pluginOptions.storage)
       ),
       storagePrefix: mode.storagePrefix,
       webBrowserOptions: pluginOptions.webBrowserOptions,
@@ -131,7 +131,7 @@ export function createVortexExpoBetterAuthClient<
   });
 }
 
-function addVortexExpoBuiltInPlugins<
+function addExpoBuiltInPlugins<
   Plugins extends readonly BetterAuthClientPlugin[],
   RuntimePlugin extends BetterAuthClientPlugin,
 >(suppliedPlugins: Plugins, runtimePlugin: RuntimePlugin) {
@@ -151,8 +151,8 @@ function addVortexExpoBuiltInPlugins<
   });
 }
 
-function splitVortexExpoBetterAuthClientOptions(
-  options: VortexExpoBetterAuthClientOptions
+function splitExpoBetterAuthClientOptions(
+  options: ExpoBetterAuthClientOptions
 ) {
   const {
     cookiePrefix,
@@ -207,8 +207,8 @@ function isDurableCookieName(cookieName: string): boolean {
 }
 
 function createDurableCookieFilteredStorage(
-  storage: VortexExpoSecureStorage
-): VortexExpoSecureStorage {
+  storage: ExpoSecureStorage
+): ExpoSecureStorage {
   return {
     getItem: (name: string) => storage.getItem(name),
     getItemAsync: (name: string) => Promise.resolve(storage.getItem(name)),
@@ -246,9 +246,9 @@ function createDurableCookieFilteredStorage(
   };
 }
 
-function requireVortexExpoSecureStorage(
-  storage: VortexExpoSecureStorage | undefined
-): VortexExpoSecureStorage {
+function requireExpoSecureStorage(
+  storage: ExpoSecureStorage | undefined
+): ExpoSecureStorage {
   if (storage === undefined) {
     throw new Error(
       "Expo SecureStore storage is required on native. Pass the expo-secure-store module as storage."

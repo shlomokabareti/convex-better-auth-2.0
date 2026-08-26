@@ -3,13 +3,13 @@ import { useCallback, useState, type FormEvent, type ReactNode } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
-export type VortexCreateOrganizationInput = {
+export type ConvexCreateOrganizationInput = {
   name: string;
   slug: string;
   imageUrl?: string | null;
 };
 
-export type VortexCreateOrganizationClassNames = {
+export type ConvexCreateOrganizationClassNames = {
   card?: string;
   header?: string;
   title?: string;
@@ -25,7 +25,7 @@ export type VortexCreateOrganizationClassNames = {
   errorBanner?: string;
 };
 
-export type VortexCreateOrganizationCopy = {
+export type ConvexCreateOrganizationCopy = {
   title?: string;
   description?: string;
   nameLabel?: string;
@@ -43,15 +43,15 @@ export type VortexCreateOrganizationCopy = {
   invalidSlugError?: string;
 };
 
-export type VortexCreateOrganizationProps = {
-  classNames?: VortexCreateOrganizationClassNames;
-  copy?: VortexCreateOrganizationCopy;
+export type ConvexCreateOrganizationProps = {
+  classNames?: ConvexCreateOrganizationClassNames;
+  copy?: ConvexCreateOrganizationCopy;
   isLoading?: boolean;
   errorMessage?: string | null;
   defaultName?: string;
   defaultSlug?: string;
   defaultImageUrl?: string | null;
-  onCreate?: (input: VortexCreateOrganizationInput) => void | Promise<void>;
+  onCreate?: (input: ConvexCreateOrganizationInput) => void | Promise<void>;
   onCancel?: () => void;
   renderHeader?: (args: {
     title: ReactNode;
@@ -61,7 +61,7 @@ export type VortexCreateOrganizationProps = {
 
 // ─── Default copy ──────────────────────────────────────────────────────────
 
-const defaultCopy: Required<VortexCreateOrganizationCopy> = {
+const defaultCopy: Required<ConvexCreateOrganizationCopy> = {
   title: "Create workspace",
   description: "Set up a new workspace for your team.",
   nameLabel: "Workspace name",
@@ -81,8 +81,8 @@ const defaultCopy: Required<VortexCreateOrganizationCopy> = {
 };
 
 function resolveCopy(
-  copy: VortexCreateOrganizationCopy | undefined
-): Required<VortexCreateOrganizationCopy> {
+  copy: ConvexCreateOrganizationCopy | undefined
+): Required<ConvexCreateOrganizationCopy> {
   return { ...defaultCopy, ...copy };
 }
 
@@ -91,9 +91,9 @@ const slugRegex = /^[a-z0-9-]+$/;
 // ─── Component ────────────────────────────────────────────────────────────
 
 function CreateOrganizationHeader(props: {
-  classNames?: VortexCreateOrganizationClassNames;
-  copy: Required<VortexCreateOrganizationCopy>;
-  renderHeader?: VortexCreateOrganizationProps["renderHeader"];
+  classNames?: ConvexCreateOrganizationClassNames;
+  copy: Required<ConvexCreateOrganizationCopy>;
+  renderHeader?: ConvexCreateOrganizationProps["renderHeader"];
 }) {
   const { classNames, copy, renderHeader } = props;
   const title = (
@@ -120,7 +120,7 @@ function CreateOrganizationHeader(props: {
 }
 
 function CreateOrganizationErrorBanner(props: {
-  classNames?: VortexCreateOrganizationClassNames;
+  classNames?: ConvexCreateOrganizationClassNames;
   errorMessage?: string | null;
 }) {
   if (!props.errorMessage) {
@@ -140,7 +140,7 @@ function CreateOrganizationErrorBanner(props: {
 }
 
 function CreateOrganizationField(props: {
-  classNames?: VortexCreateOrganizationClassNames;
+  classNames?: ConvexCreateOrganizationClassNames;
   disabled: boolean;
   error?: string | null;
   helper?: string;
@@ -184,8 +184,8 @@ function CreateOrganizationField(props: {
 
 function CreateOrganizationActions(props: {
   busy: boolean;
-  classNames?: VortexCreateOrganizationClassNames;
-  copy: Required<VortexCreateOrganizationCopy>;
+  classNames?: ConvexCreateOrganizationClassNames;
+  copy: Required<ConvexCreateOrganizationCopy>;
   hasCreateHandler: boolean;
   onCancel?: () => void;
 }) {
@@ -220,8 +220,8 @@ function CreateOrganizationActions(props: {
 
 function CreateOrganizationFields(props: {
   busy: boolean;
-  classNames?: VortexCreateOrganizationClassNames;
-  copy: Required<VortexCreateOrganizationCopy>;
+  classNames?: ConvexCreateOrganizationClassNames;
+  copy: Required<ConvexCreateOrganizationCopy>;
   imageUrl: string;
   name: string;
   nameError: string | null;
@@ -272,7 +272,7 @@ function CreateOrganizationFields(props: {
   );
 }
 
-export function VortexCreateOrganization({
+export function ConvexCreateOrganization({
   classNames,
   copy,
   isLoading,
@@ -283,7 +283,7 @@ export function VortexCreateOrganization({
   onCreate,
   onCancel,
   renderHeader,
-}: VortexCreateOrganizationProps) {
+}: ConvexCreateOrganizationProps) {
   const resolvedCopy = resolveCopy(copy);
   const [name, setName] = useState(defaultName ?? "");
   const [slug, setSlug] = useState(defaultSlug ?? "");

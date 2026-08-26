@@ -9,7 +9,7 @@ import {
   organizationMemberStatusValidator,
   organizationStatusValidator,
 } from "./schema.js";
-import { fanOutVortexWebhookEvent } from "./webhooks.js";
+import { fanOutConvexWebhookEvent } from "./webhooks.js";
 
 type DbCtx = Pick<MutationCtx | QueryCtx, "db">;
 type OrganizationDetailsPatch = Partial<
@@ -240,7 +240,7 @@ async function emitOrganizationEvent(
   }
 ): Promise<void> {
   const eventId = crypto.randomUUID();
-  await fanOutVortexWebhookEvent(ctx, {
+  await fanOutConvexWebhookEvent(ctx, {
     eventType: args.eventType,
     eventId,
     organizationId: args.organizationId,

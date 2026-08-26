@@ -1,13 +1,13 @@
-export type VortexExpoSessionRestoreResult =
+export type ExpoSessionRestoreResult =
   | { kind: "restored"; userId: string }
   | { kind: "none"; reason: "no_session" | "corrupted" }
   | { kind: "error"; error: unknown };
 
-export function parseVortexExpoSessionRestore(state: {
+export function parseExpoSessionRestore(state: {
   data?: unknown;
   error?: unknown;
   isPending: boolean;
-}): VortexExpoSessionRestoreResult {
+}): ExpoSessionRestoreResult {
   if (state.isPending) {
     return { kind: "none", reason: "no_session" };
   }

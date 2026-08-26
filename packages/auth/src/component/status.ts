@@ -5,12 +5,12 @@ import { query } from "./_generated/server.js";
 export const get = query({
   args: {},
   returns: v.object({
-    component: v.literal("vortexAuth"),
+    component: v.literal("convexAuth"),
     schemaVersion: v.number(),
   }),
   handler: async () =>
     ({
-      component: "vortexAuth",
+      component: "convexAuth",
       schemaVersion: 1,
     }) as const,
 });

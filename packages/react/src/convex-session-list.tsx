@@ -1,19 +1,19 @@
 /**
- * VortexSessionList — drop-in active-sessions UI for consumers.
+ * ConvexSessionList — drop-in active-sessions UI for consumers.
  *
  * Replaces the per-consumer provider-style sessions table that pile/CRM
  * had to hand-write against `user.getSessions()` + `session.revoke()`.
- * Uses the package's session-management hooks (useVortexAuthSessionList +
- * useVortexAuthRevokeSession) so the component is purely presentational.
+ * Uses the package's session-management hooks (useConvexAuthSessionList +
+ * useConvexAuthRevokeSession) so the component is purely presentational.
  *
  * Consumer usage:
- *   <VortexSessionList
+ *   <ConvexSessionList
  *     authClient={authClient}
  *     currentSessionToken={currentSessionToken}
  *   />
  *
  * That's the whole API. Copy + classNames slots are documented in
- * VortexSessionListClassNames + VortexSessionListCopy below. Pile's
+ * ConvexSessionListClassNames + ConvexSessionListCopy below. Pile's
  * settings page can replace its placeholder "session listing coming
  * in a follow-up" with this in 3 lines (the new bundle being the
  * follow-up that finally lands).
@@ -21,14 +21,14 @@
 import { useState, type ReactNode } from "react";
 
 import {
-  useVortexAuthRevokeSession,
-  useVortexAuthSessionList,
-  type VortexAuthSessionListItem,
-  type VortexBetterAuthClient,
+  useConvexAuthRevokeSession,
+  useConvexAuthSessionList,
+  type ConvexAuthSessionListItem,
+  type ConvexBetterAuthClient,
 } from "./better-auth-runtime";
 import { AuthCard, AuthCardContent, AuthCardHeader } from "./ui";
 
-export type VortexSessionListClassNames = {
+export type ConvexSessionListClassNames = {
   root?: string;
   list?: string;
   item?: string;
@@ -40,7 +40,7 @@ export type VortexSessionListClassNames = {
   errorState?: string;
 };
 
-export type VortexSessionListCopy = {
+export type ConvexSessionListCopy = {
   title?: string;
   description?: string;
   currentBadge?: string;
@@ -54,8 +54,8 @@ export type VortexSessionListCopy = {
   revokingOthersButton?: string;
 };
 
-export type VortexSessionListProps = {
-  authClient: VortexBetterAuthClient | null;
+export type ConvexSessionListProps = {
+  authClient: ConvexBetterAuthClient | null;
   /**
    * Token of the session currently powering this browser. Used to
    * mark the row as the active session and to suppress the
@@ -68,12 +68,12 @@ export type VortexSessionListProps = {
    * Defaults to true. Hides when no other sessions exist.
    */
   showRevokeOthersAction?: boolean;
-  classNames?: VortexSessionListClassNames;
-  copy?: VortexSessionListCopy;
+  classNames?: ConvexSessionListClassNames;
+  copy?: ConvexSessionListCopy;
   formatTimestamp?: (value: string | Date) => string;
 };
 
-const DEFAULT_COPY: Required<VortexSessionListCopy> = {
+const DEFAULT_COPY: Required<ConvexSessionListCopy> = {
   title: "Active sessions",
   description: "Devices currently signed in to this account.",
   currentBadge: "Current",
@@ -93,16 +93,16 @@ function defaultFormatTimestamp(value: string | Date): string {
   return d.toLocaleString();
 }
 
-export function VortexSessionList(props: VortexSessionListProps) {
+export function ConvexSessionList(props: ConvexSessionListProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
   const fmt = props.formatTimestamp ?? defaultFormatTimestamp;
 
-  const { sessions, isLoading, error, refetch } = useVortexAuthSessionList(
+  const { sessions, isLoading, error, refetch } = useConvexAuthSessionList(
     props.authClient
   );
   const { revokeSession, revokeOtherSessions, isRevoking } =
-    useVortexAuthRevokeSession(props.authClient);
+    useConvexAuthRevokeSession(props.authClient);
   const [revokingToken, setRevokingToken] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -194,11 +194,11 @@ export function VortexSessionList(props: VortexSessionListProps) {
 }
 
 function SessionRow(args: {
-  session: VortexAuthSessionListItem;
+  session: ConvexAuthSessionListItem;
   isCurrent: boolean;
   isRevoking: boolean;
-  copy: Required<VortexSessionListCopy>;
-  classNames: VortexSessionListClassNames;
+  copy: Required<ConvexSessionListCopy>;
+  classNames: ConvexSessionListClassNames;
   onRevoke: () => void;
   formatTimestamp: (value: string | Date) => string;
 }): ReactNode {

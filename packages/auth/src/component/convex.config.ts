@@ -1,3 +1,3 @@
 import { defineComponent } from "convex/server";
 
-export default defineComponent("vortexAuth");
+export default defineComponent("convexAuth");

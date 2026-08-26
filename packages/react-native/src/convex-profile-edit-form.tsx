@@ -1,11 +1,11 @@
 /**
- * VortexProfileEditForm (RN) — drop-in profile editor for Expo
+ * ConvexProfileEditForm (RN) — drop-in profile editor for Expo
  * consumers. Mirrors the web component's API + behavior. Uses RN
  * primitives (View/Text/TextInput/Pressable).
  *
  * Consumer usage:
- *   <VortexProfileEditForm
- *     authClient={vortexAuth.authClient}
+ *   <ConvexProfileEditForm
+ *     authClient={convexAuth.authClient}
  *     initialName={user?.name ?? ''}
  *     onUpdated={() => router.replace(router.canGoBack() ? '..' : '/')}
  *   />
@@ -25,10 +25,10 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { VortexExpoBetterAuthClient } from "./client";
-import { useVortexExpoAuthUpdateProfile } from "./runtime";
+import type { ExpoBetterAuthClient } from "./client";
+import { useExpoAuthUpdateProfile } from "./runtime";
 
-export type VortexExpoProfileEditFormStyles = {
+export type ExpoProfileEditFormStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -42,7 +42,7 @@ export type VortexExpoProfileEditFormStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoProfileEditFormCopy = {
+export type ExpoProfileEditFormCopy = {
   title?: string;
   description?: string;
   nameLabel?: string;
@@ -53,17 +53,17 @@ export type VortexExpoProfileEditFormCopy = {
   unavailable?: string;
 };
 
-export type VortexExpoProfileEditFormProps = {
-  authClient: VortexExpoBetterAuthClient | null;
+export type ExpoProfileEditFormProps = {
+  authClient: ExpoBetterAuthClient | null;
   initialName?: string;
   initialImage?: string;
   showImageField?: boolean;
-  styles?: VortexExpoProfileEditFormStyles;
-  copy?: VortexExpoProfileEditFormCopy;
+  styles?: ExpoProfileEditFormStyles;
+  copy?: ExpoProfileEditFormCopy;
   onUpdated?: (next: { name?: string; image?: string }) => void;
 };
 
-const DEFAULT_COPY: Required<VortexExpoProfileEditFormCopy> = {
+const DEFAULT_COPY: Required<ExpoProfileEditFormCopy> = {
   title: "Profile",
   description: "Update your display name and avatar.",
   nameLabel: "Display name",
@@ -74,11 +74,11 @@ const DEFAULT_COPY: Required<VortexExpoProfileEditFormCopy> = {
   unavailable: "Profile update is not available on this auth client.",
 };
 
-export function VortexProfileEditForm(props: VortexExpoProfileEditFormProps) {
+export function ConvexProfileEditForm(props: ExpoProfileEditFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
 
-  const { updateProfile, isUpdating } = useVortexExpoAuthUpdateProfile(
+  const { updateProfile, isUpdating } = useExpoAuthUpdateProfile(
     props.authClient
   );
   const [name, setName] = useState(props.initialName ?? "");

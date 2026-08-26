@@ -6,7 +6,7 @@ export type SelectableOrganization = {
 
 export type PostSignUpStorageLike = Pick<Storage, "removeItem" | "setItem">;
 
-export type VortexPostSignUpFlowState = {
+export type ConvexPostSignUpFlowState = {
   hasTimedOut: boolean;
   isEnsuringOrganization: boolean;
   isRedeemingInvitation: boolean;
@@ -71,7 +71,7 @@ export function getBrowserSessionStorage(): Storage | undefined {
   return typeof window === "undefined" ? undefined : window.sessionStorage;
 }
 
-export function useVortexPostSignUpFlow(args: {
+export function useConvexPostSignUpFlow(args: {
   currentOrganization: unknown;
   availableOrganizations: readonly SelectableOrganization[] | null | undefined;
   invitationToken: string | null;
@@ -79,7 +79,7 @@ export function useVortexPostSignUpFlow(args: {
   redeemInvitation: (token: string) => Promise<unknown>;
   onCurrentOrganizationReady: () => void;
   timeoutMs?: number;
-}): VortexPostSignUpFlowState {
+}): ConvexPostSignUpFlowState {
   const {
     availableOrganizations,
     currentOrganization,

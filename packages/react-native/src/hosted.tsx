@@ -18,9 +18,9 @@ import {
   View,
 } from "react-native";
 
-import type { VortexExpoAuthRuntime } from "./runtime";
-import { parseVortexExpoSessionRestore } from "./session-restore";
-import { VortexVerifyTwoFactorForm } from "./vortex-verify-two-factor-form";
+import type { ExpoAuthRuntime } from "./runtime";
+import { parseExpoSessionRestore } from "./session-restore";
+import { ConvexVerifyTwoFactorForm } from "./convex-verify-two-factor-form";
 
 // Automated e2e (agent-device) cannot commit text into an iOS RN
 // secureTextEntry field. ONLY when an explicit test build sets
@@ -224,7 +224,7 @@ function HostedInviteAuthStep(props: {
   };
   email: string;
   mode: "signIn" | "signUp";
-  runtime: VortexExpoAuthRuntime;
+  runtime: ExpoAuthRuntime;
   setMode: (mode: "signIn" | "signUp") => void;
 }) {
   return props.mode === "signUp" ? (
@@ -276,7 +276,7 @@ export function HostedSignInScreen(props: {
   copy?: Partial<HostedCopy>;
   initialEmail?: string;
   onNavigateToSignUp?: () => void;
-  runtime: VortexExpoAuthRuntime;
+  runtime: ExpoAuthRuntime;
 }) {
   const { signInEmail } = props.runtime.useAppAuthActions();
   const copy = {
@@ -323,7 +323,7 @@ export function HostedSignInScreen(props: {
       <HostedAuthScaffold>
         {/* On success the session becomes authenticated and the app's
             protected gate navigates away; no explicit redirect needed. */}
-        <VortexVerifyTwoFactorForm
+        <ConvexVerifyTwoFactorForm
           authClient={props.runtime.authClient}
           onVerified={() => undefined}
         />
@@ -347,7 +347,7 @@ export function HostedSignInScreen(props: {
           placeholderTextColorClassName="accent-muted-foreground"
           className="bg-input border-border text-foreground"
           style={styles.input}
-          testID="vortex-signin-email"
+          testID="convex-signin-email"
           value={email}
         />
 
@@ -362,7 +362,7 @@ export function HostedSignInScreen(props: {
           secureTextEntry={SECURE_TEXT_ENTRY}
           className="bg-input border-border text-foreground"
           style={styles.input}
-          testID="vortex-signin-password"
+          testID="convex-signin-password"
           value={password}
         />
 
@@ -376,7 +376,7 @@ export function HostedSignInScreen(props: {
             styles.primaryButton,
             loading || !email.trim() || !password ? styles.disabled : null,
           ]}
-          testID="vortex-signin-submit"
+          testID="convex-signin-submit"
         >
           <Text
             className="text-primary-foreground"
@@ -390,7 +390,7 @@ export function HostedSignInScreen(props: {
           label="Don’t have an account?"
           onPress={props.onNavigateToSignUp}
           strongLabel={copy.secondaryActionLabel}
-          testID="vortex-signin-gotosignup"
+          testID="convex-signin-gotosignup"
         />
       </View>
     </HostedAuthScaffold>
@@ -401,7 +401,7 @@ export function HostedSignUpScreen(props: {
   copy?: Partial<HostedCopy>;
   initialEmail?: string;
   onNavigateToSignIn?: () => void;
-  runtime: VortexExpoAuthRuntime;
+  runtime: ExpoAuthRuntime;
 }) {
   const { signUpEmail } = props.runtime.useAppAuthActions();
   const copy = {
@@ -449,7 +449,7 @@ export function HostedSignUpScreen(props: {
           placeholderTextColorClassName="accent-muted-foreground"
           className="bg-input border-border text-foreground"
           style={styles.input}
-          testID="vortex-signup-name"
+          testID="convex-signup-name"
           value={name}
         />
 
@@ -463,7 +463,7 @@ export function HostedSignUpScreen(props: {
           placeholderTextColorClassName="accent-muted-foreground"
           className="bg-input border-border text-foreground"
           style={styles.input}
-          testID="vortex-signup-email"
+          testID="convex-signup-email"
           value={email}
         />
 
@@ -478,7 +478,7 @@ export function HostedSignUpScreen(props: {
           secureTextEntry={SECURE_TEXT_ENTRY}
           className="bg-input border-border text-foreground"
           style={styles.input}
-          testID="vortex-signup-password"
+          testID="convex-signup-password"
           value={password}
         />
 
@@ -494,7 +494,7 @@ export function HostedSignUpScreen(props: {
               ? styles.disabled
               : null,
           ]}
-          testID="vortex-signup-submit"
+          testID="convex-signup-submit"
         >
           <Text
             className="text-primary-foreground"
@@ -508,7 +508,7 @@ export function HostedSignUpScreen(props: {
           label="Already have an account?"
           onPress={props.onNavigateToSignIn}
           strongLabel={copy.secondaryActionLabel}
-          testID="vortex-signup-gotosignin"
+          testID="convex-signup-gotosignin"
         />
       </View>
     </HostedAuthScaffold>
@@ -535,7 +535,7 @@ type HostedInviteRedeemScreenProps = {
   lookupInvitation: (token: string) => Promise<HostedInvitationLookup | null>;
   onRedeemed?: (result: { organizationId: string }) => void;
   redeemInvitation: (token: string) => Promise<{ organizationId: string }>;
-  runtime: VortexExpoAuthRuntime;
+  runtime: ExpoAuthRuntime;
 };
 
 export function HostedInviteRedeemScreen(props: HostedInviteRedeemScreenProps) {
@@ -631,7 +631,7 @@ export function HostedInviteRedeemScreen(props: HostedInviteRedeemScreenProps) {
 }
 
 // Higher-level RN provisioner with web API parity. Web's
-// VortexBetterAuthConvexIdentityProvisioner accepts Convex
+// ConvexBetterAuthConvexIdentityProvisioner accepts Convex
 // FunctionReferences directly; RN's HostedIdentityProvisioningSync
 // requires a pre-resolved prop bag. This wrapper closes that gap —
 // take the same Convex refs web accepts, manage the runtime + Convex
@@ -639,7 +639,7 @@ export function HostedInviteRedeemScreen(props: HostedInviteRedeemScreenProps) {
 //
 // Consumer (CRM/pile/Seal) writes the SAME code on web and RN:
 //   <BetterAuthConvexIdentityProvisioner
-//     runtime={vortexAuth}
+//     runtime={convexAuth}
 //     getCurrentUser={api.auth.getCurrentUser}
 //     provisionCurrentUser={api.users.provisionCurrentBetterAuthUser}
 //   />
@@ -650,7 +650,7 @@ export function HostedInviteRedeemScreen(props: HostedInviteRedeemScreenProps) {
 type EmptyArgs = Record<string, never>;
 
 export type BetterAuthConvexIdentityProvisionerProps = {
-  runtime: VortexExpoAuthRuntime;
+  runtime: ExpoAuthRuntime;
   /**
    * Public Convex query that returns the local users row for the
    * authenticated viewer (null if not signed in yet). Web uses the
@@ -685,7 +685,7 @@ export function BetterAuthConvexIdentityProvisioner(
   // Intentionally reference the query type so a future PR can switch
   // the runtime's useAppUser to hydrate from it (issue #2). Today the
   // param isn't consumed at runtime; keeping it in the signature locks
-  // the API symmetry with web's VortexBetterAuthConvexIdentityProvisioner.
+  // the API symmetry with web's ConvexBetterAuthConvexIdentityProvisioner.
   void props.getCurrentUser;
 
   return (
@@ -705,10 +705,10 @@ export function HostedIdentityProvisioningSync(props: {
   isLoaded: boolean;
   isSignedIn: boolean;
   provisionCurrentUser: () => Promise<unknown>;
-  runtime: VortexExpoAuthRuntime;
+  runtime: ExpoAuthRuntime;
   userId: string | null;
 }) {
-  const sessionRestore = parseVortexExpoSessionRestore(
+  const sessionRestore = parseExpoSessionRestore(
     props.runtime.authClient.useSession()
   );
   const lastProvisionedUserId = useRef<string | null>(null);

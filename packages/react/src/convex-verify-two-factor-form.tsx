@@ -1,5 +1,5 @@
 /**
- * VortexVerifyTwoFactorForm — drop-in 2FA step-up for sign-in.
+ * ConvexVerifyTwoFactorForm — drop-in 2FA step-up for sign-in.
  *
  * When `signIn.email` returns `data.twoFactorRedirect === true`, the
  * user is mid-sign-in and must satisfy the second factor. Render this:
@@ -11,7 +11,7 @@
  *   const res = await authClient.signIn.email({ email, password });
  *   if (res.data?.twoFactorRedirect) setNeeds2fa(true);
  *   ...
- *   <VortexVerifyTwoFactorForm
+ *   <ConvexVerifyTwoFactorForm
  *     authClient={authClient}
  *     onVerified={() => window.location.assign('/app')}
  *   />
@@ -19,9 +19,9 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import {
-  useVortexAuthVerifyBackupCode,
-  useVortexAuthVerifyTotp,
-  type VortexBetterAuthClient,
+  useConvexAuthVerifyBackupCode,
+  useConvexAuthVerifyTotp,
+  type ConvexBetterAuthClient,
 } from "./better-auth-runtime";
 import {
   AuthButton,
@@ -33,7 +33,7 @@ import {
   AuthLabel,
 } from "./ui";
 
-export type VortexVerifyTwoFactorFormClassNames = {
+export type ConvexVerifyTwoFactorFormClassNames = {
   root?: string;
   form?: string;
   field?: string;
@@ -45,7 +45,7 @@ export type VortexVerifyTwoFactorFormClassNames = {
   errorState?: string;
 };
 
-export type VortexVerifyTwoFactorFormCopy = {
+export type ConvexVerifyTwoFactorFormCopy = {
   title?: string;
   description?: string;
   codeLabel?: string;
@@ -60,20 +60,20 @@ export type VortexVerifyTwoFactorFormCopy = {
   unavailable?: string;
 };
 
-export type VortexVerifyTwoFactorFormProps = {
-  authClient: VortexBetterAuthClient | null;
+export type ConvexVerifyTwoFactorFormProps = {
+  authClient: ConvexBetterAuthClient | null;
   /**
    * Show the "trust this device" checkbox (skips 2FA on this device for
    * the server's trust window). Defaults to true.
    */
   showTrustDevice?: boolean;
-  classNames?: VortexVerifyTwoFactorFormClassNames;
-  copy?: VortexVerifyTwoFactorFormCopy;
+  classNames?: ConvexVerifyTwoFactorFormClassNames;
+  copy?: ConvexVerifyTwoFactorFormCopy;
   /** Fired once the second factor is satisfied and the session is live. */
   onVerified?: () => void;
 };
 
-const DEFAULT_COPY: Required<VortexVerifyTwoFactorFormCopy> = {
+const DEFAULT_COPY: Required<ConvexVerifyTwoFactorFormCopy> = {
   title: "Two-factor authentication",
   description: "Enter the 6-digit code from your authenticator app.",
   codeLabel: "Authentication code",
@@ -91,18 +91,18 @@ const DEFAULT_COPY: Required<VortexVerifyTwoFactorFormCopy> = {
 
 type Mode = "totp" | "backup";
 
-export function VortexVerifyTwoFactorForm(
-  props: VortexVerifyTwoFactorFormProps
+export function ConvexVerifyTwoFactorForm(
+  props: ConvexVerifyTwoFactorFormProps
 ) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
   const showTrustDevice = props.showTrustDevice ?? true;
 
-  const { verifyTotp, isVerifying: isVerifyingTotp } = useVortexAuthVerifyTotp(
+  const { verifyTotp, isVerifying: isVerifyingTotp } = useConvexAuthVerifyTotp(
     props.authClient
   );
   const { verifyBackupCode, isVerifying: isVerifyingBackup } =
-    useVortexAuthVerifyBackupCode(props.authClient);
+    useConvexAuthVerifyBackupCode(props.authClient);
 
   const [mode, setMode] = useState<Mode>("totp");
   const [code, setCode] = useState("");
@@ -153,11 +153,11 @@ export function VortexVerifyTwoFactorForm(
       <AuthCardContent>
         <form onSubmit={handleSubmit} className={cn.form}>
           <AuthField className={cn.field}>
-            <AuthLabel htmlFor="vortex-2fa-verify-code" className={cn.label}>
+            <AuthLabel htmlFor="convex-2fa-verify-code" className={cn.label}>
               {mode === "totp" ? copy.codeLabel : copy.backupCodeLabel}
             </AuthLabel>
             <AuthInput
-              id="vortex-2fa-verify-code"
+              id="convex-2fa-verify-code"
               inputMode={mode === "totp" ? "numeric" : "text"}
               autoComplete="one-time-code"
               value={code}

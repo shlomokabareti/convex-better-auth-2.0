@@ -1,11 +1,11 @@
 /**
- * VortexSessionList (RN) — drop-in active-sessions UI for Expo
+ * ConvexSessionList (RN) — drop-in active-sessions UI for Expo
  * consumers. Mirrors the web component's API + behavior. Uses RN
  * primitives (View/Text/Pressable/FlatList) instead of div/button.
  *
  * Consumer usage:
- *   <VortexSessionList
- *     authClient={vortexAuth.authClient}
+ *   <ConvexSessionList
+ *     authClient={convexAuth.authClient}
  *     currentSessionToken={currentSessionToken}
  *   />
  *
@@ -26,14 +26,14 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { VortexExpoBetterAuthClient } from "./client";
+import type { ExpoBetterAuthClient } from "./client";
 import {
-  useVortexExpoAuthRevokeSession,
-  useVortexExpoAuthSessionList,
-  type VortexExpoAuthSessionListItem,
+  useExpoAuthRevokeSession,
+  useExpoAuthSessionList,
+  type ExpoAuthSessionListItem,
 } from "./runtime";
 
-export type VortexExpoSessionListStyles = {
+export type ExpoSessionListStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -52,7 +52,7 @@ export type VortexExpoSessionListStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoSessionListCopy = {
+export type ExpoSessionListCopy = {
   title?: string;
   description?: string;
   currentBadge?: string;
@@ -66,16 +66,16 @@ export type VortexExpoSessionListCopy = {
   revokingOthersButton?: string;
 };
 
-export type VortexExpoSessionListProps = {
-  authClient: VortexExpoBetterAuthClient | null;
+export type ExpoSessionListProps = {
+  authClient: ExpoBetterAuthClient | null;
   currentSessionToken?: string | null;
   showRevokeOthersAction?: boolean;
-  styles?: VortexExpoSessionListStyles;
-  copy?: VortexExpoSessionListCopy;
+  styles?: ExpoSessionListStyles;
+  copy?: ExpoSessionListCopy;
   formatTimestamp?: (value: string | Date) => string;
 };
 
-const DEFAULT_COPY: Required<VortexExpoSessionListCopy> = {
+const DEFAULT_COPY: Required<ExpoSessionListCopy> = {
   title: "Active sessions",
   description: "Devices currently signed in to this account.",
   currentBadge: "Current",
@@ -95,16 +95,16 @@ function defaultFormatTimestamp(value: string | Date): string {
   return d.toLocaleString();
 }
 
-export function VortexSessionList(props: VortexExpoSessionListProps) {
+export function ConvexSessionList(props: ExpoSessionListProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const fmt = props.formatTimestamp ?? defaultFormatTimestamp;
 
-  const { sessions, isLoading, error, refetch } = useVortexExpoAuthSessionList(
+  const { sessions, isLoading, error, refetch } = useExpoAuthSessionList(
     props.authClient
   );
   const { revokeSession, revokeOtherSessions, isRevoking } =
-    useVortexExpoAuthRevokeSession(props.authClient);
+    useExpoAuthRevokeSession(props.authClient);
   const [revokingToken, setRevokingToken] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -203,11 +203,11 @@ export function VortexSessionList(props: VortexExpoSessionListProps) {
 }
 
 function SessionRow(args: {
-  session: VortexExpoAuthSessionListItem;
+  session: ExpoAuthSessionListItem;
   isCurrent: boolean;
   isRevoking: boolean;
-  copy: Required<VortexExpoSessionListCopy>;
-  styles: VortexExpoSessionListStyles;
+  copy: Required<ExpoSessionListCopy>;
+  styles: ExpoSessionListStyles;
   onRevoke: () => void;
   formatTimestamp: (value: string | Date) => string;
 }) {

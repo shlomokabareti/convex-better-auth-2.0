@@ -2,17 +2,17 @@ import { cn } from "./lib/ui";
 import { useState, type ReactNode } from "react";
 
 import type {
-  VortexOrganizationBrand,
-  VortexOrganizationBrandUpdate,
+  ConvexOrganizationBrand,
+  ConvexOrganizationBrandUpdate,
 } from "./organization-brand";
 import type {
-  VortexOrganizationSecurity,
-  VortexOrganizationSecurityUpdate,
+  ConvexOrganizationSecurity,
+  ConvexOrganizationSecurityUpdate,
 } from "./organization-security";
 
 export type {
-  VortexOrganizationBrand,
-  VortexOrganizationBrandUpdate,
+  ConvexOrganizationBrand,
+  ConvexOrganizationBrandUpdate,
 } from "./organization-brand";
 export {
   mergeOrganizationBrandIntoMetadataJson,
@@ -20,8 +20,8 @@ export {
   VORTEX_ORGANIZATION_BRAND_METADATA_KEY,
 } from "./organization-brand";
 export type {
-  VortexOrganizationSecurity,
-  VortexOrganizationSecurityUpdate,
+  ConvexOrganizationSecurity,
+  ConvexOrganizationSecurityUpdate,
 } from "./organization-security";
 export {
   mergeOrganizationSecurityIntoMetadataJson,
@@ -33,19 +33,19 @@ export {
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
-export type VortexOrgProfileOrganization = {
+export type ConvexOrgProfileOrganization = {
   _id: string;
   name: string;
   slug: string;
   imageUrl?: string;
   status: "active" | "suspended" | "deleted";
   /** Suite tenant brand (VOR-182). Product chrome stays in the consumer. */
-  brand?: VortexOrganizationBrand;
+  brand?: ConvexOrganizationBrand;
   /** Suite org security policy (VOR-183). */
-  security?: VortexOrganizationSecurity;
+  security?: ConvexOrganizationSecurity;
 };
 
-export type VortexOrgProfileClassNames = {
+export type ConvexOrgProfileClassNames = {
   card?: string;
   header?: string;
   title?: string;
@@ -63,7 +63,7 @@ export type VortexOrgProfileClassNames = {
   statusBadge?: string;
 };
 
-export type VortexOrgProfileCopy = {
+export type ConvexOrgProfileCopy = {
   title?: string;
   description?: string;
   nameLabel?: string;
@@ -92,25 +92,25 @@ export type VortexOrgProfileCopy = {
   confirmDeleteDescription?: string;
 };
 
-export type VortexOrgProfileUpdateInput = {
+export type ConvexOrgProfileUpdateInput = {
   name?: string;
   slug?: string;
   imageUrl?: string | null;
-  brand?: VortexOrganizationBrandUpdate;
-  security?: VortexOrganizationSecurityUpdate;
+  brand?: ConvexOrganizationBrandUpdate;
+  security?: ConvexOrganizationSecurityUpdate;
 };
 
-export type VortexOrgProfileProps = {
-  organization: VortexOrgProfileOrganization | null | undefined;
-  classNames?: VortexOrgProfileClassNames;
-  copy?: VortexOrgProfileCopy;
+export type ConvexOrgProfileProps = {
+  organization: ConvexOrgProfileOrganization | null | undefined;
+  classNames?: ConvexOrgProfileClassNames;
+  copy?: ConvexOrgProfileCopy;
   isAdmin?: boolean;
   isLoading?: boolean;
   /** When false, brand fields are hidden (default true). */
   showBrandFields?: boolean;
   /** When false, security fields are hidden (default true). */
   showSecurityFields?: boolean;
-  onUpdate?: (input: VortexOrgProfileUpdateInput) => void | Promise<void>;
+  onUpdate?: (input: ConvexOrgProfileUpdateInput) => void | Promise<void>;
   onDelete?: () => void | Promise<void>;
   renderDeleteConfirm?: (args: {
     onConfirm: () => void;
@@ -120,7 +120,7 @@ export type VortexOrgProfileProps = {
 
 // ─── Default copy ──────────────────────────────────────────────────────────
 
-const defaultCopy: Required<VortexOrgProfileCopy> = {
+const defaultCopy: Required<ConvexOrgProfileCopy> = {
   title: "Workspace settings",
   description: "Manage your workspace profile.",
   nameLabel: "Name",
@@ -150,14 +150,14 @@ const defaultCopy: Required<VortexOrgProfileCopy> = {
 };
 
 function resolveCopy(
-  copy: VortexOrgProfileCopy | undefined
-): Required<VortexOrgProfileCopy> {
+  copy: ConvexOrgProfileCopy | undefined
+): Required<ConvexOrgProfileCopy> {
   return { ...defaultCopy, ...copy };
 }
 
 function OrganizationProfileHeader(props: {
-  classNames?: VortexOrgProfileClassNames;
-  copy: Required<VortexOrgProfileCopy>;
+  classNames?: ConvexOrgProfileClassNames;
+  copy: Required<ConvexOrgProfileCopy>;
 }) {
   const { classNames, copy } = props;
 
@@ -174,8 +174,8 @@ function OrganizationProfileHeader(props: {
 }
 
 function OrganizationProfileImage(props: {
-  organization: VortexOrgProfileOrganization;
-  classNames?: VortexOrgProfileClassNames;
+  organization: ConvexOrgProfileOrganization;
+  classNames?: ConvexOrgProfileClassNames;
 }) {
   const { organization, classNames } = props;
   if (!organization.imageUrl) return null;
@@ -193,7 +193,7 @@ function EditableProfileField(props: {
   label: string;
   value: string;
   editing: boolean;
-  classNames?: VortexOrgProfileClassNames;
+  classNames?: ConvexOrgProfileClassNames;
   onChange: (value: string) => void;
 }) {
   const { label, value, editing, classNames, onChange } = props;
@@ -223,9 +223,9 @@ function EditableProfileField(props: {
 }
 
 function OrganizationStatusField(props: {
-  organization: VortexOrgProfileOrganization;
-  classNames?: VortexOrgProfileClassNames;
-  copy: Required<VortexOrgProfileCopy>;
+  organization: ConvexOrgProfileOrganization;
+  classNames?: ConvexOrgProfileClassNames;
+  copy: Required<ConvexOrgProfileCopy>;
 }) {
   const { organization, classNames, copy } = props;
   const statusLabel =
@@ -252,19 +252,19 @@ function OrganizationStatusField(props: {
 }
 
 function OrganizationProfileBody(props: {
-  organization: VortexOrgProfileOrganization;
+  organization: ConvexOrgProfileOrganization;
   editing: boolean;
   name: string;
   slug: string;
-  brand: VortexOrganizationBrand;
-  security: VortexOrganizationSecurity;
+  brand: ConvexOrganizationBrand;
+  security: ConvexOrganizationSecurity;
   showBrandFields: boolean;
   showSecurityFields: boolean;
-  classNames?: VortexOrgProfileClassNames;
-  copy: Required<VortexOrgProfileCopy>;
+  classNames?: ConvexOrgProfileClassNames;
+  copy: Required<ConvexOrgProfileCopy>;
   onNameChange: (value: string) => void;
   onSlugChange: (value: string) => void;
-  onBrandChange: (key: keyof VortexOrganizationBrand, value: string) => void;
+  onBrandChange: (key: keyof ConvexOrganizationBrand, value: string) => void;
   onRequireMfaChange: (value: boolean) => void;
   onSessionTimeoutChange: (value: string) => void;
 }) {
@@ -441,8 +441,8 @@ function ProfileButton(props: {
 function EditingActions(props: {
   saving: boolean;
   isLoading?: boolean;
-  classNames?: VortexOrgProfileClassNames;
-  copy: Required<VortexOrgProfileCopy>;
+  classNames?: ConvexOrgProfileClassNames;
+  copy: Required<ConvexOrgProfileCopy>;
   onSave: () => void | Promise<void>;
   onCancel: () => void;
 }) {
@@ -477,8 +477,8 @@ function EditingActions(props: {
 function ReadOnlyActions(props: {
   isLoading?: boolean;
   canDelete: boolean;
-  classNames?: VortexOrgProfileClassNames;
-  copy: Required<VortexOrgProfileCopy>;
+  classNames?: ConvexOrgProfileClassNames;
+  copy: Required<ConvexOrgProfileCopy>;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -518,8 +518,8 @@ function OrganizationProfileActions(props: {
   saving: boolean;
   isLoading?: boolean;
   canDelete: boolean;
-  classNames?: VortexOrgProfileClassNames;
-  copy: Required<VortexOrgProfileCopy>;
+  classNames?: ConvexOrgProfileClassNames;
+  copy: Required<ConvexOrgProfileCopy>;
   onEdit: () => void;
   onSave: () => void | Promise<void>;
   onCancel: () => void;
@@ -566,14 +566,14 @@ function OrganizationProfileActions(props: {
 }
 
 function DefaultDeleteConfirm(props: {
-  copy: Required<VortexOrgProfileCopy>;
+  copy: Required<ConvexOrgProfileCopy>;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 }) {
   const { copy, onConfirm, onCancel } = props;
 
   return (
-    // vortex-allow-color: modal scrim — intentionally dark in both light and dark
+    // convex-allow-color: modal scrim — intentionally dark in both light and dark
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="border-foreground/10 bg-background w-full max-w-sm rounded-lg border p-5 shadow-xl">
         <h4 className="text-foreground text-base font-semibold">
@@ -605,7 +605,7 @@ function DefaultDeleteConfirm(props: {
 
 function DeleteConfirm(props: {
   open: boolean;
-  copy: Required<VortexOrgProfileCopy>;
+  copy: Required<ConvexOrgProfileCopy>;
   renderDeleteConfirm?: (args: {
     onConfirm: () => void;
     onCancel: () => void;
@@ -629,7 +629,7 @@ function DeleteConfirm(props: {
 
 // ─── Component ────────────────────────────────────────────────────────────
 
-export function VortexOrganizationProfile(props: VortexOrgProfileProps) {
+export function ConvexOrganizationProfile(props: ConvexOrgProfileProps) {
   const {
     organization,
     classNames,
@@ -647,10 +647,10 @@ export function VortexOrganizationProfile(props: VortexOrgProfileProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [name, setName] = useState(organization?.name ?? "");
   const [slug, setSlug] = useState(organization?.slug ?? "");
-  const [brand, setBrand] = useState<VortexOrganizationBrand>(
+  const [brand, setBrand] = useState<ConvexOrganizationBrand>(
     organization?.brand ?? {}
   );
-  const [security, setSecurity] = useState<VortexOrganizationSecurity>(
+  const [security, setSecurity] = useState<ConvexOrganizationSecurity>(
     organization?.security ?? {}
   );
   const [saving, setSaving] = useState(false);
@@ -675,7 +675,7 @@ export function VortexOrganizationProfile(props: VortexOrgProfileProps) {
     if (!onUpdate) return;
     setSaving(true);
     try {
-      const brandUpdate: VortexOrganizationBrandUpdate = {
+      const brandUpdate: ConvexOrganizationBrandUpdate = {
         primaryColor: brand.primaryColor?.trim()
           ? brand.primaryColor.trim()
           : null,
@@ -690,7 +690,7 @@ export function VortexOrganizationProfile(props: VortexOrgProfileProps) {
           ? brand.emailReplyTo.trim()
           : null,
       };
-      const securityUpdate: VortexOrganizationSecurityUpdate = {
+      const securityUpdate: ConvexOrganizationSecurityUpdate = {
         requireMfa: security.requireMfa === true ? true : null,
         sessionTimeoutMinutes:
           security.sessionTimeoutMinutes !== undefined
@@ -715,7 +715,7 @@ export function VortexOrganizationProfile(props: VortexOrgProfileProps) {
     await onDelete();
   };
 
-  const onBrandChange = (key: keyof VortexOrganizationBrand, value: string) => {
+  const onBrandChange = (key: keyof ConvexOrganizationBrand, value: string) => {
     setBrand((current) => ({ ...current, [key]: value }));
   };
 

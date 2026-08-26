@@ -9,21 +9,21 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
-export type VortexUserButtonOrganizationItem = {
+export type ConvexUserButtonOrganizationItem = {
   _id: string;
   name: string;
   imageUrl?: string;
   roleKey?: string;
 };
 
-export type VortexUserButtonUser = {
+export type ConvexUserButtonUser = {
   id: string;
   email: string;
   name?: string | null;
   imageUrl?: string | null;
 };
 
-export type VortexUserButtonClassNames = {
+export type ConvexUserButtonClassNames = {
   trigger?: string;
   avatar?: string;
   initials?: string;
@@ -39,7 +39,7 @@ export type VortexUserButtonClassNames = {
   signOutButton?: string;
 };
 
-export type VortexUserButtonCopy = {
+export type ConvexUserButtonCopy = {
   manageAccountLabel?: string;
   manageOrganizationLabel?: string;
   signOutLabel?: string;
@@ -49,12 +49,12 @@ export type VortexUserButtonCopy = {
   personalAccountLabel?: string;
 };
 
-export type VortexUserButtonProps = {
-  user: VortexUserButtonUser | null | undefined;
+export type ConvexUserButtonProps = {
+  user: ConvexUserButtonUser | null | undefined;
   currentOrganizationId?: string | null;
-  organizations?: readonly VortexUserButtonOrganizationItem[];
-  classNames?: VortexUserButtonClassNames;
-  copy?: VortexUserButtonCopy;
+  organizations?: readonly ConvexUserButtonOrganizationItem[];
+  classNames?: ConvexUserButtonClassNames;
+  copy?: ConvexUserButtonCopy;
   onSignOut?: () => void | Promise<void>;
   onManageAccount?: () => void | Promise<void>;
   onManageOrganization?: () => void | Promise<void>;
@@ -62,14 +62,14 @@ export type VortexUserButtonProps = {
   onCreateOrganization?: () => void | Promise<void>;
   showManageOrganization?: boolean;
   renderCustomTrigger?: (args: {
-    user: VortexUserButtonUser | null | undefined;
+    user: ConvexUserButtonUser | null | undefined;
     onClick: () => void;
   }) => ReactNode;
 };
 
 // ─── Default copy ──────────────────────────────────────────────────────────
 
-const defaultCopy: Required<VortexUserButtonCopy> = {
+const defaultCopy: Required<ConvexUserButtonCopy> = {
   manageAccountLabel: "Manage account",
   manageOrganizationLabel: "Manage organization",
   signOutLabel: "Sign out",
@@ -80,8 +80,8 @@ const defaultCopy: Required<VortexUserButtonCopy> = {
 };
 
 function resolveCopy(
-  copy: VortexUserButtonCopy | undefined
-): Required<VortexUserButtonCopy> {
+  copy: ConvexUserButtonCopy | undefined
+): Required<ConvexUserButtonCopy> {
   return { ...defaultCopy, ...copy };
 }
 
@@ -97,7 +97,7 @@ function getInitials(name: string | null | undefined, email: string): string {
 
 // ─── Component ────────────────────────────────────────────────────────────
 
-export function VortexUserButton(props: VortexUserButtonProps) {
+export function ConvexUserButton(props: ConvexUserButtonProps) {
   const {
     user,
     currentOrganizationId,
@@ -205,14 +205,14 @@ export function VortexUserButton(props: VortexUserButtonProps) {
   );
 }
 
-type ResolvedUserButtonCopy = Required<VortexUserButtonCopy>;
+type ResolvedUserButtonCopy = Required<ConvexUserButtonCopy>;
 
 function UserButtonTrigger(args: {
-  classNames?: VortexUserButtonClassNames;
+  classNames?: ConvexUserButtonClassNames;
   initials: string;
   onClick: () => void;
   open: boolean;
-  user: VortexUserButtonUser;
+  user: ConvexUserButtonUser;
 }) {
   return (
     <button
@@ -255,9 +255,9 @@ function UserButtonTrigger(args: {
 }
 
 function UserButtonAvatar(args: {
-  classNames?: VortexUserButtonClassNames;
+  classNames?: ConvexUserButtonClassNames;
   initials: string;
-  user: VortexUserButtonUser;
+  user: ConvexUserButtonUser;
 }) {
   return args.user.imageUrl ? (
     <img
@@ -281,7 +281,7 @@ function UserButtonAvatar(args: {
 }
 
 function UserButtonDropdown(args: {
-  classNames?: VortexUserButtonClassNames;
+  classNames?: ConvexUserButtonClassNames;
   copy: ResolvedUserButtonCopy;
   currentOrganizationId?: string | null;
   hasOrgs: boolean;
@@ -290,8 +290,8 @@ function UserButtonDropdown(args: {
   onManageOrganization?: () => void;
   onSelectOrganization: (organizationId: string) => void;
   onSignOut: () => void;
-  organizations: readonly VortexUserButtonOrganizationItem[];
-  user: VortexUserButtonUser;
+  organizations: readonly ConvexUserButtonOrganizationItem[];
+  user: ConvexUserButtonUser;
 }) {
   return (
     <div
@@ -318,9 +318,9 @@ function UserButtonDropdown(args: {
 }
 
 function SignedInSection(args: {
-  classNames?: VortexUserButtonClassNames;
+  classNames?: ConvexUserButtonClassNames;
   copy: ResolvedUserButtonCopy;
-  user: VortexUserButtonUser;
+  user: ConvexUserButtonUser;
 }) {
   return (
     <div className={cn("px-3 py-2", args.classNames?.dropdownPanel)}>
@@ -338,7 +338,7 @@ function SignedInSection(args: {
 }
 
 function AccountActionSection(args: {
-  classNames?: VortexUserButtonClassNames;
+  classNames?: ConvexUserButtonClassNames;
   copy: ResolvedUserButtonCopy;
   onManageAccount: () => void;
 }) {
@@ -359,12 +359,12 @@ function AccountActionSection(args: {
 }
 
 function OrganizationSwitcherSection(args: {
-  classNames?: VortexUserButtonClassNames;
+  classNames?: ConvexUserButtonClassNames;
   copy: ResolvedUserButtonCopy;
   currentOrganizationId?: string | null;
   onCreateOrganization?: () => void;
   onSelectOrganization: (organizationId: string) => void;
-  organizations: readonly VortexUserButtonOrganizationItem[];
+  organizations: readonly ConvexUserButtonOrganizationItem[];
 }) {
   return (
     <>
@@ -404,10 +404,10 @@ function OrganizationSwitcherSection(args: {
 }
 
 function OrganizationSwitcherItem(args: {
-  classNames?: VortexUserButtonClassNames;
+  classNames?: ConvexUserButtonClassNames;
   currentOrganizationId?: string | null;
   onSelectOrganization: (organizationId: string) => void;
-  organization: VortexUserButtonOrganizationItem;
+  organization: ConvexUserButtonOrganizationItem;
 }) {
   const active = args.organization._id === args.currentOrganizationId;
   return (
@@ -447,7 +447,7 @@ function OrganizationSwitcherItem(args: {
 }
 
 function OrganizationSwitcherAvatar(args: {
-  organization: VortexUserButtonOrganizationItem;
+  organization: ConvexUserButtonOrganizationItem;
 }) {
   return args.organization.imageUrl ? (
     <img
@@ -463,7 +463,7 @@ function OrganizationSwitcherAvatar(args: {
 }
 
 function ManageOrganizationSection(args: {
-  classNames?: VortexUserButtonClassNames;
+  classNames?: ConvexUserButtonClassNames;
   copy: ResolvedUserButtonCopy;
   onManageOrganization?: () => void;
 }) {
@@ -483,7 +483,7 @@ function ManageOrganizationSection(args: {
 }
 
 function SignOutSection(args: {
-  classNames?: VortexUserButtonClassNames;
+  classNames?: ConvexUserButtonClassNames;
   copy: ResolvedUserButtonCopy;
   onSignOut: () => void;
 }) {
@@ -504,7 +504,7 @@ function SignOutSection(args: {
 }
 
 function DropdownAction(args: {
-  classNames?: VortexUserButtonClassNames;
+  classNames?: ConvexUserButtonClassNames;
   danger?: boolean;
   icon: "account" | "organization" | "plus" | "signOut";
   label: string;
@@ -612,7 +612,7 @@ function DropdownActionIcon(args: {
   );
 }
 
-function DropdownDivider(args: { classNames?: VortexUserButtonClassNames }) {
+function DropdownDivider(args: { classNames?: ConvexUserButtonClassNames }) {
   return (
     <div
       className={cn(

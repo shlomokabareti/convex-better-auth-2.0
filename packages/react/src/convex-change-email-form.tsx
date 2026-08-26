@@ -1,26 +1,26 @@
 /**
- * VortexChangeEmailForm — drop-in "change your email" form for
+ * ConvexChangeEmailForm — drop-in "change your email" form for
  * consumers. Sends a verification email to the NEW address; once
  * the user clicks the link (which goes through the same
  * verifyEmail flow), the email is updated.
  *
  * Consumer usage:
- *   <VortexChangeEmailForm
+ *   <ConvexChangeEmailForm
  *     authClient={authClient}
  *     currentEmail={user?.primaryEmailAddress?.emailAddress ?? null}
  *     verifyCallbackUrl={`${origin}/verify-email`}
  *   />
  *
  * Verification email lands on /verify-email — this means
- * VortexVerifyEmailScreen already covers the second half of the
+ * ConvexVerifyEmailScreen already covers the second half of the
  * flow. Consumers wire one route; both 'verify after signup' and
  * 'verify after email change' use it.
  */
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import {
-  useVortexAuthChangeEmail,
-  type VortexBetterAuthClient,
+  useConvexAuthChangeEmail,
+  type ConvexBetterAuthClient,
 } from "./better-auth-runtime";
 import {
   AuthCard,
@@ -31,7 +31,7 @@ import {
   AuthLabel,
 } from "./ui";
 
-export type VortexChangeEmailFormClassNames = {
+export type ConvexChangeEmailFormClassNames = {
   root?: string;
   form?: string;
   field?: string;
@@ -42,7 +42,7 @@ export type VortexChangeEmailFormClassNames = {
   errorState?: string;
 };
 
-export type VortexChangeEmailFormCopy = {
+export type ConvexChangeEmailFormCopy = {
   title?: string;
   description?: string;
   currentEmailLabel?: string;
@@ -55,8 +55,8 @@ export type VortexChangeEmailFormCopy = {
   sameAsCurrentMessage?: string;
 };
 
-export type VortexChangeEmailFormProps = {
-  authClient: VortexBetterAuthClient | null;
+export type ConvexChangeEmailFormProps = {
+  authClient: ConvexBetterAuthClient | null;
   /** The user's current email, displayed read-only above the new-email field. */
   currentEmail?: string | null;
   /**
@@ -64,12 +64,12 @@ export type VortexChangeEmailFormProps = {
    * appends `?token=…` to it for the change-confirmation email.
    */
   verifyCallbackUrl?: string;
-  classNames?: VortexChangeEmailFormClassNames;
-  copy?: VortexChangeEmailFormCopy;
+  classNames?: ConvexChangeEmailFormClassNames;
+  copy?: ConvexChangeEmailFormCopy;
   onRequested?: (newEmail: string) => void;
 };
 
-const DEFAULT_COPY: Required<VortexChangeEmailFormCopy> = {
+const DEFAULT_COPY: Required<ConvexChangeEmailFormCopy> = {
   title: "Change email",
   description: "We'll send a confirmation link to the new address.",
   currentEmailLabel: "Current email",
@@ -83,11 +83,11 @@ const DEFAULT_COPY: Required<VortexChangeEmailFormCopy> = {
   sameAsCurrentMessage: "New email is the same as your current email.",
 };
 
-export function VortexChangeEmailForm(props: VortexChangeEmailFormProps) {
+export function ConvexChangeEmailForm(props: ConvexChangeEmailFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { requestChange, isRequesting } = useVortexAuthChangeEmail(
+  const { requestChange, isRequesting } = useConvexAuthChangeEmail(
     props.authClient
   );
   const [newEmail, setNewEmail] = useState("");
@@ -131,13 +131,13 @@ export function VortexChangeEmailForm(props: VortexChangeEmailFormProps) {
             {props.currentEmail !== null && props.currentEmail !== undefined ? (
               <AuthField className={cn.field}>
                 <AuthLabel
-                  htmlFor="vortex-change-email-current"
+                  htmlFor="convex-change-email-current"
                   className={cn.label}
                 >
                   {copy.currentEmailLabel}
                 </AuthLabel>
                 <AuthInput
-                  id="vortex-change-email-current"
+                  id="convex-change-email-current"
                   value={props.currentEmail}
                   readOnly
                   className={cn.input}
@@ -145,11 +145,11 @@ export function VortexChangeEmailForm(props: VortexChangeEmailFormProps) {
               </AuthField>
             ) : null}
             <AuthField className={cn.field}>
-              <AuthLabel htmlFor="vortex-change-email-new" className={cn.label}>
+              <AuthLabel htmlFor="convex-change-email-new" className={cn.label}>
                 {copy.newEmailLabel}
               </AuthLabel>
               <AuthInput
-                id="vortex-change-email-new"
+                id="convex-change-email-new"
                 type="email"
                 value={newEmail}
                 placeholder={copy.newEmailPlaceholder}

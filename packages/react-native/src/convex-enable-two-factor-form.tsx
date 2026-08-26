@@ -1,13 +1,13 @@
 /**
- * VortexEnableTwoFactorForm (RN) — drop-in TOTP enrollment flow for Expo.
+ * ConvexEnableTwoFactorForm (RN) — drop-in TOTP enrollment flow for Expo.
  * Mirrors the web component: password → verify (secret + optional QR via
  * `renderQR`) → backup codes. Ships NO QR dependency; manual-entry of the
  * secret is always a complete path, and `renderQR` (e.g. a
  * react-native-qrcode-svg) adds the scan affordance when wanted.
  *
  * Consumer usage:
- *   <VortexEnableTwoFactorForm
- *     authClient={vortexAuth.authClient}
+ *   <ConvexEnableTwoFactorForm
+ *     authClient={convexAuth.authClient}
  *     issuer="Pile"
  *     renderQR={(uri) => <QRCode value={uri} size={180} />}
  *     onEnrolled={() => router.replace('/settings/security')}
@@ -25,14 +25,14 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { VortexExpoBetterAuthClient } from "./client";
+import type { ExpoBetterAuthClient } from "./client";
 import {
   extractTotpSecret,
-  useVortexExpoAuthEnableTwoFactor,
-  useVortexExpoAuthVerifyTotp,
+  useExpoAuthEnableTwoFactor,
+  useExpoAuthVerifyTotp,
 } from "./runtime";
 
-export type VortexExpoEnableTwoFactorFormStyles = {
+export type ExpoEnableTwoFactorFormStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -49,7 +49,7 @@ export type VortexExpoEnableTwoFactorFormStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoEnableTwoFactorFormCopy = {
+export type ExpoEnableTwoFactorFormCopy = {
   title?: string;
   description?: string;
   passwordLabel?: string;
@@ -68,16 +68,16 @@ export type VortexExpoEnableTwoFactorFormCopy = {
   unavailable?: string;
 };
 
-export type VortexExpoEnableTwoFactorFormProps = {
-  authClient: VortexExpoBetterAuthClient | null;
+export type ExpoEnableTwoFactorFormProps = {
+  authClient: ExpoBetterAuthClient | null;
   issuer?: string;
   renderQR?: (totpURI: string) => ReactNode;
-  styles?: VortexExpoEnableTwoFactorFormStyles;
-  copy?: VortexExpoEnableTwoFactorFormCopy;
+  styles?: ExpoEnableTwoFactorFormStyles;
+  copy?: ExpoEnableTwoFactorFormCopy;
   onEnrolled?: () => void;
 };
 
-const DEFAULT_COPY: Required<VortexExpoEnableTwoFactorFormCopy> = {
+const DEFAULT_COPY: Required<ExpoEnableTwoFactorFormCopy> = {
   title: "Enable two-factor authentication",
   description: "Add an authenticator app for an extra layer of security.",
   passwordLabel: "Confirm your password",
@@ -100,18 +100,18 @@ const DEFAULT_COPY: Required<VortexExpoEnableTwoFactorFormCopy> = {
 };
 
 type Step = "password" | "verify" | "backup";
-type TwoFactorFormCopy = Required<VortexExpoEnableTwoFactorFormCopy>;
+type TwoFactorFormCopy = Required<ExpoEnableTwoFactorFormCopy>;
 
-export function VortexEnableTwoFactorForm(
-  props: VortexExpoEnableTwoFactorFormProps
+export function ConvexEnableTwoFactorForm(
+  props: ExpoEnableTwoFactorFormProps
 ) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
 
-  const { enable, isEnabling } = useVortexExpoAuthEnableTwoFactor(
+  const { enable, isEnabling } = useExpoAuthEnableTwoFactor(
     props.authClient
   );
-  const { verifyTotp, isVerifying } = useVortexExpoAuthVerifyTotp(
+  const { verifyTotp, isVerifying } = useExpoAuthVerifyTotp(
     props.authClient
   );
 
@@ -215,7 +215,7 @@ function getTwoFactorHeader(copy: TwoFactorFormCopy, step: Step) {
 
 function TwoFactorUnavailable(args: {
   copy: TwoFactorFormCopy;
-  stylesOverride: VortexExpoEnableTwoFactorFormStyles;
+  stylesOverride: ExpoEnableTwoFactorFormStyles;
 }) {
   return (
     <View style={[styles.root, args.stylesOverride.root]}>
@@ -236,7 +236,7 @@ function TwoFactorPasswordStep(args: {
   onPasswordChange: (value: string) => void;
   onSubmit: () => Promise<void>;
   password: string;
-  stylesOverride: VortexExpoEnableTwoFactorFormStyles;
+  stylesOverride: ExpoEnableTwoFactorFormStyles;
 }) {
   const s = args.stylesOverride;
   return (
@@ -276,7 +276,7 @@ function TwoFactorVerifyStep(args: {
   onSubmit: () => Promise<void>;
   renderQR?: (totpURI: string) => ReactNode;
   secret: string | null;
-  stylesOverride: VortexExpoEnableTwoFactorFormStyles;
+  stylesOverride: ExpoEnableTwoFactorFormStyles;
   totpURI: string | null;
 }) {
   const s = args.stylesOverride;
@@ -323,7 +323,7 @@ function TwoFactorBackupStep(args: {
   backupCodes: string[];
   copy: TwoFactorFormCopy;
   onDone?: () => void;
-  stylesOverride: VortexExpoEnableTwoFactorFormStyles;
+  stylesOverride: ExpoEnableTwoFactorFormStyles;
 }) {
   const s = args.stylesOverride;
   return (
@@ -353,7 +353,7 @@ function TwoFactorBackupStep(args: {
 
 function TwoFactorError(args: {
   error: string | null;
-  stylesOverride: VortexExpoEnableTwoFactorFormStyles;
+  stylesOverride: ExpoEnableTwoFactorFormStyles;
 }) {
   return args.error === null ? null : (
     <Text

@@ -1,5 +1,5 @@
 /**
- * VortexOrganizationMembers (RN) — view/manage current org's members
+ * ConvexOrganizationMembers (RN) — view/manage current org's members
  * + pending invitations. Props-driven mirror of the web component.
  *
  * Consumer brings: members list, invitations list, role list, and
@@ -21,7 +21,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-export type VortexExpoOrgMember = {
+export type ExpoOrgMember = {
   _id: string;
   userId: string;
   name?: string;
@@ -31,19 +31,19 @@ export type VortexExpoOrgMember = {
   isViewer?: boolean;
 };
 
-export type VortexExpoOrgInvitation = {
+export type ExpoOrgInvitation = {
   _id: string;
   email: string;
   roleKey: string;
   expiresAt?: number;
 };
 
-export type VortexExpoOrgRole = {
+export type ExpoOrgRole = {
   key: string;
   label: string;
 };
 
-export type VortexExpoOrgMembersStyles = {
+export type ExpoOrgMembersStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -68,7 +68,7 @@ export type VortexExpoOrgMembersStyles = {
   errorState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoOrgMembersCopy = {
+export type ExpoOrgMembersCopy = {
   title?: string;
   description?: string;
   inviteSectionTitle?: string;
@@ -84,12 +84,12 @@ export type VortexExpoOrgMembersCopy = {
   cancelInvite?: string;
 };
 
-export type VortexExpoOrgMembersProps = {
-  members: readonly VortexExpoOrgMember[];
-  invitations?: readonly VortexExpoOrgInvitation[];
-  roles: readonly VortexExpoOrgRole[];
-  styles?: VortexExpoOrgMembersStyles;
-  copy?: VortexExpoOrgMembersCopy;
+export type ExpoOrgMembersProps = {
+  members: readonly ExpoOrgMember[];
+  invitations?: readonly ExpoOrgInvitation[];
+  roles: readonly ExpoOrgRole[];
+  styles?: ExpoOrgMembersStyles;
+  copy?: ExpoOrgMembersCopy;
   onInvite: (args: {
     email: string;
     roleKey: string;
@@ -102,7 +102,7 @@ export type VortexExpoOrgMembersProps = {
   ) => Promise<{ ok: boolean; error: string | null }>;
 };
 
-const DEFAULT_COPY: Required<VortexExpoOrgMembersCopy> = {
+const DEFAULT_COPY: Required<ExpoOrgMembersCopy> = {
   title: "Members",
   description: "Invite teammates and manage roles.",
   inviteSectionTitle: "Invite member",
@@ -118,7 +118,7 @@ const DEFAULT_COPY: Required<VortexExpoOrgMembersCopy> = {
   cancelInvite: "Cancel",
 };
 
-export function VortexOrganizationMembers(props: VortexExpoOrgMembersProps) {
+export function ConvexOrganizationMembers(props: ExpoOrgMembersProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const [email, setEmail] = useState("");
@@ -152,7 +152,7 @@ export function VortexOrganizationMembers(props: VortexExpoOrgMembersProps) {
         </Text>
       </View>
 
-      <VortexOrganizationMembersInviteSection
+      <ConvexOrganizationMembersInviteSection
         copy={copy}
         email={email}
         error={error}
@@ -166,14 +166,14 @@ export function VortexOrganizationMembers(props: VortexExpoOrgMembersProps) {
       />
 
       <View className="bg-border" style={[styles.divider, s.divider]} />
-      <VortexOrganizationMembersList
+      <ConvexOrganizationMembersList
         copy={copy}
         members={props.members}
         onError={setError}
         onRemoveMember={props.onRemoveMember}
         stylesOverride={s}
       />
-      <VortexOrganizationInvitationsList
+      <ConvexOrganizationInvitationsList
         copy={copy}
         invitations={props.invitations}
         onCancelInvitation={props.onCancelInvitation}
@@ -184,7 +184,7 @@ export function VortexOrganizationMembers(props: VortexExpoOrgMembersProps) {
   );
 }
 
-function VortexOrganizationMembersInviteSection({
+function ConvexOrganizationMembersInviteSection({
   copy,
   email,
   error,
@@ -196,7 +196,7 @@ function VortexOrganizationMembersInviteSection({
   roles,
   stylesOverride,
 }: {
-  copy: Required<VortexExpoOrgMembersCopy>;
+  copy: Required<ExpoOrgMembersCopy>;
   email: string;
   error: string | null;
   inviting: boolean;
@@ -204,8 +204,8 @@ function VortexOrganizationMembersInviteSection({
   onInvite: () => Promise<void>;
   onRoleChange: (roleKey: string) => void;
   roleKey: string;
-  roles: readonly VortexExpoOrgRole[];
-  stylesOverride: VortexExpoOrgMembersStyles;
+  roles: readonly ExpoOrgRole[];
+  stylesOverride: ExpoOrgMembersStyles;
 }) {
   return (
     <>
@@ -221,7 +221,7 @@ function VortexOrganizationMembersInviteSection({
           style={[styles.input, stylesOverride.input]}
           value={email}
         />
-        <VortexOrganizationRolePicker
+        <ConvexOrganizationRolePicker
           onRoleChange={onRoleChange}
           roleKey={roleKey}
           roles={roles}
@@ -251,7 +251,7 @@ function VortexOrganizationMembersInviteSection({
   );
 }
 
-function VortexOrganizationRolePicker({
+function ConvexOrganizationRolePicker({
   onRoleChange,
   roleKey,
   roles,
@@ -259,8 +259,8 @@ function VortexOrganizationRolePicker({
 }: {
   onRoleChange: (roleKey: string) => void;
   roleKey: string;
-  roles: readonly VortexExpoOrgRole[];
-  stylesOverride: VortexExpoOrgMembersStyles;
+  roles: readonly ExpoOrgRole[];
+  stylesOverride: ExpoOrgMembersStyles;
 }) {
   return (
     <View style={[styles.rolePicker, stylesOverride.rolePicker]}>
@@ -292,18 +292,18 @@ function VortexOrganizationRolePicker({
   );
 }
 
-function VortexOrganizationMembersList({
+function ConvexOrganizationMembersList({
   copy,
   members,
   onError,
   onRemoveMember,
   stylesOverride,
 }: {
-  copy: Required<VortexExpoOrgMembersCopy>;
-  members: readonly VortexExpoOrgMember[];
+  copy: Required<ExpoOrgMembersCopy>;
+  members: readonly ExpoOrgMember[];
   onError: (error: string | null) => void;
-  onRemoveMember: VortexExpoOrgMembersProps["onRemoveMember"];
-  stylesOverride: VortexExpoOrgMembersStyles;
+  onRemoveMember: ExpoOrgMembersProps["onRemoveMember"];
+  stylesOverride: ExpoOrgMembersStyles;
 }) {
   return (
     <>
@@ -319,7 +319,7 @@ function VortexOrganizationMembersList({
           data={members}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
-            <VortexOrganizationMemberRow
+            <ConvexOrganizationMemberRow
               copy={copy}
               member={item}
               onError={onError}
@@ -334,18 +334,18 @@ function VortexOrganizationMembersList({
   );
 }
 
-function VortexOrganizationMemberRow({
+function ConvexOrganizationMemberRow({
   copy,
   member,
   onError,
   onRemoveMember,
   stylesOverride,
 }: {
-  copy: Required<VortexExpoOrgMembersCopy>;
-  member: VortexExpoOrgMember;
+  copy: Required<ExpoOrgMembersCopy>;
+  member: ExpoOrgMember;
   onError: (error: string | null) => void;
-  onRemoveMember: VortexExpoOrgMembersProps["onRemoveMember"];
-  stylesOverride: VortexExpoOrgMembersStyles;
+  onRemoveMember: ExpoOrgMembersProps["onRemoveMember"];
+  stylesOverride: ExpoOrgMembersStyles;
 }) {
   return (
     <View style={[styles.memberItem, stylesOverride.memberItem]}>
@@ -386,18 +386,18 @@ function VortexOrganizationMemberRow({
   );
 }
 
-function VortexOrganizationInvitationsList({
+function ConvexOrganizationInvitationsList({
   copy,
   invitations,
   onCancelInvitation,
   onError,
   stylesOverride,
 }: {
-  copy: Required<VortexExpoOrgMembersCopy>;
-  invitations: readonly VortexExpoOrgInvitation[] | undefined;
-  onCancelInvitation: VortexExpoOrgMembersProps["onCancelInvitation"];
+  copy: Required<ExpoOrgMembersCopy>;
+  invitations: readonly ExpoOrgInvitation[] | undefined;
+  onCancelInvitation: ExpoOrgMembersProps["onCancelInvitation"];
   onError: (error: string | null) => void;
-  stylesOverride: VortexExpoOrgMembersStyles;
+  stylesOverride: ExpoOrgMembersStyles;
 }) {
   if (invitations === undefined || invitations.length === 0) {
     return null;
@@ -413,7 +413,7 @@ function VortexOrganizationInvitationsList({
         {copy.invitationsSectionTitle}
       </Text>
       {invitations.map((invitation) => (
-        <VortexOrganizationInvitationRow
+        <ConvexOrganizationInvitationRow
           copy={copy}
           invitation={invitation}
           key={invitation._id}
@@ -426,18 +426,18 @@ function VortexOrganizationInvitationsList({
   );
 }
 
-function VortexOrganizationInvitationRow({
+function ConvexOrganizationInvitationRow({
   copy,
   invitation,
   onCancelInvitation,
   onError,
   stylesOverride,
 }: {
-  copy: Required<VortexExpoOrgMembersCopy>;
-  invitation: VortexExpoOrgInvitation;
-  onCancelInvitation: VortexExpoOrgMembersProps["onCancelInvitation"];
+  copy: Required<ExpoOrgMembersCopy>;
+  invitation: ExpoOrgInvitation;
+  onCancelInvitation: ExpoOrgMembersProps["onCancelInvitation"];
   onError: (error: string | null) => void;
-  stylesOverride: VortexExpoOrgMembersStyles;
+  stylesOverride: ExpoOrgMembersStyles;
 }) {
   return (
     <View style={[styles.memberItem, stylesOverride.memberItem]}>

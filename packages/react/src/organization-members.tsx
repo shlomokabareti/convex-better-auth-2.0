@@ -8,7 +8,7 @@ import {
   useGuardedConvexMutation,
 } from "./protected-writes";
 
-export const vortexOrganizationRoleTemplates = [
+export const convexOrganizationRoleTemplates = [
   "owner",
   "admin",
   "manager",
@@ -16,20 +16,20 @@ export const vortexOrganizationRoleTemplates = [
   "viewer",
 ] as const;
 
-export type VortexOrganizationRoleTemplate =
-  (typeof vortexOrganizationRoleTemplates)[number];
+export type ConvexOrganizationRoleTemplate =
+  (typeof convexOrganizationRoleTemplates)[number];
 
-export type VortexOrganizationMemberStatus =
+export type ConvexOrganizationMemberStatus =
   | "active"
   | "pending"
   | "inactive"
   | "suspended";
 
-export type VortexOrganizationMemberListItem<MemberId extends string = string> =
+export type ConvexOrganizationMemberListItem<MemberId extends string = string> =
   {
     _id: MemberId;
-    roleTemplate: VortexOrganizationRoleTemplate;
-    status: VortexOrganizationMemberStatus;
+    roleTemplate: ConvexOrganizationRoleTemplate;
+    status: ConvexOrganizationMemberStatus;
     createdAt?: number;
     updatedAt?: number;
     user?: {
@@ -39,14 +39,14 @@ export type VortexOrganizationMemberListItem<MemberId extends string = string> =
     } | null;
   };
 
-export type VortexOrganizationInviteFormState<
-  Role extends string = VortexOrganizationRoleTemplate,
+export type ConvexOrganizationInviteFormState<
+  Role extends string = ConvexOrganizationRoleTemplate,
 > = {
   email: string;
   roleTemplate: Role;
 };
 
-export type VortexOrganizationMembersCopy = {
+export type ConvexOrganizationMembersCopy = {
   loadingMessage?: string;
   emptyMessage: string;
   unknownMemberLabel?: string;
@@ -59,7 +59,7 @@ export type VortexOrganizationMembersCopy = {
   lastOwnerDisabledLabel?: string;
 };
 
-export type VortexOrganizationInviteFormCopy = {
+export type ConvexOrganizationInviteFormCopy = {
   emailLabel?: string;
   emailPlaceholder?: string;
   roleLabel?: string;
@@ -67,7 +67,7 @@ export type VortexOrganizationInviteFormCopy = {
   submittingLabel?: string;
 };
 
-export type VortexOrganizationMembersClassNames = {
+export type ConvexOrganizationMembersClassNames = {
   form?: string;
   formGrid?: string;
   label?: string;
@@ -91,39 +91,39 @@ export type VortexOrganizationMembersClassNames = {
   stateText?: string;
 };
 
-export type VortexOrganizationInviteFormProps<
-  Role extends string = VortexOrganizationRoleTemplate,
+export type ConvexOrganizationInviteFormProps<
+  Role extends string = ConvexOrganizationRoleTemplate,
 > = {
-  classNames?: VortexOrganizationMembersClassNames;
-  copy?: VortexOrganizationInviteFormCopy;
+  classNames?: ConvexOrganizationMembersClassNames;
+  copy?: ConvexOrganizationInviteFormCopy;
   disabled?: boolean;
   inviting: boolean;
   onEmailChange: (value: string) => void;
   onRoleTemplateChange: (value: Role) => void;
   onSubmit: () => void;
   roleOptions: readonly Role[];
-  state: VortexOrganizationInviteFormState<Role>;
+  state: ConvexOrganizationInviteFormState<Role>;
 };
 
-export type VortexOrganizationMemberListProps<
-  Role extends string = VortexOrganizationRoleTemplate,
+export type ConvexOrganizationMemberListProps<
+  Role extends string = ConvexOrganizationRoleTemplate,
   MemberId extends string = string,
 > = {
   canManageMembers?: boolean;
   canManageRoles?: boolean;
-  classNames?: VortexOrganizationMembersClassNames;
-  copy: VortexOrganizationMembersCopy;
+  classNames?: ConvexOrganizationMembersClassNames;
+  copy: ConvexOrganizationMembersCopy;
   formatTimestamp?: (timestamp: number) => string;
-  members: readonly VortexOrganizationMemberListItem<MemberId>[] | undefined;
+  members: readonly ConvexOrganizationMemberListItem<MemberId>[] | undefined;
   mutatingMemberId?: MemberId | null;
   onReactivate?: (membershipId: MemberId) => void;
   onRoleChange?: (membershipId: MemberId, roleTemplate: Role) => void;
   onSuspend?: (membershipId: MemberId) => void;
-  renderStatus?: (status: VortexOrganizationMemberStatus) => ReactNode;
+  renderStatus?: (status: ConvexOrganizationMemberStatus) => ReactNode;
   roleOptions: readonly Role[];
 };
 
-export type VortexOrganizationInviteMemberResult<
+export type ConvexOrganizationInviteMemberResult<
   InvitationId extends string = string,
 > = {
   acceptUrl: string;
@@ -131,8 +131,8 @@ export type VortexOrganizationInviteMemberResult<
   token: string;
 };
 
-export type VortexOrganizationMemberFunctionReferences<
-  Role extends string = VortexOrganizationRoleTemplate,
+export type ConvexOrganizationMemberFunctionReferences<
+  Role extends string = ConvexOrganizationRoleTemplate,
   MemberId extends string = string,
   OrganizationId extends string = string,
   InvitationId extends string = string,
@@ -141,13 +141,13 @@ export type VortexOrganizationMemberFunctionReferences<
     "action",
     "public",
     { email: string; organizationId: OrganizationId; roleTemplate: Role },
-    VortexOrganizationInviteMemberResult<InvitationId>
+    ConvexOrganizationInviteMemberResult<InvitationId>
   >;
   listMembers: FunctionReference<
     "query",
     "public",
     EmptyArgs,
-    readonly VortexOrganizationMemberListItem<MemberId>[]
+    readonly ConvexOrganizationMemberListItem<MemberId>[]
   >;
   reactivateMember: FunctionReference<
     "mutation",
@@ -169,15 +169,15 @@ export type VortexOrganizationMemberFunctionReferences<
   >;
 };
 
-export type VortexOrganizationMembersSurfaceCopy = {
+export type ConvexOrganizationMembersSurfaceCopy = {
   actionErrorTitle?: string;
   invitationLinkTitle?: string;
-  invite?: VortexOrganizationInviteFormCopy;
-  members?: Partial<VortexOrganizationMembersCopy>;
+  invite?: ConvexOrganizationInviteFormCopy;
+  members?: Partial<ConvexOrganizationMembersCopy>;
 };
 
-export type VortexOrganizationMembersSurfaceProps<
-  Role extends string = VortexOrganizationRoleTemplate,
+export type ConvexOrganizationMembersSurfaceProps<
+  Role extends string = ConvexOrganizationRoleTemplate,
   MemberId extends string = string,
   OrganizationId extends string = string,
   InvitationId extends string = string,
@@ -185,15 +185,15 @@ export type VortexOrganizationMembersSurfaceProps<
   canManageMembers?: boolean;
   canManageRoles?: boolean;
   captureEvent?: (name: string, properties: Record<string, unknown>) => void;
-  classNames?: VortexOrganizationMembersClassNames;
+  classNames?: ConvexOrganizationMembersClassNames;
   confirmSuspendMember?: (args: {
     membershipId: MemberId;
   }) => boolean | Promise<boolean>;
-  copy?: VortexOrganizationMembersSurfaceCopy;
+  copy?: ConvexOrganizationMembersSurfaceCopy;
   defaultInviteRoleTemplate?: Role;
   getErrorMessage?: (error: unknown, fallback: string) => string;
   organizationId?: OrganizationId;
-  refs: VortexOrganizationMemberFunctionReferences<
+  refs: ConvexOrganizationMemberFunctionReferences<
     Role,
     MemberId,
     OrganizationId,
@@ -201,7 +201,7 @@ export type VortexOrganizationMembersSurfaceProps<
   >;
   renderActionError?: (message: string) => ReactNode;
   renderInvitationLink?: (args: { title: string; value: string }) => ReactNode;
-  renderStatus?: (status: VortexOrganizationMemberStatus) => ReactNode;
+  renderStatus?: (status: ConvexOrganizationMemberStatus) => ReactNode;
   roleOptions: readonly Role[];
 };
 
@@ -214,7 +214,7 @@ const defaultInviteCopy = {
   roleLabel: "Role",
   submitLabel: "Invite member",
   submittingLabel: "Inviting...",
-} satisfies Required<VortexOrganizationInviteFormCopy>;
+} satisfies Required<ConvexOrganizationInviteFormCopy>;
 
 const defaultMembersCopy = {
   emptyMessage: "No organization members yet.",
@@ -227,16 +227,16 @@ const defaultMembersCopy = {
   suspendLabel: "Suspend",
   suspendingLabel: "Suspending...",
   unknownMemberLabel: "Unknown member",
-} satisfies VortexOrganizationMembersCopy;
+} satisfies ConvexOrganizationMembersCopy;
 
 const defaultSurfaceCopy = {
   actionErrorTitle: "Action failed",
   invitationLinkTitle: "Invitation link",
 } satisfies Required<
-  Omit<VortexOrganizationMembersSurfaceCopy, "invite" | "members">
+  Omit<ConvexOrganizationMembersSurfaceCopy, "invite" | "members">
 >;
 
-export function canSubmitVortexOrganizationInviteForm({
+export function canSubmitConvexOrganizationInviteForm({
   disabled,
   email,
   inviting,
@@ -255,26 +255,26 @@ export function canSubmitVortexOrganizationInviteForm({
   );
 }
 
-export function getVortexOrganizationMemberLabel(
-  member: Pick<VortexOrganizationMemberListItem, "user">,
+export function getConvexOrganizationMemberLabel(
+  member: Pick<ConvexOrganizationMemberListItem, "user">,
   unknownMemberLabel = defaultMembersCopy.unknownMemberLabel
 ): string {
   return member.user?.name ?? member.user?.email ?? unknownMemberLabel;
 }
 
-export function getVortexOrganizationRoleLabel(role: string): string {
+export function getConvexOrganizationRoleLabel(role: string): string {
   return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
-export function getVortexOrganizationMemberStatusLabel(
-  status: VortexOrganizationMemberStatus
+export function getConvexOrganizationMemberStatusLabel(
+  status: ConvexOrganizationMemberStatus
 ): string {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
-export function countVortexActiveOwners(
+export function countConvexActiveOwners(
   members: readonly Pick<
-    VortexOrganizationMemberListItem,
+    ConvexOrganizationMemberListItem,
     "roleTemplate" | "status"
   >[]
 ): number {
@@ -283,8 +283,8 @@ export function countVortexActiveOwners(
   ).length;
 }
 
-export function isVortexLastActiveOwner(
-  member: Pick<VortexOrganizationMemberListItem, "roleTemplate" | "status">,
+export function isConvexLastActiveOwner(
+  member: Pick<ConvexOrganizationMemberListItem, "roleTemplate" | "status">,
   activeOwnerCount: number
 ): boolean {
   return (
@@ -294,14 +294,14 @@ export function isVortexLastActiveOwner(
   );
 }
 
-export function formatVortexOrganizationMemberTimestamp(
+export function formatConvexOrganizationMemberTimestamp(
   timestamp: number
 ): string {
   return new Date(timestamp).toLocaleString();
 }
 
-export function VortexOrganizationInviteForm<
-  Role extends string = VortexOrganizationRoleTemplate,
+export function ConvexOrganizationInviteForm<
+  Role extends string = ConvexOrganizationRoleTemplate,
 >({
   classNames,
   copy,
@@ -312,9 +312,9 @@ export function VortexOrganizationInviteForm<
   onSubmit,
   roleOptions,
   state,
-}: VortexOrganizationInviteFormProps<Role>) {
+}: ConvexOrganizationInviteFormProps<Role>) {
   const resolvedCopy = resolveInviteCopy(copy);
-  const canInvite = canSubmitVortexOrganizationInviteForm({
+  const canInvite = canSubmitConvexOrganizationInviteForm({
     disabled,
     email: state.email,
     inviting,
@@ -371,7 +371,7 @@ export function VortexOrganizationInviteForm<
           >
             {roleOptions.map((role) => (
               <option key={role} value={role}>
-                {getVortexOrganizationRoleLabel(role)}
+                {getConvexOrganizationRoleLabel(role)}
               </option>
             ))}
           </select>
@@ -393,15 +393,15 @@ export function VortexOrganizationInviteForm<
   );
 }
 
-export function VortexOrganizationMemberList<
-  Role extends string = VortexOrganizationRoleTemplate,
+export function ConvexOrganizationMemberList<
+  Role extends string = ConvexOrganizationRoleTemplate,
   MemberId extends string = string,
 >({
   canManageMembers = true,
   canManageRoles = true,
   classNames,
   copy,
-  formatTimestamp = formatVortexOrganizationMemberTimestamp,
+  formatTimestamp = formatConvexOrganizationMemberTimestamp,
   members,
   mutatingMemberId,
   onReactivate,
@@ -409,7 +409,7 @@ export function VortexOrganizationMemberList<
   onSuspend,
   renderStatus,
   roleOptions,
-}: VortexOrganizationMemberListProps<Role, MemberId>) {
+}: ConvexOrganizationMemberListProps<Role, MemberId>) {
   const resolvedCopy = resolveMembersCopy(copy);
 
   if (members === undefined) {
@@ -428,12 +428,12 @@ export function VortexOrganizationMemberList<
     );
   }
 
-  const activeOwnerCount = countVortexActiveOwners(members);
+  const activeOwnerCount = countConvexActiveOwners(members);
 
   return (
     <div className={cn("space-y-3", classNames?.list)}>
       {members.map((member) => (
-        <VortexOrganizationMemberCard<Role, MemberId>
+        <ConvexOrganizationMemberCard<Role, MemberId>
           activeOwnerCount={activeOwnerCount}
           canManageMembers={canManageMembers}
           canManageRoles={canManageRoles}
@@ -454,8 +454,8 @@ export function VortexOrganizationMemberList<
   );
 }
 
-function VortexOrganizationMemberCard<
-  Role extends string = VortexOrganizationRoleTemplate,
+function ConvexOrganizationMemberCard<
+  Role extends string = ConvexOrganizationRoleTemplate,
   MemberId extends string = string,
 >({
   activeOwnerCount,
@@ -475,10 +475,10 @@ function VortexOrganizationMemberCard<
   activeOwnerCount: number;
   canManageMembers: boolean;
   canManageRoles: boolean;
-  classNames: VortexOrganizationMembersClassNames | undefined;
-  copy: Required<VortexOrganizationMembersCopy>;
+  classNames: ConvexOrganizationMembersClassNames | undefined;
+  copy: Required<ConvexOrganizationMembersCopy>;
   formatTimestamp: (timestamp: number) => string;
-  member: VortexOrganizationMemberListItem<MemberId>;
+  member: ConvexOrganizationMemberListItem<MemberId>;
   mutatingMemberId: MemberId | null | undefined;
   onReactivate: ((membershipId: MemberId) => void) | undefined;
   onRoleChange:
@@ -486,15 +486,15 @@ function VortexOrganizationMemberCard<
     | undefined;
   onSuspend: ((membershipId: MemberId) => void) | undefined;
   renderStatus:
-    | ((status: VortexOrganizationMemberStatus) => ReactNode)
+    | ((status: ConvexOrganizationMemberStatus) => ReactNode)
     | undefined;
   roleOptions: readonly Role[];
 }) {
-  const label = getVortexOrganizationMemberLabel(
+  const label = getConvexOrganizationMemberLabel(
     member,
     copy.unknownMemberLabel
   );
-  const isLastOwner = isVortexLastActiveOwner(member, activeOwnerCount);
+  const isLastOwner = isConvexLastActiveOwner(member, activeOwnerCount);
   const isMutating = mutatingMemberId === member._id;
 
   return (
@@ -512,13 +512,13 @@ function VortexOrganizationMemberCard<
             classNames?.listHeader
           )}
         >
-          <VortexOrganizationMemberDetails
+          <ConvexOrganizationMemberDetails
             classNames={classNames}
             formatTimestamp={formatTimestamp}
             label={label}
             member={member}
           />
-          <VortexOrganizationMemberActions<Role, MemberId>
+          <ConvexOrganizationMemberActions<Role, MemberId>
             canManageMembers={canManageMembers}
             canManageRoles={canManageRoles}
             classNames={classNames}
@@ -542,16 +542,16 @@ function VortexOrganizationMemberCard<
   );
 }
 
-function VortexOrganizationMemberDetails<MemberId extends string = string>({
+function ConvexOrganizationMemberDetails<MemberId extends string = string>({
   classNames,
   formatTimestamp,
   label,
   member,
 }: {
-  classNames: VortexOrganizationMembersClassNames | undefined;
+  classNames: ConvexOrganizationMembersClassNames | undefined;
   formatTimestamp: (timestamp: number) => string;
   label: string;
-  member: VortexOrganizationMemberListItem<MemberId>;
+  member: ConvexOrganizationMemberListItem<MemberId>;
 }) {
   return (
     <div className={cn("min-w-0 space-y-1", classNames?.memberDetails)}>
@@ -587,8 +587,8 @@ function VortexOrganizationMemberDetails<MemberId extends string = string>({
   );
 }
 
-function VortexOrganizationMemberActions<
-  Role extends string = VortexOrganizationRoleTemplate,
+function ConvexOrganizationMemberActions<
+  Role extends string = ConvexOrganizationRoleTemplate,
   MemberId extends string = string,
 >({
   canManageMembers,
@@ -607,19 +607,19 @@ function VortexOrganizationMemberActions<
 }: {
   canManageMembers: boolean;
   canManageRoles: boolean;
-  classNames: VortexOrganizationMembersClassNames | undefined;
-  copy: Required<VortexOrganizationMembersCopy>;
+  classNames: ConvexOrganizationMembersClassNames | undefined;
+  copy: Required<ConvexOrganizationMembersCopy>;
   isLastOwner: boolean;
   isMutating: boolean;
   label: string;
-  member: VortexOrganizationMemberListItem<MemberId>;
+  member: ConvexOrganizationMemberListItem<MemberId>;
   onReactivate: ((membershipId: MemberId) => void) | undefined;
   onRoleChange:
     | ((membershipId: MemberId, roleTemplate: Role) => void)
     | undefined;
   onSuspend: ((membershipId: MemberId) => void) | undefined;
   renderStatus:
-    | ((status: VortexOrganizationMemberStatus) => ReactNode)
+    | ((status: ConvexOrganizationMemberStatus) => ReactNode)
     | undefined;
   roleOptions: readonly Role[];
 }) {
@@ -630,7 +630,7 @@ function VortexOrganizationMemberActions<
         classNames?.actions
       )}
     >
-      <VortexOrganizationMemberRoleSelect<Role, MemberId>
+      <ConvexOrganizationMemberRoleSelect<Role, MemberId>
         canManageRoles={canManageRoles}
         classNames={classNames}
         copy={copy}
@@ -641,13 +641,13 @@ function VortexOrganizationMemberActions<
         onRoleChange={onRoleChange}
         roleOptions={roleOptions}
       />
-      <VortexOrganizationMemberStatusSlot
+      <ConvexOrganizationMemberStatusSlot
         classNames={classNames}
         copy={copy}
         member={member}
         renderStatus={renderStatus}
       />
-      <VortexOrganizationMemberLifecycleButtons
+      <ConvexOrganizationMemberLifecycleButtons
         canManageMembers={canManageMembers}
         classNames={classNames}
         copy={copy}
@@ -661,8 +661,8 @@ function VortexOrganizationMemberActions<
   );
 }
 
-function VortexOrganizationMemberRoleSelect<
-  Role extends string = VortexOrganizationRoleTemplate,
+function ConvexOrganizationMemberRoleSelect<
+  Role extends string = ConvexOrganizationRoleTemplate,
   MemberId extends string = string,
 >({
   canManageRoles,
@@ -676,12 +676,12 @@ function VortexOrganizationMemberRoleSelect<
   roleOptions,
 }: {
   canManageRoles: boolean;
-  classNames: VortexOrganizationMembersClassNames | undefined;
-  copy: Required<VortexOrganizationMembersCopy>;
+  classNames: ConvexOrganizationMembersClassNames | undefined;
+  copy: Required<ConvexOrganizationMembersCopy>;
   isLastOwner: boolean;
   isMutating: boolean;
   label: string;
-  member: VortexOrganizationMemberListItem<MemberId>;
+  member: ConvexOrganizationMemberListItem<MemberId>;
   onRoleChange:
     | ((membershipId: MemberId, roleTemplate: Role) => void)
     | undefined;
@@ -715,7 +715,7 @@ function VortexOrganizationMemberRoleSelect<
       >
         {roleOptions.map((role) => (
           <option key={role} value={role}>
-            {getVortexOrganizationRoleLabel(role)}
+            {getConvexOrganizationRoleLabel(role)}
           </option>
         ))}
       </select>
@@ -723,17 +723,17 @@ function VortexOrganizationMemberRoleSelect<
   );
 }
 
-function VortexOrganizationMemberStatusSlot<MemberId extends string = string>({
+function ConvexOrganizationMemberStatusSlot<MemberId extends string = string>({
   classNames,
   copy,
   member,
   renderStatus,
 }: {
-  classNames: VortexOrganizationMembersClassNames | undefined;
-  copy: Required<VortexOrganizationMembersCopy>;
-  member: VortexOrganizationMemberListItem<MemberId>;
+  classNames: ConvexOrganizationMembersClassNames | undefined;
+  copy: Required<ConvexOrganizationMembersCopy>;
+  member: ConvexOrganizationMemberListItem<MemberId>;
   renderStatus:
-    | ((status: VortexOrganizationMemberStatus) => ReactNode)
+    | ((status: ConvexOrganizationMemberStatus) => ReactNode)
     | undefined;
 }) {
   return (
@@ -750,14 +750,14 @@ function VortexOrganizationMemberStatusSlot<MemberId extends string = string>({
             classNames?.status
           )}
         >
-          {getVortexOrganizationMemberStatusLabel(member.status)}
+          {getConvexOrganizationMemberStatusLabel(member.status)}
         </span>
       )}
     </div>
   );
 }
 
-function VortexOrganizationMemberLifecycleButtons<
+function ConvexOrganizationMemberLifecycleButtons<
   MemberId extends string = string,
 >({
   canManageMembers,
@@ -770,11 +770,11 @@ function VortexOrganizationMemberLifecycleButtons<
   onSuspend,
 }: {
   canManageMembers: boolean;
-  classNames: VortexOrganizationMembersClassNames | undefined;
-  copy: Required<VortexOrganizationMembersCopy>;
+  classNames: ConvexOrganizationMembersClassNames | undefined;
+  copy: Required<ConvexOrganizationMembersCopy>;
   isLastOwner: boolean;
   isMutating: boolean;
-  member: VortexOrganizationMemberListItem<MemberId>;
+  member: ConvexOrganizationMemberListItem<MemberId>;
   onReactivate: ((membershipId: MemberId) => void) | undefined;
   onSuspend: ((membershipId: MemberId) => void) | undefined;
 }) {
@@ -788,7 +788,7 @@ function VortexOrganizationMemberLifecycleButtons<
 
   return (
     <>
-      <VortexOrganizationMemberSuspendButton
+      <ConvexOrganizationMemberSuspendButton
         canSuspend={canSuspend}
         classNames={classNames}
         copy={copy}
@@ -796,7 +796,7 @@ function VortexOrganizationMemberLifecycleButtons<
         member={member}
         onSuspend={onSuspend}
       />
-      <VortexOrganizationMemberReactivateButton
+      <ConvexOrganizationMemberReactivateButton
         canReactivate={canReactivate}
         classNames={classNames}
         copy={copy}
@@ -808,7 +808,7 @@ function VortexOrganizationMemberLifecycleButtons<
   );
 }
 
-function VortexOrganizationMemberSuspendButton<
+function ConvexOrganizationMemberSuspendButton<
   MemberId extends string = string,
 >({
   canSuspend,
@@ -819,10 +819,10 @@ function VortexOrganizationMemberSuspendButton<
   onSuspend,
 }: {
   canSuspend: boolean;
-  classNames: VortexOrganizationMembersClassNames | undefined;
-  copy: Required<VortexOrganizationMembersCopy>;
+  classNames: ConvexOrganizationMembersClassNames | undefined;
+  copy: Required<ConvexOrganizationMembersCopy>;
   isMutating: boolean;
-  member: VortexOrganizationMemberListItem<MemberId>;
+  member: ConvexOrganizationMemberListItem<MemberId>;
   onSuspend: ((membershipId: MemberId) => void) | undefined;
 }) {
   if (member.status !== "active" || !onSuspend) {
@@ -830,7 +830,7 @@ function VortexOrganizationMemberSuspendButton<
   }
 
   return (
-    <VortexOrganizationMemberLifecycleButton
+    <ConvexOrganizationMemberLifecycleButton
       classNames={classNames}
       disabled={!canSuspend || isMutating}
       label={isMutating ? copy.suspendingLabel : copy.suspendLabel}
@@ -839,7 +839,7 @@ function VortexOrganizationMemberSuspendButton<
   );
 }
 
-function VortexOrganizationMemberReactivateButton<
+function ConvexOrganizationMemberReactivateButton<
   MemberId extends string = string,
 >({
   canReactivate,
@@ -850,10 +850,10 @@ function VortexOrganizationMemberReactivateButton<
   onReactivate,
 }: {
   canReactivate: boolean;
-  classNames: VortexOrganizationMembersClassNames | undefined;
-  copy: Required<VortexOrganizationMembersCopy>;
+  classNames: ConvexOrganizationMembersClassNames | undefined;
+  copy: Required<ConvexOrganizationMembersCopy>;
   isMutating: boolean;
-  member: VortexOrganizationMemberListItem<MemberId>;
+  member: ConvexOrganizationMemberListItem<MemberId>;
   onReactivate: ((membershipId: MemberId) => void) | undefined;
 }) {
   if (member.status !== "suspended" || !onReactivate) {
@@ -861,7 +861,7 @@ function VortexOrganizationMemberReactivateButton<
   }
 
   return (
-    <VortexOrganizationMemberLifecycleButton
+    <ConvexOrganizationMemberLifecycleButton
       classNames={classNames}
       disabled={!canReactivate || isMutating}
       label={isMutating ? copy.reactivatingLabel : copy.reactivateLabel}
@@ -870,13 +870,13 @@ function VortexOrganizationMemberReactivateButton<
   );
 }
 
-function VortexOrganizationMemberLifecycleButton({
+function ConvexOrganizationMemberLifecycleButton({
   classNames,
   disabled,
   label,
   onClick,
 }: {
-  classNames: VortexOrganizationMembersClassNames | undefined;
+  classNames: ConvexOrganizationMembersClassNames | undefined;
   disabled: boolean;
   label: string;
   onClick: () => void;
@@ -897,8 +897,8 @@ function VortexOrganizationMemberLifecycleButton({
   );
 }
 
-export function VortexOrganizationMembersSurface<
-  Role extends string = VortexOrganizationRoleTemplate,
+export function ConvexOrganizationMembersSurface<
+  Role extends string = ConvexOrganizationRoleTemplate,
   MemberId extends string = string,
   OrganizationId extends string = string,
   InvitationId extends string = string,
@@ -910,21 +910,21 @@ export function VortexOrganizationMembersSurface<
   confirmSuspendMember,
   copy,
   defaultInviteRoleTemplate,
-  getErrorMessage = getVortexOrganizationMemberMutationErrorMessage,
+  getErrorMessage = getConvexOrganizationMemberMutationErrorMessage,
   organizationId,
   refs,
   renderActionError,
   renderInvitationLink,
   renderStatus,
   roleOptions,
-}: VortexOrganizationMembersSurfaceProps<
+}: ConvexOrganizationMembersSurfaceProps<
   Role,
   MemberId,
   OrganizationId,
   InvitationId
 >) {
   const members = useQuery(refs.listMembers, {});
-  const actions = useVortexOrganizationMemberActions({
+  const actions = useConvexOrganizationMemberActions({
     captureEvent,
     confirmSuspendMember,
     defaultInviteRoleTemplate,
@@ -938,7 +938,7 @@ export function VortexOrganizationMembersSurface<
 
   return (
     <>
-      <VortexOrganizationInviteForm<Role>
+      <ConvexOrganizationInviteForm<Role>
         classNames={classNames}
         copy={copy?.invite}
         disabled={!organizationId}
@@ -952,19 +952,19 @@ export function VortexOrganizationMembersSurface<
           roleTemplate: actions.inviteRoleTemplate,
         }}
       />
-      <VortexOrganizationInvitationLinkSlot
+      <ConvexOrganizationInvitationLinkSlot
         classNames={classNames}
         renderInvitationLink={renderInvitationLink}
         title={invitationLinkTitle}
         value={actions.latestInviteAcceptUrl}
       />
-      <VortexOrganizationMemberActionErrorSlot
+      <ConvexOrganizationMemberActionErrorSlot
         classNames={classNames}
         message={actions.actionError}
         renderActionError={renderActionError}
         title={copy?.actionErrorTitle ?? defaultSurfaceCopy.actionErrorTitle}
       />
-      <VortexOrganizationMemberList<Role, MemberId>
+      <ConvexOrganizationMemberList<Role, MemberId>
         canManageMembers={canManageMembers}
         canManageRoles={canManageRoles}
         classNames={classNames}
@@ -981,14 +981,14 @@ export function VortexOrganizationMembersSurface<
   );
 }
 
-function VortexOrganizationInvitationLinkSlot({
+function ConvexOrganizationInvitationLinkSlot({
   classNames,
   renderInvitationLink,
   title,
   value,
 }: {
-  classNames: VortexOrganizationMembersClassNames | undefined;
-  renderInvitationLink: VortexOrganizationMembersSurfaceProps["renderInvitationLink"];
+  classNames: ConvexOrganizationMembersClassNames | undefined;
+  renderInvitationLink: ConvexOrganizationMembersSurfaceProps["renderInvitationLink"];
   title: string;
   value: string | null;
 }) {
@@ -998,7 +998,7 @@ function VortexOrganizationInvitationLinkSlot({
 
   return (
     renderInvitationLink?.({ title, value }) ?? (
-      <VortexOrganizationInvitationLinkNotice
+      <ConvexOrganizationInvitationLinkNotice
         classNames={classNames}
         title={title}
         value={value}
@@ -1007,15 +1007,15 @@ function VortexOrganizationInvitationLinkSlot({
   );
 }
 
-function VortexOrganizationMemberActionErrorSlot({
+function ConvexOrganizationMemberActionErrorSlot({
   classNames,
   message,
   renderActionError,
   title,
 }: {
-  classNames: VortexOrganizationMembersClassNames | undefined;
+  classNames: ConvexOrganizationMembersClassNames | undefined;
   message: string | null;
-  renderActionError: VortexOrganizationMembersSurfaceProps["renderActionError"];
+  renderActionError: ConvexOrganizationMembersSurfaceProps["renderActionError"];
   title: string;
 }) {
   if (!message) {
@@ -1024,7 +1024,7 @@ function VortexOrganizationMemberActionErrorSlot({
 
   return (
     renderActionError?.(message) ?? (
-      <VortexOrganizationMemberActionErrorNotice
+      <ConvexOrganizationMemberActionErrorNotice
         classNames={classNames}
         message={message}
         title={title}
@@ -1042,8 +1042,8 @@ function isValidInviteEmail(email: string): boolean {
   );
 }
 
-function useVortexOrganizationMemberActions<
-  Role extends string = VortexOrganizationRoleTemplate,
+function useConvexOrganizationMemberActions<
+  Role extends string = ConvexOrganizationRoleTemplate,
   MemberId extends string = string,
   OrganizationId extends string = string,
   InvitationId extends string = string,
@@ -1065,7 +1065,7 @@ function useVortexOrganizationMemberActions<
   defaultInviteRoleTemplate: Role | undefined;
   getErrorMessage: (error: unknown, fallback: string) => string;
   organizationId: OrganizationId | undefined;
-  refs: VortexOrganizationMemberFunctionReferences<
+  refs: ConvexOrganizationMemberFunctionReferences<
     Role,
     MemberId,
     OrganizationId,
@@ -1073,17 +1073,17 @@ function useVortexOrganizationMemberActions<
   >;
   roleOptions: readonly Role[];
 }) {
-  const mutations = useVortexOrganizationMemberMutationRunners<
+  const mutations = useConvexOrganizationMemberMutationRunners<
     Role,
     MemberId,
     OrganizationId,
     InvitationId
   >(refs);
   const [inviteForm, setInviteForm] = useState<
-    VortexOrganizationInviteFormState<Role>
+    ConvexOrganizationInviteFormState<Role>
   >({
     email: "",
-    roleTemplate: resolveVortexOrganizationDefaultInviteRole({
+    roleTemplate: resolveConvexOrganizationDefaultInviteRole({
       defaultInviteRoleTemplate,
       roleOptions,
     }),
@@ -1163,13 +1163,13 @@ function useVortexOrganizationMemberActions<
   };
 }
 
-function useVortexOrganizationMemberMutationRunners<
-  Role extends string = VortexOrganizationRoleTemplate,
+function useConvexOrganizationMemberMutationRunners<
+  Role extends string = ConvexOrganizationRoleTemplate,
   MemberId extends string = string,
   OrganizationId extends string = string,
   InvitationId extends string = string,
 >(
-  refs: VortexOrganizationMemberFunctionReferences<
+  refs: ConvexOrganizationMemberFunctionReferences<
     Role,
     MemberId,
     OrganizationId,
@@ -1191,7 +1191,7 @@ function useVortexOrganizationMemberMutationRunners<
 }
 
 function inviteOrganizationMember<
-  Role extends string = VortexOrganizationRoleTemplate,
+  Role extends string = ConvexOrganizationRoleTemplate,
   OrganizationId extends string = string,
   InvitationId extends string = string,
 >({
@@ -1212,16 +1212,16 @@ function inviteOrganizationMember<
     | ((name: string, properties: Record<string, unknown>) => void)
     | undefined;
   defaultInviteRoleTemplate: Role | undefined;
-  inviteForm: VortexOrganizationInviteFormState<Role>;
+  inviteForm: ConvexOrganizationInviteFormState<Role>;
   inviteMember: ActionRunner<
     { email: string; organizationId: OrganizationId; roleTemplate: Role },
-    VortexOrganizationInviteMemberResult<InvitationId>
+    ConvexOrganizationInviteMemberResult<InvitationId>
   >;
   inviting: boolean;
   organizationId: OrganizationId | undefined;
   roleOptions: readonly Role[];
   setActionError: (error: string | null) => void;
-  setInviteForm: (value: VortexOrganizationInviteFormState<Role>) => void;
+  setInviteForm: (value: ConvexOrganizationInviteFormState<Role>) => void;
   setInviting: (value: boolean) => void;
   setLatestInviteAcceptUrl: (url: string | null) => void;
   setMutationError: (error: unknown, fallback: string) => void;
@@ -1242,7 +1242,7 @@ function inviteOrganizationMember<
       setLatestInviteAcceptUrl(result.acceptUrl);
       setInviteForm({
         email: "",
-        roleTemplate: resolveVortexOrganizationDefaultInviteRole({
+        roleTemplate: resolveConvexOrganizationDefaultInviteRole({
           defaultInviteRoleTemplate,
           roleOptions,
         }),
@@ -1383,7 +1383,7 @@ async function suspendMemberAfterConfirmation<
   }
 }
 
-export function getVortexOrganizationMemberMutationErrorMessage(
+export function getConvexOrganizationMemberMutationErrorMessage(
   error: unknown,
   fallback: string
 ): string {
@@ -1392,8 +1392,8 @@ export function getVortexOrganizationMemberMutationErrorMessage(
     : fallback;
 }
 
-export function resolveVortexOrganizationDefaultInviteRole<
-  Role extends string = VortexOrganizationRoleTemplate,
+export function resolveConvexOrganizationDefaultInviteRole<
+  Role extends string = ConvexOrganizationRoleTemplate,
 >({
   defaultInviteRoleTemplate,
   roleOptions,
@@ -1408,12 +1408,12 @@ export function resolveVortexOrganizationDefaultInviteRole<
   return role;
 }
 
-export function VortexOrganizationInvitationLinkNotice({
+export function ConvexOrganizationInvitationLinkNotice({
   classNames,
   title,
   value,
 }: {
-  classNames?: VortexOrganizationMembersClassNames;
+  classNames?: ConvexOrganizationMembersClassNames;
   title: string;
   value: string;
 }) {
@@ -1441,12 +1441,12 @@ export function VortexOrganizationInvitationLinkNotice({
   );
 }
 
-export function VortexOrganizationMemberActionErrorNotice({
+export function ConvexOrganizationMemberActionErrorNotice({
   classNames,
   message,
   title,
 }: {
-  classNames?: VortexOrganizationMembersClassNames;
+  classNames?: ConvexOrganizationMembersClassNames;
   message: string;
   title: string;
 }) {
@@ -1478,13 +1478,13 @@ export function VortexOrganizationMemberActionErrorNotice({
 }
 
 function resolveInviteCopy(
-  copy: VortexOrganizationInviteFormCopy | undefined
-): Required<VortexOrganizationInviteFormCopy> {
+  copy: ConvexOrganizationInviteFormCopy | undefined
+): Required<ConvexOrganizationInviteFormCopy> {
   return { ...defaultInviteCopy, ...copy };
 }
 
 function resolveMembersCopy(
-  copy: Partial<VortexOrganizationMembersCopy> | undefined
-): Required<VortexOrganizationMembersCopy> {
+  copy: Partial<ConvexOrganizationMembersCopy> | undefined
+): Required<ConvexOrganizationMembersCopy> {
   return { ...defaultMembersCopy, ...copy };
 }

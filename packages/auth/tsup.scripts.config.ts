@@ -12,5 +12,5 @@ export default defineConfig({
   bundle: true,
   clean: false,
   outDir: "dist/scripts",
-  noExternal: [/@vortexnyc\/auth/],
+  noExternal: [/@convexnyc\/auth/],
 });

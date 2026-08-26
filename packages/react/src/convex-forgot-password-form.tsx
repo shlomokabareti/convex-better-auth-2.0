@@ -1,16 +1,16 @@
 /**
- * VortexForgotPasswordForm — drop-in "request a password reset email"
- * form for consumers. Mirrors the API of VortexProfileEditForm.
+ * ConvexForgotPasswordForm — drop-in "request a password reset email"
+ * form for consumers. Mirrors the API of ConvexProfileEditForm.
  *
  * Consumer usage:
- *   <VortexForgotPasswordForm
+ *   <ConvexForgotPasswordForm
  *     authClient={authClient}
  *     resetPasswordUrl={`${window.location.origin}/reset-password`}
  *     copy={{ title: 'Forgot your Pile password?' }}
  *   />
  *
  * The component is purely presentational — the actual API call goes
- * through `useVortexAuthForgotPassword` so consumers can swap the UI
+ * through `useConvexAuthForgotPassword` so consumers can swap the UI
  * without losing the runtime logic.
  *
  * The component always shows a generic success message after submit
@@ -20,8 +20,8 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import {
-  useVortexAuthForgotPassword,
-  type VortexBetterAuthClient,
+  useConvexAuthForgotPassword,
+  type ConvexBetterAuthClient,
 } from "./better-auth-runtime";
 import {
   AuthCard,
@@ -32,7 +32,7 @@ import {
   AuthLabel,
 } from "./ui";
 
-export type VortexForgotPasswordFormClassNames = {
+export type ConvexForgotPasswordFormClassNames = {
   root?: string;
   form?: string;
   field?: string;
@@ -43,7 +43,7 @@ export type VortexForgotPasswordFormClassNames = {
   errorState?: string;
 };
 
-export type VortexForgotPasswordFormCopy = {
+export type ConvexForgotPasswordFormCopy = {
   title?: string;
   description?: string;
   emailLabel?: string;
@@ -54,19 +54,19 @@ export type VortexForgotPasswordFormCopy = {
   unavailable?: string;
 };
 
-export type VortexForgotPasswordFormProps = {
-  authClient: VortexBetterAuthClient | null;
+export type ConvexForgotPasswordFormProps = {
+  authClient: ConvexBetterAuthClient | null;
   /**
    * Absolute URL of the reset-password page on this app. Better-Auth
    * appends `?token=…` to it before sending the email.
    */
   resetPasswordUrl: string;
-  classNames?: VortexForgotPasswordFormClassNames;
-  copy?: VortexForgotPasswordFormCopy;
+  classNames?: ConvexForgotPasswordFormClassNames;
+  copy?: ConvexForgotPasswordFormCopy;
   onRequested?: (email: string) => void;
 };
 
-const DEFAULT_COPY: Required<VortexForgotPasswordFormCopy> = {
+const DEFAULT_COPY: Required<ConvexForgotPasswordFormCopy> = {
   title: "Forgot your password?",
   description: "Enter your email and we'll send you a reset link.",
   emailLabel: "Email",
@@ -78,11 +78,11 @@ const DEFAULT_COPY: Required<VortexForgotPasswordFormCopy> = {
   unavailable: "Password recovery is not available on this auth client.",
 };
 
-export function VortexForgotPasswordForm(props: VortexForgotPasswordFormProps) {
+export function ConvexForgotPasswordForm(props: ConvexForgotPasswordFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { requestReset, isRequesting } = useVortexAuthForgotPassword(
+  const { requestReset, isRequesting } = useConvexAuthForgotPassword(
     props.authClient
   );
   const [email, setEmail] = useState("");
@@ -124,11 +124,11 @@ export function VortexForgotPasswordForm(props: VortexForgotPasswordFormProps) {
         {isAvailable ? (
           <form onSubmit={handleSubmit} className={cn.form}>
             <AuthField className={cn.field}>
-              <AuthLabel htmlFor="vortex-forgot-email" className={cn.label}>
+              <AuthLabel htmlFor="convex-forgot-email" className={cn.label}>
                 {copy.emailLabel}
               </AuthLabel>
               <AuthInput
-                id="vortex-forgot-email"
+                id="convex-forgot-email"
                 type="email"
                 value={email}
                 placeholder={copy.emailPlaceholder}

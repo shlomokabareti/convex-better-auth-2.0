@@ -3,21 +3,21 @@ import { useCallback, useState, type FormEvent, type ReactNode } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
-export type VortexUserIdentityProvider = {
+export type ConvexUserIdentityProvider = {
   providerId: string;
   providerName?: string;
 };
 
-export type VortexUserProfileUser = {
+export type ConvexUserProfileUser = {
   id: string;
   email: string;
   name?: string | null;
   imageUrl?: string | null;
   emailVerified?: boolean;
-  providers?: readonly VortexUserIdentityProvider[];
+  providers?: readonly ConvexUserIdentityProvider[];
 };
 
-export type VortexUserProfileClassNames = {
+export type ConvexUserProfileClassNames = {
   card?: string;
   header?: string;
   title?: string;
@@ -41,7 +41,7 @@ export type VortexUserProfileClassNames = {
   errorBanner?: string;
 };
 
-export type VortexUserProfileCopy = {
+export type ConvexUserProfileCopy = {
   title?: string;
   description?: string;
   nameLabel?: string;
@@ -64,10 +64,10 @@ export type VortexUserProfileCopy = {
   nameRequiredError?: string;
 };
 
-export type VortexUserProfileProps = {
-  user: VortexUserProfileUser | null | undefined;
-  classNames?: VortexUserProfileClassNames;
-  copy?: VortexUserProfileCopy;
+export type ConvexUserProfileProps = {
+  user: ConvexUserProfileUser | null | undefined;
+  classNames?: ConvexUserProfileClassNames;
+  copy?: ConvexUserProfileCopy;
   isLoading?: boolean;
   errorMessage?: string | null;
   isAdmin?: boolean;
@@ -86,7 +86,7 @@ export type VortexUserProfileProps = {
 
 // ─── Default copy ──────────────────────────────────────────────────────────
 
-const defaultCopy: Required<VortexUserProfileCopy> = {
+const defaultCopy: Required<ConvexUserProfileCopy> = {
   title: "Account",
   description: "Manage your profile and security settings.",
   nameLabel: "Name",
@@ -111,14 +111,14 @@ const defaultCopy: Required<VortexUserProfileCopy> = {
 };
 
 function resolveCopy(
-  copy: VortexUserProfileCopy | undefined
-): Required<VortexUserProfileCopy> {
+  copy: ConvexUserProfileCopy | undefined
+): Required<ConvexUserProfileCopy> {
   return { ...defaultCopy, ...copy };
 }
 
 function UserProfileHeader(props: {
-  classNames?: VortexUserProfileClassNames;
-  copy: Required<VortexUserProfileCopy>;
+  classNames?: ConvexUserProfileClassNames;
+  copy: Required<ConvexUserProfileCopy>;
 }) {
   const { classNames, copy } = props;
 
@@ -136,7 +136,7 @@ function UserProfileHeader(props: {
 
 function UserProfileError(props: {
   message?: string | null;
-  classNames?: VortexUserProfileClassNames;
+  classNames?: ConvexUserProfileClassNames;
 }) {
   const { message, classNames } = props;
   if (!message) return null;
@@ -154,8 +154,8 @@ function UserProfileError(props: {
 }
 
 function UserProfileAvatar(props: {
-  user: VortexUserProfileUser;
-  classNames?: VortexUserProfileClassNames;
+  user: ConvexUserProfileUser;
+  classNames?: ConvexUserProfileClassNames;
 }) {
   const { user, classNames } = props;
 
@@ -182,8 +182,8 @@ function UserProfileAvatar(props: {
 }
 
 function UserProfileSummary(props: {
-  user: VortexUserProfileUser;
-  classNames?: VortexUserProfileClassNames;
+  user: ConvexUserProfileUser;
+  classNames?: ConvexUserProfileClassNames;
 }) {
   const { user, classNames } = props;
 
@@ -206,13 +206,13 @@ function UserProfileSummary(props: {
 }
 
 function NameField(props: {
-  user: VortexUserProfileUser;
+  user: ConvexUserProfileUser;
   editing: boolean;
   name: string;
   nameError: string | null;
   busy: boolean;
-  classNames?: VortexUserProfileClassNames;
-  copy: Required<VortexUserProfileCopy>;
+  classNames?: ConvexUserProfileClassNames;
+  copy: Required<ConvexUserProfileCopy>;
   onNameChange: (value: string) => void;
   onClearNameError: () => void;
 }) {
@@ -261,9 +261,9 @@ function NameField(props: {
 }
 
 function EmailField(props: {
-  user: VortexUserProfileUser;
-  classNames?: VortexUserProfileClassNames;
-  copy: Required<VortexUserProfileCopy>;
+  user: ConvexUserProfileUser;
+  classNames?: ConvexUserProfileClassNames;
+  copy: Required<ConvexUserProfileCopy>;
 }) {
   const { user, classNames, copy } = props;
 
@@ -295,8 +295,8 @@ function ImageUrlField(props: {
   editing: boolean;
   imageUrl: string;
   busy: boolean;
-  classNames?: VortexUserProfileClassNames;
-  copy: Required<VortexUserProfileCopy>;
+  classNames?: ConvexUserProfileClassNames;
+  copy: Required<ConvexUserProfileCopy>;
   onImageUrlChange: (value: string) => void;
 }) {
   const { editing, imageUrl, busy, classNames, copy, onImageUrlChange } = props;
@@ -327,8 +327,8 @@ function UserProfileFormActions(props: {
   saving: boolean;
   busy: boolean;
   isLoading?: boolean;
-  classNames?: VortexUserProfileClassNames;
-  copy: Required<VortexUserProfileCopy>;
+  classNames?: ConvexUserProfileClassNames;
+  copy: Required<ConvexUserProfileCopy>;
   onCancel: () => void;
   onEdit: () => void;
 }) {
@@ -387,7 +387,7 @@ function UserProfileFormActions(props: {
 }
 
 function UserProfileForm(props: {
-  user: VortexUserProfileUser;
+  user: ConvexUserProfileUser;
   editing: boolean;
   name: string;
   imageUrl: string;
@@ -395,8 +395,8 @@ function UserProfileForm(props: {
   saving: boolean;
   busy: boolean;
   isLoading?: boolean;
-  classNames?: VortexUserProfileClassNames;
-  copy: Required<VortexUserProfileCopy>;
+  classNames?: ConvexUserProfileClassNames;
+  copy: Required<ConvexUserProfileCopy>;
   onSubmit: (event: FormEvent) => void | Promise<void>;
   onNameChange: (value: string) => void;
   onImageUrlChange: (value: string) => void;
@@ -456,7 +456,7 @@ function UserProfileForm(props: {
   );
 }
 
-function SectionDivider(props: { classNames?: VortexUserProfileClassNames }) {
+function SectionDivider(props: { classNames?: ConvexUserProfileClassNames }) {
   return (
     <div
       className={cn(
@@ -469,8 +469,8 @@ function SectionDivider(props: { classNames?: VortexUserProfileClassNames }) {
 
 function SecuritySection(props: {
   isLoading?: boolean;
-  classNames?: VortexUserProfileClassNames;
-  copy: Required<VortexUserProfileCopy>;
+  classNames?: ConvexUserProfileClassNames;
+  copy: Required<ConvexUserProfileCopy>;
   onChangePassword?: () => void | Promise<void>;
   onManageTwoFactor?: () => void | Promise<void>;
 }) {
@@ -510,7 +510,7 @@ function SecurityButton(props: {
   label: string;
   disabled?: boolean;
   onClick?: () => void | Promise<void>;
-  classNames?: VortexUserProfileClassNames;
+  classNames?: ConvexUserProfileClassNames;
 }) {
   const { label, disabled, onClick, classNames } = props;
   if (!onClick) return null;
@@ -531,9 +531,9 @@ function SecurityButton(props: {
 }
 
 function ConnectedAccountsSection(props: {
-  providers?: readonly VortexUserIdentityProvider[];
-  classNames?: VortexUserProfileClassNames;
-  copy: Required<VortexUserProfileCopy>;
+  providers?: readonly ConvexUserIdentityProvider[];
+  classNames?: ConvexUserProfileClassNames;
+  copy: Required<ConvexUserProfileCopy>;
 }) {
   const { providers, classNames, copy } = props;
   if (!providers || providers.length === 0) return null;
@@ -573,8 +573,8 @@ function ConnectedAccountsSection(props: {
 function DeleteAccountAction(props: {
   enabled: boolean;
   isLoading?: boolean;
-  classNames?: VortexUserProfileClassNames;
-  copy: Required<VortexUserProfileCopy>;
+  classNames?: ConvexUserProfileClassNames;
+  copy: Required<ConvexUserProfileCopy>;
   onClick: () => void;
 }) {
   const { enabled, isLoading, classNames, copy, onClick } = props;
@@ -599,14 +599,14 @@ function DeleteAccountAction(props: {
 }
 
 function DefaultDeleteConfirm(props: {
-  copy: Required<VortexUserProfileCopy>;
+  copy: Required<ConvexUserProfileCopy>;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 }) {
   const { copy, onConfirm, onCancel } = props;
 
   return (
-    // vortex-allow-color: modal scrim — intentionally dark in both light and dark
+    // convex-allow-color: modal scrim — intentionally dark in both light and dark
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="border-foreground/10 bg-background w-full max-w-sm rounded-lg border p-5 shadow-xl">
         <h4 className="text-foreground text-base font-semibold">
@@ -638,7 +638,7 @@ function DefaultDeleteConfirm(props: {
 
 function DeleteConfirm(props: {
   open: boolean;
-  copy: Required<VortexUserProfileCopy>;
+  copy: Required<ConvexUserProfileCopy>;
   renderDeleteConfirm?: (args: {
     onConfirm: () => void;
     onCancel: () => void;
@@ -662,7 +662,7 @@ function DeleteConfirm(props: {
 
 // ─── Component ────────────────────────────────────────────────────────────
 
-export function VortexUserProfile(props: VortexUserProfileProps) {
+export function ConvexUserProfile(props: ConvexUserProfileProps) {
   const {
     user,
     classNames,

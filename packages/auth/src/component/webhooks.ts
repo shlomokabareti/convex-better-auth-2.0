@@ -342,7 +342,7 @@ export const enqueueWebhookEvent = mutation({
     deliveryIds: v.array(v.id("webhook_deliveries")),
   }),
   handler: async (ctx, args) => {
-    return await fanOutVortexWebhookEvent(ctx, args);
+    return await fanOutConvexWebhookEvent(ctx, args);
   },
 });
 
@@ -353,7 +353,7 @@ export const enqueueWebhookEvent = mutation({
  * emits the canonical Gap A webhook events. It lists active endpoints for the
  * org, subscription-matches them, and inserts a pending delivery per match.
  */
-export async function fanOutVortexWebhookEvent(
+export async function fanOutConvexWebhookEvent(
   ctx: Pick<MutationCtx, "db">,
   args: {
     eventType: string;

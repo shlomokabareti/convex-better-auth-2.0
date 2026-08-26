@@ -5,15 +5,15 @@ import { useRef, useState, type ReactNode } from "react";
 
 import { useGuardedConvexMutation } from "./protected-writes";
 
-export type VortexWebhookEndpointStatus = "active" | "disabled" | "archived";
+export type ConvexWebhookEndpointStatus = "active" | "disabled" | "archived";
 
-export type VortexWebhookDeliveryStatus =
+export type ConvexWebhookDeliveryStatus =
   | "pending"
   | "processing"
   | "delivered"
   | "failed";
 
-export type VortexWebhookDeliveryFailureKind =
+export type ConvexWebhookDeliveryFailureKind =
   | "endpoint_inactive"
   | "network_error"
   | "rate_limited"
@@ -21,21 +21,21 @@ export type VortexWebhookDeliveryFailureKind =
   | "client_error"
   | "unknown_error";
 
-export type VortexWebhookEndpointListItem<
+export type ConvexWebhookEndpointListItem<
   EventType extends string = string,
   EndpointId extends string = string,
 > = {
   _id: EndpointId;
   url: string;
   description?: string;
-  status: VortexWebhookEndpointStatus;
+  status: ConvexWebhookEndpointStatus;
   events: readonly EventType[];
   secretPreview: string;
   createdAt: number;
   updatedAt: number;
 };
 
-export type VortexWebhookDeliveryListItem<
+export type ConvexWebhookDeliveryListItem<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -47,7 +47,7 @@ export type VortexWebhookDeliveryListItem<
   eventId: string;
   eventType: EventType;
   payload: string;
-  status: VortexWebhookDeliveryStatus;
+  status: ConvexWebhookDeliveryStatus;
   attemptCount: number;
   nextAttemptAt?: number;
   lastAttemptAt?: number;
@@ -57,20 +57,20 @@ export type VortexWebhookDeliveryListItem<
   recoveryCount?: number;
   responseStatus?: number;
   responseBody?: string;
-  failureKind?: VortexWebhookDeliveryFailureKind;
+  failureKind?: ConvexWebhookDeliveryFailureKind;
   createdAt: number;
   updatedAt: number;
   endpointUrl?: string;
   endpointDescription?: string;
 };
 
-export type VortexWebhookDeliveryPage<
+export type ConvexWebhookDeliveryPage<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
   OrganizationId extends string = string,
 > = {
-  items: readonly VortexWebhookDeliveryListItem<
+  items: readonly ConvexWebhookDeliveryListItem<
     EventType,
     EndpointId,
     DeliveryId,
@@ -82,13 +82,13 @@ export type VortexWebhookDeliveryPage<
   hasMore: boolean;
 };
 
-export type VortexWebhookCreateFormState<EventType extends string = string> = {
+export type ConvexWebhookCreateFormState<EventType extends string = string> = {
   url: string;
   description: string;
   events: readonly EventType[];
 };
 
-export type VortexWebhookCreateFormCopy = {
+export type ConvexWebhookCreateFormCopy = {
   urlLabel?: string;
   urlPlaceholder?: string;
   descriptionLabel?: string;
@@ -97,7 +97,7 @@ export type VortexWebhookCreateFormCopy = {
   creatingLabel?: string;
 };
 
-export type VortexWebhookEndpointListCopy = {
+export type ConvexWebhookEndpointListCopy = {
   loadingMessage?: string;
   emptyMessage: string;
   allEventsLabel?: string;
@@ -113,7 +113,7 @@ export type VortexWebhookEndpointListCopy = {
   saveLabel?: string;
 };
 
-export type VortexWebhookDeliveryCopy = {
+export type ConvexWebhookDeliveryCopy = {
   loadingMessage?: string;
   emptyMessage: string;
   historyTitle?: string;
@@ -142,7 +142,7 @@ export type VortexWebhookDeliveryCopy = {
   ofLabel?: string;
 };
 
-export type VortexWebhookClassNames = {
+export type ConvexWebhookClassNames = {
   card?: string;
   cardContent?: string;
   label?: string;
@@ -175,9 +175,9 @@ export type VortexWebhookClassNames = {
   codeBlock?: string;
 };
 
-export type VortexWebhookCreateFormProps<EventType extends string = string> = {
-  classNames?: VortexWebhookClassNames;
-  copy?: VortexWebhookCreateFormCopy;
+export type ConvexWebhookCreateFormProps<EventType extends string = string> = {
+  classNames?: ConvexWebhookClassNames;
+  copy?: ConvexWebhookCreateFormCopy;
   creating: boolean;
   enabled: boolean;
   eventOptions: readonly EventType[];
@@ -185,17 +185,17 @@ export type VortexWebhookCreateFormProps<EventType extends string = string> = {
   onEventsChange: (value: EventType[]) => void;
   onSubmit: () => void;
   onUrlChange: (value: string) => void;
-  state: VortexWebhookCreateFormState<EventType>;
+  state: ConvexWebhookCreateFormState<EventType>;
 };
 
-export type VortexWebhookEndpointListProps<
+export type ConvexWebhookEndpointListProps<
   EventType extends string = string,
   EndpointId extends string = string,
 > = {
-  classNames?: VortexWebhookClassNames;
-  copy: VortexWebhookEndpointListCopy;
+  classNames?: ConvexWebhookClassNames;
+  copy: ConvexWebhookEndpointListCopy;
   endpoints:
-    | readonly VortexWebhookEndpointListItem<EventType, EndpointId>[]
+    | readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[]
     | undefined;
   eventOptions: readonly EventType[];
   onArchive: (endpointId: EndpointId) => void;
@@ -211,36 +211,36 @@ export type VortexWebhookEndpointListProps<
   sendingTestEndpointId: EndpointId | null;
 };
 
-export type VortexWebhookDeliveryFiltersProps<
+export type ConvexWebhookDeliveryFiltersProps<
   EventType extends string = string,
   EndpointId extends string = string,
 > = {
-  classNames?: VortexWebhookClassNames;
-  copy?: Partial<VortexWebhookDeliveryCopy>;
+  classNames?: ConvexWebhookClassNames;
+  copy?: Partial<ConvexWebhookDeliveryCopy>;
   endpointId: EndpointId | "all";
   endpoints:
-    | readonly VortexWebhookEndpointListItem<EventType, EndpointId>[]
+    | readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[]
     | undefined;
   eventOptions: readonly EventType[];
   eventType: EventType | "all";
   onEndpointIdChange: (value: EndpointId | "all") => void;
   onEventTypeChange: (value: EventType | "all") => void;
-  onStatusChange: (value: VortexWebhookDeliveryStatus | "all") => void;
-  status: VortexWebhookDeliveryStatus | "all";
+  onStatusChange: (value: ConvexWebhookDeliveryStatus | "all") => void;
+  status: ConvexWebhookDeliveryStatus | "all";
 };
 
-export type VortexWebhookDeliveryPaginationProps<
+export type ConvexWebhookDeliveryPaginationProps<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
   OrganizationId extends string = string,
 > = {
-  classNames?: VortexWebhookClassNames;
-  copy?: Partial<VortexWebhookDeliveryCopy>;
+  classNames?: ConvexWebhookClassNames;
+  copy?: Partial<ConvexWebhookDeliveryCopy>;
   onNext: () => void;
   onPrevious: () => void;
   page:
-    | VortexWebhookDeliveryPage<
+    | ConvexWebhookDeliveryPage<
         EventType,
         EndpointId,
         DeliveryId,
@@ -249,16 +249,16 @@ export type VortexWebhookDeliveryPaginationProps<
     | undefined;
 };
 
-export type VortexWebhookDeliveryListProps<
+export type ConvexWebhookDeliveryListProps<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
   OrganizationId extends string = string,
 > = {
-  classNames?: VortexWebhookClassNames;
-  copy: VortexWebhookDeliveryCopy;
+  classNames?: ConvexWebhookClassNames;
+  copy: ConvexWebhookDeliveryCopy;
   deliveries:
-    | readonly VortexWebhookDeliveryListItem<
+    | readonly ConvexWebhookDeliveryListItem<
         EventType,
         EndpointId,
         DeliveryId,
@@ -267,17 +267,17 @@ export type VortexWebhookDeliveryListProps<
     | undefined;
   formatTimestamp?: (timestamp: number) => string;
   renderFailureBadge?: (
-    failureKind: VortexWebhookDeliveryFailureKind
+    failureKind: ConvexWebhookDeliveryFailureKind
   ) => ReactNode;
   renderTag?: (label: string) => ReactNode;
 };
 
-export type VortexExhaustedWebhookDeliveryListProps<
+export type ConvexExhaustedWebhookDeliveryListProps<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
   OrganizationId extends string = string,
-> = VortexWebhookDeliveryListProps<
+> = ConvexWebhookDeliveryListProps<
   EventType,
   EndpointId,
   DeliveryId,
@@ -287,15 +287,15 @@ export type VortexExhaustedWebhookDeliveryListProps<
   retryingDeliveryId: DeliveryId | null;
 };
 
-export type VortexWebhookCreateEndpointResult = {
+export type ConvexWebhookCreateEndpointResult = {
   secret?: string | null;
 };
 
-export type VortexWebhookRotateSecretResult = {
+export type ConvexWebhookRotateSecretResult = {
   secret: string;
 };
 
-export type VortexWebhookSettingsFunctionReferences<
+export type ConvexWebhookSettingsFunctionReferences<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -305,13 +305,13 @@ export type VortexWebhookSettingsFunctionReferences<
     "query",
     "public",
     EmptyArgs,
-    readonly VortexWebhookEndpointListItem<EventType, EndpointId>[]
+    readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[]
   >;
   listExhaustedDeliveries: FunctionReference<
     "query",
     "public",
     { limit?: number },
-    readonly VortexWebhookDeliveryListItem<
+    readonly ConvexWebhookDeliveryListItem<
       EventType,
       EndpointId,
       DeliveryId,
@@ -326,9 +326,9 @@ export type VortexWebhookSettingsFunctionReferences<
       eventType?: EventType;
       limit?: number;
       offset?: number;
-      status?: VortexWebhookDeliveryStatus;
+      status?: ConvexWebhookDeliveryStatus;
     },
-    VortexWebhookDeliveryPage<EventType, EndpointId, DeliveryId, OrganizationId>
+    ConvexWebhookDeliveryPage<EventType, EndpointId, DeliveryId, OrganizationId>
   >;
   createEndpoint: FunctionReference<
     "mutation",
@@ -339,7 +339,7 @@ export type VortexWebhookSettingsFunctionReferences<
       requestId?: string;
       url: string;
     },
-    VortexWebhookCreateEndpointResult
+    ConvexWebhookCreateEndpointResult
   >;
   updateEndpoint: FunctionReference<
     "mutation",
@@ -356,7 +356,7 @@ export type VortexWebhookSettingsFunctionReferences<
     "mutation",
     "public",
     { endpointId: string },
-    VortexWebhookRotateSecretResult
+    ConvexWebhookRotateSecretResult
   >;
   archiveEndpoint: FunctionReference<
     "mutation",
@@ -396,28 +396,28 @@ export type VortexWebhookSettingsFunctionReferences<
   >;
 };
 
-export type VortexWebhookSettingsSurfaceCopy = {
+export type ConvexWebhookSettingsSurfaceCopy = {
   actionErrorTitle?: string;
-  create?: VortexWebhookCreateFormCopy;
-  deliveries?: Partial<VortexWebhookDeliveryCopy>;
-  endpoints?: Partial<VortexWebhookEndpointListCopy>;
-  exhaustedDeliveries?: Partial<VortexWebhookDeliveryCopy>;
+  create?: ConvexWebhookCreateFormCopy;
+  deliveries?: Partial<ConvexWebhookDeliveryCopy>;
+  endpoints?: Partial<ConvexWebhookEndpointListCopy>;
+  exhaustedDeliveries?: Partial<ConvexWebhookDeliveryCopy>;
   processQueueLabel?: string;
   secretTitle?: string;
 };
 
-export type VortexWebhookSettingsSurfaceProps<
+export type ConvexWebhookSettingsSurfaceProps<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
   OrganizationId extends string = string,
 > = {
   captureEvent?: (name: string, properties: Record<string, unknown>) => void;
-  classNames?: VortexWebhookClassNames;
+  classNames?: ConvexWebhookClassNames;
   confirmDeleteEndpoint?: (args: {
     endpointId: EndpointId;
   }) => boolean | Promise<boolean>;
-  copy?: VortexWebhookSettingsSurfaceCopy;
+  copy?: ConvexWebhookSettingsSurfaceCopy;
   createRequestId: (prefix: string) => string;
   deliveryLimit?: number;
   enabled: boolean;
@@ -426,7 +426,7 @@ export type VortexWebhookSettingsSurfaceProps<
   formatTimestamp?: (timestamp: number) => string;
   getErrorMessage?: (error: unknown, fallback: string) => string;
   organizationId?: string;
-  refs: VortexWebhookSettingsFunctionReferences<
+  refs: ConvexWebhookSettingsFunctionReferences<
     EventType,
     EndpointId,
     DeliveryId,
@@ -434,7 +434,7 @@ export type VortexWebhookSettingsSurfaceProps<
   >;
   renderActionError?: (message: string) => ReactNode;
   renderFailureBadge?: (
-    failureKind: VortexWebhookDeliveryFailureKind
+    failureKind: ConvexWebhookDeliveryFailureKind
   ) => ReactNode;
   renderProcessQueueButton?: (args: {
     label: string;
@@ -454,7 +454,7 @@ const defaultCreateCopy = {
   descriptionPlaceholder: "Primary production endpoint",
   urlLabel: "Endpoint URL",
   urlPlaceholder: "https://example.com/webhooks",
-} satisfies Required<VortexWebhookCreateFormCopy>;
+} satisfies Required<ConvexWebhookCreateFormCopy>;
 
 const defaultEndpointCopy = {
   allEventsLabel: "All events",
@@ -469,7 +469,7 @@ const defaultEndpointCopy = {
   secretLabel: "Secret",
   sendingTestLabel: "Sending...",
   sendTestLabel: "Send test",
-} satisfies Omit<VortexWebhookEndpointListCopy, "emptyMessage">;
+} satisfies Omit<ConvexWebhookEndpointListCopy, "emptyMessage">;
 
 const defaultDeliveryCopy = {
   allEndpointsLabel: "All endpoints",
@@ -497,7 +497,7 @@ const defaultDeliveryCopy = {
   retryLabel: "Retry",
   showingLabel: "Showing",
   statusFilterLabel: "Filter by status",
-} satisfies Omit<VortexWebhookDeliveryCopy, "emptyMessage">;
+} satisfies Omit<ConvexWebhookDeliveryCopy, "emptyMessage">;
 
 const deliveryStatuses = [
   "pending",
@@ -506,7 +506,7 @@ const deliveryStatuses = [
   "failed",
 ] as const;
 
-export function canSubmitVortexWebhookCreateForm({
+export function canSubmitConvexWebhookCreateForm({
   creating,
   enabled,
   url,
@@ -518,18 +518,18 @@ export function canSubmitVortexWebhookCreateForm({
   return enabled && !creating && url.trim().length > 0;
 }
 
-export function formatVortexWebhookTimestamp(timestamp: number): string {
+export function formatConvexWebhookTimestamp(timestamp: number): string {
   return new Date(timestamp).toLocaleString();
 }
 
-export function getVortexWebhookFailureKindLabel(
-  failureKind: VortexWebhookDeliveryFailureKind
+export function getConvexWebhookFailureKindLabel(
+  failureKind: ConvexWebhookDeliveryFailureKind
 ): string {
   return failureKind.replaceAll("_", " ");
 }
 
-export function getVortexWebhookFailureKindTone(
-  failureKind: VortexWebhookDeliveryFailureKind
+export function getConvexWebhookFailureKindTone(
+  failureKind: ConvexWebhookDeliveryFailureKind
 ): "destructive" | "warning" | "secondary" {
   if (failureKind === "client_error" || failureKind === "endpoint_inactive") {
     return "destructive";
@@ -540,7 +540,7 @@ export function getVortexWebhookFailureKindTone(
   return "secondary";
 }
 
-export function getVortexWebhookMutationErrorMessage(
+export function getConvexWebhookMutationErrorMessage(
   error: unknown,
   fallback: string
 ): string {
@@ -553,7 +553,7 @@ export function getVortexWebhookMutationErrorMessage(
   return fallback;
 }
 
-export function VortexWebhookSettingsSurface<
+export function ConvexWebhookSettingsSurface<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -569,7 +569,7 @@ export function VortexWebhookSettingsSurface<
   eventOptions,
   exhaustedDeliveryLimit = 5,
   formatTimestamp,
-  getErrorMessage = getVortexWebhookMutationErrorMessage,
+  getErrorMessage = getConvexWebhookMutationErrorMessage,
   organizationId,
   refs,
   renderActionError,
@@ -577,7 +577,7 @@ export function VortexWebhookSettingsSurface<
   renderProcessQueueButton,
   renderSecret,
   renderTag,
-}: VortexWebhookSettingsSurfaceProps<
+}: ConvexWebhookSettingsSurfaceProps<
   EventType,
   EndpointId,
   DeliveryId,
@@ -587,11 +587,11 @@ export function VortexWebhookSettingsSurface<
   const exhaustedDeliveries = useQuery(refs.listExhaustedDeliveries, {
     limit: exhaustedDeliveryLimit,
   });
-  const deliveries = useVortexWebhookDeliveryPage({
+  const deliveries = useConvexWebhookDeliveryPage({
     deliveryLimit,
     refs,
   });
-  const endpointActions = useVortexWebhookEndpointActions({
+  const endpointActions = useConvexWebhookEndpointActions({
     captureEvent,
     createRequestId,
     getErrorMessage,
@@ -609,7 +609,7 @@ export function VortexWebhookSettingsSurface<
 
   return (
     <>
-      <VortexWebhookCreateSection<EventType>
+      <ConvexWebhookCreateSection<EventType>
         actions={endpointActions}
         classNames={classNames}
         copy={copy?.create}
@@ -620,7 +620,7 @@ export function VortexWebhookSettingsSurface<
         secretTitle={secretTitle}
         title={copy?.actionErrorTitle ?? "Action failed"}
       />
-      <VortexWebhookEndpointSection<EventType, EndpointId>
+      <ConvexWebhookEndpointSection<EventType, EndpointId>
         actions={endpointActions}
         classNames={classNames}
         confirmDeleteEndpoint={confirmDeleteEndpoint}
@@ -629,13 +629,13 @@ export function VortexWebhookSettingsSurface<
         eventOptions={eventOptions}
         renderTag={renderTag}
       />
-      <VortexWebhookProcessQueueSlot
+      <ConvexWebhookProcessQueueSlot
         classNames={classNames}
         label={processQueueLabel}
         onClick={endpointActions.processQueue}
         renderProcessQueueButton={renderProcessQueueButton}
       />
-      <VortexWebhookDeliverySection<
+      <ConvexWebhookDeliverySection<
         EventType,
         EndpointId,
         DeliveryId,
@@ -650,7 +650,7 @@ export function VortexWebhookSettingsSurface<
         renderFailureBadge={renderFailureBadge}
         renderTag={renderTag}
       />
-      <VortexExhaustedWebhookDeliveryList<
+      <ConvexExhaustedWebhookDeliveryList<
         EventType,
         EndpointId,
         DeliveryId,
@@ -669,7 +669,7 @@ export function VortexWebhookSettingsSurface<
   );
 }
 
-function VortexWebhookCreateSection<EventType extends string = string>({
+function ConvexWebhookCreateSection<EventType extends string = string>({
   actions,
   classNames,
   copy,
@@ -682,7 +682,7 @@ function VortexWebhookCreateSection<EventType extends string = string>({
 }: {
   actions: Pick<
     ReturnType<
-      typeof useVortexWebhookEndpointActions<EventType, string, string, string>
+      typeof useConvexWebhookEndpointActions<EventType, string, string, string>
     >,
     | "actionError"
     | "create"
@@ -695,18 +695,18 @@ function VortexWebhookCreateSection<EventType extends string = string>({
     | "webhookEvents"
     | "webhookUrl"
   >;
-  classNames: VortexWebhookClassNames | undefined;
-  copy: VortexWebhookCreateFormCopy | undefined;
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: ConvexWebhookCreateFormCopy | undefined;
   enabled: boolean;
   eventOptions: readonly EventType[];
-  renderActionError: VortexWebhookSettingsSurfaceProps["renderActionError"];
-  renderSecret: VortexWebhookSettingsSurfaceProps["renderSecret"];
+  renderActionError: ConvexWebhookSettingsSurfaceProps["renderActionError"];
+  renderSecret: ConvexWebhookSettingsSurfaceProps["renderSecret"];
   secretTitle: string;
   title: string;
 }) {
   return (
     <>
-      <VortexWebhookCreateForm<EventType>
+      <ConvexWebhookCreateForm<EventType>
         classNames={classNames}
         copy={copy}
         creating={actions.creatingWebhook}
@@ -722,13 +722,13 @@ function VortexWebhookCreateSection<EventType extends string = string>({
           url: actions.webhookUrl,
         }}
       />
-      <VortexWebhookSecretSlot
+      <ConvexWebhookSecretSlot
         classNames={classNames}
         renderSecret={renderSecret}
         secret={actions.createdWebhookSecret}
         title={secretTitle}
       />
-      <VortexWebhookActionErrorSlot
+      <ConvexWebhookActionErrorSlot
         classNames={classNames}
         message={actions.actionError}
         renderActionError={renderActionError}
@@ -738,7 +738,7 @@ function VortexWebhookCreateSection<EventType extends string = string>({
   );
 }
 
-function VortexWebhookEndpointSection<
+function ConvexWebhookEndpointSection<
   EventType extends string = string,
   EndpointId extends string = string,
 >({
@@ -752,7 +752,7 @@ function VortexWebhookEndpointSection<
 }: {
   actions: Pick<
     ReturnType<
-      typeof useVortexWebhookEndpointActions<
+      typeof useConvexWebhookEndpointActions<
         EventType,
         EndpointId,
         string,
@@ -767,19 +767,19 @@ function VortexWebhookEndpointSection<
     | "sendTest"
     | "sendingTestEndpointId"
   >;
-  classNames: VortexWebhookClassNames | undefined;
+  classNames: ConvexWebhookClassNames | undefined;
   confirmDeleteEndpoint:
     | ((args: { endpointId: EndpointId }) => boolean | Promise<boolean>)
     | undefined;
-  copy: VortexWebhookEndpointListCopy;
+  copy: ConvexWebhookEndpointListCopy;
   endpoints:
-    | readonly VortexWebhookEndpointListItem<EventType, EndpointId>[]
+    | readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[]
     | undefined;
   eventOptions: readonly EventType[];
-  renderTag: VortexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
+  renderTag: ConvexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
 }) {
   return (
-    <VortexWebhookEndpointList<EventType, EndpointId>
+    <ConvexWebhookEndpointList<EventType, EndpointId>
       classNames={classNames}
       copy={copy}
       endpoints={endpoints}
@@ -798,7 +798,7 @@ function VortexWebhookEndpointSection<
   );
 }
 
-function VortexWebhookDeliverySection<
+function ConvexWebhookDeliverySection<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -813,10 +813,10 @@ function VortexWebhookDeliverySection<
   renderFailureBadge,
   renderTag,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  copy: VortexWebhookDeliveryCopy;
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: ConvexWebhookDeliveryCopy;
   deliveries: ReturnType<
-    typeof useVortexWebhookDeliveryPage<
+    typeof useConvexWebhookDeliveryPage<
       EventType,
       EndpointId,
       DeliveryId,
@@ -824,17 +824,17 @@ function VortexWebhookDeliverySection<
     >
   >;
   endpoints:
-    | readonly VortexWebhookEndpointListItem<EventType, EndpointId>[]
+    | readonly ConvexWebhookEndpointListItem<EventType, EndpointId>[]
     | undefined;
   eventOptions: readonly EventType[];
   formatTimestamp: ((timestamp: number) => string) | undefined;
-  renderFailureBadge: VortexWebhookDeliveryListProps<
+  renderFailureBadge: ConvexWebhookDeliveryListProps<
     EventType,
     EndpointId,
     DeliveryId,
     OrganizationId
   >["renderFailureBadge"];
-  renderTag: VortexWebhookDeliveryListProps<
+  renderTag: ConvexWebhookDeliveryListProps<
     EventType,
     EndpointId,
     DeliveryId,
@@ -843,7 +843,7 @@ function VortexWebhookDeliverySection<
 }) {
   return (
     <>
-      <VortexWebhookDeliveryFilters<EventType, EndpointId>
+      <ConvexWebhookDeliveryFilters<EventType, EndpointId>
         classNames={classNames}
         endpointId={deliveries.deliveryEndpointId}
         endpoints={endpoints}
@@ -863,7 +863,7 @@ function VortexWebhookDeliverySection<
         }}
         status={deliveries.deliveryStatus}
       />
-      <VortexWebhookDeliveryPagination<
+      <ConvexWebhookDeliveryPagination<
         EventType,
         EndpointId,
         DeliveryId,
@@ -874,7 +874,7 @@ function VortexWebhookDeliverySection<
         onPrevious={deliveries.previousPage}
         page={deliveries.webhookDeliveriesPage}
       />
-      <VortexWebhookDeliveryList<
+      <ConvexWebhookDeliveryList<
         EventType,
         EndpointId,
         DeliveryId,
@@ -891,14 +891,14 @@ function VortexWebhookDeliverySection<
   );
 }
 
-function VortexWebhookSecretSlot({
+function ConvexWebhookSecretSlot({
   classNames,
   renderSecret,
   secret,
   title,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  renderSecret: VortexWebhookSettingsSurfaceProps["renderSecret"];
+  classNames: ConvexWebhookClassNames | undefined;
+  renderSecret: ConvexWebhookSettingsSurfaceProps["renderSecret"];
   secret: string | null;
   title: string;
 }) {
@@ -908,7 +908,7 @@ function VortexWebhookSecretSlot({
 
   return (
     renderSecret?.({ secret, title }) ?? (
-      <VortexWebhookSecretNotice
+      <ConvexWebhookSecretNotice
         classNames={classNames}
         secret={secret}
         title={title}
@@ -917,15 +917,15 @@ function VortexWebhookSecretSlot({
   );
 }
 
-function VortexWebhookActionErrorSlot({
+function ConvexWebhookActionErrorSlot({
   classNames,
   message,
   renderActionError,
   title,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
+  classNames: ConvexWebhookClassNames | undefined;
   message: string | null;
-  renderActionError: VortexWebhookSettingsSurfaceProps["renderActionError"];
+  renderActionError: ConvexWebhookSettingsSurfaceProps["renderActionError"];
   title: string;
 }) {
   if (!message) {
@@ -934,7 +934,7 @@ function VortexWebhookActionErrorSlot({
 
   return (
     renderActionError?.(message) ?? (
-      <VortexWebhookActionErrorNotice
+      <ConvexWebhookActionErrorNotice
         classNames={classNames}
         message={message}
         title={title}
@@ -943,16 +943,16 @@ function VortexWebhookActionErrorSlot({
   );
 }
 
-function VortexWebhookProcessQueueSlot({
+function ConvexWebhookProcessQueueSlot({
   classNames,
   label,
   onClick,
   renderProcessQueueButton,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
+  classNames: ConvexWebhookClassNames | undefined;
   label: string;
   onClick: () => void;
-  renderProcessQueueButton: VortexWebhookSettingsSurfaceProps["renderProcessQueueButton"];
+  renderProcessQueueButton: ConvexWebhookSettingsSurfaceProps["renderProcessQueueButton"];
 }) {
   return (
     renderProcessQueueButton?.({ label, onClick }) ?? (
@@ -967,7 +967,7 @@ function VortexWebhookProcessQueueSlot({
   );
 }
 
-export function VortexWebhookCreateForm<EventType extends string = string>({
+export function ConvexWebhookCreateForm<EventType extends string = string>({
   classNames,
   copy,
   creating,
@@ -978,9 +978,9 @@ export function VortexWebhookCreateForm<EventType extends string = string>({
   onSubmit,
   onUrlChange,
   state,
-}: VortexWebhookCreateFormProps<EventType>) {
+}: ConvexWebhookCreateFormProps<EventType>) {
   const resolvedCopy = resolveCreateCopy(copy);
-  const canCreate = canSubmitVortexWebhookCreateForm({
+  const canCreate = canSubmitConvexWebhookCreateForm({
     creating,
     enabled,
     url: state.url,
@@ -1016,7 +1016,7 @@ export function VortexWebhookCreateForm<EventType extends string = string>({
             value={state.description}
           />
         </label>
-        <VortexWebhookEventPills
+        <ConvexWebhookEventPills
           classNames={classNames}
           disabled={!enabled}
           eventOptions={eventOptions}
@@ -1039,7 +1039,7 @@ export function VortexWebhookCreateForm<EventType extends string = string>({
   );
 }
 
-export function VortexWebhookEndpointList<
+export function ConvexWebhookEndpointList<
   EventType extends string = string,
   EndpointId extends string = string,
 >({
@@ -1055,7 +1055,7 @@ export function VortexWebhookEndpointList<
   onSendTest,
   renderTag,
   sendingTestEndpointId,
-}: VortexWebhookEndpointListProps<EventType, EndpointId>) {
+}: ConvexWebhookEndpointListProps<EventType, EndpointId>) {
   const resolvedCopy = resolveEndpointCopy(copy);
 
   if (endpoints === undefined) {
@@ -1077,7 +1077,7 @@ export function VortexWebhookEndpointList<
   return (
     <div className={cn("space-y-3", classNames?.endpointList)}>
       {endpoints.map((endpoint) => (
-        <VortexWebhookEndpointCard
+        <ConvexWebhookEndpointCard
           classNames={classNames}
           copy={resolvedCopy}
           endpoint={endpoint}
@@ -1097,7 +1097,7 @@ export function VortexWebhookEndpointList<
   );
 }
 
-export function VortexWebhookDeliveryFilters<
+export function ConvexWebhookDeliveryFilters<
   EventType extends string = string,
   EndpointId extends string = string,
 >({
@@ -1111,7 +1111,7 @@ export function VortexWebhookDeliveryFilters<
   onEventTypeChange,
   onStatusChange,
   status,
-}: VortexWebhookDeliveryFiltersProps<EventType, EndpointId>) {
+}: ConvexWebhookDeliveryFiltersProps<EventType, EndpointId>) {
   const resolvedCopy = resolveDeliveryCopy({ emptyMessage: "", ...copy });
   const filterEndpoints =
     endpoints?.filter(
@@ -1209,7 +1209,7 @@ export function VortexWebhookDeliveryFilters<
   );
 }
 
-export function VortexWebhookDeliveryPagination<
+export function ConvexWebhookDeliveryPagination<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -1220,7 +1220,7 @@ export function VortexWebhookDeliveryPagination<
   onNext,
   onPrevious,
   page,
-}: VortexWebhookDeliveryPaginationProps<
+}: ConvexWebhookDeliveryPaginationProps<
   EventType,
   EndpointId,
   DeliveryId,
@@ -1263,7 +1263,7 @@ export function VortexWebhookDeliveryPagination<
   );
 }
 
-export function VortexWebhookDeliveryList<
+export function ConvexWebhookDeliveryList<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -1272,10 +1272,10 @@ export function VortexWebhookDeliveryList<
   classNames,
   copy,
   deliveries,
-  formatTimestamp = formatVortexWebhookTimestamp,
+  formatTimestamp = formatConvexWebhookTimestamp,
   renderFailureBadge,
   renderTag,
-}: VortexWebhookDeliveryListProps<
+}: ConvexWebhookDeliveryListProps<
   EventType,
   EndpointId,
   DeliveryId,
@@ -1316,7 +1316,7 @@ export function VortexWebhookDeliveryList<
       </div>
       <div className="space-y-3">
         {deliveries.map((delivery) => (
-          <VortexWebhookDeliveryCard
+          <ConvexWebhookDeliveryCard
             classNames={classNames}
             copy={resolvedCopy}
             delivery={delivery}
@@ -1331,7 +1331,7 @@ export function VortexWebhookDeliveryList<
   );
 }
 
-export function VortexExhaustedWebhookDeliveryList<
+export function ConvexExhaustedWebhookDeliveryList<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -1340,12 +1340,12 @@ export function VortexExhaustedWebhookDeliveryList<
   classNames,
   copy,
   deliveries,
-  formatTimestamp = formatVortexWebhookTimestamp,
+  formatTimestamp = formatConvexWebhookTimestamp,
   onRetry,
   renderFailureBadge,
   renderTag,
   retryingDeliveryId,
-}: VortexExhaustedWebhookDeliveryListProps<
+}: ConvexExhaustedWebhookDeliveryListProps<
   EventType,
   EndpointId,
   DeliveryId,
@@ -1382,7 +1382,7 @@ export function VortexExhaustedWebhookDeliveryList<
       </div>
       <div className="space-y-3">
         {deliveries.map((delivery) => (
-          <VortexWebhookDeliveryCard
+          <ConvexWebhookDeliveryCard
             actions={
               <button
                 className={secondaryButtonClassName(classNames)}
@@ -1409,7 +1409,7 @@ export function VortexExhaustedWebhookDeliveryList<
   );
 }
 
-function useVortexWebhookDeliveryPage<
+function useConvexWebhookDeliveryPage<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -1419,7 +1419,7 @@ function useVortexWebhookDeliveryPage<
   refs,
 }: {
   deliveryLimit: number;
-  refs: VortexWebhookSettingsFunctionReferences<
+  refs: ConvexWebhookSettingsFunctionReferences<
     EventType,
     EndpointId,
     DeliveryId,
@@ -1430,7 +1430,7 @@ function useVortexWebhookDeliveryPage<
     EndpointId | "all"
   >("all");
   const [deliveryStatus, setDeliveryStatus] = useState<
-    VortexWebhookDeliveryStatus | "all"
+    ConvexWebhookDeliveryStatus | "all"
   >("all");
   const [deliveryEventType, setDeliveryEventType] = useState<EventType | "all">(
     "all"
@@ -1459,7 +1459,7 @@ function useVortexWebhookDeliveryPage<
   };
 }
 
-function useVortexWebhookEndpointActions<
+function useConvexWebhookEndpointActions<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -1477,14 +1477,14 @@ function useVortexWebhookEndpointActions<
   createRequestId: (prefix: string) => string;
   getErrorMessage: (error: unknown, fallback: string) => string;
   organizationId: string | undefined;
-  refs: VortexWebhookSettingsFunctionReferences<
+  refs: ConvexWebhookSettingsFunctionReferences<
     EventType,
     EndpointId,
     DeliveryId,
     OrganizationId
   >;
 }) {
-  const mutations = useVortexWebhookEndpointMutationRunners<
+  const mutations = useConvexWebhookEndpointMutationRunners<
     EventType,
     EndpointId,
     DeliveryId
@@ -1492,7 +1492,7 @@ function useVortexWebhookEndpointActions<
   const [actionError, setActionError] = useState<string | null>(null);
   const setMutationError = (error: unknown, fallback: string) =>
     setActionError(getErrorMessage(error, fallback));
-  const createState = useVortexWebhookCreateActionState<EventType>({
+  const createState = useConvexWebhookCreateActionState<EventType>({
     captureEvent,
     createRequestId,
     createWebhookEndpoint: mutations.createWebhookEndpoint,
@@ -1500,20 +1500,20 @@ function useVortexWebhookEndpointActions<
     setActionError,
     setMutationError,
   });
-  const retryState = useVortexWebhookRetryActionState<DeliveryId>({
+  const retryState = useConvexWebhookRetryActionState<DeliveryId>({
     captureEvent,
     retryWebhookDelivery: mutations.retryWebhookDelivery,
     setActionError,
     setMutationError,
   });
-  const sendTestState = useVortexWebhookSendTestActionState<EndpointId>({
+  const sendTestState = useConvexWebhookSendTestActionState<EndpointId>({
     createRequestId,
     sendTestWebhook: mutations.sendTestWebhook,
     setActionError,
     setMutationError,
   });
   const endpointMutationActions =
-    createVortexWebhookEndpointMutationActions<EndpointId>({
+    createConvexWebhookEndpointMutationActions<EndpointId>({
       mutations,
       setActionError,
       setCreatedWebhookSecret: createState.setCreatedWebhookSecret,
@@ -1529,7 +1529,7 @@ function useVortexWebhookEndpointActions<
   };
 }
 
-function createVortexWebhookEndpointMutationActions<
+function createConvexWebhookEndpointMutationActions<
   EndpointId extends string = string,
 >({
   mutations,
@@ -1539,7 +1539,7 @@ function createVortexWebhookEndpointMutationActions<
 }: {
   mutations: Pick<
     ReturnType<
-      typeof useVortexWebhookEndpointMutationRunners<string, EndpointId, string>
+      typeof useConvexWebhookEndpointMutationRunners<string, EndpointId, string>
     >,
     | "archiveWebhookEndpoint"
     | "disableWebhookEndpoint"
@@ -1670,7 +1670,7 @@ function rotateWebhookSecretWithState<EndpointId extends string = string>({
   endpointId: EndpointId;
   rotateWebhookSecret: MutationRunner<
     { endpointId: EndpointId },
-    VortexWebhookRotateSecretResult
+    ConvexWebhookRotateSecretResult
   >;
   setActionError: (error: string | null) => void;
   setCreatedWebhookSecret: (secret: string | null) => void;
@@ -1712,7 +1712,7 @@ function saveWebhookEndpoint<
   );
 }
 
-function useVortexWebhookCreateActionState<EventType extends string = string>({
+function useConvexWebhookCreateActionState<EventType extends string = string>({
   captureEvent,
   createRequestId,
   createWebhookEndpoint,
@@ -1731,7 +1731,7 @@ function useVortexWebhookCreateActionState<EventType extends string = string>({
       requestId: string;
       url: string;
     },
-    VortexWebhookCreateEndpointResult
+    ConvexWebhookCreateEndpointResult
   >;
   organizationId: string | undefined;
   setActionError: (error: string | null) => void;
@@ -1777,7 +1777,7 @@ function useVortexWebhookCreateActionState<EventType extends string = string>({
   };
 }
 
-function useVortexWebhookRetryActionState<DeliveryId extends string = string>({
+function useConvexWebhookRetryActionState<DeliveryId extends string = string>({
   captureEvent,
   retryWebhookDelivery,
   setActionError,
@@ -1807,7 +1807,7 @@ function useVortexWebhookRetryActionState<DeliveryId extends string = string>({
   };
 }
 
-function useVortexWebhookSendTestActionState<
+function useConvexWebhookSendTestActionState<
   EndpointId extends string = string,
 >({
   createRequestId,
@@ -1871,7 +1871,7 @@ function createWebhookEndpointWithState<EventType extends string = string>({
       requestId: string;
       url: string;
     },
-    VortexWebhookCreateEndpointResult
+    ConvexWebhookCreateEndpointResult
   >;
   organizationId: string | undefined;
   setActionError: (error: string | null) => void;
@@ -2001,12 +2001,12 @@ function sendTestWebhookWithState<EndpointId extends string = string>({
     });
 }
 
-function useVortexWebhookEndpointMutationRunners<
+function useConvexWebhookEndpointMutationRunners<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
 >(
-  refs: VortexWebhookSettingsFunctionReferences<
+  refs: ConvexWebhookSettingsFunctionReferences<
     EventType,
     EndpointId,
     DeliveryId
@@ -2051,7 +2051,7 @@ function useVortexWebhookEndpointMutationRunners<
   };
 }
 
-function VortexWebhookEndpointCard<
+function ConvexWebhookEndpointCard<
   EventType extends string = string,
   EndpointId extends string = string,
 >({
@@ -2068,9 +2068,9 @@ function VortexWebhookEndpointCard<
   renderTag,
   sendingTestEndpointId,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  copy: Required<VortexWebhookEndpointListCopy>;
-  endpoint: VortexWebhookEndpointListItem<EventType, EndpointId>;
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: Required<ConvexWebhookEndpointListCopy>;
+  endpoint: ConvexWebhookEndpointListItem<EventType, EndpointId>;
   eventOptions: readonly EventType[];
   onArchive: (endpointId: EndpointId) => void;
   onDelete: (endpointId: EndpointId) => void;
@@ -2081,7 +2081,7 @@ function VortexWebhookEndpointCard<
     values: { url: string; description?: string; events: EventType[] }
   ) => void;
   onSendTest: (endpointId: EndpointId) => void;
-  renderTag: VortexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
+  renderTag: ConvexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
   sendingTestEndpointId: EndpointId | null;
 }) {
   const [url, setUrl] = useState(endpoint.url);
@@ -2097,7 +2097,7 @@ function VortexWebhookEndpointCard<
       data-testid="webhook-endpoint-card"
     >
       <div className={cn("p-5", classNames?.cardContent)}>
-        <VortexWebhookEndpointHeader
+        <ConvexWebhookEndpointHeader
           classNames={classNames}
           copy={copy}
           endpoint={endpoint}
@@ -2108,7 +2108,7 @@ function VortexWebhookEndpointCard<
           onSendTest={onSendTest}
           sendingTestEndpointId={sendingTestEndpointId}
         />
-        <VortexWebhookEndpointEditFields
+        <ConvexWebhookEndpointEditFields
           classNames={classNames}
           copy={copy}
           description={description}
@@ -2117,7 +2117,7 @@ function VortexWebhookEndpointCard<
           url={url}
         />
         <div className="mt-3">
-          <VortexWebhookEventPills
+          <ConvexWebhookEventPills
             classNames={classNames}
             disabled={endpoint.status !== "active"}
             eventOptions={eventOptions}
@@ -2125,7 +2125,7 @@ function VortexWebhookEndpointCard<
             selected={events}
           />
         </div>
-        <VortexWebhookEndpointSaveRow
+        <ConvexWebhookEndpointSaveRow
           classNames={classNames}
           copy={copy}
           endpoint={endpoint}
@@ -2139,7 +2139,7 @@ function VortexWebhookEndpointCard<
   );
 }
 
-function VortexWebhookEndpointHeader<
+function ConvexWebhookEndpointHeader<
   EventType extends string = string,
   EndpointId extends string = string,
 >({
@@ -2153,9 +2153,9 @@ function VortexWebhookEndpointHeader<
   onSendTest,
   sendingTestEndpointId,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  copy: Required<VortexWebhookEndpointListCopy>;
-  endpoint: VortexWebhookEndpointListItem<EventType, EndpointId>;
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: Required<ConvexWebhookEndpointListCopy>;
+  endpoint: ConvexWebhookEndpointListItem<EventType, EndpointId>;
   onArchive: (endpointId: EndpointId) => void;
   onDelete: (endpointId: EndpointId) => void;
   onDisable: (endpointId: EndpointId) => void;
@@ -2170,12 +2170,12 @@ function VortexWebhookEndpointHeader<
         classNames?.endpointHeader
       )}
     >
-      <VortexWebhookEndpointMeta
+      <ConvexWebhookEndpointMeta
         classNames={classNames}
         copy={copy}
         endpoint={endpoint}
       />
-      <VortexWebhookEndpointActions
+      <ConvexWebhookEndpointActions
         classNames={classNames}
         copy={copy}
         endpoint={endpoint}
@@ -2190,7 +2190,7 @@ function VortexWebhookEndpointHeader<
   );
 }
 
-function VortexWebhookEndpointMeta<
+function ConvexWebhookEndpointMeta<
   EventType extends string = string,
   EndpointId extends string = string,
 >({
@@ -2198,9 +2198,9 @@ function VortexWebhookEndpointMeta<
   copy,
   endpoint,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  copy: Required<VortexWebhookEndpointListCopy>;
-  endpoint: VortexWebhookEndpointListItem<EventType, EndpointId>;
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: Required<ConvexWebhookEndpointListCopy>;
+  endpoint: ConvexWebhookEndpointListItem<EventType, EndpointId>;
 }) {
   return (
     <div className={cn("space-y-1", classNames?.endpointMeta)}>
@@ -2216,7 +2216,7 @@ function VortexWebhookEndpointMeta<
   );
 }
 
-function VortexWebhookEndpointActions<
+function ConvexWebhookEndpointActions<
   EventType extends string = string,
   EndpointId extends string = string,
 >({
@@ -2230,9 +2230,9 @@ function VortexWebhookEndpointActions<
   onSendTest,
   sendingTestEndpointId,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  copy: Required<VortexWebhookEndpointListCopy>;
-  endpoint: VortexWebhookEndpointListItem<EventType, EndpointId>;
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: Required<ConvexWebhookEndpointListCopy>;
+  endpoint: ConvexWebhookEndpointListItem<EventType, EndpointId>;
   onArchive: (endpointId: EndpointId) => void;
   onDelete: (endpointId: EndpointId) => void;
   onDisable: (endpointId: EndpointId) => void;
@@ -2247,7 +2247,7 @@ function VortexWebhookEndpointActions<
         classNames?.endpointActions
       )}
     >
-      <VortexWebhookSendTestButton
+      <ConvexWebhookSendTestButton
         classNames={classNames}
         copy={copy}
         endpoint={endpoint}
@@ -2292,7 +2292,7 @@ function VortexWebhookEndpointActions<
   );
 }
 
-function VortexWebhookSendTestButton<
+function ConvexWebhookSendTestButton<
   EventType extends string = string,
   EndpointId extends string = string,
 >({
@@ -2302,9 +2302,9 @@ function VortexWebhookSendTestButton<
   onSendTest,
   sendingTestEndpointId,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  copy: Required<VortexWebhookEndpointListCopy>;
-  endpoint: VortexWebhookEndpointListItem<EventType, EndpointId>;
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: Required<ConvexWebhookEndpointListCopy>;
+  endpoint: ConvexWebhookEndpointListItem<EventType, EndpointId>;
   onSendTest: (endpointId: EndpointId) => void;
   sendingTestEndpointId: EndpointId | null;
 }) {
@@ -2326,7 +2326,7 @@ function VortexWebhookSendTestButton<
   );
 }
 
-function VortexWebhookEndpointEditFields({
+function ConvexWebhookEndpointEditFields({
   classNames,
   copy,
   description,
@@ -2334,8 +2334,8 @@ function VortexWebhookEndpointEditFields({
   onUrlChange,
   url,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  copy: Required<VortexWebhookEndpointListCopy>;
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: Required<ConvexWebhookEndpointListCopy>;
   description: string;
   onDescriptionChange: (value: string) => void;
   onUrlChange: (value: string) => void;
@@ -2372,7 +2372,7 @@ function VortexWebhookEndpointEditFields({
   );
 }
 
-function VortexWebhookEndpointSaveRow<
+function ConvexWebhookEndpointSaveRow<
   EventType extends string = string,
   EndpointId extends string = string,
 >({
@@ -2384,15 +2384,15 @@ function VortexWebhookEndpointSaveRow<
   renderTag,
   values,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  copy: Required<VortexWebhookEndpointListCopy>;
-  endpoint: VortexWebhookEndpointListItem<EventType, EndpointId>;
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: Required<ConvexWebhookEndpointListCopy>;
+  endpoint: ConvexWebhookEndpointListItem<EventType, EndpointId>;
   events: EventType[];
   onSave: (
     endpointId: EndpointId,
     values: { url: string; description?: string; events: EventType[] }
   ) => void;
-  renderTag: VortexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
+  renderTag: ConvexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
   values: { description: string; url: string };
 }) {
   return (
@@ -2411,7 +2411,7 @@ function VortexWebhookEndpointSaveRow<
       >
         {copy.saveLabel}
       </button>
-      <VortexWebhookEndpointEventTags
+      <ConvexWebhookEndpointEventTags
         classNames={classNames}
         copy={copy}
         endpoint={endpoint}
@@ -2421,7 +2421,7 @@ function VortexWebhookEndpointSaveRow<
   );
 }
 
-function VortexWebhookEndpointEventTags<
+function ConvexWebhookEndpointEventTags<
   EventType extends string = string,
   EndpointId extends string = string,
 >({
@@ -2430,10 +2430,10 @@ function VortexWebhookEndpointEventTags<
   endpoint,
   renderTag,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  copy: Required<VortexWebhookEndpointListCopy>;
-  endpoint: VortexWebhookEndpointListItem<EventType, EndpointId>;
-  renderTag: VortexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: Required<ConvexWebhookEndpointListCopy>;
+  endpoint: ConvexWebhookEndpointListItem<EventType, EndpointId>;
+  renderTag: ConvexWebhookEndpointListProps<EventType, EndpointId>["renderTag"];
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -2446,14 +2446,14 @@ function VortexWebhookEndpointEventTags<
   );
 }
 
-function VortexWebhookEventPills<EventType extends string>({
+function ConvexWebhookEventPills<EventType extends string>({
   classNames,
   disabled,
   eventOptions,
   onChange,
   selected,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
+  classNames: ConvexWebhookClassNames | undefined;
   disabled: boolean;
   eventOptions: readonly EventType[];
   onChange: (value: EventType[]) => void;
@@ -2495,7 +2495,7 @@ function VortexWebhookEventPills<EventType extends string>({
   );
 }
 
-function VortexWebhookDeliveryCard<
+function ConvexWebhookDeliveryCard<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -2510,22 +2510,22 @@ function VortexWebhookDeliveryCard<
   renderTag,
 }: {
   actions?: ReactNode;
-  classNames: VortexWebhookClassNames | undefined;
-  copy: Required<VortexWebhookDeliveryCopy>;
-  delivery: VortexWebhookDeliveryListItem<
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: Required<ConvexWebhookDeliveryCopy>;
+  delivery: ConvexWebhookDeliveryListItem<
     EventType,
     EndpointId,
     DeliveryId,
     OrganizationId
   >;
   formatTimestamp: (timestamp: number) => string;
-  renderFailureBadge: VortexWebhookDeliveryListProps<
+  renderFailureBadge: ConvexWebhookDeliveryListProps<
     EventType,
     EndpointId,
     DeliveryId,
     OrganizationId
   >["renderFailureBadge"];
-  renderTag: VortexWebhookDeliveryListProps<
+  renderTag: ConvexWebhookDeliveryListProps<
     EventType,
     EndpointId,
     DeliveryId,
@@ -2539,14 +2539,14 @@ function VortexWebhookDeliveryCard<
         classNames?.deliveryCard
       )}
     >
-      <VortexWebhookDeliveryHeader
+      <ConvexWebhookDeliveryHeader
         actions={actions}
         classNames={classNames}
         delivery={delivery}
         renderFailureBadge={renderFailureBadge}
         renderTag={renderTag}
       />
-      <VortexWebhookDeliveryDetails
+      <ConvexWebhookDeliveryDetails
         classNames={classNames}
         copy={copy}
         delivery={delivery}
@@ -2556,7 +2556,7 @@ function VortexWebhookDeliveryCard<
   );
 }
 
-function VortexWebhookDeliveryHeader<
+function ConvexWebhookDeliveryHeader<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -2569,20 +2569,20 @@ function VortexWebhookDeliveryHeader<
   renderTag,
 }: {
   actions?: ReactNode;
-  classNames: VortexWebhookClassNames | undefined;
-  delivery: VortexWebhookDeliveryListItem<
+  classNames: ConvexWebhookClassNames | undefined;
+  delivery: ConvexWebhookDeliveryListItem<
     EventType,
     EndpointId,
     DeliveryId,
     OrganizationId
   >;
-  renderFailureBadge: VortexWebhookDeliveryListProps<
+  renderFailureBadge: ConvexWebhookDeliveryListProps<
     EventType,
     EndpointId,
     DeliveryId,
     OrganizationId
   >["renderFailureBadge"];
-  renderTag: VortexWebhookDeliveryListProps<
+  renderTag: ConvexWebhookDeliveryListProps<
     EventType,
     EndpointId,
     DeliveryId,
@@ -2604,7 +2604,7 @@ function VortexWebhookDeliveryHeader<
             "Unknown endpoint"}
         </p>
       </div>
-      <VortexWebhookDeliveryBadges
+      <ConvexWebhookDeliveryBadges
         actions={actions}
         classNames={classNames}
         delivery={delivery}
@@ -2615,7 +2615,7 @@ function VortexWebhookDeliveryHeader<
   );
 }
 
-function VortexWebhookDeliveryBadges<
+function ConvexWebhookDeliveryBadges<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -2628,20 +2628,20 @@ function VortexWebhookDeliveryBadges<
   renderTag,
 }: {
   actions?: ReactNode;
-  classNames: VortexWebhookClassNames | undefined;
-  delivery: VortexWebhookDeliveryListItem<
+  classNames: ConvexWebhookClassNames | undefined;
+  delivery: ConvexWebhookDeliveryListItem<
     EventType,
     EndpointId,
     DeliveryId,
     OrganizationId
   >;
-  renderFailureBadge: VortexWebhookDeliveryListProps<
+  renderFailureBadge: ConvexWebhookDeliveryListProps<
     EventType,
     EndpointId,
     DeliveryId,
     OrganizationId
   >["renderFailureBadge"];
-  renderTag: VortexWebhookDeliveryListProps<
+  renderTag: ConvexWebhookDeliveryListProps<
     EventType,
     EndpointId,
     DeliveryId,
@@ -2674,7 +2674,7 @@ function VortexWebhookDeliveryBadges<
   );
 }
 
-function VortexWebhookDeliveryDetails<
+function ConvexWebhookDeliveryDetails<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -2685,9 +2685,9 @@ function VortexWebhookDeliveryDetails<
   delivery,
   formatTimestamp,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
-  copy: Required<VortexWebhookDeliveryCopy>;
-  delivery: VortexWebhookDeliveryListItem<
+  classNames: ConvexWebhookClassNames | undefined;
+  copy: Required<ConvexWebhookDeliveryCopy>;
+  delivery: ConvexWebhookDeliveryListItem<
     EventType,
     EndpointId,
     DeliveryId,
@@ -2708,7 +2708,7 @@ function VortexWebhookDeliveryDetails<
       <p>
         {copy.createdLabel}: {formatTimestamp(delivery.createdAt)}
       </p>
-      <VortexWebhookDeliveryOptionalDetails
+      <ConvexWebhookDeliveryOptionalDetails
         copy={copy}
         delivery={delivery}
         formatTimestamp={formatTimestamp}
@@ -2727,7 +2727,7 @@ function VortexWebhookDeliveryDetails<
   );
 }
 
-function VortexWebhookDeliveryOptionalDetails<
+function ConvexWebhookDeliveryOptionalDetails<
   EventType extends string = string,
   EndpointId extends string = string,
   DeliveryId extends string = string,
@@ -2737,8 +2737,8 @@ function VortexWebhookDeliveryOptionalDetails<
   delivery,
   formatTimestamp,
 }: {
-  copy: Required<VortexWebhookDeliveryCopy>;
-  delivery: VortexWebhookDeliveryListItem<
+  copy: Required<ConvexWebhookDeliveryCopy>;
+  delivery: ConvexWebhookDeliveryListItem<
     EventType,
     EndpointId,
     DeliveryId,
@@ -2771,7 +2771,7 @@ function VortexWebhookDeliveryOptionalDetails<
       {delivery.failureKind ? (
         <p>
           {copy.failureKindLabel}:{" "}
-          {getVortexWebhookFailureKindLabel(delivery.failureKind)}
+          {getConvexWebhookFailureKindLabel(delivery.failureKind)}
         </p>
       ) : null}
     </>
@@ -2779,7 +2779,7 @@ function VortexWebhookDeliveryOptionalDetails<
 }
 
 function inputClassName(
-  classNames: VortexWebhookClassNames | undefined
+  classNames: ConvexWebhookClassNames | undefined
 ): string {
   return cn(
     "border-foreground/10 bg-foreground/5 text-foreground placeholder:text-foreground/35 focus:border-foreground/25 h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
@@ -2788,7 +2788,7 @@ function inputClassName(
 }
 
 function selectClassName(
-  classNames: VortexWebhookClassNames | undefined
+  classNames: ConvexWebhookClassNames | undefined
 ): string {
   return cn(
     "border-foreground/10 bg-foreground/5 text-foreground focus:border-foreground/25 h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-60",
@@ -2797,7 +2797,7 @@ function selectClassName(
 }
 
 function primaryButtonClassName(
-  classNames: VortexWebhookClassNames | undefined
+  classNames: ConvexWebhookClassNames | undefined
 ): string {
   return cn(
     "bg-foreground text-background hover:bg-foreground/90 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
@@ -2806,7 +2806,7 @@ function primaryButtonClassName(
 }
 
 function secondaryButtonClassName(
-  classNames: VortexWebhookClassNames | undefined
+  classNames: ConvexWebhookClassNames | undefined
 ): string {
   return cn(
     "border-foreground/15 text-foreground/70 hover:bg-foreground/5 inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
@@ -2815,7 +2815,7 @@ function secondaryButtonClassName(
 }
 
 function warningButtonClassName(
-  classNames: VortexWebhookClassNames | undefined
+  classNames: ConvexWebhookClassNames | undefined
 ): string {
   return cn(
     "border-warning/30 text-warning hover:bg-warning/10 inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
@@ -2824,7 +2824,7 @@ function warningButtonClassName(
 }
 
 function destructiveButtonClassName(
-  classNames: VortexWebhookClassNames | undefined
+  classNames: ConvexWebhookClassNames | undefined
 ): string {
   return cn(
     "bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
@@ -2833,14 +2833,14 @@ function destructiveButtonClassName(
 }
 
 function stateTextClassName(
-  classNames: VortexWebhookClassNames | undefined
+  classNames: ConvexWebhookClassNames | undefined
 ): string {
   return cn("text-foreground/50 text-sm", classNames?.stateText);
 }
 
 function renderWebhookTag(
   label: string,
-  classNames: VortexWebhookClassNames | undefined,
+  classNames: ConvexWebhookClassNames | undefined,
   renderTag: ((label: string) => ReactNode) | undefined
 ): ReactNode {
   if (renderTag) {
@@ -2861,17 +2861,17 @@ function renderWebhookTag(
 }
 
 function renderDeliveryFailureBadge(
-  failureKind: VortexWebhookDeliveryFailureKind,
-  classNames: VortexWebhookClassNames | undefined,
+  failureKind: ConvexWebhookDeliveryFailureKind,
+  classNames: ConvexWebhookClassNames | undefined,
   renderFailureBadge:
-    | ((failureKind: VortexWebhookDeliveryFailureKind) => ReactNode)
+    | ((failureKind: ConvexWebhookDeliveryFailureKind) => ReactNode)
     | undefined
 ): ReactNode {
   if (renderFailureBadge) {
     return renderFailureBadge(failureKind);
   }
 
-  const tone = getVortexWebhookFailureKindTone(failureKind);
+  const tone = getConvexWebhookFailureKindTone(failureKind);
   return (
     <span
       className={cn(
@@ -2884,17 +2884,17 @@ function renderDeliveryFailureBadge(
         classNames?.tag
       )}
     >
-      {getVortexWebhookFailureKindLabel(failureKind)}
+      {getConvexWebhookFailureKindLabel(failureKind)}
     </span>
   );
 }
 
-function VortexWebhookSecretNotice({
+function ConvexWebhookSecretNotice({
   classNames,
   secret,
   title,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
+  classNames: ConvexWebhookClassNames | undefined;
   secret: string;
   title: string;
 }) {
@@ -2918,12 +2918,12 @@ function VortexWebhookSecretNotice({
   );
 }
 
-function VortexWebhookActionErrorNotice({
+function ConvexWebhookActionErrorNotice({
   classNames,
   message,
   title,
 }: {
-  classNames: VortexWebhookClassNames | undefined;
+  classNames: ConvexWebhookClassNames | undefined;
   message: string;
   title: string;
 }) {
@@ -2942,8 +2942,8 @@ function VortexWebhookActionErrorNotice({
 }
 
 function resolveSettingsEndpointCopy(
-  copy: Partial<VortexWebhookEndpointListCopy> | undefined
-): VortexWebhookEndpointListCopy {
+  copy: Partial<ConvexWebhookEndpointListCopy> | undefined
+): ConvexWebhookEndpointListCopy {
   return {
     ...copy,
     emptyMessage: copy?.emptyMessage ?? "No webhook endpoints configured yet.",
@@ -2951,8 +2951,8 @@ function resolveSettingsEndpointCopy(
 }
 
 function resolveSettingsDeliveryCopy(
-  copy: Partial<VortexWebhookDeliveryCopy> | undefined
-): VortexWebhookDeliveryCopy {
+  copy: Partial<ConvexWebhookDeliveryCopy> | undefined
+): ConvexWebhookDeliveryCopy {
   return {
     ...copy,
     emptyMessage: copy?.emptyMessage ?? "No webhook deliveries yet.",
@@ -2960,8 +2960,8 @@ function resolveSettingsDeliveryCopy(
 }
 
 function resolveSettingsExhaustedDeliveryCopy(
-  copy: Partial<VortexWebhookDeliveryCopy> | undefined
-): VortexWebhookDeliveryCopy {
+  copy: Partial<ConvexWebhookDeliveryCopy> | undefined
+): ConvexWebhookDeliveryCopy {
   return {
     ...copy,
     emptyMessage: copy?.emptyMessage ?? "No exhausted webhook deliveries.",
@@ -2969,21 +2969,21 @@ function resolveSettingsExhaustedDeliveryCopy(
 }
 
 function resolveCreateCopy(
-  copy: VortexWebhookCreateFormCopy | undefined
-): Required<VortexWebhookCreateFormCopy> {
+  copy: ConvexWebhookCreateFormCopy | undefined
+): Required<ConvexWebhookCreateFormCopy> {
   return { ...defaultCreateCopy, ...copy };
 }
 
 function resolveEndpointCopy(
-  copy: VortexWebhookEndpointListCopy
-): Required<VortexWebhookEndpointListCopy> {
+  copy: ConvexWebhookEndpointListCopy
+): Required<ConvexWebhookEndpointListCopy> {
   return { ...defaultEndpointCopy, ...copy, emptyMessage: copy.emptyMessage };
 }
 
 function resolveDeliveryCopy(
-  copy: Partial<VortexWebhookDeliveryCopy> &
-    Pick<VortexWebhookDeliveryCopy, "emptyMessage">
-): Required<VortexWebhookDeliveryCopy> {
+  copy: Partial<ConvexWebhookDeliveryCopy> &
+    Pick<ConvexWebhookDeliveryCopy, "emptyMessage">
+): Required<ConvexWebhookDeliveryCopy> {
   return { ...defaultDeliveryCopy, ...copy, emptyMessage: copy.emptyMessage };
 }
 

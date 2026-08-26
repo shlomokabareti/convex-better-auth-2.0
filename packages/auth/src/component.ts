@@ -22,4 +22,4 @@ export {
   webhookFailureKindValidator,
 } from "./component/schema";
 
-export type { ComponentApi as VortexAuthComponentApi } from "./component/_generated/component";
+export type { ComponentApi as ConvexAuthComponentApi } from "./component/_generated/component";

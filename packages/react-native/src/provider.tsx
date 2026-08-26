@@ -5,16 +5,16 @@ import {
 import { ConvexReactClient } from "convex/react";
 import type { ReactNode } from "react";
 
-export type VortexExpoConvexClientOptions = ConstructorParameters<
+export type ExpoConvexClientOptions = ConstructorParameters<
   typeof ConvexReactClient
 >[1];
 
-export type VortexExpoConvexReactClient = ConvexReactClient;
+export type ExpoConvexReactClient = ConvexReactClient;
 
-export function createVortexExpoConvexReactClient(
+export function createExpoConvexReactClient(
   convexUrl: string,
-  options: VortexExpoConvexClientOptions = {}
-): VortexExpoConvexReactClient {
+  options: ExpoConvexClientOptions = {}
+): ExpoConvexReactClient {
   const url = convexUrl.trim();
   if (!url) {
     throw new Error("EXPO_PUBLIC_CONVEX_URL is required.");
@@ -27,10 +27,10 @@ export function createVortexExpoConvexReactClient(
   });
 }
 
-export function VortexExpoConvexAuthProvider(args: {
+export function ExpoConvexAuthProvider(args: {
   authClient: AuthClient;
   children: ReactNode;
-  client: VortexExpoConvexReactClient;
+  client: ExpoConvexReactClient;
   initialToken?: string | null;
 }) {
   return (

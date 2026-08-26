@@ -2,17 +2,21 @@
 
 This workspace is a full-stack, open-source auth solution that sits at the intersection of [Convex](https://convex.dev) and [Better Auth](https://www.better-auth.com).
 
+## Where it came from
+
+This code was originally built for **Plasma**, my previous startup. After Plasma was sunsetted, I extracted the auth layer and released it as a public project. The goal is to give Convex developers an out-of-the-box auth stack that covers the same surface area as Clerk or WorkOS, without giving up Convex's native database model.
+
 ## The three problems it addresses
 
 ### 1. Convex Auth 2.0 is still coming
 
-Convex has announced that a richer built-in auth system is on the roadmap. Until it ships, Convex apps need a way to run production-grade auth today without betting against Convex's eventual first-class solution. Better Auth is the best available option for the feature set, but it is not designed around Convex's component and query model out of the box.
+Convex has made it clear that a richer built-in auth system is on the roadmap. Until it ships, Convex apps need a way to run production-grade auth today without betting against Convex's eventual first-class solution. Better Auth is the best available option for the feature set, but it is not designed around Convex's component and query model out of the box.
 
 ### 2. The Better Auth plugin model and Convex's component system fight each other
 
 Better Auth is built as a pluggable Node/Edge framework. Its plugins assume they own the runtime, the database calls, and the request/response lifecycle. Convex is different: the source of truth is a durable, transactional database with generated query/mutation/action functions and a component model for reusable packages.
 
-When you install `@convex-dev/better-auth`, you immediately hit impedance mismatches:
+When you install the standard Better Auth Convex integration, you immediately hit impedance mismatches:
 
 - Better Auth wants to run `betterAuthHandler` inside an HTTP action; Convex wants `http.ts` route handlers.
 - Better Auth's plugins store state in their own tables; Convex wants those tables inside a reusable, versioned component.
@@ -32,7 +36,18 @@ The long-term goal is for Convex to provide native, component-based auth that ke
 - Webhook fan-out and security
 - MCP and agent-auth protocols
 
-Until Convex natively covers that surface, removing Better Auth is a net loss. The pragmatic path is to wrap Better Auth's battle-tested primitives inside a Convex-native component and client runtime, then migrate pieces to native Convex auth as the platform catches up.
+Until Convex natively covers that surface, removing Better Auth is a net loss. The pragmatic path is to **rebuild Better Auth's plugin features as Convex-style components, queries, mutations, and actions** — keeping auth in the same DB and using Better Auth's primitives where they add value.
+
+See [`better-auth-to-convex.md`](better-auth-to-convex.md) for the full mapping.
+
+## Why not just use Clerk or WorkOS?
+
+Clerk and WorkOS are great products. They are also **external auth platforms** that own your users, sessions, and organization data. That creates two problems for a Convex app:
+
+1. **Data gravity.** Auth state lives outside Convex, so every auth check is a network call, every organization lookup is a network call, and every audit log is a sync problem.
+2. **Lock-in.** The longer you stay on a hosted auth platform, the deeper your schema and UI depend on its shapes and its availability.
+
+This project gives you the Clerk/WorkOS feature surface — users, orgs, invites, roles, API keys, OAuth, 2FA, webhooks, machine auth — while keeping the source of truth in **your Convex database**. You own the domain. The auth provider is a component inside your backend, not a separate service.
 
 ## What this repo does about it
 
@@ -43,4 +58,4 @@ Until Convex natively covers that surface, removing Better Auth is a net loss. T
 - `convex-auth-react` — React UI and hooks that are auth-first and Convex-integrated.
 - `convex-auth-react-native` — Expo / React Native client and forms.
 
-All four packages are self-contained, Apache-2.0, and have no dependencies on private Vortex packages.
+All four packages are self-contained, Apache-2.0, and have no dependencies on private packages.

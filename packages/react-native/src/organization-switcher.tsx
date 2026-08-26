@@ -1,5 +1,5 @@
 /**
- * VortexOrganizationSwitcher (RN) — props-driven org switcher
+ * ConvexOrganizationSwitcher (RN) — props-driven org switcher
  * mirroring the web component. Renders the current org as a button;
  * tapping it opens a Modal listing the other orgs + (optional)
  * personal account + (optional) create-org action.
@@ -21,14 +21,14 @@ import {
   type ViewStyle,
 } from "react-native";
 
-export type VortexOrgSwitcherOrganization = {
+export type ConvexOrgSwitcherOrganization = {
   _id: string;
   name: string;
   slug?: string;
   imageUrl?: string;
 };
 
-export type VortexExpoOrgSwitcherStyles = {
+export type ExpoOrgSwitcherStyles = {
   trigger?: StyleProp<ViewStyle>;
   triggerName?: StyleProp<TextStyle>;
   triggerImage?: StyleProp<ImageStyle>;
@@ -45,7 +45,7 @@ export type VortexExpoOrgSwitcherStyles = {
   createButtonText?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoOrgSwitcherCopy = {
+export type ExpoOrgSwitcherCopy = {
   currentOrganizationLabel?: string;
   otherOrganizationsLabel?: string;
   createOrganizationLabel?: string;
@@ -53,23 +53,23 @@ export type VortexExpoOrgSwitcherCopy = {
   noOrganizationsLabel?: string;
 };
 
-export type VortexExpoOrgSwitcherProps = {
-  organizations: readonly VortexOrgSwitcherOrganization[];
+export type ExpoOrgSwitcherProps = {
+  organizations: readonly ConvexOrgSwitcherOrganization[];
   currentOrganizationId?: string | null;
-  currentOrganization?: VortexOrgSwitcherOrganization | null;
+  currentOrganization?: ConvexOrgSwitcherOrganization | null;
   showPersonalAccount?: boolean;
-  styles?: VortexExpoOrgSwitcherStyles;
-  copy?: VortexExpoOrgSwitcherCopy;
+  styles?: ExpoOrgSwitcherStyles;
+  copy?: ExpoOrgSwitcherCopy;
   onSelectOrganization: (organizationId: string) => void | Promise<void>;
   onSelectPersonalAccount?: () => void | Promise<void>;
   onCreateOrganization?: () => void | Promise<void>;
   renderCustomTrigger?: (args: {
-    organization: VortexOrgSwitcherOrganization | null;
+    organization: ConvexOrgSwitcherOrganization | null;
     onPress: () => void;
   }) => ReactNode;
 };
 
-const DEFAULT_COPY: Required<VortexExpoOrgSwitcherCopy> = {
+const DEFAULT_COPY: Required<ExpoOrgSwitcherCopy> = {
   currentOrganizationLabel: "Current",
   otherOrganizationsLabel: "Switch to",
   createOrganizationLabel: "Create workspace",
@@ -78,11 +78,11 @@ const DEFAULT_COPY: Required<VortexExpoOrgSwitcherCopy> = {
 };
 
 function OrganizationSwitcherTrigger(props: {
-  copy: Required<VortexExpoOrgSwitcherCopy>;
-  current: VortexOrgSwitcherOrganization | null;
+  copy: Required<ExpoOrgSwitcherCopy>;
+  current: ConvexOrgSwitcherOrganization | null;
   onPress: () => void;
-  renderCustomTrigger?: VortexExpoOrgSwitcherProps["renderCustomTrigger"];
-  styles: VortexExpoOrgSwitcherStyles;
+  renderCustomTrigger?: ExpoOrgSwitcherProps["renderCustomTrigger"];
+  styles: ExpoOrgSwitcherStyles;
 }) {
   const custom = props.renderCustomTrigger?.({
     organization: props.current,
@@ -116,9 +116,9 @@ function OrganizationSwitcherTrigger(props: {
 }
 
 function CurrentOrganizationSection(props: {
-  copy: Required<VortexExpoOrgSwitcherCopy>;
-  current: VortexOrgSwitcherOrganization | null;
-  styles: VortexExpoOrgSwitcherStyles;
+  copy: Required<ExpoOrgSwitcherCopy>;
+  current: ConvexOrgSwitcherOrganization | null;
+  styles: ExpoOrgSwitcherStyles;
 }) {
   if (props.current === null) {
     return null;
@@ -154,7 +154,7 @@ function CurrentOrganizationSection(props: {
   );
 }
 
-export function VortexOrganizationSwitcher(props: VortexExpoOrgSwitcherProps) {
+export function ConvexOrganizationSwitcher(props: ExpoOrgSwitcherProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const [open, setOpen] = useState(false);
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   modal: {
     flex: 1,
     justifyContent: "flex-end",
-    // vortex-allow-color: modal scrim
+    // convex-allow-color: modal scrim
     backgroundColor: "rgba(0,0,0,0.4)",
   },
   panel: {

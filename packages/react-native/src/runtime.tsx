@@ -1,35 +1,35 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
-  createVortexExpoBetterAuthClient,
-  type VortexExpoBetterAuthClient,
-  type VortexExpoBetterAuthClientOptions,
+  createExpoBetterAuthClient,
+  type ExpoBetterAuthClient,
+  type ExpoBetterAuthClientOptions,
 } from "./client";
 import {
-  normalizeVortexExpoTrustedOrigin,
-  resolveVortexExpoAuthConfig,
-  type VortexExpoPlatformOS,
-  type VortexExpoResolvedAuthConfig,
+  normalizeExpoTrustedOrigin,
+  resolveExpoAuthConfig,
+  type ExpoPlatformOS,
+  type ExpoResolvedAuthConfig,
 } from "./config";
 
-export type VortexExpoAuthUser = {
+export type ExpoAuthUser = {
   email?: string | null;
   id: string;
   image?: string | null;
   name?: string | null;
 };
 
-export type VortexExpoAuthSession = {
-  user?: VortexExpoAuthUser | null;
+export type ExpoAuthSession = {
+  user?: ExpoAuthUser | null;
 };
 
-export type VortexExpoAuthSessionState = {
-  data?: VortexExpoAuthSession | null;
+export type ExpoAuthSessionState = {
+  data?: ExpoAuthSession | null;
   error?: unknown;
   isPending: boolean;
 };
 
-export type VortexExpoAuthActionResult<Data = unknown> = {
+export type ExpoAuthActionResult<Data = unknown> = {
   data?: Data | null;
   error?: {
     code?: string;
@@ -39,52 +39,52 @@ export type VortexExpoAuthActionResult<Data = unknown> = {
   } | null;
 };
 
-export type VortexExpoAuthRuntimeOptions = Omit<
-  VortexExpoBetterAuthClientOptions,
+export type ExpoAuthRuntimeOptions = Omit<
+  ExpoBetterAuthClientOptions,
   "baseURL" | "platformOS" | "scheme"
 > & {
   convexSiteUrl?: string | null;
   convexUrl?: string | null;
-  platformOS: VortexExpoPlatformOS;
+  platformOS: ExpoPlatformOS;
   scheme?: string | readonly string[] | null;
 };
 
-export type VortexExpoAuthRuntime = {
-  authClient: VortexExpoBetterAuthClient;
-  config: VortexExpoResolvedAuthConfig;
+export type ExpoAuthRuntime = {
+  authClient: ExpoBetterAuthClient;
+  config: ExpoResolvedAuthConfig;
   useAppAuth: () => {
     isLoaded: boolean;
     isSignedIn: boolean;
-    session: VortexExpoAuthSession | null;
+    session: ExpoAuthSession | null;
     userId: string | null;
   };
   useAppAuthActions: () => {
     signInEmail: (args: {
       email: string;
       password: string;
-    }) => Promise<VortexExpoAuthActionResult>;
+    }) => Promise<ExpoAuthActionResult>;
     signInSocial: (args: {
       provider: string;
-    }) => Promise<VortexExpoAuthActionResult>;
-    signOut: () => Promise<VortexExpoAuthActionResult>;
+    }) => Promise<ExpoAuthActionResult>;
+    signOut: () => Promise<ExpoAuthActionResult>;
     signUpEmail: (args: {
       email: string;
       name: string;
       password: string;
-    }) => Promise<VortexExpoAuthActionResult>;
+    }) => Promise<ExpoAuthActionResult>;
   };
   useAppUser: () => {
     isLoaded: boolean;
     isSignedIn: boolean;
-    user: VortexExpoAuthUser | null;
+    user: ExpoAuthUser | null;
   };
 };
 
-export function createVortexExpoAuthRuntime(
-  options: VortexExpoAuthRuntimeOptions
-): VortexExpoAuthRuntime {
-  const config = resolveVortexExpoAuthConfig(options);
-  const authClient = createVortexExpoBetterAuthClient({
+export function createExpoAuthRuntime(
+  options: ExpoAuthRuntimeOptions
+): ExpoAuthRuntime {
+  const config = resolveExpoAuthConfig(options);
+  const authClient = createExpoBetterAuthClient({
     ...options,
     baseURL: config.convexSiteUrl,
     platformOS: config.platformOS,
@@ -96,7 +96,7 @@ export function createVortexExpoAuthRuntime(
   // and listens for the deep link back into the app. Better Auth needs the
   // app's scheme-based callback URL (e.g. `plasma://`) so the provider
   // redirect lands back inside the app rather than on the web origin.
-  const socialCallbackURL = normalizeVortexExpoTrustedOrigin(config.scheme);
+  const socialCallbackURL = normalizeExpoTrustedOrigin(config.scheme);
 
   function useAppAuth() {
     const session = sessionClient.useSession();
@@ -151,7 +151,7 @@ export function createVortexExpoAuthRuntime(
 // packages/react/src/better-auth-runtime.tsx for the source of truth.
 // Consumer code should be identical on both platforms.
 
-export type VortexExpoAuthSessionListItem = {
+export type ExpoAuthSessionListItem = {
   id: string;
   token: string;
   userId: string;
@@ -164,7 +164,7 @@ export type VortexExpoAuthSessionListItem = {
 
 type SessionManagementClient = {
   listSessions?: () => Promise<{
-    data?: VortexExpoAuthSessionListItem[] | null;
+    data?: ExpoAuthSessionListItem[] | null;
     error?: unknown;
   }>;
   revokeSession?: (args: { token: string }) => Promise<{
@@ -204,18 +204,18 @@ type SessionManagementClient = {
   }>;
 };
 
-export type VortexExpoAuthSessionListState = {
-  sessions: VortexExpoAuthSessionListItem[] | null;
+export type ExpoAuthSessionListState = {
+  sessions: ExpoAuthSessionListItem[] | null;
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 };
 
-export function useVortexExpoAuthSessionList(
-  authClient: (VortexExpoBetterAuthClient & SessionManagementClient) | null
-): VortexExpoAuthSessionListState {
+export function useExpoAuthSessionList(
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+): ExpoAuthSessionListState {
   const [sessions, setSessions] = useState<
-    VortexExpoAuthSessionListItem[] | null
+    ExpoAuthSessionListItem[] | null
   >(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -256,7 +256,7 @@ export function useVortexExpoAuthSessionList(
   return { sessions, isLoading, error, refetch };
 }
 
-export type VortexExpoAuthRevokeSessionState = {
+export type ExpoAuthRevokeSessionState = {
   revokeSession: (args: {
     token: string;
   }) => Promise<{ ok: boolean; error: string | null }>;
@@ -264,9 +264,9 @@ export type VortexExpoAuthRevokeSessionState = {
   isRevoking: boolean;
 };
 
-export function useVortexExpoAuthRevokeSession(
-  authClient: (VortexExpoBetterAuthClient & SessionManagementClient) | null
-): VortexExpoAuthRevokeSessionState {
+export function useExpoAuthRevokeSession(
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+): ExpoAuthRevokeSessionState {
   const [isRevoking, setIsRevoking] = useState(false);
 
   const revokeSession = useCallback(
@@ -331,7 +331,7 @@ export function useVortexExpoAuthRevokeSession(
   return { revokeSession, revokeOtherSessions, isRevoking };
 }
 
-export type VortexExpoAuthUpdateProfileState = {
+export type ExpoAuthUpdateProfileState = {
   updateProfile: (args: {
     name?: string;
     image?: string;
@@ -339,9 +339,9 @@ export type VortexExpoAuthUpdateProfileState = {
   isUpdating: boolean;
 };
 
-export function useVortexExpoAuthUpdateProfile(
-  authClient: (VortexExpoBetterAuthClient & SessionManagementClient) | null
-): VortexExpoAuthUpdateProfileState {
+export function useExpoAuthUpdateProfile(
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+): ExpoAuthUpdateProfileState {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const updateProfile = useCallback(
@@ -380,7 +380,7 @@ export function useVortexExpoAuthUpdateProfile(
 
 // ---- Password-recovery hooks (RN mirror of web) ----
 
-export type VortexExpoAuthForgotPasswordState = {
+export type ExpoAuthForgotPasswordState = {
   requestReset: (args: {
     email: string;
     redirectTo?: string;
@@ -388,9 +388,9 @@ export type VortexExpoAuthForgotPasswordState = {
   isRequesting: boolean;
 };
 
-export function useVortexExpoAuthForgotPassword(
-  authClient: (VortexExpoBetterAuthClient & SessionManagementClient) | null
-): VortexExpoAuthForgotPasswordState {
+export function useExpoAuthForgotPassword(
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+): ExpoAuthForgotPasswordState {
   const [isRequesting, setIsRequesting] = useState(false);
 
   const requestReset = useCallback(
@@ -427,7 +427,7 @@ export function useVortexExpoAuthForgotPassword(
   return { requestReset, isRequesting };
 }
 
-export type VortexExpoAuthResetPasswordState = {
+export type ExpoAuthResetPasswordState = {
   resetPassword: (args: {
     newPassword: string;
     token: string;
@@ -435,9 +435,9 @@ export type VortexExpoAuthResetPasswordState = {
   isResetting: boolean;
 };
 
-export function useVortexExpoAuthResetPassword(
-  authClient: (VortexExpoBetterAuthClient & SessionManagementClient) | null
-): VortexExpoAuthResetPasswordState {
+export function useExpoAuthResetPassword(
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+): ExpoAuthResetPasswordState {
   const [isResetting, setIsResetting] = useState(false);
 
   const resetPassword = useCallback(
@@ -476,24 +476,24 @@ export function useVortexExpoAuthResetPassword(
 
 // ---- Email-verification hooks (RN mirror of web) ----
 
-export type VortexExpoAuthVerifyEmailStatus =
+export type ExpoAuthVerifyEmailStatus =
   | "idle"
   | "verifying"
   | "verified"
   | "error";
 
-export type VortexExpoAuthVerifyEmailState = {
-  status: VortexExpoAuthVerifyEmailStatus;
+export type ExpoAuthVerifyEmailState = {
+  status: ExpoAuthVerifyEmailStatus;
   error: string | null;
   verifyEmail: (args: {
     token: string;
   }) => Promise<{ ok: boolean; error: string | null }>;
 };
 
-export function useVortexExpoAuthVerifyEmail(
-  authClient: (VortexExpoBetterAuthClient & SessionManagementClient) | null
-): VortexExpoAuthVerifyEmailState {
-  const [status, setStatus] = useState<VortexExpoAuthVerifyEmailStatus>("idle");
+export function useExpoAuthVerifyEmail(
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+): ExpoAuthVerifyEmailState {
+  const [status, setStatus] = useState<ExpoAuthVerifyEmailStatus>("idle");
   const [error, setError] = useState<string | null>(null);
 
   const verifyEmail = useCallback(
@@ -534,7 +534,7 @@ export function useVortexExpoAuthVerifyEmail(
   return { status, error, verifyEmail };
 }
 
-export type VortexExpoAuthResendVerificationState = {
+export type ExpoAuthResendVerificationState = {
   resend: (args: {
     email: string;
     callbackURL?: string;
@@ -542,9 +542,9 @@ export type VortexExpoAuthResendVerificationState = {
   isResending: boolean;
 };
 
-export function useVortexExpoAuthResendVerification(
-  authClient: (VortexExpoBetterAuthClient & SessionManagementClient) | null
-): VortexExpoAuthResendVerificationState {
+export function useExpoAuthResendVerification(
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+): ExpoAuthResendVerificationState {
   const [isResending, setIsResending] = useState(false);
 
   const resend = useCallback(
@@ -583,7 +583,7 @@ export function useVortexExpoAuthResendVerification(
 
 // ---- Email-change hooks (RN mirror) ----
 
-export type VortexExpoAuthChangeEmailState = {
+export type ExpoAuthChangeEmailState = {
   requestChange: (args: {
     newEmail: string;
     callbackURL?: string;
@@ -591,9 +591,9 @@ export type VortexExpoAuthChangeEmailState = {
   isRequesting: boolean;
 };
 
-export function useVortexExpoAuthChangeEmail(
-  authClient: (VortexExpoBetterAuthClient & SessionManagementClient) | null
-): VortexExpoAuthChangeEmailState {
+export function useExpoAuthChangeEmail(
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null
+): ExpoAuthChangeEmailState {
   const [isRequesting, setIsRequesting] = useState(false);
 
   const requestChange = useCallback(
@@ -637,17 +637,17 @@ export function useVortexExpoAuthChangeEmail(
 // expo-image-picker / react-native-image-picker yield a local file
 // URI, not a File. Consumer's `uploadFile` converts it to a public URL.
 
-export type VortexExpoAuthUploadProfileImageState = {
+export type ExpoAuthUploadProfileImageState = {
   uploadAndSave: (
     file: Blob | string
   ) => Promise<{ ok: boolean; url: string | null; error: string | null }>;
   isUploading: boolean;
 };
 
-export function useVortexExpoAuthUploadProfileImage(
-  authClient: (VortexExpoBetterAuthClient & SessionManagementClient) | null,
+export function useExpoAuthUploadProfileImage(
+  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
   options: { uploadFile: (file: Blob | string) => Promise<string> }
-): VortexExpoAuthUploadProfileImageState {
+): ExpoAuthUploadProfileImageState {
   const [isUploading, setIsUploading] = useState(false);
   const { uploadFile } = options;
 
@@ -727,24 +727,24 @@ type TwoFactorClient = {
   };
 };
 
-export type VortexExpoAuthEnableTwoFactorResult = {
+export type ExpoAuthEnableTwoFactorResult = {
   ok: boolean;
   totpURI: string | null;
   backupCodes: string[] | null;
   error: string | null;
 };
 
-export type VortexExpoAuthEnableTwoFactorState = {
+export type ExpoAuthEnableTwoFactorState = {
   enable: (args: {
     password: string;
     issuer?: string;
-  }) => Promise<VortexExpoAuthEnableTwoFactorResult>;
+  }) => Promise<ExpoAuthEnableTwoFactorResult>;
   isEnabling: boolean;
 };
 
-export function useVortexExpoAuthEnableTwoFactor(
-  authClient: (VortexExpoBetterAuthClient & TwoFactorClient) | null
-): VortexExpoAuthEnableTwoFactorState {
+export function useExpoAuthEnableTwoFactor(
+  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null
+): ExpoAuthEnableTwoFactorState {
   const [isEnabling, setIsEnabling] = useState(false);
 
   const enable = useCallback(
@@ -792,7 +792,7 @@ export function useVortexExpoAuthEnableTwoFactor(
   return { enable, isEnabling };
 }
 
-export type VortexExpoAuthVerifyTotpState = {
+export type ExpoAuthVerifyTotpState = {
   verifyTotp: (args: {
     code: string;
     trustDevice?: boolean;
@@ -800,9 +800,9 @@ export type VortexExpoAuthVerifyTotpState = {
   isVerifying: boolean;
 };
 
-export function useVortexExpoAuthVerifyTotp(
-  authClient: (VortexExpoBetterAuthClient & TwoFactorClient) | null
-): VortexExpoAuthVerifyTotpState {
+export function useExpoAuthVerifyTotp(
+  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null
+): ExpoAuthVerifyTotpState {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const verifyTotp = useCallback(
@@ -832,7 +832,7 @@ export function useVortexExpoAuthVerifyTotp(
   return { verifyTotp, isVerifying };
 }
 
-export type VortexExpoAuthVerifyBackupCodeState = {
+export type ExpoAuthVerifyBackupCodeState = {
   verifyBackupCode: (args: {
     code: string;
     trustDevice?: boolean;
@@ -840,9 +840,9 @@ export type VortexExpoAuthVerifyBackupCodeState = {
   isVerifying: boolean;
 };
 
-export function useVortexExpoAuthVerifyBackupCode(
-  authClient: (VortexExpoBetterAuthClient & TwoFactorClient) | null
-): VortexExpoAuthVerifyBackupCodeState {
+export function useExpoAuthVerifyBackupCode(
+  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null
+): ExpoAuthVerifyBackupCodeState {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const verifyBackupCode = useCallback(
@@ -875,16 +875,16 @@ export function useVortexExpoAuthVerifyBackupCode(
   return { verifyBackupCode, isVerifying };
 }
 
-export type VortexExpoAuthDisableTwoFactorState = {
+export type ExpoAuthDisableTwoFactorState = {
   disable: (args: {
     password: string;
   }) => Promise<{ ok: boolean; error: string | null }>;
   isDisabling: boolean;
 };
 
-export function useVortexExpoAuthDisableTwoFactor(
-  authClient: (VortexExpoBetterAuthClient & TwoFactorClient) | null
-): VortexExpoAuthDisableTwoFactorState {
+export function useExpoAuthDisableTwoFactor(
+  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null
+): ExpoAuthDisableTwoFactorState {
   const [isDisabling, setIsDisabling] = useState(false);
 
   const disable = useCallback(
@@ -918,7 +918,7 @@ export function useVortexExpoAuthDisableTwoFactor(
   return { disable, isDisabling };
 }
 
-export type VortexExpoAuthGenerateBackupCodesState = {
+export type ExpoAuthGenerateBackupCodesState = {
   generateBackupCodes: (args: { password: string }) => Promise<{
     ok: boolean;
     backupCodes: string[] | null;
@@ -927,9 +927,9 @@ export type VortexExpoAuthGenerateBackupCodesState = {
   isGenerating: boolean;
 };
 
-export function useVortexExpoAuthGenerateBackupCodes(
-  authClient: (VortexExpoBetterAuthClient & TwoFactorClient) | null
-): VortexExpoAuthGenerateBackupCodesState {
+export function useExpoAuthGenerateBackupCodes(
+  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null
+): ExpoAuthGenerateBackupCodesState {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateBackupCodes = useCallback(

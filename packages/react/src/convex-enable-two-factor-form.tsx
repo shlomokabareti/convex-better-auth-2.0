@@ -1,5 +1,5 @@
 /**
- * VortexEnableTwoFactorForm — drop-in TOTP enrollment flow.
+ * ConvexEnableTwoFactorForm — drop-in TOTP enrollment flow.
  *
  * Three steps, one component:
  *   1. password — re-authenticate, then call `enable` (returns the
@@ -14,7 +14,7 @@
  * <QRCodeSVG value={uri} />) to add the scan affordance.
  *
  * Consumer usage:
- *   <VortexEnableTwoFactorForm
+ *   <ConvexEnableTwoFactorForm
  *     authClient={authClient}
  *     issuer="Pile"
  *     renderQR={(uri) => <QRCodeSVG value={uri} size={180} />}
@@ -30,9 +30,9 @@ import {
 
 import {
   extractTotpSecret,
-  useVortexAuthEnableTwoFactor,
-  useVortexAuthVerifyTotp,
-  type VortexBetterAuthClient,
+  useConvexAuthEnableTwoFactor,
+  useConvexAuthVerifyTotp,
+  type ConvexBetterAuthClient,
 } from "./better-auth-runtime";
 import {
   AuthButton,
@@ -44,7 +44,7 @@ import {
   AuthLabel,
 } from "./ui";
 
-export type VortexEnableTwoFactorFormClassNames = {
+export type ConvexEnableTwoFactorFormClassNames = {
   root?: string;
   form?: string;
   field?: string;
@@ -59,7 +59,7 @@ export type VortexEnableTwoFactorFormClassNames = {
   errorState?: string;
 };
 
-export type VortexEnableTwoFactorFormCopy = {
+export type ConvexEnableTwoFactorFormCopy = {
   title?: string;
   description?: string;
   passwordLabel?: string;
@@ -78,8 +78,8 @@ export type VortexEnableTwoFactorFormCopy = {
   unavailable?: string;
 };
 
-export type VortexEnableTwoFactorFormProps = {
-  authClient: VortexBetterAuthClient | null;
+export type ConvexEnableTwoFactorFormProps = {
+  authClient: ConvexBetterAuthClient | null;
   /** Authenticator label shown alongside the account (e.g. "Pile"). */
   issuer?: string;
   /**
@@ -88,13 +88,13 @@ export type VortexEnableTwoFactorFormProps = {
    * enrollment path. Keeps the package free of a QR dependency.
    */
   renderQR?: (totpURI: string) => ReactNode;
-  classNames?: VortexEnableTwoFactorFormClassNames;
-  copy?: VortexEnableTwoFactorFormCopy;
+  classNames?: ConvexEnableTwoFactorFormClassNames;
+  copy?: ConvexEnableTwoFactorFormCopy;
   /** Fired once enrollment is fully confirmed (after the backup step). */
   onEnrolled?: () => void;
 };
 
-const DEFAULT_COPY: Required<VortexEnableTwoFactorFormCopy> = {
+const DEFAULT_COPY: Required<ConvexEnableTwoFactorFormCopy> = {
   title: "Enable two-factor authentication",
   description: "Add an authenticator app for an extra layer of security.",
   passwordLabel: "Confirm your password",
@@ -117,16 +117,16 @@ const DEFAULT_COPY: Required<VortexEnableTwoFactorFormCopy> = {
 };
 
 type Step = "password" | "verify" | "backup";
-type TwoFactorFormCopy = Required<VortexEnableTwoFactorFormCopy>;
+type TwoFactorFormCopy = Required<ConvexEnableTwoFactorFormCopy>;
 
-export function VortexEnableTwoFactorForm(
-  props: VortexEnableTwoFactorFormProps
+export function ConvexEnableTwoFactorForm(
+  props: ConvexEnableTwoFactorFormProps
 ) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { enable, isEnabling } = useVortexAuthEnableTwoFactor(props.authClient);
-  const { verifyTotp, isVerifying } = useVortexAuthVerifyTotp(props.authClient);
+  const { enable, isEnabling } = useConvexAuthEnableTwoFactor(props.authClient);
+  const { verifyTotp, isVerifying } = useConvexAuthVerifyTotp(props.authClient);
 
   const [step, setStep] = useState<Step>("password");
   const [password, setPassword] = useState("");
@@ -224,7 +224,7 @@ function getTwoFactorHeader(copy: TwoFactorFormCopy, step: Step) {
 
 function TwoFactorUnavailable(args: {
   copy: TwoFactorFormCopy;
-  classNames: VortexEnableTwoFactorFormClassNames;
+  classNames: ConvexEnableTwoFactorFormClassNames;
 }) {
   return (
     <AuthCard className={args.classNames.root}>
@@ -242,7 +242,7 @@ function TwoFactorUnavailable(args: {
 }
 
 function TwoFactorPasswordStep(args: {
-  classNames: VortexEnableTwoFactorFormClassNames;
+  classNames: ConvexEnableTwoFactorFormClassNames;
   copy: TwoFactorFormCopy;
   error: string | null;
   isEnabling: boolean;
@@ -254,11 +254,11 @@ function TwoFactorPasswordStep(args: {
   return (
     <form onSubmit={args.onSubmit} className={cn.form}>
       <AuthField className={cn.field}>
-        <AuthLabel htmlFor="vortex-2fa-password" className={cn.label}>
+        <AuthLabel htmlFor="convex-2fa-password" className={cn.label}>
           {copy.passwordLabel}
         </AuthLabel>
         <AuthInput
-          id="vortex-2fa-password"
+          id="convex-2fa-password"
           type="password"
           autoComplete="current-password"
           value={args.password}
@@ -283,7 +283,7 @@ function TwoFactorPasswordStep(args: {
 }
 
 function TwoFactorVerifyStep(args: {
-  classNames: VortexEnableTwoFactorFormClassNames;
+  classNames: ConvexEnableTwoFactorFormClassNames;
   code: string;
   copy: TwoFactorFormCopy;
   error: string | null;
@@ -304,11 +304,11 @@ function TwoFactorVerifyStep(args: {
         <TwoFactorSecret classNames={cn} copy={copy} secret={args.secret} />
       ) : null}
       <AuthField className={cn.field}>
-        <AuthLabel htmlFor="vortex-2fa-code" className={cn.label}>
+        <AuthLabel htmlFor="convex-2fa-code" className={cn.label}>
           {copy.codeLabel}
         </AuthLabel>
         <AuthInput
-          id="vortex-2fa-code"
+          id="convex-2fa-code"
           inputMode="numeric"
           autoComplete="one-time-code"
           value={args.code}
@@ -333,7 +333,7 @@ function TwoFactorVerifyStep(args: {
 }
 
 function TwoFactorSecret(args: {
-  classNames: VortexEnableTwoFactorFormClassNames;
+  classNames: ConvexEnableTwoFactorFormClassNames;
   copy: TwoFactorFormCopy;
   secret: string;
 }) {
@@ -354,7 +354,7 @@ function TwoFactorSecret(args: {
 
 function TwoFactorBackupStep(args: {
   backupCodes: string[];
-  classNames: VortexEnableTwoFactorFormClassNames;
+  classNames: ConvexEnableTwoFactorFormClassNames;
   copy: TwoFactorFormCopy;
   onDone?: () => void;
 }) {

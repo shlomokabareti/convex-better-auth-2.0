@@ -7,12 +7,12 @@ import { useGuardedConvexMutation } from "./protected-writes";
 
 type EmptyArgs = Record<string, never>;
 
-export type VortexOrganizationPermissionListItem = {
+export type ConvexOrganizationPermissionListItem = {
   description?: string;
   key: string;
 };
 
-export type VortexOrganizationRoleListItem<RoleId extends string = string> = {
+export type ConvexOrganizationRoleListItem<RoleId extends string = string> = {
   _id: RoleId;
   createdAt?: number;
   description?: string;
@@ -24,40 +24,40 @@ export type VortexOrganizationRoleListItem<RoleId extends string = string> = {
   updatedAt?: number;
 };
 
-export type VortexOrganizationRoleFormState = {
+export type ConvexOrganizationRoleFormState = {
   name: string;
   permissions: string[];
 };
 
-export type VortexOrganizationCreateRoleArgs = {
+export type ConvexOrganizationCreateRoleArgs = {
   name: string;
   permissions: string[];
 };
 
-export type VortexOrganizationRoleManagerFunctionReferences<
+export type ConvexOrganizationRoleManagerFunctionReferences<
   RoleId extends string = string,
 > = {
   createRole: FunctionReference<
     "mutation",
     "public",
-    VortexOrganizationCreateRoleArgs,
+    ConvexOrganizationCreateRoleArgs,
     RoleId
   >;
   listPermissions: FunctionReference<
     "query",
     "public",
     EmptyArgs,
-    readonly VortexOrganizationPermissionListItem[]
+    readonly ConvexOrganizationPermissionListItem[]
   >;
   listRoles: FunctionReference<
     "query",
     "public",
     EmptyArgs,
-    readonly VortexOrganizationRoleListItem<RoleId>[]
+    readonly ConvexOrganizationRoleListItem<RoleId>[]
   >;
 };
 
-export type VortexOrganizationRoleManagerCopy = {
+export type ConvexOrganizationRoleManagerCopy = {
   actionErrorTitle?: string;
   createTitle?: string;
   creatingLabel?: string;
@@ -73,7 +73,7 @@ export type VortexOrganizationRoleManagerCopy = {
   systemRoleLabel?: string;
 };
 
-export type VortexOrganizationRoleManagerClassNames = {
+export type ConvexOrganizationRoleManagerClassNames = {
   badge?: string;
   checkbox?: string;
   error?: string;
@@ -98,18 +98,18 @@ export type VortexOrganizationRoleManagerClassNames = {
   stateText?: string;
 };
 
-export type VortexOrganizationRoleManagerSurfaceProps<
+export type ConvexOrganizationRoleManagerSurfaceProps<
   RoleId extends string = string,
 > = {
   buildCreateRoleArgs?: (
-    state: VortexOrganizationRoleFormState
-  ) => VortexOrganizationCreateRoleArgs;
+    state: ConvexOrganizationRoleFormState
+  ) => ConvexOrganizationCreateRoleArgs;
   canCreateRoles?: boolean;
   captureEvent?: (name: string, properties: Record<string, unknown>) => void;
-  classNames?: VortexOrganizationRoleManagerClassNames;
-  copy?: VortexOrganizationRoleManagerCopy;
+  classNames?: ConvexOrganizationRoleManagerClassNames;
+  copy?: ConvexOrganizationRoleManagerCopy;
   getErrorMessage?: (error: unknown, fallback: string) => string;
-  refs: VortexOrganizationRoleManagerFunctionReferences<RoleId>;
+  refs: ConvexOrganizationRoleManagerFunctionReferences<RoleId>;
   renderActionError?: (message: string) => ReactNode;
 };
 
@@ -127,9 +127,9 @@ const defaultRoleManagerCopy = {
   roleListTitle: "Roles",
   submitLabel: "Create role",
   systemRoleLabel: "System",
-} satisfies Required<VortexOrganizationRoleManagerCopy>;
+} satisfies Required<ConvexOrganizationRoleManagerCopy>;
 
-export function canSubmitVortexOrganizationRoleForm({
+export function canSubmitConvexOrganizationRoleForm({
   creating,
   disabled,
   name,
@@ -145,7 +145,7 @@ export function canSubmitVortexOrganizationRoleForm({
   );
 }
 
-export function getVortexOrganizationRoleManagerErrorMessage(
+export function getConvexOrganizationRoleManagerErrorMessage(
   error: unknown,
   fallback: string
 ): string {
@@ -154,13 +154,13 @@ export function getVortexOrganizationRoleManagerErrorMessage(
     : fallback;
 }
 
-export function isVortexOrganizationSystemRole(
-  role: Pick<VortexOrganizationRoleListItem, "isSystem" | "type">
+export function isConvexOrganizationSystemRole(
+  role: Pick<ConvexOrganizationRoleListItem, "isSystem" | "type">
 ): boolean {
   return role.isSystem === true || role.type === "system";
 }
 
-export function toggleVortexOrganizationRolePermission(
+export function toggleConvexOrganizationRolePermission(
   permissions: readonly string[],
   permission: string
 ): string[] {
@@ -169,13 +169,13 @@ export function toggleVortexOrganizationRolePermission(
     : [...permissions, permission];
 }
 
-export function groupVortexOrganizationPermissions(
-  permissions: readonly VortexOrganizationPermissionListItem[]
+export function groupConvexOrganizationPermissions(
+  permissions: readonly ConvexOrganizationPermissionListItem[]
 ): Array<{
   label: string;
-  permissions: VortexOrganizationPermissionListItem[];
+  permissions: ConvexOrganizationPermissionListItem[];
 }> {
-  const groups = new Map<string, VortexOrganizationPermissionListItem[]>();
+  const groups = new Map<string, ConvexOrganizationPermissionListItem[]>();
   for (const permission of permissions) {
     const separatorIndex = permission.key.indexOf(":");
     const label =
@@ -190,7 +190,7 @@ export function groupVortexOrganizationPermissions(
   }));
 }
 
-export function VortexOrganizationRoleManagerSurface<
+export function ConvexOrganizationRoleManagerSurface<
   RoleId extends string = string,
 >({
   buildCreateRoleArgs,
@@ -198,13 +198,13 @@ export function VortexOrganizationRoleManagerSurface<
   captureEvent,
   classNames,
   copy,
-  getErrorMessage = getVortexOrganizationRoleManagerErrorMessage,
+  getErrorMessage = getConvexOrganizationRoleManagerErrorMessage,
   refs,
   renderActionError,
-}: VortexOrganizationRoleManagerSurfaceProps<RoleId>) {
+}: ConvexOrganizationRoleManagerSurfaceProps<RoleId>) {
   const permissions = useQuery(refs.listPermissions, {});
   const roles = useQuery(refs.listRoles, {});
-  const actions = useVortexOrganizationRoleManagerActions({
+  const actions = useConvexOrganizationRoleManagerActions({
     buildCreateRoleArgs,
     captureEvent,
     getErrorMessage,
@@ -213,7 +213,7 @@ export function VortexOrganizationRoleManagerSurface<
 
   return (
     <div className="space-y-4">
-      <VortexOrganizationRoleCreateForm
+      <ConvexOrganizationRoleCreateForm
         canCreateRoles={canCreateRoles}
         classNames={classNames}
         copy={copy}
@@ -226,7 +226,7 @@ export function VortexOrganizationRoleManagerSurface<
       />
       {actions.actionError
         ? (renderActionError?.(actions.actionError) ?? (
-            <VortexOrganizationRoleActionErrorNotice
+            <ConvexOrganizationRoleActionErrorNotice
               classNames={classNames}
               message={actions.actionError}
               title={
@@ -236,7 +236,7 @@ export function VortexOrganizationRoleManagerSurface<
             />
           ))
         : null}
-      <VortexOrganizationRoleList
+      <ConvexOrganizationRoleList
         classNames={classNames}
         copy={copy}
         roles={roles}
@@ -245,7 +245,7 @@ export function VortexOrganizationRoleManagerSurface<
   );
 }
 
-export function VortexOrganizationRoleCreateForm({
+export function ConvexOrganizationRoleCreateForm({
   canCreateRoles = true,
   classNames,
   copy,
@@ -257,17 +257,17 @@ export function VortexOrganizationRoleCreateForm({
   state,
 }: {
   canCreateRoles?: boolean;
-  classNames?: VortexOrganizationRoleManagerClassNames;
-  copy?: VortexOrganizationRoleManagerCopy;
+  classNames?: ConvexOrganizationRoleManagerClassNames;
+  copy?: ConvexOrganizationRoleManagerCopy;
   creating: boolean;
   onNameChange: (name: string) => void;
   onPermissionToggle: (permission: string) => void;
   onSubmit: () => void;
-  permissions: readonly VortexOrganizationPermissionListItem[] | undefined;
-  state: VortexOrganizationRoleFormState;
+  permissions: readonly ConvexOrganizationPermissionListItem[] | undefined;
+  state: ConvexOrganizationRoleFormState;
 }) {
   const resolvedCopy = resolveRoleManagerCopy(copy);
-  const canSubmit = canSubmitVortexOrganizationRoleForm({
+  const canSubmit = canSubmitConvexOrganizationRoleForm({
     creating,
     disabled: !canCreateRoles || permissions === undefined,
     name: state.name,
@@ -310,7 +310,7 @@ export function VortexOrganizationRoleCreateForm({
           <p className={cn("text-foreground/70 text-sm", classNames?.label)}>
             {resolvedCopy.permissionLabel}
           </p>
-          <VortexOrganizationPermissionChecklist
+          <ConvexOrganizationPermissionChecklist
             classNames={classNames}
             copy={resolvedCopy}
             disabled={!canCreateRoles || creating}
@@ -336,7 +336,7 @@ export function VortexOrganizationRoleCreateForm({
   );
 }
 
-export function VortexOrganizationPermissionChecklist({
+export function ConvexOrganizationPermissionChecklist({
   classNames,
   copy,
   disabled,
@@ -344,11 +344,11 @@ export function VortexOrganizationPermissionChecklist({
   permissions,
   selectedPermissions,
 }: {
-  classNames?: VortexOrganizationRoleManagerClassNames;
-  copy: Required<VortexOrganizationRoleManagerCopy>;
+  classNames?: ConvexOrganizationRoleManagerClassNames;
+  copy: Required<ConvexOrganizationRoleManagerCopy>;
   disabled?: boolean;
   onPermissionToggle: (permission: string) => void;
-  permissions: readonly VortexOrganizationPermissionListItem[] | undefined;
+  permissions: readonly ConvexOrganizationPermissionListItem[] | undefined;
   selectedPermissions: readonly string[];
 }) {
   if (permissions === undefined) {
@@ -371,7 +371,7 @@ export function VortexOrganizationPermissionChecklist({
     <div
       className={cn("grid gap-3 md:grid-cols-2", classNames?.permissionGrid)}
     >
-      {groupVortexOrganizationPermissions(permissions).map((group) => (
+      {groupConvexOrganizationPermissions(permissions).map((group) => (
         <div
           className={cn(
             "border-foreground/10 bg-foreground/[0.03] rounded-md border p-3",
@@ -427,14 +427,14 @@ export function VortexOrganizationPermissionChecklist({
   );
 }
 
-export function VortexOrganizationRoleList<RoleId extends string = string>({
+export function ConvexOrganizationRoleList<RoleId extends string = string>({
   classNames,
   copy,
   roles,
 }: {
-  classNames?: VortexOrganizationRoleManagerClassNames;
-  copy?: VortexOrganizationRoleManagerCopy;
-  roles: readonly VortexOrganizationRoleListItem<RoleId>[] | undefined;
+  classNames?: ConvexOrganizationRoleManagerClassNames;
+  copy?: ConvexOrganizationRoleManagerCopy;
+  roles: readonly ConvexOrganizationRoleListItem<RoleId>[] | undefined;
 }) {
   const resolvedCopy = resolveRoleManagerCopy(copy);
 
@@ -465,7 +465,7 @@ export function VortexOrganizationRoleList<RoleId extends string = string>({
         {resolvedCopy.roleListTitle}
       </h3>
       {roles.map((role) => {
-        const systemRole = isVortexOrganizationSystemRole(role);
+        const systemRole = isConvexOrganizationSystemRole(role);
         return (
           <article
             className={cn(
@@ -531,12 +531,12 @@ export function VortexOrganizationRoleList<RoleId extends string = string>({
   );
 }
 
-export function VortexOrganizationRoleActionErrorNotice({
+export function ConvexOrganizationRoleActionErrorNotice({
   classNames,
   message,
   title,
 }: {
-  classNames?: VortexOrganizationRoleManagerClassNames;
+  classNames?: ConvexOrganizationRoleManagerClassNames;
   message: string;
   title: string;
 }) {
@@ -554,7 +554,7 @@ export function VortexOrganizationRoleActionErrorNotice({
   );
 }
 
-function useVortexOrganizationRoleManagerActions<
+function useConvexOrganizationRoleManagerActions<
   RoleId extends string = string,
 >({
   buildCreateRoleArgs,
@@ -564,17 +564,17 @@ function useVortexOrganizationRoleManagerActions<
 }: {
   buildCreateRoleArgs:
     | ((
-        state: VortexOrganizationRoleFormState
-      ) => VortexOrganizationCreateRoleArgs)
+        state: ConvexOrganizationRoleFormState
+      ) => ConvexOrganizationCreateRoleArgs)
     | undefined;
   captureEvent:
     | ((name: string, properties: Record<string, unknown>) => void)
     | undefined;
   getErrorMessage: (error: unknown, fallback: string) => string;
-  refs: VortexOrganizationRoleManagerFunctionReferences<RoleId>;
+  refs: ConvexOrganizationRoleManagerFunctionReferences<RoleId>;
 }) {
   const createRole = useGuardedConvexMutation(useMutation(refs.createRole));
-  const [form, setForm] = useState<VortexOrganizationRoleFormState>({
+  const [form, setForm] = useState<ConvexOrganizationRoleFormState>({
     name: "",
     permissions: [],
   });
@@ -585,7 +585,7 @@ function useVortexOrganizationRoleManagerActions<
     actionError,
     createRole: () => {
       if (
-        !canSubmitVortexOrganizationRoleForm({
+        !canSubmitConvexOrganizationRoleForm({
           creating,
           name: form.name,
           permissions: form.permissions,
@@ -625,7 +625,7 @@ function useVortexOrganizationRoleManagerActions<
     togglePermission: (permission: string) => {
       setForm((current) => ({
         ...current,
-        permissions: toggleVortexOrganizationRolePermission(
+        permissions: toggleConvexOrganizationRolePermission(
           current.permissions,
           permission
         ),
@@ -635,7 +635,7 @@ function useVortexOrganizationRoleManagerActions<
 }
 
 function resolveRoleManagerCopy(
-  copy: VortexOrganizationRoleManagerCopy | undefined
-): Required<VortexOrganizationRoleManagerCopy> {
+  copy: ConvexOrganizationRoleManagerCopy | undefined
+): Required<ConvexOrganizationRoleManagerCopy> {
   return { ...defaultRoleManagerCopy, ...copy };
 }

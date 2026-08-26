@@ -1,5 +1,5 @@
 /**
- * VortexOrganizationList (RN) — props-driven org chooser. Lists
+ * ConvexOrganizationList (RN) — props-driven org chooser. Lists
  * memberships + (optional) pending invitations, plus a create-org
  * action. Tap an org to select; tap an invitation's accept/reject
  * to act on it. Mirrors the web component's API.
@@ -21,7 +21,7 @@ import {
   type ViewStyle,
 } from "react-native";
 
-export type VortexOrgListOrganization = {
+export type ConvexOrgListOrganization = {
   _id: string;
   name: string;
   slug?: string;
@@ -29,7 +29,7 @@ export type VortexOrgListOrganization = {
   roleKey?: string;
 };
 
-export type VortexOrgListInvitation = {
+export type ConvexOrgListInvitation = {
   _id: string;
   organizationName: string;
   organizationImageUrl?: string;
@@ -38,7 +38,7 @@ export type VortexOrgListInvitation = {
   expiresAt?: number;
 };
 
-export type VortexExpoOrgListStyles = {
+export type ExpoOrgListStyles = {
   root?: StyleProp<ViewStyle>;
   header?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -59,7 +59,7 @@ export type VortexExpoOrgListStyles = {
   emptyState?: StyleProp<TextStyle>;
 };
 
-export type VortexExpoOrgListCopy = {
+export type ExpoOrgListCopy = {
   title?: string;
   description?: string;
   membershipsLabel?: string;
@@ -73,12 +73,12 @@ export type VortexExpoOrgListCopy = {
   expiresLabel?: string;
 };
 
-export type VortexExpoOrgListProps = {
-  organizations: readonly VortexOrgListOrganization[];
-  invitations?: readonly VortexOrgListInvitation[];
+export type ExpoOrgListProps = {
+  organizations: readonly ConvexOrgListOrganization[];
+  invitations?: readonly ConvexOrgListInvitation[];
   currentOrganizationId?: string | null;
-  styles?: VortexExpoOrgListStyles;
-  copy?: VortexExpoOrgListCopy;
+  styles?: ExpoOrgListStyles;
+  copy?: ExpoOrgListCopy;
   isLoading?: boolean;
   showInvitations?: boolean;
   onSelectOrganization: (organizationId: string) => void | Promise<void>;
@@ -87,7 +87,7 @@ export type VortexExpoOrgListProps = {
   onCreateOrganization?: () => void | Promise<void>;
 };
 
-const DEFAULT_COPY: Required<VortexExpoOrgListCopy> = {
+const DEFAULT_COPY: Required<ExpoOrgListCopy> = {
   title: "Workspaces",
   description: "Pick a workspace to continue.",
   membershipsLabel: "Your workspaces",
@@ -102,8 +102,8 @@ const DEFAULT_COPY: Required<VortexExpoOrgListCopy> = {
 };
 
 function OrganizationListHeader(props: {
-  copy: Required<VortexExpoOrgListCopy>;
-  styles: VortexExpoOrgListStyles;
+  copy: Required<ExpoOrgListCopy>;
+  styles: ExpoOrgListStyles;
 }) {
   return (
     <View style={[styles.header, props.styles.header]}>
@@ -116,9 +116,9 @@ function OrganizationListHeader(props: {
 }
 
 function CreateOrganizationAction(props: {
-  copy: Required<VortexExpoOrgListCopy>;
+  copy: Required<ExpoOrgListCopy>;
   onCreateOrganization?: () => void | Promise<void>;
-  styles: VortexExpoOrgListStyles;
+  styles: ExpoOrgListStyles;
 }) {
   if (props.onCreateOrganization === undefined) {
     return null;
@@ -144,7 +144,7 @@ function CreateOrganizationAction(props: {
   );
 }
 
-export function VortexOrganizationList(props: VortexExpoOrgListProps) {
+export function ConvexOrganizationList(props: ExpoOrgListProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const showInvites = props.showInvitations ?? true;

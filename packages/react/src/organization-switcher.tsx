@@ -9,14 +9,14 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
-export type VortexOrgSwitcherOrganization = {
+export type ConvexOrgSwitcherOrganization = {
   _id: string;
   name: string;
   slug?: string;
   imageUrl?: string;
 };
 
-export type VortexOrgSwitcherClassNames = {
+export type ConvexOrgSwitcherClassNames = {
   trigger?: string;
   triggerName?: string;
   triggerImage?: string;
@@ -33,7 +33,7 @@ export type VortexOrgSwitcherClassNames = {
   createButton?: string;
 };
 
-export type VortexOrgSwitcherCopy = {
+export type ConvexOrgSwitcherCopy = {
   currentOrganizationLabel?: string;
   otherOrganizationsLabel?: string;
   createOrganizationLabel?: string;
@@ -41,26 +41,26 @@ export type VortexOrgSwitcherCopy = {
   noOrganizationsLabel?: string;
 };
 
-export type VortexOrgSwitcherProps = {
-  organizations: readonly VortexOrgSwitcherOrganization[];
+export type ConvexOrgSwitcherProps = {
+  organizations: readonly ConvexOrgSwitcherOrganization[];
   currentOrganizationId?: string | null;
-  classNames?: VortexOrgSwitcherClassNames;
-  copy?: VortexOrgSwitcherCopy;
+  classNames?: ConvexOrgSwitcherClassNames;
+  copy?: ConvexOrgSwitcherCopy;
   onSelectOrganization: (organizationId: string) => void | Promise<void>;
   onSelectPersonalAccount?: () => void | Promise<void>;
   onCreateOrganization?: () => void | Promise<void>;
   showPersonalAccount?: boolean;
-  currentOrganization?: VortexOrgSwitcherOrganization | null;
+  currentOrganization?: ConvexOrgSwitcherOrganization | null;
   personalAccountLabel?: string;
   renderCustomTrigger?: (args: {
-    organization: VortexOrgSwitcherOrganization | null;
+    organization: ConvexOrgSwitcherOrganization | null;
     onClick: () => void;
   }) => ReactNode;
 };
 
 // ─── Default copy ──────────────────────────────────────────────────────────
 
-const defaultCopy: Required<VortexOrgSwitcherCopy> = {
+const defaultCopy: Required<ConvexOrgSwitcherCopy> = {
   currentOrganizationLabel: "Current workspace",
   otherOrganizationsLabel: "Other workspaces",
   createOrganizationLabel: "Create workspace",
@@ -69,13 +69,13 @@ const defaultCopy: Required<VortexOrgSwitcherCopy> = {
 };
 
 function resolveCopy(
-  copy: VortexOrgSwitcherCopy | undefined
-): Required<VortexOrgSwitcherCopy> {
+  copy: ConvexOrgSwitcherCopy | undefined
+): Required<ConvexOrgSwitcherCopy> {
   return { ...defaultCopy, ...copy };
 }
 
 function OrganizationAvatar(props: {
-  organization: VortexOrgSwitcherOrganization;
+  organization: ConvexOrgSwitcherOrganization;
   className?: string;
   placeholderClassName?: string;
 }) {
@@ -104,10 +104,10 @@ function OrganizationAvatar(props: {
 }
 
 function OrganizationSwitcherTrigger(props: {
-  currentOrg: VortexOrgSwitcherOrganization | null;
+  currentOrg: ConvexOrgSwitcherOrganization | null;
   open: boolean;
-  classNames?: VortexOrgSwitcherClassNames;
-  copy: Required<VortexOrgSwitcherCopy>;
+  classNames?: ConvexOrgSwitcherClassNames;
+  copy: Required<ConvexOrgSwitcherCopy>;
   onToggle: () => void;
 }) {
   const { currentOrg, open, classNames, copy, onToggle } = props;
@@ -161,7 +161,7 @@ function OrganizationSwitcherTrigger(props: {
   );
 }
 
-function DropdownDivider(props: { classNames?: VortexOrgSwitcherClassNames }) {
+function DropdownDivider(props: { classNames?: ConvexOrgSwitcherClassNames }) {
   return (
     <div
       className={cn(
@@ -174,7 +174,7 @@ function DropdownDivider(props: { classNames?: VortexOrgSwitcherClassNames }) {
 
 function DropdownTitle(props: {
   children: ReactNode;
-  classNames?: VortexOrgSwitcherClassNames;
+  classNames?: ConvexOrgSwitcherClassNames;
 }) {
   return (
     <div
@@ -189,9 +189,9 @@ function DropdownTitle(props: {
 }
 
 function OrganizationMenuItem(props: {
-  organization: VortexOrgSwitcherOrganization;
+  organization: ConvexOrgSwitcherOrganization;
   active?: boolean;
-  classNames?: VortexOrgSwitcherClassNames;
+  classNames?: ConvexOrgSwitcherClassNames;
   onClick?: () => void;
 }) {
   const { organization, active, classNames, onClick } = props;
@@ -220,9 +220,9 @@ function OrganizationMenuItem(props: {
 }
 
 function CurrentOrganizationSection(props: {
-  currentOrg: VortexOrgSwitcherOrganization | null;
-  classNames?: VortexOrgSwitcherClassNames;
-  copy: Required<VortexOrgSwitcherCopy>;
+  currentOrg: ConvexOrgSwitcherOrganization | null;
+  classNames?: ConvexOrgSwitcherClassNames;
+  copy: Required<ConvexOrgSwitcherCopy>;
 }) {
   const { currentOrg, classNames, copy } = props;
   if (!currentOrg) return null;
@@ -244,9 +244,9 @@ function CurrentOrganizationSection(props: {
 }
 
 function OtherOrganizationsSection(props: {
-  organizations: readonly VortexOrgSwitcherOrganization[];
-  classNames?: VortexOrgSwitcherClassNames;
-  copy: Required<VortexOrgSwitcherCopy>;
+  organizations: readonly ConvexOrgSwitcherOrganization[];
+  classNames?: ConvexOrgSwitcherClassNames;
+  copy: Required<ConvexOrgSwitcherCopy>;
   onSelect: (organizationId: string) => void;
 }) {
   const { organizations, classNames, copy, onSelect } = props;
@@ -274,8 +274,8 @@ function OtherOrganizationsSection(props: {
 
 function PersonalAccountSection(props: {
   enabled: boolean;
-  classNames?: VortexOrgSwitcherClassNames;
-  copy: Required<VortexOrgSwitcherCopy>;
+  classNames?: ConvexOrgSwitcherClassNames;
+  copy: Required<ConvexOrgSwitcherCopy>;
   onSelect: () => void;
 }) {
   const { enabled, classNames, copy, onSelect } = props;
@@ -317,8 +317,8 @@ function PersonalAccountSection(props: {
 
 function CreateOrganizationSection(props: {
   enabled: boolean;
-  classNames?: VortexOrgSwitcherClassNames;
-  copy: Required<VortexOrgSwitcherCopy>;
+  classNames?: ConvexOrgSwitcherClassNames;
+  copy: Required<ConvexOrgSwitcherCopy>;
   onCreate: () => void;
 }) {
   const { enabled, classNames, copy, onCreate } = props;
@@ -356,10 +356,10 @@ function CreateOrganizationSection(props: {
 }
 
 function OrganizationSwitcherDropdown(props: {
-  currentOrg: VortexOrgSwitcherOrganization | null;
-  otherOrgs: readonly VortexOrgSwitcherOrganization[];
-  classNames?: VortexOrgSwitcherClassNames;
-  copy: Required<VortexOrgSwitcherCopy>;
+  currentOrg: ConvexOrgSwitcherOrganization | null;
+  otherOrgs: readonly ConvexOrgSwitcherOrganization[];
+  classNames?: ConvexOrgSwitcherClassNames;
+  copy: Required<ConvexOrgSwitcherCopy>;
   showPersonalAccount: boolean;
   canCreateOrganization: boolean;
   onSelect: (organizationId: string) => void;
@@ -415,7 +415,7 @@ function OrganizationSwitcherDropdown(props: {
 
 // ─── Component ────────────────────────────────────────────────────────────
 
-export function VortexOrganizationSwitcher(props: VortexOrgSwitcherProps) {
+export function ConvexOrganizationSwitcher(props: ConvexOrgSwitcherProps) {
   const {
     organizations,
     currentOrganizationId,

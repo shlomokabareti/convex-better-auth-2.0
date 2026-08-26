@@ -1,12 +1,12 @@
 /**
  * Suite tenant brand identity (VOR-182).
  *
- * Stored on the vortex-auth organization as `metadataJson.brand` so every
+ * Stored on the convex-auth organization as `metadataJson.brand` so every
  * consumer reads/writes the same shape. Product chrome (e.g. Seal
  * `hideSealBranding`, custom signing footer) stays in the consumer.
  */
 
-export type VortexOrganizationBrand = {
+export type ConvexOrganizationBrand = {
   /** Primary brand color (CSS color string, e.g. `#0F172A`). */
   primaryColor?: string;
   /** Accent / secondary color. */
@@ -36,11 +36,11 @@ function optionalString(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function parseBrandObject(value: unknown): VortexOrganizationBrand | undefined {
+function parseBrandObject(value: unknown): ConvexOrganizationBrand | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
-  const brand: VortexOrganizationBrand = {
+  const brand: ConvexOrganizationBrand = {
     ...(optionalString(value.primaryColor)
       ? { primaryColor: optionalString(value.primaryColor) }
       : {}),
@@ -65,7 +65,7 @@ function parseBrandObject(value: unknown): VortexOrganizationBrand | undefined {
  */
 export function parseOrganizationBrandFromMetadataJson(
   metadataJson: string | null | undefined
-): VortexOrganizationBrand | undefined {
+): ConvexOrganizationBrand | undefined {
   if (!metadataJson || metadataJson.trim() === "") {
     return undefined;
   }
@@ -80,15 +80,15 @@ export function parseOrganizationBrandFromMetadataJson(
   }
 }
 
-export type VortexOrganizationBrandUpdate = {
-  [K in keyof VortexOrganizationBrand]?: string | null;
+export type ConvexOrganizationBrandUpdate = {
+  [K in keyof ConvexOrganizationBrand]?: string | null;
 };
 
 function applyBrandUpdate(
-  current: VortexOrganizationBrand | undefined,
-  update: VortexOrganizationBrandUpdate
-): VortexOrganizationBrand | undefined {
-  const next: VortexOrganizationBrand = { ...current };
+  current: ConvexOrganizationBrand | undefined,
+  update: ConvexOrganizationBrandUpdate
+): ConvexOrganizationBrand | undefined {
+  const next: ConvexOrganizationBrand = { ...current };
   const keys = [
     "primaryColor",
     "accentColor",
@@ -119,7 +119,7 @@ function applyBrandUpdate(
  */
 export function mergeOrganizationBrandIntoMetadataJson(
   metadataJson: string | null | undefined,
-  brandUpdate: VortexOrganizationBrandUpdate
+  brandUpdate: ConvexOrganizationBrandUpdate
 ): string | undefined {
   let base: MetadataRecord = {};
   if (metadataJson && metadataJson.trim() !== "") {

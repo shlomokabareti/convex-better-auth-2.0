@@ -28,20 +28,20 @@ const DEFAULT_EMAIL_INPUT_SELECTOR =
 const DEFAULT_PASSWORD_INPUT_SELECTOR = 'input[type="password"]';
 const DEFAULT_SIGN_IN_BUTTON_NAME = /continue|sign in/i;
 
-export type VortexAuthTestingPage = {
+export type ConvexAuthTestingPage = {
   evaluate<T, TArg>(
     pageFunction: (arg: TArg) => T | Promise<T>,
     arg: TArg
   ): Promise<T>;
 };
 
-export type VortexAuthTestingLocator = {
-  first(): VortexAuthTestingLocator;
+export type ConvexAuthTestingLocator = {
+  first(): ConvexAuthTestingLocator;
   fill(value: string): Promise<void>;
   click(): Promise<void>;
 };
 
-export type VortexAuthTestingPageWithUi = {
+export type ConvexAuthTestingPageWithUi = {
   goto(
     url: string,
     options?: {
@@ -51,8 +51,8 @@ export type VortexAuthTestingPageWithUi = {
   getByRole(
     role: "button",
     options: { name: string | RegExp }
-  ): VortexAuthTestingLocator;
-  locator(selector: string): VortexAuthTestingLocator;
+  ): ConvexAuthTestingLocator;
+  locator(selector: string): ConvexAuthTestingLocator;
   url(): string;
   waitForSelector(
     selector: string,
@@ -85,21 +85,21 @@ export type CreateAuthenticatedConvexHttpClientOptions =
     convexUrlEnvName?: string;
   };
 
-export type VortexAuthTestingEnv = Record<string, string | undefined>;
+export type ConvexAuthTestingEnv = Record<string, string | undefined>;
 
-export type VortexAuthTestCredentials = {
+export type ConvexAuthTestCredentials = {
   email: string;
   password: string;
 };
 
-export type VortexAuthTestCredentialsOptions = {
-  env?: VortexAuthTestingEnv;
+export type ConvexAuthTestCredentialsOptions = {
+  env?: ConvexAuthTestingEnv;
   emailEnvName?: string;
   passwordEnvName?: string;
 };
 
-export type VortexAuthE2EEnvironmentOptions =
-  VortexAuthTestCredentialsOptions & {
+export type ConvexAuthE2EEnvironmentOptions =
+  ConvexAuthTestCredentialsOptions & {
     scope?: string;
     baseUrlEnvName?: string;
     defaultBaseUrl?: string;
@@ -107,9 +107,9 @@ export type VortexAuthE2EEnvironmentOptions =
     logger?: (message: string) => void;
   };
 
-export type VortexAuthPreflightCommandOptions = {
+export type ConvexAuthPreflightCommandOptions = {
   repoRoot: string;
-  backendSetup?: false | VortexAuthPreflightBackendSetupOptions;
+  backendSetup?: false | ConvexAuthPreflightBackendSetupOptions;
   commandArgs?: string[];
   env?: NodeJS.ProcessEnv;
   logger?: (message: string) => void;
@@ -125,21 +125,21 @@ export type VortexAuthPreflightCommandOptions = {
   appServerProbePaths?: string[];
 };
 
-export type VortexAuthPreflightBackendSetupOptions = {
+export type ConvexAuthPreflightBackendSetupOptions = {
   authConfigPath?: string;
   betterAuthRuntimePath?: string;
   convexConfigPath?: string;
   httpPath?: string;
 };
 
-export type SignInWithVortexAuthEmailPasswordOptions =
-  VortexAuthTestCredentialsOptions & {
+export type SignInWithConvexAuthEmailPasswordOptions =
+  ConvexAuthTestCredentialsOptions & {
     afterSignInPathPattern?: RegExp;
-    credentials?: VortexAuthTestCredentials;
+    credentials?: ConvexAuthTestCredentials;
     emailInputSelector?: string;
     passwordInputSelector?: string;
     readFailureMessage?: (
-      page: VortexAuthTestingPageWithUi
+      page: ConvexAuthTestingPageWithUi
     ) => Promise<string | null>;
     signInButtonName?: string | RegExp;
     signInPath?: string;
@@ -147,7 +147,7 @@ export type SignInWithVortexAuthEmailPasswordOptions =
     timeoutMs?: number;
   };
 
-type VortexAuthBrowserRuntime = {
+type ConvexAuthBrowserRuntime = {
   __authRuntime?: {
     getConvexToken?: (args?: {
       forceRefreshToken?: boolean;
@@ -165,8 +165,8 @@ type PackageJson = {
 
 let hasLoggedE2EEnvironment = false;
 
-export function hasVortexAuthTestCredentials(
-  options: VortexAuthTestCredentialsOptions = {}
+export function hasConvexAuthTestCredentials(
+  options: ConvexAuthTestCredentialsOptions = {}
 ) {
   const env = options.env ?? process.env;
   const emailEnvName = options.emailEnvName ?? "TEST_USER_EMAIL";
@@ -175,9 +175,9 @@ export function hasVortexAuthTestCredentials(
   return Boolean(env[emailEnvName]?.trim() && env[passwordEnvName]?.trim());
 }
 
-export function getVortexAuthTestCredentials(
-  options: VortexAuthTestCredentialsOptions = {}
-): VortexAuthTestCredentials {
+export function getConvexAuthTestCredentials(
+  options: ConvexAuthTestCredentialsOptions = {}
+): ConvexAuthTestCredentials {
   const env = options.env ?? process.env;
   const emailEnvName = options.emailEnvName ?? "TEST_USER_EMAIL";
   const passwordEnvName = options.passwordEnvName ?? "TEST_USER_PASSWORD";
@@ -193,8 +193,8 @@ export function getVortexAuthTestCredentials(
   return { email, password };
 }
 
-export function assertVortexAuthAppEnv(
-  options: VortexAuthE2EEnvironmentOptions = {}
+export function assertConvexAuthAppEnv(
+  options: ConvexAuthE2EEnvironmentOptions = {}
 ) {
   const env = options.env ?? process.env;
   const baseUrlEnvName = options.baseUrlEnvName ?? "PLAYWRIGHT_TEST_BASE_URL";
@@ -207,31 +207,31 @@ export function assertVortexAuthAppEnv(
     throw new Error(`[E2E preflight] Missing ${baseUrlEnvName} for app setup`);
   }
 
-  logVortexAuthE2EEnvironment({
+  logConvexAuthE2EEnvironment({
     ...options,
     env,
     scope: options.scope ?? "app",
   });
 }
 
-export function assertVortexAuthCredentialsEnv(
-  options: VortexAuthE2EEnvironmentOptions = {}
+export function assertConvexAuthCredentialsEnv(
+  options: ConvexAuthE2EEnvironmentOptions = {}
 ) {
-  getVortexAuthTestCredentials(options);
-  logVortexAuthE2EEnvironment({
+  getConvexAuthTestCredentials(options);
+  logConvexAuthE2EEnvironment({
     ...options,
     scope: options.scope ?? "auth",
   });
 }
 
-export function logVortexAuthE2EEnvironment(
-  options: VortexAuthE2EEnvironmentOptions = {}
+export function logConvexAuthE2EEnvironment(
+  options: ConvexAuthE2EEnvironmentOptions = {}
 ) {
   if (hasLoggedE2EEnvironment) {
     return;
   }
 
-  const environment = resolveVortexAuthE2EEnvironment(options);
+  const environment = resolveConvexAuthE2EEnvironment(options);
   const logger = options.logger ?? console.info;
 
   logger(`[setup:${environment.scope}] Base URL: ${environment.baseUrl}`);
@@ -243,8 +243,8 @@ export function logVortexAuthE2EEnvironment(
   hasLoggedE2EEnvironment = true;
 }
 
-function resolveVortexAuthE2EEnvironment(
-  options: VortexAuthE2EEnvironmentOptions
+function resolveConvexAuthE2EEnvironment(
+  options: ConvexAuthE2EEnvironmentOptions
 ) {
   const env = options.env ?? process.env;
   const scope = options.scope ?? "app";
@@ -291,7 +291,7 @@ function expectedPreflightPackageVersion(
 
 function resolvePreflightUrls(
   env: NodeJS.ProcessEnv,
-  options: VortexAuthPreflightCommandOptions
+  options: ConvexAuthPreflightCommandOptions
 ) {
   return {
     appBaseUrl: firstEnvValue(
@@ -312,8 +312,8 @@ function resolvePreflightUrls(
   };
 }
 
-export async function runVortexAuthPreflightCommand(
-  options: VortexAuthPreflightCommandOptions
+export async function runConvexAuthPreflightCommand(
+  options: ConvexAuthPreflightCommandOptions
 ) {
   const env = options.env ?? process.env;
   const logger = options.logger ?? console.info;
@@ -391,12 +391,12 @@ export async function runVortexAuthPreflightCommand(
   return await runCommand(options.repoRoot, env, commandArgs);
 }
 
-export async function signInWithVortexAuthEmailPassword(
-  page: VortexAuthTestingPageWithUi,
-  options: SignInWithVortexAuthEmailPasswordOptions = {}
+export async function signInWithConvexAuthEmailPassword(
+  page: ConvexAuthTestingPageWithUi,
+  options: SignInWithConvexAuthEmailPasswordOptions = {}
 ) {
   const credentials =
-    options.credentials ?? getVortexAuthTestCredentials(options);
+    options.credentials ?? getConvexAuthTestCredentials(options);
   const timeoutMs = options.timeoutMs ?? DEFAULT_AUTH_RUNTIME_TIMEOUT_MS;
   const emailInputSelector =
     options.emailInputSelector ?? DEFAULT_EMAIL_INPUT_SELECTOR;
@@ -424,7 +424,7 @@ export async function signInWithVortexAuthEmailPassword(
     .click();
 
   try {
-    await waitForVortexAuthSignedInPath(page, {
+    await waitForConvexAuthSignedInPath(page, {
       afterSignInPathPattern: options.afterSignInPathPattern,
       timeoutMs,
     });
@@ -439,13 +439,13 @@ export async function signInWithVortexAuthEmailPassword(
 }
 
 export async function waitForExposedConvexRuntime(
-  page: VortexAuthTestingPage,
+  page: ConvexAuthTestingPage,
   options: WaitForExposedConvexRuntimeOptions = {}
 ) {
   await pollUntil(
     async () =>
       await page.evaluate(() => {
-        const runtime = window as typeof window & VortexAuthBrowserRuntime;
+        const runtime = window as typeof window & ConvexAuthBrowserRuntime;
         return Boolean(runtime.__convexApi && runtime.__convexClient);
       }, undefined),
     (isReady): isReady is true => isReady,
@@ -459,13 +459,13 @@ export async function waitForExposedConvexRuntime(
 }
 
 export async function waitForExposedAuthRuntime(
-  page: VortexAuthTestingPage,
+  page: ConvexAuthTestingPage,
   options: WaitForExposedAuthRuntimeOptions = {}
 ) {
   await pollUntil(
     async () =>
       await page.evaluate(() => {
-        const runtime = window as typeof window & VortexAuthBrowserRuntime;
+        const runtime = window as typeof window & ConvexAuthBrowserRuntime;
         return typeof runtime.__authRuntime?.getConvexToken === "function";
       }, undefined),
     (isReady): isReady is true => isReady,
@@ -479,7 +479,7 @@ export async function waitForExposedAuthRuntime(
 }
 
 export async function readConvexAuthToken(
-  page: VortexAuthTestingPage,
+  page: ConvexAuthTestingPage,
   options: ReadConvexAuthTokenOptions = {}
 ) {
   await waitForExposedConvexRuntime(page, options);
@@ -489,7 +489,7 @@ export async function readConvexAuthToken(
     async () =>
       await page.evaluate(
         async (args) => {
-          const runtime = window as typeof window & VortexAuthBrowserRuntime;
+          const runtime = window as typeof window & ConvexAuthBrowserRuntime;
           const tokenOptions =
             args.forceRefreshToken === undefined
               ? undefined
@@ -515,14 +515,14 @@ export async function readConvexAuthToken(
 }
 
 export async function waitForAuthenticatedConvexReady(
-  page: VortexAuthTestingPage,
+  page: ConvexAuthTestingPage,
   options: ReadConvexAuthTokenOptions = {}
 ) {
   return await readConvexAuthToken(page, options);
 }
 
 export async function createAuthenticatedConvexHttpClient(
-  page: VortexAuthTestingPage,
+  page: ConvexAuthTestingPage,
   options: CreateAuthenticatedConvexHttpClientOptions = {}
 ) {
   const convexUrl = getRequiredConvexUrl(options);
@@ -558,7 +558,7 @@ function getRequiredConvexUrl(
 // headless/backend test suites with zero browser and zero form.
 // ---------------------------------------------------------------------------
 
-export type MintVortexAuthTestSessionOptions = {
+export type MintConvexAuthTestSessionOptions = {
   /** Convex SITE url hosting the endpoint + `/api/auth` (e.g. `https://calm-x.convex.site`). */
   siteUrl: string;
   /** Shared secret matching the deployment's `VORTEX_AUTH_TEST_SESSION_SECRET`. */
@@ -569,13 +569,13 @@ export type MintVortexAuthTestSessionOptions = {
   testSessionPath?: string;
   /** Better-Auth base path. Default `/api/auth`. */
   basePath?: string;
-  /** Header carrying the secret. Default `x-vortex-test-secret`. */
+  /** Header carrying the secret. Default `x-convex-test-secret`. */
   secretHeaderName?: string;
   /** Override fetch (tests). Default `globalThis.fetch`. */
   fetchImpl?: typeof fetch;
 };
 
-export type VortexAuthMintedTestSession = {
+export type ConvexAuthMintedTestSession = {
   /** The Convex JWT — feed to `ConvexHttpClient.setAuth()`. */
   convexToken: string;
   /** The replayed `Cookie` header for the session, when cookie-based. */
@@ -584,19 +584,19 @@ export type VortexAuthMintedTestSession = {
   sessionToken?: string;
 };
 
-export async function mintVortexAuthTestSession(
-  options: MintVortexAuthTestSessionOptions
-): Promise<VortexAuthMintedTestSession> {
+export async function mintConvexAuthTestSession(
+  options: MintConvexAuthTestSessionOptions
+): Promise<ConvexAuthMintedTestSession> {
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
   if (typeof fetchImpl !== "function") {
     throw new Error(
-      "mintVortexAuthTestSession: no fetch implementation available."
+      "mintConvexAuthTestSession: no fetch implementation available."
     );
   }
   const siteUrl = options.siteUrl.replace(/\/$/, "");
   const testSessionPath = options.testSessionPath ?? "/test-session";
   const basePath = options.basePath ?? "/api/auth";
-  const secretHeaderName = options.secretHeaderName ?? "x-vortex-test-secret";
+  const secretHeaderName = options.secretHeaderName ?? "x-convex-test-secret";
 
   // 1. Mint the session through the secret-guarded endpoint (forwards a
   //    server-side sign-in to Better-Auth).
@@ -610,7 +610,7 @@ export async function mintVortexAuthTestSession(
   });
   if (!signInResponse.ok) {
     throw new Error(
-      `mintVortexAuthTestSession: test-session mint failed (${signInResponse.status} ${signInResponse.statusText}). ` +
+      `mintConvexAuthTestSession: test-session mint failed (${signInResponse.status} ${signInResponse.statusText}). ` +
         "Confirm VORTEX_AUTH_TEST_SESSIONS=enabled, the secret matches, and the user exists."
     );
   }
@@ -619,7 +619,7 @@ export async function mintVortexAuthTestSession(
     signInResponse.headers.get("set-auth-token") ?? undefined;
   if (!cookie && !sessionToken) {
     throw new Error(
-      "mintVortexAuthTestSession: sign-in succeeded but returned no session (no Set-Cookie / set-auth-token)."
+      "mintConvexAuthTestSession: sign-in succeeded but returned no session (no Set-Cookie / set-auth-token)."
     );
   }
 
@@ -633,7 +633,7 @@ export async function mintVortexAuthTestSession(
   });
   if (!tokenResponse.ok) {
     throw new Error(
-      `mintVortexAuthTestSession: convex token exchange failed (${tokenResponse.status} ${tokenResponse.statusText}).`
+      `mintConvexAuthTestSession: convex token exchange failed (${tokenResponse.status} ${tokenResponse.statusText}).`
     );
   }
   const payload: unknown = await tokenResponse.json();
@@ -643,7 +643,7 @@ export async function mintVortexAuthTestSession(
       : undefined;
   if (typeof token !== "string" || token.length === 0) {
     throw new Error(
-      "mintVortexAuthTestSession: /api/auth/convex/token returned no token."
+      "mintConvexAuthTestSession: /api/auth/convex/token returned no token."
     );
   }
 
@@ -656,12 +656,12 @@ export async function mintVortexAuthTestSession(
  * `convexUrlEnvName`).
  */
 export async function createTestSessionConvexHttpClient(
-  options: MintVortexAuthTestSessionOptions & {
+  options: MintConvexAuthTestSessionOptions & {
     convexUrl?: string;
     convexUrlEnvName?: string;
   }
 ): Promise<ConvexHttpClient> {
-  const session = await mintVortexAuthTestSession(options);
+  const session = await mintConvexAuthTestSession(options);
   const convexUrl = getRequiredConvexUrl(options);
   const client = new ConvexHttpClient(convexUrl);
   client.setAuth(session.convexToken);
@@ -684,8 +684,8 @@ function extractSessionCookieHeader(response: Response): string | undefined {
   return pairs.length > 0 ? pairs.join("; ") : undefined;
 }
 
-async function waitForVortexAuthSignedInPath(
-  page: VortexAuthTestingPageWithUi,
+async function waitForConvexAuthSignedInPath(
+  page: ConvexAuthTestingPageWithUi,
   options: {
     afterSignInPathPattern?: RegExp;
     timeoutMs: number;
@@ -737,7 +737,7 @@ async function readEnvFile(path: string) {
 async function readBackendSetup(
   repoRoot: string,
   env: NodeJS.ProcessEnv,
-  options: VortexAuthPreflightBackendSetupOptions = {}
+  options: ConvexAuthPreflightBackendSetupOptions = {}
 ) {
   const convexConfigPath =
     options.convexConfigPath ?? "convex/convex.config.ts";
@@ -749,10 +749,10 @@ async function readBackendSetup(
   return {
     files: [
       {
-        name: "Vortex Auth component registration",
+        name: "Convex Auth component registration",
         path: convexConfigPath,
         content: await readOptionalText(resolve(repoRoot, convexConfigPath)),
-        requiredSnippets: ["@vortexnyc/auth/convex.config", "app.use"],
+        requiredSnippets: ["@convexnyc/auth/convex.config", "app.use"],
       },
       {
         name: "Convex auth config",
@@ -774,7 +774,7 @@ async function readBackendSetup(
         ),
         requiredSnippets: [
           "createBetterAuthConvexRuntime",
-          "components.vortexAuth",
+          "components.convexAuth",
           "registerRoutes",
         ],
       },
@@ -930,7 +930,7 @@ async function runCommand(
   });
 }
 
-function firstEnvValue(env: VortexAuthTestingEnv, names: string[]) {
+function firstEnvValue(env: ConvexAuthTestingEnv, names: string[]) {
   for (const name of names) {
     const value = env[name]?.trim();
     if (value) {

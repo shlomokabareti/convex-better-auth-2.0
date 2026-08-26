@@ -1,8 +1,8 @@
 /**
- * VortexProfileImageUploader — drop-in profile avatar uploader.
+ * ConvexProfileImageUploader — drop-in profile avatar uploader.
  *
  * Consumer usage:
- *   <VortexProfileImageUploader
+ *   <ConvexProfileImageUploader
  *     authClient={authClient}
  *     uploadFile={async (file) => {
  *       // Convex example — generate URL, POST, return public URL:
@@ -21,12 +21,12 @@
 import { useRef, useState, type ChangeEvent } from "react";
 
 import {
-  useVortexAuthUploadProfileImage,
-  type VortexBetterAuthClient,
+  useConvexAuthUploadProfileImage,
+  type ConvexBetterAuthClient,
 } from "./better-auth-runtime";
 import { AuthCard, AuthCardContent, AuthCardHeader } from "./ui";
 
-export type VortexProfileImageUploaderClassNames = {
+export type ConvexProfileImageUploaderClassNames = {
   root?: string;
   preview?: string;
   noPreview?: string;
@@ -35,7 +35,7 @@ export type VortexProfileImageUploaderClassNames = {
   errorState?: string;
 };
 
-export type VortexProfileImageUploaderCopy = {
+export type ConvexProfileImageUploaderCopy = {
   title?: string;
   description?: string;
   pick?: string;
@@ -45,8 +45,8 @@ export type VortexProfileImageUploaderCopy = {
   unavailable?: string;
 };
 
-export type VortexProfileImageUploaderProps = {
-  authClient: VortexBetterAuthClient | null;
+export type ConvexProfileImageUploaderProps = {
+  authClient: ConvexBetterAuthClient | null;
   /**
    * Consumer-provided upload strategy. Receives the picked File and
    * MUST return the canonical URL of the uploaded image (the URL
@@ -57,12 +57,12 @@ export type VortexProfileImageUploaderProps = {
   initialImage?: string | null;
   /** File-input `accept` attribute (defaults to image/*). */
   accept?: string;
-  classNames?: VortexProfileImageUploaderClassNames;
-  copy?: VortexProfileImageUploaderCopy;
+  classNames?: ConvexProfileImageUploaderClassNames;
+  copy?: ConvexProfileImageUploaderCopy;
   onUploaded?: (url: string) => void;
 };
 
-const DEFAULT_COPY: Required<VortexProfileImageUploaderCopy> = {
+const DEFAULT_COPY: Required<ConvexProfileImageUploaderCopy> = {
   title: "Profile picture",
   description: "Pick an image to use as your avatar.",
   pick: "Choose image…",
@@ -72,13 +72,13 @@ const DEFAULT_COPY: Required<VortexProfileImageUploaderCopy> = {
   unavailable: "Image upload is not available on this auth client.",
 };
 
-export function VortexProfileImageUploader(
-  props: VortexProfileImageUploaderProps
+export function ConvexProfileImageUploader(
+  props: ConvexProfileImageUploaderProps
 ) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { uploadAndSave, isUploading } = useVortexAuthUploadProfileImage(
+  const { uploadAndSave, isUploading } = useConvexAuthUploadProfileImage(
     props.authClient,
     {
       uploadFile: props.uploadFile,

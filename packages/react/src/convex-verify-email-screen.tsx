@@ -1,5 +1,5 @@
 /**
- * VortexVerifyEmailScreen — drop-in landing page for verification
+ * ConvexVerifyEmailScreen — drop-in landing page for verification
  * email links. The user lands here from the email's verify-link
  * (token in `?token=…`); the component auto-runs verification on
  * mount, shows a status, and offers a resend button if it fails
@@ -7,7 +7,7 @@
  *
  * Consumer usage:
  *   const token = new URLSearchParams(location.search).get('token') ?? '';
- *   <VortexVerifyEmailScreen
+ *   <ConvexVerifyEmailScreen
  *     authClient={authClient}
  *     token={token}
  *     userEmail={user?.primaryEmailAddress?.emailAddress ?? null}
@@ -18,18 +18,18 @@
  * Why this exists: Better-Auth sends the verification email but
  * supplies no UI for the landing page. Without this, consumers
  * either skip email verification or hand-roll a fiddly state
- * machine. Same pattern as VortexResetPasswordForm.
+ * machine. Same pattern as ConvexResetPasswordForm.
  */
 import { useEffect, useState } from "react";
 
 import {
-  useVortexAuthResendVerification,
-  useVortexAuthVerifyEmail,
-  type VortexBetterAuthClient,
+  useConvexAuthResendVerification,
+  useConvexAuthVerifyEmail,
+  type ConvexBetterAuthClient,
 } from "./better-auth-runtime";
 import { AuthCard, AuthCardContent, AuthCardHeader } from "./ui";
 
-export type VortexVerifyEmailScreenClassNames = {
+export type ConvexVerifyEmailScreenClassNames = {
   root?: string;
   verifyingState?: string;
   verifiedState?: string;
@@ -38,7 +38,7 @@ export type VortexVerifyEmailScreenClassNames = {
   resendButton?: string;
 };
 
-export type VortexVerifyEmailScreenCopy = {
+export type ConvexVerifyEmailScreenCopy = {
   title?: string;
   description?: string;
   verifying?: string;
@@ -51,8 +51,8 @@ export type VortexVerifyEmailScreenCopy = {
   unavailable?: string;
 };
 
-export type VortexVerifyEmailScreenProps = {
-  authClient: VortexBetterAuthClient | null;
+export type ConvexVerifyEmailScreenProps = {
+  authClient: ConvexBetterAuthClient | null;
   /** Token from the verification email's `?token=…` param. */
   token: string;
   /**
@@ -66,13 +66,13 @@ export type VortexVerifyEmailScreenProps = {
    * appends a fresh `?token=…` to it for the resent email.
    */
   resendCallbackUrl?: string;
-  classNames?: VortexVerifyEmailScreenClassNames;
-  copy?: VortexVerifyEmailScreenCopy;
+  classNames?: ConvexVerifyEmailScreenClassNames;
+  copy?: ConvexVerifyEmailScreenCopy;
   /** Called on successful verification (after the verify call returns ok). */
   onVerified?: () => void;
 };
 
-const DEFAULT_COPY: Required<VortexVerifyEmailScreenCopy> = {
+const DEFAULT_COPY: Required<ConvexVerifyEmailScreenCopy> = {
   title: "Verify your email",
   description: "Hang tight while we confirm your email address.",
   verifying: "Verifying your email…",
@@ -86,14 +86,14 @@ const DEFAULT_COPY: Required<VortexVerifyEmailScreenCopy> = {
   unavailable: "Email verification is not available on this auth client.",
 };
 
-export function VortexVerifyEmailScreen(props: VortexVerifyEmailScreenProps) {
+export function ConvexVerifyEmailScreen(props: ConvexVerifyEmailScreenProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { status, error, verifyEmail } = useVortexAuthVerifyEmail(
+  const { status, error, verifyEmail } = useConvexAuthVerifyEmail(
     props.authClient
   );
-  const { resend, isResending } = useVortexAuthResendVerification(
+  const { resend, isResending } = useConvexAuthResendVerification(
     props.authClient
   );
   const [resendResult, setResendResult] = useState<string | null>(null);

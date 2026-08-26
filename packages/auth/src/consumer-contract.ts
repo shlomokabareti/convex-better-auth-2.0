@@ -2,9 +2,9 @@
  * Consumer contract guardrail.
  *
  * Detects local re-introductions of the org/member/role/invitation/api-key
- * mirror that consumers must NOT keep — the vortexAuth component owns truth
+ * mirror that consumers must NOT keep — the convexAuth component owns truth
  * for those surfaces. Consumers keep only a local `organizations` ANCHOR
- * (mapped by `vortexAuthOrganizationId`) and FK domain rows to it.
+ * (mapped by `convexAuthOrganizationId`) and FK domain rows to it.
  *
  * Intended for CI: run the bundled script
  * `scripts/check-consumer-contract.ts` against your consumer's convex dir.
@@ -31,7 +31,7 @@ export interface ConsumerContractResult {
 export interface CheckConsumerContractOptions {
   convexDir: string;
   /**
-   * Tables that ARE allowed to carry `vortexAuth*Id` / `vortex*Id` bridge
+   * Tables that ARE allowed to carry `convexAuth*Id` / `convex*Id` bridge
    * columns — i.e. the consumer's legitimate anchor tables. Defaults to
    * `["organizations", "users"]`. Override if your consumer's anchor table
    * is named differently (e.g. `tenants`), but every entry should be a
@@ -62,27 +62,27 @@ const FORBIDDEN_TABLES = [
 ] as const;
 
 /**
- * Default tables allowed to carry `vortexAuth*Id` bridge columns: the local
+ * Default tables allowed to carry `convexAuth*Id` bridge columns: the local
  * `organizations` ANCHOR (maps id ↔ component organization) and the
  * `users` mirror that Better Auth populates via sync triggers.
  */
 const DEFAULT_ANCHOR_TABLES: readonly string[] = ["organizations", "users"];
 
 /**
- * Column-name pattern for a "bridge" id pointing into the vortexAuth
- * component. Matches both canonical names (`vortexAuthUserId`,
- * `vortexAuthOrganizationId`, `vortexAuthMemberId`) and common shorthand
- * (`vortexOrgId`, `vortexUserId`, `vortexMemberId`) — name-agnostic so
+ * Column-name pattern for a "bridge" id pointing into the convexAuth
+ * component. Matches both canonical names (`convexAuthUserId`,
+ * `convexAuthOrganizationId`, `convexAuthMemberId`) and common shorthand
+ * (`convexOrgId`, `convexUserId`, `convexMemberId`) — name-agnostic so
  * consumers can't slip a mirror past the rule by renaming the column.
  */
-const BRIDGE_COLUMN_PATTERN = /^vortex(?:Auth)?[A-Z][A-Za-z0-9_]*Id$/;
+const BRIDGE_COLUMN_PATTERN = /^convex(?:Auth)?[A-Z][A-Za-z0-9_]*Id$/;
 
 const FORBIDDEN_MIRROR_WRITERS = [
-  "ensureVortexAuthMember",
-  "ensureVortexAuthRole",
-  "ensureVortexAuthRoleForTemplate",
-  "ensureVortexAuthInvitation",
-  "ensureVortexAuthApiKey",
+  "ensureConvexAuthMember",
+  "ensureConvexAuthRole",
+  "ensureConvexAuthRoleForTemplate",
+  "ensureConvexAuthInvitation",
+  "ensureConvexAuthApiKey",
 ] as const;
 
 /**
@@ -233,7 +233,7 @@ function checkLocalTruthTable(
         rule: "local-org-member-truth-table",
         file: relPath,
         line: lineNo,
-        message: `Local defineTable for "${table}" — the vortexAuth component owns this table. Remove it and FK domain rows to the local organizations anchor instead. See ${CONTRACT_DOC}.`,
+        message: `Local defineTable for "${table}" — the convexAuth component owns this table. Remove it and FK domain rows to the local organizations anchor instead. See ${CONTRACT_DOC}.`,
       });
     }
   }
@@ -276,7 +276,7 @@ function checkSplitSchemaTruthTable(
       rule: "local-org-member-truth-table",
       file: relPath,
       line: source.slice(0, match.index).split(/\r?\n/).length,
-      message: `Local split-schema defineTable for "${tableFromPath}" — the vortexAuth component owns this table. Remove it and FK domain rows to the local organizations anchor instead. See ${CONTRACT_DOC}.`,
+      message: `Local split-schema defineTable for "${tableFromPath}" — the convexAuth component owns this table. Remove it and FK domain rows to the local organizations anchor instead. See ${CONTRACT_DOC}.`,
     });
   }
 
@@ -313,7 +313,7 @@ function checkBidirectionalMirrorWriter(
   const found: ConsumerContractViolation[] = [];
   for (const name of FORBIDDEN_MIRROR_WRITERS) {
     // Detect function declaration / arrow assignment / export of the symbol.
-    // Allow `ensureVortexAuthOrganization` — that's the sanctioned anchor mapper.
+    // Allow `ensureConvexAuthOrganization` — that's the sanctioned anchor mapper.
     const decl = new RegExp(
       `(?:^|[^A-Za-z0-9_])(?:function\\s+|const\\s+|let\\s+|var\\s+|export\\s+(?:async\\s+)?function\\s+|export\\s+const\\s+|export\\s+let\\s+|export\\s+\\{[^}]*\\b)${name}(?:\\b|\\s|\\()`
     );
@@ -322,7 +322,7 @@ function checkBidirectionalMirrorWriter(
         rule: "bidirectional-mirror-writer",
         file: relPath,
         line: lineNo,
-        message: `Declared bidirectional mirror writer "${name}" — only ensureVortexAuthOrganization (anchor mapper) is allowed. Delete this writer and consume the one-way component cache instead. See ${CONTRACT_DOC}.`,
+        message: `Declared bidirectional mirror writer "${name}" — only ensureConvexAuthOrganization (anchor mapper) is allowed. Delete this writer and consume the one-way component cache instead. See ${CONTRACT_DOC}.`,
       });
     }
   }
@@ -463,7 +463,7 @@ function checkLocalBridgeMirror(
       line: block.declLine,
       message:
         `Local defineTable "${block.tableName}" has bridge column(s) [${colSummary}] — ` +
-        `only the ${anchorList} anchor table(s) may carry vortexAuth*Id columns. ` +
+        `only the ${anchorList} anchor table(s) may carry convexAuth*Id columns. ` +
         `Drop this mirror and read from the component (or a one-way event cache) instead. ` +
         `See ${CONTRACT_DOC}.`,
     });

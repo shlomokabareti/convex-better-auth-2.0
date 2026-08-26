@@ -1,10 +1,10 @@
 /**
- * VortexResetPasswordForm — drop-in "set a new password" form that
- * completes the recovery loop started by VortexForgotPasswordForm.
+ * ConvexResetPasswordForm — drop-in "set a new password" form that
+ * completes the recovery loop started by ConvexForgotPasswordForm.
  *
  * Consumer usage (on the page Better-Auth's email link points at):
  *   const token = new URLSearchParams(location.search).get('token') ?? '';
- *   <VortexResetPasswordForm
+ *   <ConvexResetPasswordForm
  *     authClient={authClient}
  *     token={token}
  *     onReset={() => router.push('/sign-in')}
@@ -16,8 +16,8 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
 import {
-  useVortexAuthResetPassword,
-  type VortexBetterAuthClient,
+  useConvexAuthResetPassword,
+  type ConvexBetterAuthClient,
 } from "./better-auth-runtime";
 import {
   AuthCard,
@@ -28,7 +28,7 @@ import {
   AuthLabel,
 } from "./ui";
 
-export type VortexResetPasswordFormClassNames = {
+export type ConvexResetPasswordFormClassNames = {
   root?: string;
   form?: string;
   field?: string;
@@ -39,7 +39,7 @@ export type VortexResetPasswordFormClassNames = {
   errorState?: string;
 };
 
-export type VortexResetPasswordFormCopy = {
+export type ConvexResetPasswordFormCopy = {
   title?: string;
   description?: string;
   passwordLabel?: string;
@@ -53,8 +53,8 @@ export type VortexResetPasswordFormCopy = {
   minLengthMessage?: string;
 };
 
-export type VortexResetPasswordFormProps = {
-  authClient: VortexBetterAuthClient | null;
+export type ConvexResetPasswordFormProps = {
+  authClient: ConvexBetterAuthClient | null;
   /** Reset token from the recovery email (typically `?token=…`). */
   token: string;
   /**
@@ -63,12 +63,12 @@ export type VortexResetPasswordFormProps = {
    * The server is authoritative either way.
    */
   minPasswordLength?: number;
-  classNames?: VortexResetPasswordFormClassNames;
-  copy?: VortexResetPasswordFormCopy;
+  classNames?: ConvexResetPasswordFormClassNames;
+  copy?: ConvexResetPasswordFormCopy;
   onReset?: () => void;
 };
 
-const DEFAULT_COPY: Required<VortexResetPasswordFormCopy> = {
+const DEFAULT_COPY: Required<ConvexResetPasswordFormCopy> = {
   title: "Set a new password",
   description: "Pick something you'll remember this time.",
   passwordLabel: "New password",
@@ -84,12 +84,12 @@ const DEFAULT_COPY: Required<VortexResetPasswordFormCopy> = {
   minLengthMessage: "Password is too short.",
 };
 
-export function VortexResetPasswordForm(props: VortexResetPasswordFormProps) {
+export function ConvexResetPasswordForm(props: ConvexResetPasswordFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
   const minLength = props.minPasswordLength ?? 12;
 
-  const { resetPassword, isResetting } = useVortexAuthResetPassword(
+  const { resetPassword, isResetting } = useConvexAuthResetPassword(
     props.authClient
   );
   const [password, setPassword] = useState("");
@@ -137,11 +137,11 @@ export function VortexResetPasswordForm(props: VortexResetPasswordFormProps) {
         ) : (
           <form onSubmit={handleSubmit} className={cn.form}>
             <AuthField className={cn.field}>
-              <AuthLabel htmlFor="vortex-reset-password" className={cn.label}>
+              <AuthLabel htmlFor="convex-reset-password" className={cn.label}>
                 {copy.passwordLabel}
               </AuthLabel>
               <AuthInput
-                id="vortex-reset-password"
+                id="convex-reset-password"
                 type="password"
                 value={password}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
@@ -154,13 +154,13 @@ export function VortexResetPasswordForm(props: VortexResetPasswordFormProps) {
             </AuthField>
             <AuthField className={cn.field}>
               <AuthLabel
-                htmlFor="vortex-reset-password-confirm"
+                htmlFor="convex-reset-password-confirm"
                 className={cn.label}
               >
                 {copy.confirmPasswordLabel}
               </AuthLabel>
               <AuthInput
-                id="vortex-reset-password-confirm"
+                id="convex-reset-password-confirm"
                 type="password"
                 value={confirm}
                 onChange={(e: ChangeEvent<HTMLInputElement>) =>
