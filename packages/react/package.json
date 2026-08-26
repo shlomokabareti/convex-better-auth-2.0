@@ -23,7 +23,7 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build": "tsup src/index.ts --format esm --dts --dts-resolve --clean --out-dir dist --external convex-auth-ui",
+    "build": "vp pack",
     "test": "vitest run"
   },
   "dependencies": {
@@ -37,13 +37,13 @@
     "convex": "^1.45.0",
     "convex-better-auth": "workspace:*",
     "react": "^19.0.0",
-    "tsup": "^8.5.1",
     "typescript": "^5.7.0",
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
     "@convex-dev/better-auth": ">=0.12.5",
     "convex": ">=1.39.0",
+    "convex-better-auth": "workspace:*",
     "react": ">=19.0.0",
     "react-dom": ">=19.0.0"
   }

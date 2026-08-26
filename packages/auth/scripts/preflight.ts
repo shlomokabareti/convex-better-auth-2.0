@@ -2,16 +2,14 @@
 /**
  * CLI wrapper for the Convex Auth install/runtime preflight.
  *
- * The implementation lives in `dist/testing.js` because published packages ship
- * `dist/` plus `scripts/`, not `src/`. Keep this file thin so the programmatic
- * helper remains the source of truth.
+ * The implementation lives in `src/testing.ts`; the pack step bundles it in.
  */
 import { resolve } from "node:path";
 
 import {
   runConvexAuthPreflightCommand,
   type ConvexAuthPreflightBackendSetupOptions,
-} from "../dist/testing.js";
+} from "../src/testing.ts";
 
 type Args = {
   backendSetup?: false | ConvexAuthPreflightBackendSetupOptions;

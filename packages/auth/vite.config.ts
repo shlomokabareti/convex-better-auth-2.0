@@ -1,0 +1,51 @@
+import { defineConfig } from "vite-plus";
+
+export default defineConfig({
+  pack: [
+    {
+      name: "lib",
+      entry: {
+        index: "src/index.ts",
+        convex: "src/convex.ts",
+        "agent-auth-protocol-convex": "src/agent-auth-protocol-convex.ts",
+        "agent-auth-protocol-http": "src/agent-auth-protocol-http.ts",
+        "better-auth": "src/better-auth.ts",
+        "better-auth-client": "src/better-auth-client.ts",
+        "better-auth-server": "src/better-auth-server.ts",
+        "better-auth-convex": "src/better-auth-convex.ts",
+        preflight: "src/preflight.ts",
+        testing: "src/testing.ts",
+        component: "src/component.ts",
+        "consumer-contract": "src/consumer-contract.ts",
+        "agent-auth-protocol": "src/agent-auth-protocol.ts",
+        "auth-md": "src/auth-md.ts",
+        waitlist: "src/waitlist.tsx",
+        react: "src/react.ts",
+        "react-native": "src/react-native.ts",
+        mcp: "src/mcp.ts",
+        "component/convex.config": "src/component/convex.config.ts",
+      },
+      format: "esm",
+      dts: true,
+      clean: true,
+      fixedExtension: false,
+      hash: false,
+      outDir: "dist",
+    },
+    {
+      name: "scripts",
+      entry: {
+        cli: "scripts/cli.ts",
+        "check-consumer-contract": "scripts/check-consumer-contract.ts",
+        preflight: "scripts/preflight.ts",
+      },
+      format: "esm",
+      dts: false,
+      clean: true,
+      fixedExtension: false,
+      hash: false,
+      outDir: "dist/scripts",
+      target: "node18",
+    },
+  ],
+});

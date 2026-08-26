@@ -23,12 +23,11 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build": "tsup src/index.ts --format esm --dts --clean --out-dir dist",
+    "build": "vp pack",
     "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "tsup": "^8.5.1",
     "typescript": "^5.7.0",
     "vitest": "^4.1.10"
   }
