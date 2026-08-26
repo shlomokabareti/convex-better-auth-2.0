@@ -19,7 +19,7 @@ A public, full-stack auth solution that bridges [Convex](https://convex.dev) and
 
 ## Status
 
-Alpha — APIs will change. The first packages are not yet on npm. Read the [docs](https://gregarious-perch-710.convex.site) for the current design and roadmap.
+Alpha — APIs will change. Packages are published to npm as `0.x.x-alpha.0` pre-releases. Read the [docs](https://gregarious-perch-710.convex.site) for the current design and roadmap.
 
 ## Why this exists
 
