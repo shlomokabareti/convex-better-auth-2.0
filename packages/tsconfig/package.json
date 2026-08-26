@@ -1,6 +1,7 @@
 {
   "name": "convex-auth-tsconfig",
   "version": "0.1.0-alpha.0",
+  "private": true,
   "description": "Shared TypeScript configurations for convex-auth packages.",
   "license": "Apache-2.0",
   "files": [
