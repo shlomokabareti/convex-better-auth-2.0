@@ -356,7 +356,7 @@ function checkPackageVersion(
 
   return errorCheck(
     "Package version",
-    `expected @convexnyc/auth ${expectedPackageVersion}, found ${actualPackageVersion}.`
+    `expected convex-auth ${expectedPackageVersion}, found ${actualPackageVersion}.`
   );
 }
 

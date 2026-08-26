@@ -12,5 +12,5 @@ export default defineConfig({
   bundle: true,
   clean: false,
   outDir: "dist/scripts",
-  noExternal: [/@convexnyc\/auth/],
+  noExternal: ["convex-auth"],
 });

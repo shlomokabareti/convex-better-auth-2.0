@@ -26,3 +26,5 @@ export {
   type AgentAuthProtocolRequestedGrant,
   type CreateAgentAuthProtocolHttpServerConfig,
 } from "./agent-auth-protocol-http";
+
+export * from "./convex-runtime";
