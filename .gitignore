@@ -9,9 +9,6 @@ dist/
 *.test.tsx
 *.vitest.ts
 *.integration.test.ts
-test.ts
 CHANGELOG.md
-conformance/
-scripts/
 coverage/
 .vite/

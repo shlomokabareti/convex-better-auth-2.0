@@ -9,5 +9,6 @@ export * from "./client/createBetterAuthClient";
 export * from "./client/deriveBetterAuthRuntimeSnapshot";
 export * from "./client/restoreBetterAuthSession";
 export * from "./client/types";
+export * from "./server/createBetterAuthApiTokenVerifier";
 export * from "./server/createConvexAuthConfig";
 export * from "./server/types";
