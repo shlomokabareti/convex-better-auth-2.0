@@ -103,9 +103,9 @@ export async function getConvexToken(
 }
 
 export function uniqueEmail(label: string): string {
-  return `shlomo+${label}${Date.now()}${Math.random().toString(36).slice(2, 6)}@convex.nyc`;
+  return `test+${label}${Date.now()}${Math.random().toString(36).slice(2, 6)}@example.com`;
 }
 
 export function strongPassword(label: string): string {
-  return `Vx9$qZ-${label}-${Date.now()}-Kp7!ab`;
+  return `Tt9$qZ-${label}-${Date.now()}-Kp7!ab`;
 }
