@@ -6,4 +6,5 @@ export * from "./execution-context";
 export * from "./identity";
 export * from "./interfaces";
 export * from "./permissions";
+export * from "./permissions-conformance";
 export * from "./principal";
