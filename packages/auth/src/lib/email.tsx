@@ -66,6 +66,19 @@ export function renderEmail(element: ReactNode): string {
   return `<!doctype html>${renderToStaticMarkup(<>{element}</>)}`;
 }
 
-export function renderEmailText(_element: ReactNode): string {
-  return "";
+export function renderEmailText(element: ReactNode): string {
+  const html = renderToStaticMarkup(<>{element}</>);
+  const text = html
+    .replace(/<head[\s\S]*?<\/head>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n\s*\n/g, "\n")
+    .trim();
+  return text;
 }

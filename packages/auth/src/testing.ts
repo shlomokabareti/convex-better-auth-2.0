@@ -569,7 +569,7 @@ export type MintConvexAuthTestSessionOptions = {
   testSessionPath?: string;
   /** Better-Auth base path. Default `/api/auth`. */
   basePath?: string;
-  /** Header carrying the secret. Default `x-convex-test-secret`. */
+  /** Header carrying the secret. Default `x-convex-auth-test-secret`. */
   secretHeaderName?: string;
   /** Override fetch (tests). Default `globalThis.fetch`. */
   fetchImpl?: typeof fetch;
@@ -596,7 +596,7 @@ export async function mintConvexAuthTestSession(
   const siteUrl = options.siteUrl.replace(/\/$/, "");
   const testSessionPath = options.testSessionPath ?? "/test-session";
   const basePath = options.basePath ?? "/api/auth";
-  const secretHeaderName = options.secretHeaderName ?? "x-convex-test-secret";
+  const secretHeaderName = options.secretHeaderName ?? "x-convex-auth-test-secret";
 
   // 1. Mint the session through the secret-guarded endpoint (forwards a
   //    server-side sign-in to Better-Auth).

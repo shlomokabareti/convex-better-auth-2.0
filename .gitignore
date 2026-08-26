@@ -7,8 +7,15 @@ dist/
 !.env.example
 *.test.ts
 *.test.tsx
+!packages/core/src/*.test.ts
+!packages/core/src/*.recipe.test.ts
+!packages/better-auth/src/**/*.test.ts
+!packages/better-auth/src/**/*.integration.test.ts
+!packages/auth/src/**/*.test.ts
+!packages/auth/src/**/*.recipe.test.ts
+!packages/react/src/*.test.ts
+!packages/react-native/src/*.test.ts
 *.vitest.ts
-*.integration.test.ts
 CHANGELOG.md
 coverage/
 .vite/

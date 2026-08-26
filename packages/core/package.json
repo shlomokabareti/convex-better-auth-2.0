@@ -21,11 +21,13 @@
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build": "tsup src/index.ts --format esm --dts --clean --out-dir dist"
+    "build": "tsup src/index.ts --format esm --dts --clean --out-dir dist",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
-    "tsup": "^8.5.1"
+    "tsup": "^8.5.1",
+    "vitest": "^3.0.0"
   }
 }
