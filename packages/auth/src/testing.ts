@@ -752,7 +752,7 @@ async function readBackendSetup(
         name: "Convex Auth component registration",
         path: convexConfigPath,
         content: await readOptionalText(resolve(repoRoot, convexConfigPath)),
-        requiredSnippets: ["@convexnyc/auth/convex.config", "app.use"],
+        requiredSnippets: ["convex-auth/convex.config", "app.use"],
       },
       {
         name: "Convex auth config",
