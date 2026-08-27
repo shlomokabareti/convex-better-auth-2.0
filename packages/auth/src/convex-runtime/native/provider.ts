@@ -34,6 +34,7 @@ export type NativeEmailAndPasswordConfig = {
     resetPath?: string;
     sendEmail: EmailSender;
   };
+  requireVerifiedEmail?: boolean;
   verificationCodeTtlMs?: number;
   passwordResetCodeTtlMs?: number;
   sessionTtlMs?: number;
@@ -84,6 +85,7 @@ export function nativeEmailAndPassword(
   const passwordResetCodeTtlMs =
     config.passwordResetCodeTtlMs ?? DEFAULT_PASSWORD_RESET_CODE_TTL_MS;
   const sessionTtlMs = config.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
+  const requireVerifiedEmail = config.requireVerifiedEmail ?? false;
 
   const signUp = action({
     args: {
@@ -185,6 +187,10 @@ export function nativeEmailAndPassword(
       });
       if (!account || !verifyPassword(args.password, account.credentialHash)) {
         throw new Error("Invalid email or password");
+      }
+
+      if (requireVerifiedEmail && !user.emailVerified) {
+        throw new Error("Email not verified");
       }
 
       const sessionId = crypto.randomUUID();
@@ -484,6 +490,11 @@ export function nativeEmailAndPassword(
         userId: consumed.userId,
         token,
         expiresAt,
+      });
+
+      await ctx.runMutation(component.native.sessions.revokeSessionsForUser, {
+        userId: consumed.userId,
+        excludeSessionId: sessionId,
       });
 
       return {

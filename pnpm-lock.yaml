@@ -71,9 +71,15 @@ importers:
       convex:
         specifier: ^1.45.0
         version: 1.45.0(react@19.2.8)
+      convex-test:
+        specifier: 0.0.51
+        version: 0.0.51(convex@1.45.0(react@19.2.8))
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
+      vite:
+        specifier: ^8.2.2
+        version: 8.2.2(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.0)(yaml@2.9.0)
       vitest:
         specifier: 4.1.10
         version: 4.1.10(@edge-runtime/vm@5.0.0)(@types/node@22.20.1)(@vitest/browser-preview@4.1.10)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.0)(yaml@2.9.0))
