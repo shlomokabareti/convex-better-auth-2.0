@@ -1,13 +1,13 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src",
     "declaration": true,
     "declarationMap": true,
-    "noEmit": false,
-    "outDir": "dist/component",
-    "rootDir": "src/component",
-    "sourceMap": true,
-    "types": ["node"]
+    "sourceMap": true
   },
-  "include": ["src/component/**/*.ts"]
+  "include": ["src/component/**/*"],
+  "exclude": ["src/component/**/*.test.ts", "src/component/**/*.test.tsx"]
 }
