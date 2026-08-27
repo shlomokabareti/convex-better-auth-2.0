@@ -6,6 +6,7 @@ export * from "./AuthRuntimeProvider";
 export * from "./better-auth-app-runtime";
 export * from "./better-auth-runtime";
 export * from "./BetterAuthConvexProvider";
+export * from "./ConvexAuthProvider";
 export * from "./create-organization";
 export * from "./email-templates";
 export * from "./invite-sign-up";
