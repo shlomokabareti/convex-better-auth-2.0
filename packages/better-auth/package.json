@@ -1,6 +1,6 @@
 {
   "name": "convex-better-auth",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0",
   "description": "A public Better Auth runtime for Convex.",
   "license": "Apache-2.0",
   "repository": {
