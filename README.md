@@ -35,14 +35,15 @@ Read the full rationale in [`docs/motivation.md`](docs/motivation.md) and the de
 
 ## Packages
 
-| Package                    | npm                        | Path                    | Description                                                                                   |
-| -------------------------- | -------------------------- | ----------------------- | --------------------------------------------------------------------------------------------- |
-| `convex-auth`              | `convex-auth`              | `packages/auth`         | Convex auth component, control plane, and server integration. This is what most apps install. |
-| `convex-better-auth`       | `convex-better-auth`       | `packages/better-auth`  | Better Auth ↔ Convex bridge (runtime + client).                                               |
-| `convex-auth-react`        | `convex-auth-react`        | `packages/react`        | React UI and hooks.                                                                           |
-| `convex-auth-react-native` | `convex-auth-react-native` | `packages/react-native` | Expo / React Native client.                                                                   |
-| `convex-auth-core`         | `convex-auth-core`         | `packages/core`         | Auth domain core (permissions, roles, scopes).                                                |
-| `convex-auth-ui`           | `convex-auth-ui`           | `packages/ui`           | Base shadcn-style UI primitives.                                                              |
+| Package                      | npm                          | Path                           | Description                                                                                   |
+| ---------------------------- | ---------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
+| `convex-auth`                | `convex-auth`                | `packages/auth`                | Convex auth component, control plane, and server integration. This is what most apps install. |
+| `convex-better-auth`         | `convex-better-auth`         | `packages/better-auth`         | Better Auth ↔ Convex bridge (runtime + client).                                               |
+| `convex-better-auth-adapter` | `convex-better-auth-adapter` | `packages/better-auth-adapter` | Low-level Better Auth ↔ Convex adapter, vendored and maintained here.                         |
+| `convex-auth-react`          | `convex-auth-react`          | `packages/react`               | React UI and hooks.                                                                           |
+| `convex-auth-react-native`   | `convex-auth-react-native`   | `packages/react-native`        | Expo / React Native client.                                                                   |
+| `convex-auth-core`           | `convex-auth-core`           | `packages/core`                | Auth domain core (permissions, roles, scopes).                                                |
+| `convex-auth-ui`             | `convex-auth-ui`             | `packages/ui`                  | Base shadcn-style UI primitives.                                                              |
 
 All packages are independently buildable and published under the Apache-2.0 license.
 
@@ -95,6 +96,11 @@ export function App() {
 }
 ```
 
+## Compatibility and migration
+
+- See [`docs/compatibility.md`](docs/compatibility.md) for the current supported versions of Better Auth, Convex, React, React Native / Expo, Node, and pnpm.
+- See [`docs/migrating-from-convex-dev-better-auth.md`](docs/migrating-from-convex-dev-better-auth.md) if you are moving from `@convex-dev/better-auth` to `convex-better-auth-adapter`.
+
 ## Development
 
 This repo uses pnpm and [Vite+](https://github.com/voidzero-dev/vite_plus) (`vp`) for building, linting, and formatting. Documentation is generated with [Blume](https://useblume.dev) and hosted via [`@convex-dev/static-hosting`](https://github.com/get-convex/static-hosting) from the `site/` workspace.
@@ -124,6 +130,10 @@ git push origin v0.2.0-alpha.0
 ```
 
 The `Release` workflow in [`.github/workflows/release.yml`](.github/workflows/release.yml) builds and publishes every public package to npm. It needs an `NPM_TOKEN` repository secret.
+
+## Attribution
+
+The `convex-better-auth-adapter` package started from the community work in [`get-convex/better-auth`](https://github.com/get-convex/better-auth) and includes the Better Auth 1.7 migration from [`get-convex/better-auth#430`](https://github.com/get-convex/better-auth/pull/430). It is vendored here so the Convex + Better Auth bridge can keep pace with Better Auth releases while Convex Auth 2.0 matures. All original code remains under the Apache-2.0 license.
 
 ## License
 

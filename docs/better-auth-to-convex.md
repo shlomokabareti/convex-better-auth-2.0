@@ -20,7 +20,7 @@ The plugins are high-quality, but they are built around a **Node/Edge runtime** 
 
 ## Why the standard Better Auth Convex integration is not enough
 
-The community Convex adapter (`@convex-dev/better-auth`) is useful, but it is **not feature-complete**. At the time this project was built, it supported a subset of plugins:
+The community Convex adapter (`@convex-dev/better-auth`) was a useful starting point, but it was **not feature-complete** and lagged behind Better Auth 1.x releases. At the time this project was built, it supported a subset of plugins:
 
 - anonymous
 - email OTP
@@ -42,6 +42,8 @@ Important plugins were **not** supported out of the box:
 - MCP / oauth-provider-heavy flows
 
 That meant a production Convex app could not safely lean on the adapter for the full Clerk/WorkOS feature surface. It also reported real operational issues — slow queries on empty DBs, intermittent "Not authenticated" errors in Convex queries, missing session indexes, and async JWT claim handling.
+
+This repository now maintains the adapter directly as `packages/better-auth-adapter` (`convex-better-auth-adapter` on npm). It carries the Better Auth 1.7 migration, keeps the adapter in lock-step with the rest of the auth stack, and serves as the low-level bridge while the higher-level Convex primitives in `packages/auth` are built out.
 
 ## Why not just use Better Auth's tables?
 
