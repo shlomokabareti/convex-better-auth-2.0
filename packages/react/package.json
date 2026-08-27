@@ -1,6 +1,6 @@
 {
   "name": "convex-auth-react",
-  "version": "0.1.0-alpha.0",
+  "version": "1.0.0",
   "description": "Public React UI and hooks for convex-auth.",
   "license": "Apache-2.0",
   "repository": {
