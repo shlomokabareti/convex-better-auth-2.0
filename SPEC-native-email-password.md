@@ -5,6 +5,7 @@
 Build a feature-flagged, Convex-native email/password flow in the `convex-auth` package. It must prove that password hashing, session creation, JWT minting, and JWT verification can all run inside Convex, while leaving the existing Better Auth bridge untouched.
 
 Success criteria:
+
 - A user can `signUp(email, password)` and receive a signed JWT.
 - A user can `signIn(email, password)` and receive a signed JWT.
 - A user can `signOut()` and the session is invalidated.
