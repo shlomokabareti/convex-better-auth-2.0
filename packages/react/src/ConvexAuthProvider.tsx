@@ -33,24 +33,9 @@ export type NativeAuthSession = {
 };
 
 export type NativeAuthActions = {
-  signUp: FunctionReference<
-    "action",
-    "public",
-    NativeAuthSignUpArgs,
-    NativeAuthSession
-  >;
-  signIn: FunctionReference<
-    "action",
-    "public",
-    NativeAuthSignInArgs,
-    NativeAuthSession
-  >;
-  signOut: FunctionReference<
-    "action",
-    "public",
-    NativeAuthSignOutArgs,
-    { success: boolean }
-  >;
+  signUp: FunctionReference<"action", "public", NativeAuthSignUpArgs, NativeAuthSession>;
+  signIn: FunctionReference<"action", "public", NativeAuthSignInArgs, NativeAuthSession>;
+  signOut: FunctionReference<"action", "public", NativeAuthSignOutArgs, { success: boolean }>;
 };
 
 type ConvexAuthContextValue = NativeAuthActions & {
@@ -79,23 +64,14 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
     };
   }, [client]);
 
-  const value = useMemo(
-    () => ({ ...props.actions, token, setToken }),
-    [props.actions, token],
-  );
-  return (
-    <ConvexAuthContext.Provider value={value}>
-      {props.children}
-    </ConvexAuthContext.Provider>
-  );
+  const value = useMemo(() => ({ ...props.actions, token, setToken }), [props.actions, token]);
+  return <ConvexAuthContext.Provider value={value}>{props.children}</ConvexAuthContext.Provider>;
 }
 
 export function useAuthActions() {
   const ctx = useContext(ConvexAuthContext);
   if (ctx === null) {
-    throw new Error(
-      "useAuthActions must be used within a ConvexAuthProvider",
-    );
+    throw new Error("useAuthActions must be used within a ConvexAuthProvider");
   }
 
   const signUpAction = useAction(ctx.signUp);
