@@ -20,7 +20,7 @@ describe("updateMany pagination", () => {
             scope: "mixed-filter-scope",
             createdAt: Date.now(),
             updatedAt: Date.now(),
-          })
+          }),
         );
       }
       return insertedIds;
@@ -41,15 +41,11 @@ describe("updateMany pagination", () => {
           ],
         },
         paginationOpts: { cursor: null, numItems: 200 },
-      })
-    ).rejects.toThrow(
-      "Cannot update unique fields across multiple pages in account"
-    );
+      }),
+    ).rejects.toThrow("Cannot update unique fields across multiple pages in account");
 
     const accounts = await t.run((ctx) => ctx.db.query("account").collect());
     expect(accounts).toHaveLength(300);
-    expect(
-      accounts.every(({ issuer }) => issuer?.startsWith("original-") === true)
-    ).toBe(true);
+    expect(accounts.every(({ issuer }) => issuer?.startsWith("original-") === true)).toBe(true);
   });
 });

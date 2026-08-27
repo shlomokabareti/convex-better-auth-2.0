@@ -2,10 +2,7 @@
 
 import { describe, it } from "vitest";
 import { convexTest } from "convex-test";
-import {
-  testAdapter,
-  transactionsTestSuite,
-} from "@better-auth/test-utils/adapter";
+import { testAdapter, transactionsTestSuite } from "@better-auth/test-utils/adapter";
 import type { BetterAuthOptions } from "better-auth";
 import { internal } from "../component/_generated/api.js";
 import schema from "../component/testProfiles/schema.profile-plugin-table.js";
@@ -26,10 +23,7 @@ import {
 } from "../test/adapter-factory/index.js";
 
 const MIN_NODE_MAJOR = 24;
-const currentNodeMajor = Number.parseInt(
-  process.versions.node.split(".")[0] ?? "0",
-  10
-);
+const currentNodeMajor = Number.parseInt(process.versions.node.split(".")[0] ?? "0", 10);
 
 const NORMAL_DISABLED_TESTS = [
   // dynamic-schema-plugin-table/dynamic-schema-additional-fields:
@@ -76,9 +70,7 @@ const NORMAL_DISABLED_TESTS = [
 const toDisableMap = (testNames: readonly string[]) =>
   Object.fromEntries(testNames.map((testName) => [testName, true]));
 
-const getOverrideBetterAuthOptions = (
-  opts: BetterAuthOptions
-): BetterAuthOptions => ({
+const getOverrideBetterAuthOptions = (opts: BetterAuthOptions): BetterAuthOptions => ({
   ...opts,
   advanced: {
     ...opts.advanced,
@@ -120,39 +112,36 @@ if (currentNodeMajor < MIN_NODE_MAJOR) {
       runMutation: t.mutation.bind(t),
     } as any;
 
-    const internalWithTestProfiles =
-      internal as unknown as InternalWithTestProfiles;
+    const internalWithTestProfiles = internal as unknown as InternalWithTestProfiles;
     const profileApi = (name: TestProfileName): { adapter: AdapterModule } => ({
       adapter: internalWithTestProfiles.testProfiles[name],
     });
 
     const baseProfileClient = createClient<DataModel>(
       { adapter: internalWithTestProfiles.adapter },
-      { verbose: false }
+      { verbose: false },
     );
     const additionalFieldsProfileClient = createClient<DataModel>(
       profileApi("adapterAdditionalFields"),
-      { verbose: false }
+      { verbose: false },
     );
-    const pluginTableProfileClient = createClient<DataModel>(
-      profileApi("adapterPluginTable"),
-      { verbose: false }
-    );
-    const renameFieldProfileClient = createClient<DataModel>(
-      profileApi("adapterRenameField"),
-      { verbose: false }
-    );
+    const pluginTableProfileClient = createClient<DataModel>(profileApi("adapterPluginTable"), {
+      verbose: false,
+    });
+    const renameFieldProfileClient = createClient<DataModel>(profileApi("adapterRenameField"), {
+      verbose: false,
+    });
     const renameUserCustomProfileClient = createClient<DataModel>(
       profileApi("adapterRenameUserCustom"),
-      { verbose: false }
+      { verbose: false },
     );
     const renameUserTableProfileClient = createClient<DataModel>(
       profileApi("adapterRenameUserTable"),
-      { verbose: false }
+      { verbose: false },
     );
     const organizationJoinsProfileClient = createClient<DataModel>(
       profileApi("adapterOrganizationJoins"),
-      { verbose: false }
+      { verbose: false },
     );
 
     const noMigrations = () => {
@@ -178,10 +167,7 @@ if (currentNodeMajor < MIN_NODE_MAJOR) {
       runMigrations: noMigrations,
       overrideBetterAuthOptions: getOverrideBetterAuthOptions,
       prefixTests: "profile:additional-fields",
-      tests: [
-        additionalFieldsNormalTestSuite(),
-        additionalFieldsAuthFlowTestSuite(),
-      ],
+      tests: [additionalFieldsNormalTestSuite(), additionalFieldsAuthFlowTestSuite()],
     });
 
     const { execute: executePluginTableProfile } = await testAdapter({

@@ -23,7 +23,7 @@ describe("createSchema", () => {
     const { code } = await createSchema({ tables });
 
     expect(code).toContain(
-      '.index("userId_providerId_issuer_accountId", ["userId","providerId","issuer","accountId"])'
+      '.index("userId_providerId_issuer_accountId", ["userId","providerId","issuer","accountId"])',
     );
     expect(code).toContain('.index("userId", ["userId"])');
   });
@@ -43,9 +43,7 @@ describe("createSchema", () => {
 
     const { code } = await createSchema({ tables });
 
-    expect(code).toContain(
-      '.index("issuer_accountId", ["issuer","accountId"])'
-    );
+    expect(code).toContain('.index("issuer_accountId", ["issuer","accountId"])');
     expect(indexFields).toEqual(["issuer", "accountId"]);
   });
 
@@ -83,11 +81,7 @@ describe("createSchema", () => {
 
     const { code } = await createSchema({ tables });
 
-    expect(code).toContain(
-      '.index("issuer_accountId", ["issuer","accountId"])'
-    );
-    expect(code).toContain(
-      '.index("accountId_issuer", ["accountId","issuer"])'
-    );
+    expect(code).toContain('.index("issuer_accountId", ["issuer","accountId"])');
+    expect(code).toContain('.index("accountId_issuer", ["accountId","issuer"])');
   });
 });

@@ -19,21 +19,15 @@ const accountData = () => ({
   updatedAt: Date.now(),
 });
 
-const createAccount = async (
-  t: ReturnType<typeof convexTest>,
-  onCreateHandle?: string
-) =>
+const createAccount = async (t: ReturnType<typeof convexTest>, onCreateHandle?: string) =>
   await t.run(async (ctx) =>
     ctx.runMutation(api.adapter.create, {
       input: { model: "account", data: accountData() },
       onCreateHandle,
-    })
+    }),
   );
 
-const insertLegacyAccount = async (
-  t: ReturnType<typeof convexTest>,
-  suffix: string
-) =>
+const insertLegacyAccount = async (t: ReturnType<typeof convexTest>, suffix: string) =>
   await t.run((ctx) =>
     ctx.db.insert("account", {
       accountId: `legacy-account-${suffix}`,
@@ -42,7 +36,7 @@ const insertLegacyAccount = async (
       password: "password-hash",
       createdAt: Date.now(),
       updatedAt: 100,
-    })
+    }),
   );
 
 describe("required fields", () => {
@@ -82,13 +76,11 @@ describe("required fields", () => {
         });
       });
 
-      await expect(mutation).rejects.toThrow(
-        "Cannot clear required field account.issuer"
-      );
+      await expect(mutation).rejects.toThrow("Cannot clear required field account.issuer");
       const accounts = await t.run((ctx) => ctx.db.query("account").collect());
       expect(accounts).toHaveLength(1);
       expect(accounts[0]?.issuer).toBe("local:credential");
-    }
+    },
   );
 
   it.each(["updateOne", "incrementOne", "updateMany"] as const)(
@@ -145,7 +137,7 @@ describe("required fields", () => {
       } else {
         expect(accounts[0]?.scope).toBe("updated-scope");
       }
-    }
+    },
   );
 
   it("updates multiple pages containing a legacy account", async () => {
@@ -174,15 +166,13 @@ describe("required fields", () => {
         model: "account",
         where: [{ field: "providerId", value: "legacy-bulk-provider" }],
         update: { scope: "updated-scope" },
-      })
+      }),
     ).resolves.toBe(401);
 
     const accounts = await t.run((ctx) => ctx.db.query("account").collect());
     expect(accounts).toHaveLength(401);
     expect(accounts.every(({ scope }) => scope === "updated-scope")).toBe(true);
-    expect(accounts.filter(({ issuer }) => issuer === undefined)).toHaveLength(
-      1
-    );
+    expect(accounts.filter(({ issuer }) => issuer === undefined)).toHaveLength(1);
   });
 
   it("rolls back an onCreate trigger that clears a required field", async () => {
@@ -191,13 +181,13 @@ describe("required fields", () => {
     await expect(
       t.run(async (ctx) => {
         const handle = await createFunctionHandle(
-          internal.testTriggerHandlers.accountOnCreateIssuerClearer
+          internal.testTriggerHandlers.accountOnCreateIssuerClearer,
         );
         return await ctx.runMutation(api.adapter.create, {
           input: { model: "account", data: accountData() },
           onCreateHandle: handle,
         });
-      })
+      }),
     ).rejects.toThrow("Missing required field account.issuer");
     expect(await t.run((ctx) => ctx.db.query("account").collect())).toEqual([]);
   });
@@ -209,7 +199,7 @@ describe("required fields", () => {
     await expect(
       t.run(async (ctx) => {
         const handle = await createFunctionHandle(
-          internal.testTriggerHandlers.accountOnUpdateIssuerClearer
+          internal.testTriggerHandlers.accountOnUpdateIssuerClearer,
         );
         return await ctx.runMutation(api.adapter.updateOne, {
           input: {
@@ -219,7 +209,7 @@ describe("required fields", () => {
           },
           onUpdateHandle: handle,
         });
-      })
+      }),
     ).rejects.toThrow("Trigger cleared required field account.issuer");
 
     const accounts = await t.run((ctx) => ctx.db.query("account").collect());
@@ -237,13 +227,11 @@ describe("required fields", () => {
         userId: "legacy-null-user",
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
+      }),
     );
 
     await t.run(async (ctx) => {
-      const handle = await createFunctionHandle(
-        internal.testTriggerHandlers.accountOnUpdateNoop
-      );
+      const handle = await createFunctionHandle(internal.testTriggerHandlers.accountOnUpdateNoop);
       await ctx.runMutation(api.adapter.updateOne, {
         input: {
           model: "account",

@@ -31,12 +31,7 @@ const credentialSchema = defineSchema({
     providerId: v.string(),
     issuer: v.string(),
     accountId: v.string(),
-  }).index("userId_providerId_issuer_accountId", [
-    "userId",
-    "providerId",
-    "issuer",
-    "accountId",
-  ]),
+  }).index("userId_providerId_issuer_accountId", ["userId", "providerId", "issuer", "accountId"]),
 });
 
 const credentialBetterAuthSchema = {
@@ -69,7 +64,7 @@ describe("ordered compound indexes", () => {
             { field: "accountId", value: "user-1" },
           ],
           paginationOpts: { cursor: null, numItems: 1 },
-        })
+        }),
       );
       expect(warn).not.toHaveBeenCalled();
     } finally {
@@ -98,7 +93,7 @@ describe("ordered compound indexes", () => {
           { field: "issuer", value: "issuer-value" },
         ],
         paginationOpts: { cursor: null, numItems: 10 },
-      })
+      }),
     );
 
     expect(result.page).toHaveLength(1);
@@ -114,7 +109,7 @@ describe("ordered compound indexes", () => {
       ctx.db.insert("account", {
         issuer: "issuer-value",
         accountId: "account-value",
-      })
+      }),
     );
 
     await expect(
@@ -122,10 +117,8 @@ describe("ordered compound indexes", () => {
         checkUniqueFields(ctx, schema, betterAuthSchema, "account", {
           issuer: "issuer-value",
           accountId: "account-value",
-        })
-      )
-    ).rejects.toThrow(
-      "account unique constraint issuer+accountId already exists"
-    );
+        }),
+      ),
+    ).rejects.toThrow("account unique constraint issuer+accountId already exists");
   });
 });
