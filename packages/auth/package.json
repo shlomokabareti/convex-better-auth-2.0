@@ -132,7 +132,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "vp pack --filter lib && vp pack --filter scripts",
+    "build": "vp pack --filter lib && vp pack --filter scripts && tsc -p tsconfig.component.json",
     "test": "vitest run"
   },
   "dependencies": {
