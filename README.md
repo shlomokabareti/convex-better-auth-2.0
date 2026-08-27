@@ -19,7 +19,7 @@ A public, full-stack auth solution that bridges [Convex](https://convex.dev) and
 
 ## Status
 
-Alpha — APIs will change. Packages are published to npm as `0.x.x-alpha.0` pre-releases. Read the [docs](https://gregarious-perch-710.convex.site) for the current design and roadmap.
+Public — the core packages are now at `1.0.0` / `2.0.0` and the Better Auth 1.7 adapter is at `0.13.0`. The adapter is still pre-1.0 while the community validates it against Better Auth releases, but the rest of the workspace is stable for production use. Read the [docs](https://gregarious-perch-710.convex.site) for the current design and roadmap.
 
 ## Why this exists
 
