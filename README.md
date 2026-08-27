@@ -96,6 +96,110 @@ export function App() {
 }
 ```
 
+## Native email/password (experimental)
+
+`convex-auth` also ships a Convex-native email/password flow that does not require Better Auth. This is a prototype behind the existing component surface.
+
+### 1. Set environment variables
+
+Generate an RS256 keypair and set in your Convex deployment:
+
+```bash
+# convex dev --once and `convex env set ...` after first deploy
+convex env set JWT_PRIVATE_KEY '...' # JSON-encoded RSA private key JWK
+convex env set JWKS '...'            # JSON Web Key Set containing the public key
+```
+
+### 2. Mount the component
+
+```ts
+// convex/convex.config.ts
+import { defineComponents } from "convex/server";
+import auth from "convex-auth/component";
+
+export default defineComponents({
+  auth,
+});
+```
+
+### 3. Export the native actions from your consumer `auth.ts`
+
+```ts
+// convex/auth.ts
+import { components } from "./_generated/api";
+import { nativeEmailAndPassword } from "convex-auth/convex";
+
+const auth = nativeEmailAndPassword(components.convexAuth);
+
+export const signUp = auth.signUp;
+export const signIn = auth.signIn;
+export const signOut = auth.signOut;
+```
+
+### 4. Wrap the React app
+
+```tsx
+// src/main.tsx
+import { ConvexReactClient, ConvexProvider } from "convex/react";
+import { ConvexAuthProvider } from "convex-auth/react";
+import { api } from "../convex/_generated/api";
+import App from "./App";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
+
+function Root() {
+  return (
+    <ConvexProvider client={convex}>
+      <ConvexAuthProvider
+        actions={{
+          signUp: api.auth.signUp,
+          signIn: api.auth.signIn,
+          signOut: api.auth.signOut,
+        }}
+      >
+        <App />
+      </ConvexAuthProvider>
+    </ConvexProvider>
+  );
+}
+```
+
+### 5. Use the actions in components
+
+```tsx
+// src/SignIn.tsx
+import { useAuthActions } from "convex-auth/react";
+
+export function SignIn() {
+  const { signIn, isLoading, isAuthenticated } = useAuthActions();
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    await signIn({
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
+    });
+  }
+
+  if (isAuthenticated) {
+    return <p>Already signed in.</p>;
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="email" type="email" required />
+      <input name="password" type="password" required />
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? "Signing in..." : "Sign in"}
+      </button>
+    </form>
+  );
+}
+```
+
+See [`docs/convex-native-auth-strategy.md`](docs/convex-native-auth-strategy.md) for the long-term roadmap and how this relates to Convex Auth 2.0.
+
 ## Compatibility and migration
 
 - See [`docs/compatibility.md`](docs/compatibility.md) for the current supported versions of Better Auth, Convex, React, React Native / Expo, Node, and pnpm.

@@ -1,9 +1,10 @@
-import { useAction } from "convex/react";
+import { useAction, useConvex } from "convex/react";
 import type { FunctionReference } from "convex/server";
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -65,7 +66,19 @@ export type ConvexAuthProviderProps = {
 };
 
 export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
+  const client = useConvex();
   const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    client.setAuth(() => Promise.resolve(token));
+  }, [client, token]);
+
+  useEffect(() => {
+    return () => {
+      client.clearAuth();
+    };
+  }, [client]);
+
   const value = useMemo(
     () => ({ ...props.actions, token, setToken }),
     [props.actions, token],
