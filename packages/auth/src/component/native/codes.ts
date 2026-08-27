@@ -13,9 +13,7 @@ export const createVerificationCode = mutation({
 
     const existing = await ctx.db
       .query("authVerificationCodes")
-      .withIndex("by_user_type", (q) =>
-        q.eq("userId", args.userId).eq("type", args.type),
-      )
+      .withIndex("by_user_type", (q) => q.eq("userId", args.userId).eq("type", args.type))
       .collect();
 
     for (const code of existing) {
@@ -82,9 +80,7 @@ export const revokeVerificationCodesForUser = mutation({
 
     const existing = await ctx.db
       .query("authVerificationCodes")
-      .withIndex("by_user_type", (q) =>
-        q.eq("userId", args.userId).eq("type", args.type),
-      )
+      .withIndex("by_user_type", (q) => q.eq("userId", args.userId).eq("type", args.type))
       .filter((q) => q.eq(q.field("consumedAt"), undefined))
       .collect();
 

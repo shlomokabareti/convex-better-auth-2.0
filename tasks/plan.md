@@ -60,12 +60,12 @@ Extend the native Convex email/password provider with token-based email verifica
 
 ## Risks and mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Token hash timing leaks | High | Use `crypto.timingSafeEqual` and ensure both operands are same-length buffers. |
-| Plaintext token logged | High | Never log or return the raw token outside the email callback. |
-| Email sender not configured | Med | Actions return `not_configured` status and tests use mock senders. |
-| Schema migration in existing deployments | Med | New table is additive; no existing tables or indexes change. |
+| Risk                                     | Impact | Mitigation                                                                     |
+| ---------------------------------------- | ------ | ------------------------------------------------------------------------------ |
+| Token hash timing leaks                  | High   | Use `crypto.timingSafeEqual` and ensure both operands are same-length buffers. |
+| Plaintext token logged                   | High   | Never log or return the raw token outside the email callback.                  |
+| Email sender not configured              | Med    | Actions return `not_configured` status and tests use mock senders.             |
+| Schema migration in existing deployments | Med    | New table is additive; no existing tables or indexes change.                   |
 
 ## Open questions
 

@@ -5,6 +5,7 @@
 Add email verification and password reset flows to the native Convex email/password provider (`convex-runtime/native`) introduced in Milestone 1. These are the two most common post-sign-up account flows and the smallest end-to-end expansion that proves token generation, secure token storage, expiry, and email delivery inside Convex actions.
 
 Success criteria:
+
 - A user who signs up with email/password can request a verification email.
 - The verification email contains a single-use, time-limited token.
 - The user can verify their email by supplying the token, which updates the user and identity `emailVerified` flags.

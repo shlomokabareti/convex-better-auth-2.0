@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "../_generated/server.js";
+import { mutation, query } from "../_generated/server.js";
 
 export const getUserByEmail = query({
   args: { email: v.string() },
@@ -8,5 +8,19 @@ export const getUserByEmail = query({
       .query("users")
       .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase().trim()))
       .unique();
+  },
+});
+
+export const markEmailVerified = mutation({
+  args: {
+    userId: v.id("users"),
+    emailVerified: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    await ctx.db.patch(args.userId, {
+      emailVerified: args.emailVerified,
+      updatedAt: now,
+    });
   },
 });

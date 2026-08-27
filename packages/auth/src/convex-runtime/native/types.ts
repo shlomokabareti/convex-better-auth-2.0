@@ -1,5 +1,19 @@
 import type { FunctionReference } from "convex/server";
 
+export type VerificationCodeType = "email_verification" | "password_reset";
+
+export type NativeVerificationCodeDoc = {
+  _id: string;
+  _creationTime: number;
+  userId: string;
+  type: VerificationCodeType;
+  tokenHash: string;
+  expiresAt: number;
+  consumedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type NativeUserDoc = {
   _id: string;
   _creationTime: number;
@@ -111,6 +125,13 @@ export type NativeEmailAndPasswordComponentHandle = {
         string,
         string
       >;
+      updateCredentialHash: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { accountId: string; credentialHash: string },
+        void,
+        string
+      >;
       getAccountBySubject: FunctionReference<
         "query",
         "public" | "internal",
@@ -148,6 +169,13 @@ export type NativeEmailAndPasswordComponentHandle = {
         NativeIdentityDoc | null,
         string
       >;
+      markEmailVerified: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { identityId: string; emailVerified: boolean },
+        void,
+        string
+      >;
     };
     users: {
       getUserByEmail: FunctionReference<
@@ -155,6 +183,48 @@ export type NativeEmailAndPasswordComponentHandle = {
         "public" | "internal",
         { email: string },
         NativeUserDoc | null,
+        string
+      >;
+      markEmailVerified: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { userId: string; emailVerified: boolean },
+        void,
+        string
+      >;
+    };
+    codes: {
+      createVerificationCode: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          userId: string;
+          type: VerificationCodeType;
+          tokenHash: string;
+          expiresAt: number;
+        },
+        string,
+        string
+      >;
+      getVerificationCodeByTokenHash: FunctionReference<
+        "query",
+        "public" | "internal",
+        { tokenHash: string; type: VerificationCodeType },
+        NativeVerificationCodeDoc | null,
+        string
+      >;
+      consumeVerificationCode: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { tokenHash: string; type: VerificationCodeType },
+        NativeVerificationCodeDoc | null,
+        string
+      >;
+      revokeVerificationCodesForUser: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { userId: string; type: VerificationCodeType },
+        number,
         string
       >;
     };

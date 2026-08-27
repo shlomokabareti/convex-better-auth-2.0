@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  generateVerificationToken,
-  hashToken,
-  isTokenExpired,
-  verifyTokenHash,
-} from "./tokens.js";
+import { generateVerificationToken, hashToken, isTokenExpired, verifyTokenHash } from "./tokens.js";
 
 describe("token utilities", () => {
   it("generates tokens with 64 hex characters", () => {
