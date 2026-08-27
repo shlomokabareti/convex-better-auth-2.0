@@ -472,7 +472,7 @@ function getRequiredConvexUrl(options: CreateAuthenticatedConvexHttpClientOption
 // signed-in BROWSER page — it still needs the login form. These helpers skip the
 // browser entirely: they hit the consumer-mounted `createTestSessionHandler`
 // endpoint (Increment 6a) with the shared secret, then exchange the resulting
-// Better-Auth session for a Convex JWT via `@convex-dev/better-auth`'s
+// Better-Auth session for a Convex JWT via `convex-better-auth-adapter`'s
 // `/api/auth/convex/token` endpoint. Result: an authenticated Convex client for
 // headless/backend test suites with zero browser and zero form.
 // ---------------------------------------------------------------------------
@@ -539,7 +539,7 @@ export async function mintConvexAuthTestSession(
     );
   }
 
-  // 2. Exchange the session for a Convex JWT (@convex-dev/better-auth /convex/token).
+  // 2. Exchange the session for a Convex JWT (convex-better-auth-adapter /convex/token).
   const tokenResponse = await fetchImpl(`${siteUrl}${basePath}/convex/token`, {
     method: "GET",
     headers: {

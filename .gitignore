@@ -7,6 +7,8 @@ dist/
 !.env.example
 *.test.ts
 *.test.tsx
+!packages/better-auth-adapter/src/**/*.test.ts
+!packages/better-auth-adapter/src/**/*.test.tsx
 !packages/core/src/*.test.ts
 !packages/core/src/*.recipe.test.ts
 !packages/better-auth/src/**/*.test.ts
@@ -19,3 +21,4 @@ dist/
 CHANGELOG.md
 coverage/
 .vite/
+*.tsbuildinfo

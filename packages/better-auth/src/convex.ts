@@ -1,4 +1,4 @@
-import { createClient, type GenericCtx } from "@convex-dev/better-auth";
+import { createClient, type GenericCtx } from "convex-better-auth-adapter";
 import type { BetterAuthOptions } from "better-auth";
 import type {
   FunctionReference,
@@ -159,7 +159,7 @@ export type BetterAuthConvexRuntimeConfig<DataModel extends GenericDataModel> = 
    * and the component's function-handle dispatch can resolve it. If
    * omitted, the runtime falls back to a triggerless internal client.
    *
-   * Typed loosely on purpose: the consumer's `@convex-dev/better-auth`
+   * Typed loosely on purpose: the consumer's `convex-better-auth-adapter`
    * may be a different installed instance than this package's, so a
    * nominal `ReturnType<typeof createClient>` would falsely mismatch.
    */
@@ -274,7 +274,7 @@ export type BetterAuthConvexRuntimeConfig<DataModel extends GenericDataModel> = 
   session?: BetterAuthSessionConfig;
   /**
    * TOTP / backup-code MFA via Better Auth's OFFICIAL `twoFactor`
-   * plugin (audited crypto; the @convex-dev/better-auth component
+   * plugin (audited crypto; the convex-better-auth-adapter component
    * schema already includes the twoFactor table + twoFactorEnabled
    * field). Opt-in per project — default off. Email-OTP step-up
    * remains a separate secondary/recovery factor.
@@ -315,7 +315,7 @@ export type BetterAuthConvexRuntime<DataModel extends GenericDataModel> = {
  * The Better-Auth backend context our runtime exposes via `createAuth(ctx).$context`.
  * It is the REAL `betterAuth(...).$context` (a superset of this shape), narrowed to
  * the two things our callers depend on:
- *   - `options.trustedOrigins` — read by @convex-dev/better-auth's CORS router.
+ *   - `options.trustedOrigins` — read by convex-better-auth-adapter's CORS router.
  *   - `internalAdapter` — the native session primitive the service-session minter
  *     (createAuthServiceSessionMinter) uses to mint / revoke a session as a
  *     target user, plus the user reads consumers address a target by:
@@ -607,7 +607,7 @@ async function buildBetterAuthInstance<DataModel extends GenericDataModel>(args:
   const [{ betterAuth }, { convex, crossDomain }, { twoFactor, haveIBeenPwned, captcha }] =
     await Promise.all([
       import("better-auth/minimal"),
-      import("@convex-dev/better-auth/plugins"),
+      import("convex-better-auth-adapter/plugins"),
       import("better-auth/plugins"),
     ]);
   const emailDelivery = buildBetterAuthEmailDelivery(args.config, args.ctx);

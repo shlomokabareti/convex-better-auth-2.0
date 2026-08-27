@@ -1,4 +1,4 @@
-import { ConvexBetterAuthProvider, type AuthClient } from "@convex-dev/better-auth/react";
+import { ConvexBetterAuthProvider, type AuthClient } from "convex-better-auth-adapter/react";
 import { ConvexReactClient } from "convex/react";
 import type { ReactNode } from "react";
 
