@@ -118,6 +118,11 @@ export const authMdAssertionStatusValidator = v.union(
 
 export const authMdCredentialStatusValidator = v.union(v.literal("active"), v.literal("revoked"));
 
+export const verificationCodeTypeValidator = v.union(
+  v.literal("email_verification"),
+  v.literal("password_reset"),
+);
+
 export const authMdAuditActorTypeValidator = v.union(
   v.literal("external"),
   v.literal("user"),
@@ -718,4 +723,16 @@ export default defineSchema({
     revokedAt: v.number(),
     reason: v.union(v.literal("replay_detected"), v.literal("concurrent_conflict")),
   }).index("by_family_id", ["familyId"]),
+
+  authVerificationCodes: defineTable({
+    userId: v.id("users"),
+    type: verificationCodeTypeValidator,
+    tokenHash: v.string(),
+    expiresAt: v.number(),
+    consumedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_token_hash", ["tokenHash"])
+    .index("by_user_type", ["userId", "type"]),
 });
