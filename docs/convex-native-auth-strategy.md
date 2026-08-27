@@ -169,6 +169,18 @@ We are **not** depending on or copying Convex Auth 2.0. We will release our own 
 - We want to own the data model and auth semantics, not inherit Convex's choices.
 - We want the project to remain an independent public package that the Convex + Better Auth community can co-maintain.
 
+### Patterns from Convex Auth we can adopt
+
+Convex Auth 2.0 is a proof that a native Convex auth runtime is possible. We should copy the _structure_, not the package:
+
+- **Table layout:** Convex Auth uses `users`, `authSessions`, `authAccounts`, `authRefreshTokens`, `authVerificationCodes`, `authVerifiers`, and `authRateLimits`. We can align our schema with these names and indexes so migration guides are simple.
+- **Function layout:** `convexAuth({ providers })` returns `auth` (HTTP router helper), `signIn` (action), `signOut` (action), `store` (internal mutation), and `isAuthenticated` (query). This is a clean public seam: one file, one helper, one provider array.
+- **HTTP routes:** `auth.addHttpRoutes(http)` adds `/.well-known/openid-configuration`, `/.well-known/jwks.json`, and per-provider OAuth callback paths (`/api/auth/signin/*`, `/api/auth/callback/*`) to the Convex `httpRouter`.
+- **Provider model:** Convex Auth imports provider _metadata_ from `@auth/core/providers/*` (e.g., `GitHub`, `Google`, `Resend`). These are pure data objects — OAuth URLs, scopes, token/user-info endpoints. We can use the same metadata if we keep our runtime separate, or we can hand-author provider definitions. The point is: do not re-implement the OAuth protocol spec from scratch unless we have to.
+- **Token generation:** Use `crypto.getRandomValues` in actions for random tokens, not `Math.random` or Node `crypto.randomBytes`.
+- **Keys:** Convex Auth stores `JWT_PRIVATE_KEY` and `JWKS` in Convex environment variables and generates them with `jose` locally. We can do the same for the first release, then move to a `authKeys` table with rotation later.
+- **Client surface:** `ConvexAuthProvider` wraps `ConvexProvider` and `useAuthActions()` exposes `signIn`, `signOut`, and `signInWithRedirect`. This is the same shape we should aim for in `convex-auth-react`.
+
 ## Why this is the right long-term move
 
 - **Bundle size and memory.** Removing Better Auth from the Convex bundle is the only way to guarantee the `convex/` directory stays under 32 MiB and each function stays under 64 MB.
@@ -176,6 +188,58 @@ We are **not** depending on or copying Convex Auth 2.0. We will release our own 
 - **Authorization.** Convex authorization rules can depend on auth tables directly, without going through an adapter.
 - **Operational simplicity.** One stack, one runtime, one set of indexes, one set of migrations.
 - **Maintainability.** Future maintainers only need to know Convex and web standards, not a Node auth framework's plugin model.
+
+## Immediate milestones
+
+The strategic roadmap is long. The _right now_ milestones are deliberately small and provable.
+
+### Milestone 0 — Ship the bridge
+
+- Unblock the release by replacing the GitHub `NPM_TOKEN` with an npm Automation token that has **Publish** scope.
+- Publish `convex-better-auth-adapter@0.13.0`, `convex-better-auth@2.0.0`, `convex-auth@1.0.0`, and siblings.
+- This is a release, not a rewrite.
+
+### Milestone 1 — Native email/password sign-in
+
+This is the smallest end-to-end flow that proves the new architecture. It should live behind a feature flag and not break Better Auth consumers.
+
+1. **Schema.** Add `authSessions`, `authAccounts`, and `authRefreshTokens` tables to the `convex-auth` component (or start by writing to the existing `better-auth-adapter` component tables to avoid a migration).
+2. **Keys.** Generate an RS256 keypair locally, store `JWT_PRIVATE_KEY` and `JWKS` in the Convex deployment environment, and expose `/.well-known/jwks.json` via a Convex query.
+3. **Password hashing.** Implement a Convex Node action using `argon2` as an external package (`"use node";` in the file).
+4. **Sign-up / sign-in actions.** Implement `signUp`, `signIn`, `signOut`, and `store` Convex actions.
+   - `signUp` hashes the password, creates a `users` row, an `auth_identities` row, and an `authAccounts` row.
+   - `signIn` verifies the password hash in a Node action, then creates an `authSessions` row and returns a signed JWT.
+   - `signOut` invalidates the session.
+5. **Session verification.** Implement a Convex query `verifySession` that reads the JWT from `ctx.auth`, verifies the signature with `crypto.subtle`, and returns the user.
+6. **Client.** Add `ConvexAuthProvider` and `useAuthActions()` to `convex-auth-react` that use `useQuery`/`useAction`/`useMutation` against the new actions.
+7. **Flag.** Gate this behind `ConvexAuthProvider native` or a similar opt-in so existing consumers keep Better Auth.
+
+Milestone 1 proves the three most questioned primitives: **password hashing, session minting, and JWT verification inside the Convex runtime.**
+
+### Milestone 2 — Email verification and password reset
+
+- Generate random tokens with `crypto.getRandomValues` in a Convex action.
+- Store hashed verification codes with expiry.
+- Send email via a configured email sender (Resend/SES/SendGrid) in an action.
+- Implement the password-reset flow with a two-step token.
+
+### Milestone 3 — OAuth with one provider
+
+- Implement a single OAuth provider (GitHub) as a Convex HTTP action.
+- Use `@auth/core/providers/github` only for the provider _metadata_ — URLs, scopes, field mapping — not for runtime.
+- Add `/api/auth/signin/github` and `/api/auth/callback/github` HTTP routes.
+- On callback, fetch the token and user info with `fetch`, provision the identity, and create a session.
+
+### Milestone 4 — Expand to more providers, 2FA, and social flows
+
+- Add more OAuth providers from `@auth/core/providers/*` metadata.
+- Implement TOTP with Web Crypto HMAC.
+- Implement magic-link / OTP sign-in.
+
+### Milestone 5 — Drop the Better Auth dependency
+
+- Once all auth flows are native, `better-auth` becomes a dev-only or test-only dependency.
+- Existing consumers can migrate table-by-table or re-install under the new `convex-auth` schema.
 
 ## What the community can help with
 
