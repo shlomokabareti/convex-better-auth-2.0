@@ -28,9 +28,13 @@
     "format": "vp fmt",
     "format:check": "vp fmt --check",
     "check": "vp check",
-    "fix": "vp lint --fix && vp fmt"
+    "fix": "vp lint --fix && vp fmt",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "ci:publish": "pnpm publish -r --access public --no-git-checks"
   },
   "devDependencies": {
+    "@changesets/cli": "2.31.1",
     "@types/node": "^22.0.0",
     "vite-plus": "0.2.4",
     "vitest": "^4.1.10"
