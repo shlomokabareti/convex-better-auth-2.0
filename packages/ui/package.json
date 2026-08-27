@@ -41,7 +41,7 @@
     "convex-auth-tsconfig": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "typescript": "^5.8.3"
+    "typescript": "^7.0.2"
   },
   "peerDependencies": {
     "react": "^19.0.0",
