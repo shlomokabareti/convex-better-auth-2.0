@@ -69,7 +69,7 @@ Create an auth client with the Convex plugin:
 
 ```ts
 import { createAuthClient } from "convex-auth-react";
-import { convexClient } from "@convex-dev/better-auth/client/plugins";
+import { convexClient } from "convex-better-auth-adapter/client/plugins";
 
 export const authClient = createAuthClient({
   plugins: [convexClient()],
