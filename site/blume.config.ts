@@ -6,4 +6,7 @@ export default defineConfig({
   content: {
     root: "../docs",
   },
+  deployment: {
+    site: "https://gregarious-perch-710.convex.site",
+  },
 });
