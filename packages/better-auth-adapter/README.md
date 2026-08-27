@@ -1,39 +1,46 @@
-# Convex + Better Auth
+# `convex-better-auth-adapter`
 
-<!-- START: Include on https://convex.dev/components -->
+A [Better Auth](https://www.better-auth.com) database adapter for [Convex](https://www.convex.dev), maintained as part of [`convex-better-auth-2.0`](https://github.com/shlomokabareti/convex-better-auth-2.0).
 
-Use [Better Auth](https://better-auth.com) with
-[Convex](https://www.convex.dev).
+This package is a community-owned continuation of the adapter originally developed in [`get-convex/better-auth`](https://github.com/get-convex/better-auth), including the Better Auth 1.7 migration from [`get-convex/better-auth#430`](https://github.com/get-convex/better-auth/pull/430). It is vendored here so the Convex + Better Auth bridge can keep pace with Better Auth releases while Convex Auth 2.0 matures.
 
-**Full documentation and guides:
-[labs.convex.dev/better-auth](https://labs.convex.dev/better-auth)**
+## Install
 
-### Framework Agnostic
+```bash
+pnpm add convex-better-auth-adapter
+```
 
-**Support for popular frameworks.**
+## Peer dependencies
 
-Supports popular frameworks, including React, Vue, Svelte, Astro, Solid,
-Next.js, Nuxt, Tanstack Start, Hono, and more.
+```json
+{
+  "better-auth": ">=1.7.1 <1.8.0",
+  "convex": ">=1.39.0",
+  "react": "^18.3.1 || ^19.0.0"
+}
+```
 
-### Authentication
+## Quick start
 
-**Email & Password Authentication.**
+In your Convex backend:
 
-Built-in support for email and password authentication, with session and account
-management features.
+```ts
+import { convexClient } from "convex-better-auth-adapter/client/plugins";
+```
 
-### Social Sign-on
+Most consumers should use the higher-level packages instead:
 
-**Support multiple OAuth providers.**
+- [`convex-auth`](https://npmjs.com/package/convex-auth) — the Convex auth component and control plane.
+- [`convex-better-auth`](https://npmjs.com/package/convex-better-auth) — the Better Auth ↔ Convex runtime bridge.
+- [`convex-auth-react`](https://npmjs.com/package/convex-auth-react) — React UI and hooks.
+- [`convex-auth-react-native`](https://npmjs.com/package/convex-auth-react-native) — Expo / React Native client.
 
-Allow users to sign in with their accounts, including GitHub, Google, Discord,
-Twitter, and more.
+See the [full docs](https://gregarious-perch-710.convex.site) for the design rationale and migration guide.
 
-### Two Factor
+## Attribution
 
-**Multi Factor Authentication.**
+The source in this package started from `get-convex/better-auth` and includes the Better Auth 1.7 migration. All original code remains under the Apache-2.0 license.
 
-Secure your users accounts with two factor authentication with a few lines of
-code.
+## License
 
-<!-- END: Include on https://convex.dev/components -->
+Apache-2.0

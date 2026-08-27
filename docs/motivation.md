@@ -53,9 +53,12 @@ This project gives you the Clerk/WorkOS feature surface — users, orgs, invites
 
 `convex-better-auth-2.0` provides that bridge. It packages:
 
+- `convex-better-auth-adapter` — the low-level Better Auth ↔ Convex database adapter, vendored from the community work at `get-convex/better-auth` and maintained here with Better Auth 1.7 support.
 - `convex-better-auth` — a runtime that maps Better Auth state into Convex's client and server model.
 - `convex-auth` — a Convex component with the control plane: users, organizations, scopes, API keys, webhooks, MCP, and agent auth.
 - `convex-auth-react` — React UI and hooks that are auth-first and Convex-integrated.
 - `convex-auth-react-native` — Expo / React Native client and forms.
+- `convex-auth-core` — shared auth domain types and utilities: permissions, roles, and scopes.
+- `convex-auth-ui` — base shadcn-style UI primitives.
 
-All four packages are self-contained, Apache-2.0, and have no dependencies on private packages.
+All packages are self-contained, Apache-2.0, and have no dependencies on private packages.
