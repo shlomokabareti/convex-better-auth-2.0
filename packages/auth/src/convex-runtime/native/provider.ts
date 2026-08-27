@@ -1,19 +1,90 @@
 "use node";
 import { action } from "../../component/_generated/server.js";
+import type { GenericActionCtx } from "convex/server";
+import type { DataModel } from "../../component/_generated/dataModel.js";
 import { v } from "convex/values";
+import {
+  buildEmailVerificationUrl,
+  createEmailVerificationEmailDraft,
+} from "../account/emailVerificationEmail.js";
+import {
+  buildPasswordResetUrl,
+  createPasswordResetEmailDraft,
+} from "../account/passwordResetEmail.js";
 import { mintToken, verifyToken } from "./jwt.js";
 import { hashPassword, verifyPassword } from "./password.js";
-import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
+import { generateVerificationToken, hashToken, isTokenExpired } from "./tokens.js";
+import type { NativeEmailAndPasswordComponentHandle, VerificationCodeType } from "./types.js";
+
+export type EmailDraft = {
+  from: string;
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+};
+
+export type EmailSender = (draft: EmailDraft) => Promise<string>;
+
+export type NativeEmailAndPasswordConfig = {
+  email?: {
+    from: string;
+    appOrigin?: string;
+    verifyPath?: string;
+    resetPath?: string;
+    sendEmail: EmailSender;
+  };
+  verificationCodeTtlMs?: number;
+  passwordResetCodeTtlMs?: number;
+  sessionTtlMs?: number;
+};
 
 export type NativeEmailAndPasswordActions = {
   signUp: ReturnType<typeof action>;
   signIn: ReturnType<typeof action>;
   signOut: ReturnType<typeof action>;
+  sendEmailVerification: ReturnType<typeof action>;
+  verifyEmail: ReturnType<typeof action>;
+  sendPasswordReset: ReturnType<typeof action>;
+  resetPassword: ReturnType<typeof action>;
 };
+
+type EmailSendResult =
+  | { status: "queued"; emailId: string }
+  | { status: "not_configured"; reason: string }
+  | { status: "failed"; reason: string };
+
+const DEFAULT_VERIFICATION_CODE_TTL_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_PASSWORD_RESET_CODE_TTL_MS = 60 * 60 * 1000;
+const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+function resolveEmailConfig(args: NativeEmailAndPasswordConfig): {
+  from?: string;
+  appOrigin?: string;
+  verifyPath: string;
+  resetPath: string;
+  sendEmail?: EmailSender;
+} {
+  const email = args.email;
+  return {
+    from: email?.from,
+    appOrigin: email?.appOrigin,
+    verifyPath: email?.verifyPath ?? "/verify-email",
+    resetPath: email?.resetPath ?? "/reset-password",
+    sendEmail: email?.sendEmail,
+  };
+}
 
 export function nativeEmailAndPassword(
   component: NativeEmailAndPasswordComponentHandle,
+  config: NativeEmailAndPasswordConfig = {},
 ): NativeEmailAndPasswordActions {
+  const emailConfig = resolveEmailConfig(config);
+  const verificationCodeTtlMs = config.verificationCodeTtlMs ?? DEFAULT_VERIFICATION_CODE_TTL_MS;
+  const passwordResetCodeTtlMs =
+    config.passwordResetCodeTtlMs ?? DEFAULT_PASSWORD_RESET_CODE_TTL_MS;
+  const sessionTtlMs = config.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
+
   const signUp = action({
     args: {
       email: v.string(),
@@ -62,7 +133,7 @@ export function nativeEmailAndPassword(
       });
 
       const sessionId = crypto.randomUUID();
-      const expiresAt = now + 7 * 24 * 60 * 60 * 1000;
+      const expiresAt = now + sessionTtlMs;
       const token = await mintToken(userId, sessionId, { identityId });
 
       await ctx.runMutation(component.native.sessions.createSession, {
@@ -117,7 +188,7 @@ export function nativeEmailAndPassword(
       }
 
       const sessionId = crypto.randomUUID();
-      const expiresAt = now + 7 * 24 * 60 * 60 * 1000;
+      const expiresAt = now + sessionTtlMs;
       const token = await mintToken(user._id, sessionId, {
         identityId: identity._id,
       });
@@ -149,5 +220,289 @@ export function nativeEmailAndPassword(
     },
   });
 
-  return { signUp, signIn, signOut };
+  async function queueVerificationEmail(
+    ctx: GenericActionCtx<DataModel>,
+    args: {
+      email: string;
+      type: VerificationCodeType;
+      urlBuilder: (token: string) => string | null;
+      draftBuilder: (params: {
+        from: string;
+        to: string;
+        url: string | null;
+        expiresAt: number;
+      }) => Promise<EmailDraft | { status: "not_configured"; reason: string }>;
+      ttlMs: number;
+    },
+  ): Promise<EmailSendResult> {
+    const now = Date.now();
+    const emailConfig = resolveEmailConfig(config);
+
+    if (!emailConfig.from || !emailConfig.sendEmail) {
+      return { status: "not_configured", reason: "missing_email_config" };
+    }
+
+    const user = await ctx.runQuery(component.native.users.getUserByEmail, {
+      email: args.email.toLowerCase().trim(),
+    });
+
+    if (!user) {
+      return { status: "queued", emailId: "noop" };
+    }
+
+    const token = generateVerificationToken();
+    const tokenHash = hashToken(token);
+    const expiresAt = now + args.ttlMs;
+
+    await ctx.runMutation(component.native.codes.createVerificationCode, {
+      userId: user._id,
+      type: args.type,
+      tokenHash,
+      expiresAt,
+    });
+
+    const url = args.urlBuilder(token);
+    const draft = await args.draftBuilder({
+      from: emailConfig.from,
+      to: user.email ?? args.email,
+      url,
+      expiresAt,
+    });
+
+    if ("status" in draft) {
+      return { status: "not_configured", reason: draft.reason };
+    }
+
+    if (url === null) {
+      return { status: "not_configured", reason: "missing_url" };
+    }
+
+    try {
+      const emailId = await emailConfig.sendEmail(draft);
+      return { status: "queued", emailId };
+    } catch (error) {
+      return {
+        status: "failed",
+        reason: error instanceof Error ? error.message : "email_send_failed",
+      };
+    }
+  }
+
+  const sendEmailVerification = action({
+    args: { email: v.string() },
+    returns: v.object({
+      status: v.union(v.literal("queued"), v.literal("not_configured"), v.literal("failed")),
+      reason: v.optional(v.string()),
+      emailId: v.optional(v.string()),
+    }),
+    handler: async (ctx, args) => {
+      return queueVerificationEmail(ctx, {
+        email: args.email,
+        type: "email_verification",
+        urlBuilder: (token) =>
+          buildEmailVerificationUrl({
+            token,
+            appOrigin: emailConfig.appOrigin,
+            verifyPath: emailConfig.verifyPath,
+          }),
+        draftBuilder: async (params) =>
+          createEmailVerificationEmailDraft({
+            from: params.from,
+            to: params.to,
+            verifyUrl: params.url,
+            expiresAt: params.expiresAt,
+          }),
+        ttlMs: verificationCodeTtlMs,
+      });
+    },
+  });
+
+  const verifyEmail = action({
+    args: { token: v.string() },
+    returns: v.object({
+      success: v.boolean(),
+      reason: v.optional(v.string()),
+    }),
+    handler: async (ctx, args) => {
+      const tokenHash = hashToken(args.token);
+
+      const code = await ctx.runQuery(component.native.codes.getVerificationCodeByTokenHash, {
+        tokenHash,
+        type: "email_verification",
+      });
+
+      if (!code) {
+        return { success: false, reason: "invalid" };
+      }
+
+      if (isTokenExpired(code.expiresAt)) {
+        await ctx.runMutation(component.native.codes.consumeVerificationCode, {
+          tokenHash,
+          type: "email_verification",
+        });
+        return { success: false, reason: "expired" };
+      }
+
+      const consumed = await ctx.runMutation(component.native.codes.consumeVerificationCode, {
+        tokenHash,
+        type: "email_verification",
+      });
+
+      if (!consumed) {
+        return { success: false, reason: "invalid" };
+      }
+
+      const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
+        userId: consumed.userId,
+        provider: "password",
+        issuer: "native",
+      });
+
+      if (identity) {
+        await ctx.runMutation(component.native.identities.markEmailVerified, {
+          identityId: identity._id,
+          emailVerified: true,
+        });
+      }
+
+      await ctx.runMutation(component.native.users.markEmailVerified, {
+        userId: consumed.userId,
+        emailVerified: true,
+      });
+
+      return { success: true };
+    },
+  });
+
+  const sendPasswordReset = action({
+    args: { email: v.string() },
+    returns: v.object({
+      status: v.union(v.literal("queued"), v.literal("not_configured"), v.literal("failed")),
+      reason: v.optional(v.string()),
+      emailId: v.optional(v.string()),
+    }),
+    handler: async (ctx, args) => {
+      return queueVerificationEmail(ctx, {
+        email: args.email,
+        type: "password_reset",
+        urlBuilder: (token) =>
+          buildPasswordResetUrl({
+            token,
+            appOrigin: emailConfig.appOrigin,
+            resetPath: emailConfig.resetPath,
+          }),
+        draftBuilder: async (params) =>
+          createPasswordResetEmailDraft({
+            from: params.from,
+            to: params.to,
+            resetUrl: params.url,
+            expiresAt: params.expiresAt,
+          }),
+        ttlMs: passwordResetCodeTtlMs,
+      });
+    },
+  });
+
+  const resetPassword = action({
+    args: {
+      token: v.string(),
+      newPassword: v.string(),
+    },
+    returns: v.object({
+      success: v.boolean(),
+      reason: v.optional(v.string()),
+      token: v.optional(v.string()),
+      userId: v.optional(v.string()),
+      identityId: v.optional(v.string()),
+      sessionId: v.optional(v.string()),
+    }),
+    handler: async (ctx, args) => {
+      const tokenHash = hashToken(args.token);
+
+      const code = await ctx.runQuery(component.native.codes.getVerificationCodeByTokenHash, {
+        tokenHash,
+        type: "password_reset",
+      });
+
+      if (!code) {
+        return { success: false, reason: "invalid" };
+      }
+
+      if (isTokenExpired(code.expiresAt)) {
+        await ctx.runMutation(component.native.codes.consumeVerificationCode, {
+          tokenHash,
+          type: "password_reset",
+        });
+        return { success: false, reason: "expired" };
+      }
+
+      const consumed = await ctx.runMutation(component.native.codes.consumeVerificationCode, {
+        tokenHash,
+        type: "password_reset",
+      });
+
+      if (!consumed) {
+        return { success: false, reason: "invalid" };
+      }
+
+      const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
+        userId: consumed.userId,
+        provider: "password",
+        issuer: "native",
+      });
+
+      if (!identity) {
+        return { success: false, reason: "invalid" };
+      }
+
+      const account = await ctx.runQuery(component.native.accounts.getAccountBySubject, {
+        provider: "password",
+        issuer: "native",
+        subject: identity.subject,
+      });
+
+      if (!account) {
+        return { success: false, reason: "invalid" };
+      }
+
+      const now = Date.now();
+      const credentialHash = hashPassword(args.newPassword);
+
+      await ctx.runMutation(component.native.accounts.updateCredentialHash, {
+        accountId: account._id,
+        credentialHash,
+      });
+
+      const sessionId = crypto.randomUUID();
+      const expiresAt = now + sessionTtlMs;
+      const token = await mintToken(consumed.userId, sessionId, {
+        identityId: identity._id,
+      });
+
+      await ctx.runMutation(component.native.sessions.createSession, {
+        sessionId,
+        userId: consumed.userId,
+        token,
+        expiresAt,
+      });
+
+      return {
+        success: true,
+        token,
+        userId: consumed.userId,
+        identityId: identity._id,
+        sessionId,
+      };
+    },
+  });
+
+  return {
+    signUp,
+    signIn,
+    signOut,
+    sendEmailVerification,
+    verifyEmail,
+    sendPasswordReset,
+    resetPassword,
+  };
 }

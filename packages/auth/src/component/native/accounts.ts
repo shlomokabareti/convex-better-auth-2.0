@@ -1,6 +1,20 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server.js";
 
+export const updateCredentialHash = mutation({
+  args: {
+    accountId: v.id("authAccounts"),
+    credentialHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    await ctx.db.patch(args.accountId, {
+      credentialHash: args.credentialHash,
+      updatedAt: now,
+    });
+  },
+});
+
 export const createAccount = mutation({
   args: {
     userId: v.id("users"),
