@@ -12,6 +12,10 @@ import {
   type ExpoResolvedAuthConfig,
 } from "./config";
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
 export type ExpoAuthUser = {
   email?: string | null;
   id: string;
@@ -646,31 +650,6 @@ export function useExpoAuthUploadProfileImage(
 
 const TWO_FACTOR_UNAVAILABLE_RN = "Two-factor authentication is not available on this auth client";
 
-type TwoFactorClient = {
-  twoFactor?: {
-    enable: (args: { password: string; issuer?: string }) => Promise<{
-      data?: { totpURI: string; backupCodes: string[] } | null;
-      error?: { message?: string | null } | null;
-    }>;
-    verifyTotp: (args: { code: string; trustDevice?: boolean }) => Promise<{
-      data?: { token?: string | null } | null;
-      error?: { message?: string | null } | null;
-    }>;
-    verifyBackupCode: (args: { code: string; trustDevice?: boolean }) => Promise<{
-      data?: { token?: string | null } | null;
-      error?: { message?: string | null } | null;
-    }>;
-    disable: (args: { password: string }) => Promise<{
-      data?: { status?: boolean } | null;
-      error?: { message?: string | null } | null;
-    }>;
-    generateBackupCodes: (args: { password: string }) => Promise<{
-      data?: { status?: boolean; backupCodes: string[] } | null;
-      error?: { message?: string | null } | null;
-    }>;
-  };
-};
-
 export type ExpoAuthEnableTwoFactorResult = {
   ok: boolean;
   totpURI: string | null;
@@ -684,7 +663,7 @@ export type ExpoAuthEnableTwoFactorState = {
 };
 
 export function useExpoAuthEnableTwoFactor(
-  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null,
+  authClient: ExpoBetterAuthClient | null,
 ): ExpoAuthEnableTwoFactorState {
   const [isEnabling, setIsEnabling] = useState(false);
 
@@ -705,10 +684,16 @@ export function useExpoAuthEnableTwoFactor(
           const msg = result.error.message ?? "Could not enable two-factor authentication";
           return { ok: false, totpURI: null, backupCodes: null, error: msg };
         }
+        const data = asRecord(result.data);
+        const totpURI = typeof data?.totpURI === "string" ? data.totpURI : null;
+        const backupCodes =
+          Array.isArray(data?.backupCodes) && data.backupCodes.every((c) => typeof c === "string")
+            ? (data.backupCodes as string[])
+            : null;
         return {
           ok: true,
-          totpURI: result.data?.totpURI ?? null,
-          backupCodes: result.data?.backupCodes ?? null,
+          totpURI,
+          backupCodes,
           error: null,
         };
       } catch (err) {
@@ -737,7 +722,7 @@ export type ExpoAuthVerifyTotpState = {
 };
 
 export function useExpoAuthVerifyTotp(
-  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null,
+  authClient: ExpoBetterAuthClient | null,
 ): ExpoAuthVerifyTotpState {
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -777,7 +762,7 @@ export type ExpoAuthVerifyBackupCodeState = {
 };
 
 export function useExpoAuthVerifyBackupCode(
-  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null,
+  authClient: ExpoBetterAuthClient | null,
 ): ExpoAuthVerifyBackupCodeState {
   const [isVerifying, setIsVerifying] = useState(false);
 
@@ -817,7 +802,7 @@ export type ExpoAuthDisableTwoFactorState = {
 };
 
 export function useExpoAuthDisableTwoFactor(
-  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null,
+  authClient: ExpoBetterAuthClient | null,
 ): ExpoAuthDisableTwoFactorState {
   const [isDisabling, setIsDisabling] = useState(false);
 
@@ -861,7 +846,7 @@ export type ExpoAuthGenerateBackupCodesState = {
 };
 
 export function useExpoAuthGenerateBackupCodes(
-  authClient: (ExpoBetterAuthClient & TwoFactorClient) | null,
+  authClient: ExpoBetterAuthClient | null,
 ): ExpoAuthGenerateBackupCodesState {
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -884,9 +869,14 @@ export function useExpoAuthGenerateBackupCodes(
             error: result.error.message ?? "Could not regenerate backup codes",
           };
         }
+        const data = asRecord(result.data);
+        const backupCodes =
+          Array.isArray(data?.backupCodes) && data.backupCodes.every((c) => typeof c === "string")
+            ? (data.backupCodes as string[])
+            : null;
         return {
           ok: true,
-          backupCodes: result.data?.backupCodes ?? null,
+          backupCodes,
           error: null,
         };
       } catch (err) {

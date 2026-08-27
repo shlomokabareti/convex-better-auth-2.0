@@ -1,4 +1,4 @@
-import { convexClient, crossDomainClient } from "@convex-dev/better-auth/client/plugins";
+import { convexClient, crossDomainClient } from "convex-better-auth-adapter/client/plugins";
 import type { BetterAuthClientPlugin } from "better-auth/client";
 import { twoFactorClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";

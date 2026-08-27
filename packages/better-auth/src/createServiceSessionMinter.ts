@@ -52,7 +52,7 @@ export type ServiceSessionResult = {
   /**
    * The Better-Auth session token. Exchange it for a Convex JWT by GETting
    * `/api/auth/convex/token` with an `Authorization: Bearer <token>` header
-   * (the @convex-dev/better-auth convex plugin embeds Better-Auth's bearer
+   * (the convex-better-auth-adapter convex plugin embeds Better-Auth's bearer
    * hooks, which self-sign this raw token into the session cookie the token
    * endpoint reads). This is a CREDENTIAL — treat it like a password.
    */

@@ -4,6 +4,7 @@ packages:
 
 overrides:
   vitest: 4.1.10
+  "@better-auth/utils": "0.5.0"
   uuid: ^14.0.0
   chromium-edge-launcher: ^2.0.1
   babel-plugin-istanbul: ^8.0.2

@@ -1,5 +1,5 @@
 import { expoClient } from "@better-auth/expo/client";
-import { convexClient, crossDomainClient } from "@convex-dev/better-auth/client/plugins";
+import { convexClient, crossDomainClient } from "convex-better-auth-adapter/client/plugins";
 import type { BetterAuthClientPlugin } from "better-auth/client";
 import { twoFactorClient } from "better-auth/client/plugins";
 import { createAuthClient, type ReactAuthClient } from "better-auth/react";
@@ -176,28 +176,42 @@ function isDurableCookieName(cookieName: string): boolean {
 }
 
 function createDurableCookieFilteredStorage(storage: ExpoSecureStorage): ExpoSecureStorage {
+  const filterValue = (name: string, value: string): string => {
+    // Only the bundled cookie key (`<prefix>_cookie`) is filtered.
+    // The separate `<prefix>_session_data` body cache passes through.
+    if (!name.endsWith("_cookie")) {
+      return value;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      // Unparseable — pass through rather than silently dropping it.
+      return value;
+    }
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return value;
+    }
+    const filtered = Object.fromEntries(
+      Object.entries(parsed).filter(([cookieName]) => isDurableCookieName(cookieName)),
+    );
+    return JSON.stringify(filtered);
+  };
+
   return {
     getItem: (name: string) => storage.getItem(name),
-    setItem: (name: string, value: string) => {
-      // Only the bundled cookie key (`<prefix>_cookie`) is filtered.
-      // The separate `<prefix>_session_data` body cache passes through.
-      if (!name.endsWith("_cookie")) {
-        return storage.setItem(name, value);
+    getItemAsync: (name: string) =>
+      typeof storage.getItemAsync === "function"
+        ? storage.getItemAsync(name)
+        : Promise.resolve(storage.getItem(name)),
+    setItem: (name: string, value: string) => storage.setItem(name, filterValue(name, value)),
+    setItemAsync: async (name: string, value: string) => {
+      const filtered = filterValue(name, value);
+      if (typeof storage.setItemAsync === "function") {
+        await storage.setItemAsync(name, filtered);
+      } else {
+        storage.setItem(name, filtered);
       }
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(value);
-      } catch {
-        // Unparseable — pass through rather than silently dropping it.
-        return storage.setItem(name, value);
-      }
-      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-        return storage.setItem(name, value);
-      }
-      const filtered = Object.fromEntries(
-        Object.entries(parsed).filter(([cookieName]) => isDurableCookieName(cookieName)),
-      );
-      return storage.setItem(name, JSON.stringify(filtered));
     },
   };
 }

@@ -31,19 +31,19 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@convex-dev/better-auth": "0.12.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "convex": "^1.45.0",
     "convex-better-auth": "workspace:*",
+    "convex-better-auth-adapter": "workspace:*",
     "react": "^19.0.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
-    "@convex-dev/better-auth": ">=0.12.5",
     "convex": ">=1.39.0",
     "convex-better-auth": "workspace:*",
+    "convex-better-auth-adapter": "workspace:*",
     "react": ">=19.0.0",
     "react-dom": ">=19.0.0"
   }
