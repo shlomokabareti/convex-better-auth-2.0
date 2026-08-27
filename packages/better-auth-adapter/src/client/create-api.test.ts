@@ -18,12 +18,12 @@ describe("assertRequiredFields", () => {
     } satisfies BetterAuthDBSchema;
 
     expect(() => assertRequiredFields(schema, "customAccount", {})).toThrow(
-      "Missing required field customAccount.customIssuer"
+      "Missing required field customAccount.customIssuer",
     );
     expect(() =>
       assertRequiredFields(schema, "customAccount", {
         customIssuer: "https://issuer.example.com",
-      })
+      }),
     ).not.toThrow();
   });
 });

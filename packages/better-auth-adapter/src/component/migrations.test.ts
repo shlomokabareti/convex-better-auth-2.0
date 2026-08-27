@@ -7,11 +7,9 @@ import schema from "./schema.js";
 
 const modules = import.meta.glob("./**/*.*s");
 const backfillAccountIssuers = api.migrations.backfillAccountIssuers;
-const validateAccountIssuerBackfill =
-  api.migrations.validateAccountIssuerBackfill;
+const validateAccountIssuerBackfill = api.migrations.validateAccountIssuerBackfill;
 const listLegacyOAuthApplications = api.migrations.listLegacyOAuthApplications;
-const clearLegacyOAuthProviderRecords =
-  api.migrations.clearLegacyOAuthProviderRecords;
+const clearLegacyOAuthProviderRecords = api.migrations.clearLegacyOAuthProviderRecords;
 
 describe("backfillAccountIssuers", () => {
   it("backfills trusted issuers and normalizes credential account IDs", async () => {
@@ -49,7 +47,7 @@ describe("backfillAccountIssuers", () => {
           issuer: "local:oauth:github",
           accountId: "github-subject",
         }),
-      ])
+      ]),
     );
   });
 
@@ -62,14 +60,14 @@ describe("backfillAccountIssuers", () => {
         userId: "user-1",
         createdAt: 1,
         updatedAt: 1,
-      })
+      }),
     );
 
     await expect(
       t.mutation(backfillAccountIssuers, {
         providerIssuers: {},
         paginationOpts: { cursor: null, numItems: 10 },
-      })
+      }),
     ).rejects.toThrow("Missing trusted issuer mapping");
     const [account] = await t.run((ctx) => ctx.db.query("account").collect());
     expect(account?.issuer).toBeUndefined();
@@ -84,7 +82,7 @@ describe("backfillAccountIssuers", () => {
         userId: "user-1",
         createdAt: 1,
         updatedAt: 1,
-      })
+      }),
     );
     const args = {
       providerIssuers: {},
@@ -92,10 +90,10 @@ describe("backfillAccountIssuers", () => {
     };
 
     await expect(t.query(validateAccountIssuerBackfill, args)).rejects.toThrow(
-      "Missing trusted issuer mapping"
+      "Missing trusted issuer mapping",
     );
     await expect(t.mutation(backfillAccountIssuers, args)).rejects.toThrow(
-      "Missing trusted issuer mapping"
+      "Missing trusted issuer mapping",
     );
 
     const [account] = await t.run((ctx) => ctx.db.query("account").collect());
@@ -111,7 +109,7 @@ describe("backfillAccountIssuers", () => {
         userId: "user-1",
         createdAt: 1,
         updatedAt: 1,
-      })
+      }),
     );
 
     await expect(
@@ -120,7 +118,7 @@ describe("backfillAccountIssuers", () => {
           "custom-provider": " https://issuer.example.com ",
         },
         paginationOpts: { cursor: null, numItems: 10 },
-      })
+      }),
     ).rejects.toThrow("contains leading or trailing whitespace");
   });
 
@@ -159,7 +157,7 @@ describe("backfillAccountIssuers", () => {
         userId: "user-1",
         createdAt: 1,
         updatedAt: 1,
-      })
+      }),
     );
     const args = {
       providerIssuers: { "custom-provider": issuer },
@@ -167,10 +165,10 @@ describe("backfillAccountIssuers", () => {
     };
 
     await expect(t.query(validateAccountIssuerBackfill, args)).rejects.toThrow(
-      "is not a valid Better Auth account identity"
+      "is not a valid Better Auth account identity",
     );
     await expect(t.mutation(backfillAccountIssuers, args)).rejects.toThrow(
-      "is not a valid Better Auth account identity"
+      "is not a valid Better Auth account identity",
     );
 
     const [account] = await t.run((ctx) => ctx.db.query("account").collect());
@@ -187,9 +185,9 @@ describe("backfillAccountIssuers", () => {
           "unused-provider": " https://issuer.example.com ",
         },
         paginationOpts: { cursor: null, numItems: 10 },
-      })
+      }),
     ).rejects.toThrow(
-      "Trusted issuer mapping for providerId unused-provider contains leading or trailing whitespace"
+      "Trusted issuer mapping for providerId unused-provider contains leading or trailing whitespace",
     );
   });
 
@@ -202,14 +200,14 @@ describe("backfillAccountIssuers", () => {
         userId: "user-1",
         createdAt: 1,
         updatedAt: 1,
-      })
+      }),
     );
 
     await expect(
       t.query(validateAccountIssuerBackfill, {
         providerIssuers: { credential: "ignored" },
         paginationOpts: { cursor: null, numItems: 10 },
-      })
+      }),
     ).resolves.toMatchObject({ pending: 1, isDone: true });
   });
 
@@ -223,16 +221,16 @@ describe("backfillAccountIssuers", () => {
         userId: "user-1",
         createdAt: 1,
         updatedAt: 1,
-      })
+      }),
     );
 
     await expect(
       t.query(validateAccountIssuerBackfill, {
         providerIssuers: {},
         paginationOpts: { cursor: null, numItems: 10 },
-      })
+      }),
     ).rejects.toThrow(
-      "Existing issuer for providerId custom-provider contains leading or trailing whitespace"
+      "Existing issuer for providerId custom-provider contains leading or trailing whitespace",
     );
   });
 
@@ -244,22 +242,22 @@ describe("backfillAccountIssuers", () => {
       t.query(validateAccountIssuerBackfill, {
         providerIssuers: {},
         paginationOpts,
-      })
+      }),
     ).rejects.toThrow("paginationOpts.numItems must be a positive integer");
     await expect(
       t.mutation(backfillAccountIssuers, {
         providerIssuers: {},
         paginationOpts,
-      })
+      }),
     ).rejects.toThrow("paginationOpts.numItems must be a positive integer");
-    await expect(
-      t.query(listLegacyOAuthApplications, { paginationOpts })
-    ).rejects.toThrow("paginationOpts.numItems must be a positive integer");
+    await expect(t.query(listLegacyOAuthApplications, { paginationOpts })).rejects.toThrow(
+      "paginationOpts.numItems must be a positive integer",
+    );
     await expect(
       t.mutation(clearLegacyOAuthProviderRecords, {
         table: "oauthApplication",
         paginationOpts,
-      })
+      }),
     ).rejects.toThrow("paginationOpts.numItems must be a positive integer");
   });
 
@@ -289,12 +287,10 @@ describe("backfillAccountIssuers", () => {
           "oidc-secondary": "https://issuer.example.com",
         },
         paginationOpts: { cursor: null, numItems: 10 },
-      })
+      }),
     ).rejects.toThrow("Account identity collision");
     const accounts = await t.run((ctx) => ctx.db.query("account").collect());
-    expect(accounts.every((account) => account.issuer === undefined)).toBe(
-      true
-    );
+    expect(accounts.every((account) => account.issuer === undefined)).toBe(true);
   });
 
   it("detects collisions beyond the current page before writing", async () => {
@@ -324,16 +320,14 @@ describe("backfillAccountIssuers", () => {
       paginationOpts: { cursor: null, numItems: 1 },
     };
     await expect(t.query(validateAccountIssuerBackfill, args)).rejects.toThrow(
-      "Account identity collision"
+      "Account identity collision",
     );
     await expect(t.mutation(backfillAccountIssuers, args)).rejects.toThrow(
-      "Account identity collision"
+      "Account identity collision",
     );
 
     const accounts = await t.run((ctx) => ctx.db.query("account").collect());
-    expect(accounts.every((account) => account.issuer === undefined)).toBe(
-      true
-    );
+    expect(accounts.every((account) => account.issuer === undefined)).toBe(true);
   });
 
   it("detects credential collisions after account ID normalization", async () => {
@@ -359,12 +353,10 @@ describe("backfillAccountIssuers", () => {
       t.mutation(backfillAccountIssuers, {
         providerIssuers: {},
         paginationOpts: { cursor: null, numItems: 1 },
-      })
+      }),
     ).rejects.toThrow("Account identity collision");
     const accounts = await t.run((ctx) => ctx.db.query("account").collect());
-    expect(accounts.every((account) => account.issuer === undefined)).toBe(
-      true
-    );
+    expect(accounts.every((account) => account.issuer === undefined)).toBe(true);
   });
 
   it("is idempotent for accounts already written by Better Auth 1.7", async () => {
@@ -377,7 +369,7 @@ describe("backfillAccountIssuers", () => {
         userId: "user-1",
         createdAt: 1,
         updatedAt: 1,
-      })
+      }),
     );
 
     const result = await t.mutation(backfillAccountIssuers, {
@@ -416,16 +408,12 @@ describe("backfillAccountIssuers", () => {
       providerIssuers: {},
       paginationOpts: { cursor: null, numItems: 10 },
     };
-    await expect(
-      t.query(validateAccountIssuerBackfill, args)
-    ).resolves.toMatchObject({
+    await expect(t.query(validateAccountIssuerBackfill, args)).resolves.toMatchObject({
       isDone: true,
       pending: 0,
       alreadyMigrated: 2,
     });
-    await expect(
-      t.mutation(backfillAccountIssuers, args)
-    ).resolves.toMatchObject({
+    await expect(t.mutation(backfillAccountIssuers, args)).resolves.toMatchObject({
       isDone: true,
       migrated: 0,
       alreadyMigrated: 2,
@@ -466,17 +454,17 @@ describe("backfillAccountIssuers", () => {
       paginationOpts: { cursor: null, numItems: 10 },
     };
     await expect(t.query(validateAccountIssuerBackfill, args)).rejects.toThrow(
-      "does not match trusted issuer"
+      "does not match trusted issuer",
     );
     await expect(t.mutation(backfillAccountIssuers, args)).rejects.toThrow(
-      "does not match trusted issuer"
+      "does not match trusted issuer",
     );
 
     const accounts = await t.run((ctx) => ctx.db.query("account").collect());
     expect(
       accounts
         .map(({ issuer, accountId }) => ({ issuer, accountId }))
-        .sort((left, right) => left.issuer!.localeCompare(right.issuer!))
+        .sort((left, right) => left.issuer!.localeCompare(right.issuer!)),
     ).toEqual([
       {
         issuer: "https://login.microsoftonline.com/tenant-a/v2.0",
@@ -537,9 +525,7 @@ describe("backfillAccountIssuers", () => {
     } while (cursor);
     expect(migrated).toBe(3);
     const accounts = await t.run((ctx) => ctx.db.query("account").collect());
-    expect(
-      accounts.every((account) => account.issuer === "local:oauth:github")
-    ).toBe(true);
+    expect(accounts.every((account) => account.issuer === "local:oauth:github")).toBe(true);
   });
 
   it("treats completed cursors as terminal instead of restarting", async () => {
@@ -572,7 +558,7 @@ describe("backfillAccountIssuers", () => {
           cursor: validation.continueCursor,
           numItems: 10,
         },
-      })
+      }),
     ).resolves.toMatchObject({
       isDone: true,
       pending: 0,
@@ -588,7 +574,7 @@ describe("backfillAccountIssuers", () => {
       t.mutation(backfillAccountIssuers, {
         providerIssuers,
         paginationOpts: { cursor: backfill.continueCursor, numItems: 10 },
-      })
+      }),
     ).resolves.toMatchObject({
       isDone: true,
       migrated: 0,
@@ -602,7 +588,7 @@ describe("backfillAccountIssuers", () => {
     await expect(
       t.query(listLegacyOAuthApplications, {
         paginationOpts: { cursor: exported.continueCursor, numItems: 10 },
-      })
+      }),
     ).resolves.toMatchObject({ isDone: true, page: [] });
 
     const cleared = await t.mutation(clearLegacyOAuthProviderRecords, {
@@ -614,7 +600,7 @@ describe("backfillAccountIssuers", () => {
       t.mutation(clearLegacyOAuthProviderRecords, {
         table: "oauthApplication",
         paginationOpts: { cursor: cleared.continueCursor, numItems: 10 },
-      })
+      }),
     ).resolves.toMatchObject({ isDone: true, deleted: 0 });
   });
 
@@ -649,18 +635,13 @@ describe("backfillAccountIssuers", () => {
           cursor: validation.continueCursor,
           numItems: 10,
         },
-      })
-    ).rejects.toThrow(
-      "Migration cursor is not valid for backfillAccountIssuers"
-    );
+      }),
+    ).rejects.toThrow("Migration cursor is not valid for backfillAccountIssuers");
 
-    const clearedApplications = await t.mutation(
-      clearLegacyOAuthProviderRecords,
-      {
-        table: "oauthApplication",
-        paginationOpts,
-      }
-    );
+    const clearedApplications = await t.mutation(clearLegacyOAuthProviderRecords, {
+      table: "oauthApplication",
+      paginationOpts,
+    });
     await expect(
       t.mutation(clearLegacyOAuthProviderRecords, {
         table: "oauthConsent",
@@ -668,15 +649,13 @@ describe("backfillAccountIssuers", () => {
           cursor: clearedApplications.continueCursor,
           numItems: 10,
         },
-      })
+      }),
     ).rejects.toThrow(
-      "Migration cursor is not valid for clearLegacyOAuthProviderRecords:oauthConsent"
+      "Migration cursor is not valid for clearLegacyOAuthProviderRecords:oauthConsent",
     );
 
     const [account] = await t.run((ctx) => ctx.db.query("account").collect());
-    const consents = await t.run((ctx) =>
-      ctx.db.query("oauthConsent").collect()
-    );
+    const consents = await t.run((ctx) => ctx.db.query("oauthConsent").collect());
     expect(account?.issuer).toBeUndefined();
     expect(consents).toHaveLength(1);
   });
@@ -726,11 +705,7 @@ describe("backfillAccountIssuers", () => {
     ]);
     expect(clients.page[0]).not.toHaveProperty("clientSecret");
 
-    for (const table of [
-      "oauthApplication",
-      "oauthAccessToken",
-      "oauthConsent",
-    ] as const) {
+    for (const table of ["oauthApplication", "oauthAccessToken", "oauthConsent"] as const) {
       let cursor: string | null = null;
       let deleted = 0;
       do {

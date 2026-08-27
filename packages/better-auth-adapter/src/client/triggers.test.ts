@@ -38,7 +38,7 @@ describe("trigger result propagation", () => {
     const t = convexTest(schema, import.meta.glob("../component/**/*.*s"));
     const result = await t.run(async (ctx) => {
       const handle = await createFunctionHandle(
-        internal.testTriggerHandlers.sessionOnCreateUpdater
+        internal.testTriggerHandlers.sessionOnCreateUpdater,
       );
       return await ctx.runMutation(api.adapter.create, {
         input: {
@@ -61,7 +61,7 @@ describe("trigger result propagation", () => {
         },
       });
       const handle = await createFunctionHandle(
-        internal.testTriggerHandlers.sessionOnUpdateUpdater
+        internal.testTriggerHandlers.sessionOnUpdateUpdater,
       );
       return await ctx.runMutation(api.adapter.updateOne, {
         input: {
@@ -89,7 +89,7 @@ describe("trigger result propagation", () => {
         },
       });
       const handle = await createFunctionHandle(
-        internal.testTriggerHandlers.sessionOnUpdateUpdater
+        internal.testTriggerHandlers.sessionOnUpdateUpdater,
       );
       return await ctx.runMutation(api.adapter.incrementOne, {
         input: {
@@ -124,7 +124,7 @@ describe("trigger result propagation", () => {
         });
       }
       const handle = await createFunctionHandle(
-        internal.testTriggerHandlers.sessionOnUpdateUpdater
+        internal.testTriggerHandlers.sessionOnUpdateUpdater,
       );
       return await ctx.runMutation(api.adapter.updateMany, {
         input: {
@@ -140,9 +140,7 @@ describe("trigger result propagation", () => {
 
     const sessions = await t.run((ctx) => ctx.db.query("session").collect());
     expect(sessions).toHaveLength(2);
-    expect(
-      sessions.every(({ userAgent }) => userAgent === "trigger-ran-on-update")
-    ).toBe(true);
+    expect(sessions.every(({ userAgent }) => userAgent === "trigger-ran-on-update")).toBe(true);
   });
 });
 
@@ -160,13 +158,13 @@ describe("trigger unique constraint enforcement", () => {
             userId: "existing-user",
           }),
         },
-      })
+      }),
     );
 
     await expect(
       t.run(async (ctx) => {
         const handle = await createFunctionHandle(
-          internal.testTriggerHandlers.accountOnCreateIssuerCollider
+          internal.testTriggerHandlers.accountOnCreateIssuerCollider,
         );
         return await ctx.runMutation(api.adapter.create, {
           input: {
@@ -180,10 +178,8 @@ describe("trigger unique constraint enforcement", () => {
           },
           onCreateHandle: handle,
         });
-      })
-    ).rejects.toThrow(
-      "account unique constraint issuer+accountId already exists"
-    );
+      }),
+    ).rejects.toThrow("account unique constraint issuer+accountId already exists");
 
     const accounts = await t.run((ctx) => ctx.db.query("account").collect());
     expect(accounts).toHaveLength(1);
@@ -220,7 +216,7 @@ describe("trigger unique constraint enforcement", () => {
     await expect(
       t.run(async (ctx) => {
         const handle = await createFunctionHandle(
-          internal.testTriggerHandlers.accountOnUpdateAccountIdCollider
+          internal.testTriggerHandlers.accountOnUpdateAccountIdCollider,
         );
         return await ctx.runMutation(api.adapter.updateOne, {
           input: {
@@ -236,20 +232,16 @@ describe("trigger unique constraint enforcement", () => {
           },
           onUpdateHandle: handle,
         });
-      })
-    ).rejects.toThrow(
-      "account unique constraint issuer+accountId already exists"
-    );
+      }),
+    ).rejects.toThrow("account unique constraint issuer+accountId already exists");
 
     const candidate = await t.run((ctx) =>
       ctx.db
         .query("account")
         .withIndex("providerId_userId", (q) =>
-          q
-            .eq("providerId", "candidate-provider")
-            .eq("userId", "candidate-user")
+          q.eq("providerId", "candidate-provider").eq("userId", "candidate-user"),
         )
-        .unique()
+        .unique(),
     );
     expect(candidate).toMatchObject({
       accountId: "safe-account",
@@ -284,7 +276,7 @@ describe("trigger unique constraint enforcement", () => {
     await expect(
       t.run(async (ctx) => {
         const handle = await createFunctionHandle(
-          internal.testTriggerHandlers.accountOnUpdateAccountIdCollider
+          internal.testTriggerHandlers.accountOnUpdateAccountIdCollider,
         );
         return await ctx.runMutation(api.adapter.updateMany, {
           input: {
@@ -301,16 +293,12 @@ describe("trigger unique constraint enforcement", () => {
           paginationOpts: { cursor: null, numItems: 10 },
           onUpdateHandle: handle,
         });
-      })
-    ).rejects.toThrow(
-      "account unique constraint issuer+accountId already exists"
-    );
+      }),
+    ).rejects.toThrow("account unique constraint issuer+accountId already exists");
 
     const accounts = await t.run((ctx) => ctx.db.query("account").collect());
     expect(accounts).toHaveLength(2);
-    const candidate = accounts.find(
-      ({ providerId }) => providerId === "candidate-provider"
-    );
+    const candidate = accounts.find(({ providerId }) => providerId === "candidate-provider");
     expect(candidate).toMatchObject({
       accountId: "safe-account",
       issuer: "collision-issuer",

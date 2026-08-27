@@ -25,7 +25,7 @@ describe("count() pagination", () => {
         paginatedQueries += 1;
         if (paginatedQueries > 50) {
           throw new Error(
-            `count() issued ${paginatedQueries} paginated queries without terminating (infinite pagination loop)`
+            `count() issued ${paginatedQueries} paginated queries without terminating (infinite pagination loop)`,
           );
         }
         return (t.query as any)(...args);

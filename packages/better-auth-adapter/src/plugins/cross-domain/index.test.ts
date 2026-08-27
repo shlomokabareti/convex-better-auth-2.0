@@ -53,14 +53,14 @@ describe("crossDomain plugin", async () => {
   const post = (
     path: string,
     body: Record<string, unknown>,
-    extraHeaders?: Record<string, string>
+    extraHeaders?: Record<string, string>,
   ) =>
     auth.handler(
       new Request(`${AUTH_BASE_URL}${BASE_PATH}${path}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...extraHeaders },
         body: JSON.stringify(body),
-      })
+      }),
     );
 
   await post("/sign-up/email", {
@@ -94,9 +94,7 @@ describe("crossDomain plugin", async () => {
         callbackURL: "https://other.example.com/callback",
       });
       const url = new URL(capturedMagicLinkUrl);
-      expect(url.searchParams.get("callbackURL")).toBe(
-        "https://other.example.com/callback"
-      );
+      expect(url.searchParams.get("callbackURL")).toBe("https://other.example.com/callback");
     });
   });
 
@@ -108,9 +106,7 @@ describe("crossDomain plugin", async () => {
       });
       const { url } = (await response.json()) as { url: string };
       const state = new URL(url).searchParams.get("state");
-      const verification = db.verification.find(
-        (entry) => entry.identifier === state
-      );
+      const verification = db.verification.find((entry) => entry.identifier === state);
       expect(verification).toBeDefined();
       expect(JSON.parse(verification!.value).callbackURL).toBe(SITE_URL);
     });
@@ -123,13 +119,9 @@ describe("crossDomain plugin", async () => {
       });
       const { url } = (await response.json()) as { url: string };
       const state = new URL(url).searchParams.get("state");
-      const verification = db.verification.find(
-        (entry) => entry.identifier === state
-      );
+      const verification = db.verification.find((entry) => entry.identifier === state);
       expect(verification).toBeDefined();
-      expect(JSON.parse(verification!.value).callbackURL).toBe(
-        `${SITE_URL}/dashboard`
-      );
+      expect(JSON.parse(verification!.value).callbackURL).toBe(`${SITE_URL}/dashboard`);
     });
   });
 

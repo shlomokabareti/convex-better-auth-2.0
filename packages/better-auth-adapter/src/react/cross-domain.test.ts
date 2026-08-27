@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createAuthClient } from "better-auth/react";
-import {
-  crossDomainCapability,
-  crossDomainClient,
-} from "../plugins/cross-domain/client.js";
+import { crossDomainCapability, crossDomainClient } from "../plugins/cross-domain/client.js";
 import { handleCrossDomainCallback } from "./cross-domain.js";
 import type { RequiredAuthClient } from "./cross-domain.js";
 
@@ -25,7 +22,7 @@ describe("handleCrossDomainCallback", () => {
     await handleCrossDomainCallback(
       authClient,
       "https://example.com/callback?ott=one-time-token&next=%2Fsettings",
-      replaceUrl
+      replaceUrl,
     );
 
     expect(replaceUrl).not.toHaveBeenCalled();
@@ -47,12 +44,10 @@ describe("handleCrossDomainCallback", () => {
     });
 
     expect(
-      (core as unknown as { crossDomainCapability?: unknown })
-        .crossDomainCapability === crossDomainCapability
+      (core as unknown as { crossDomainCapability?: unknown }).crossDomainCapability ===
+        crossDomainCapability,
     ).toBe(false);
-    expect(crossDomain.crossDomainCapability === crossDomainCapability).toBe(
-      true
-    );
+    expect(crossDomain.crossDomainCapability === crossDomainCapability).toBe(true);
   });
 
   it("verifies supported callbacks and refreshes the session", async () => {
@@ -73,7 +68,7 @@ describe("handleCrossDomainCallback", () => {
     await handleCrossDomainCallback(
       authClient,
       "https://example.com/callback?ott=one-time-token&next=%2Fsettings",
-      replaceUrl
+      replaceUrl,
     );
 
     expect(authClient.crossDomain.oneTimeToken.verify).toHaveBeenCalledWith({

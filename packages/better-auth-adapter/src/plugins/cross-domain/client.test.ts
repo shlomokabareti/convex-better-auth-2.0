@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  crossDomainCapability,
-  crossDomainClient,
-  getCookie,
-  getSetCookie,
-} from "./client.js";
+import { crossDomainCapability, crossDomainClient, getCookie, getSetCookie } from "./client.js";
 
 describe("getSetCookie", () => {
   it("stores cookies from RFC-1123 Expires headers without splitting the date", () => {
@@ -201,9 +196,12 @@ describe("crossDomainClient", () => {
 
   describe("onSuccess handler", () => {
     it("clears session cookies when get-session returns null", async () => {
-      storage.set(cookieName, JSON.stringify({
-        "better-auth.session_token": { value: "stale", expires: null },
-      }));
+      storage.set(
+        cookieName,
+        JSON.stringify({
+          "better-auth.session_token": { value: "stale", expires: null },
+        }),
+      );
 
       const onSuccess = getOnSuccessHook();
       await onSuccess({
@@ -216,12 +214,15 @@ describe("crossDomainClient", () => {
     });
 
     it("preserves two_factor cookie when get-session returns null", async () => {
-      storage.set(cookieName, JSON.stringify({
-        "better-auth.session_token": { value: "stale", expires: null },
-        "better-auth.session_data": { value: "data", expires: null },
-        "better-auth.convex_jwt": { value: "jwt", expires: null },
-        "better-auth.two_factor": { value: "2fa-challenge-token", expires: null },
-      }));
+      storage.set(
+        cookieName,
+        JSON.stringify({
+          "better-auth.session_token": { value: "stale", expires: null },
+          "better-auth.session_data": { value: "data", expires: null },
+          "better-auth.convex_jwt": { value: "jwt", expires: null },
+          "better-auth.two_factor": { value: "2fa-challenge-token", expires: null },
+        }),
+      );
 
       const onSuccess = getOnSuccessHook();
       await onSuccess({
@@ -231,7 +232,10 @@ describe("crossDomainClient", () => {
       } as any);
 
       const result = JSON.parse(storage.get(cookieName)!);
-      expect(result["better-auth.two_factor"]).toEqual({ value: "2fa-challenge-token", expires: null });
+      expect(result["better-auth.two_factor"]).toEqual({
+        value: "2fa-challenge-token",
+        expires: null,
+      });
       expect(result["better-auth.session_token"]).toBeUndefined();
       expect(result["better-auth.session_data"]).toBeUndefined();
       expect(result["better-auth.convex_jwt"]).toBeUndefined();
@@ -274,8 +278,7 @@ describe("crossDomainClient", () => {
         request: { url: new URL("https://example.com/api/auth/sign-in") },
         response: {
           headers: new Headers({
-            "set-better-auth-cookie":
-              "better-auth.session_token=new-token; Max-Age=3600",
+            "set-better-auth-cookie": "better-auth.session_token=new-token; Max-Age=3600",
           }),
         },
       } as any);
@@ -292,7 +295,7 @@ describe("crossDomainClient", () => {
             value: "same-token",
             expires: new Date(Date.now() + 3600000).toISOString(),
           },
-        })
+        }),
       );
 
       const { onSuccess, notify } = getOnSuccessHookWithStore();
@@ -301,8 +304,7 @@ describe("crossDomainClient", () => {
         request: { url: new URL("https://example.com/api/auth/get-session") },
         response: {
           headers: new Headers({
-            "set-better-auth-cookie":
-              "better-auth.session_token=same-token; Max-Age=3600",
+            "set-better-auth-cookie": "better-auth.session_token=same-token; Max-Age=3600",
           }),
         },
       } as any);
@@ -318,7 +320,7 @@ describe("crossDomainClient", () => {
             value: "old-token",
             expires: new Date(Date.now() + 3600000).toISOString(),
           },
-        })
+        }),
       );
 
       const { onSuccess, notify } = getOnSuccessHookWithStore();
@@ -327,8 +329,7 @@ describe("crossDomainClient", () => {
         request: { url: new URL("https://example.com/api/auth/get-session") },
         response: {
           headers: new Headers({
-            "set-better-auth-cookie":
-              "better-auth.session_token=new-token; Max-Age=3600",
+            "set-better-auth-cookie": "better-auth.session_token=new-token; Max-Age=3600",
           }),
         },
       } as any);

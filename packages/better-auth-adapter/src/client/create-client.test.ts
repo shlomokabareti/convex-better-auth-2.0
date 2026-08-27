@@ -17,7 +17,7 @@ const component = {
 const getRouteHandler = (
   http: ReturnType<typeof httpRouter>,
   path: string,
-  method: "GET" | "POST" | "OPTIONS"
+  method: "GET" | "POST" | "OPTIONS",
 ) => {
   const route = http.lookup(path, method);
   if (!route) {
@@ -49,9 +49,7 @@ describe("createClient route registration", () => {
 
     expect(createAuth).toHaveBeenCalledTimes(1);
     expect(getRouteHandler(http, "/custom/auth/test", "GET")).toBeTruthy();
-    expect(
-      getRouteHandler(http, "/.well-known/openid-configuration", "GET")
-    ).toBeTruthy();
+    expect(getRouteHandler(http, "/.well-known/openid-configuration", "GET")).toBeTruthy();
   });
 
   it("registerRoutes uses auth options for CORS and basePath", async () => {
@@ -76,11 +74,7 @@ describe("createClient route registration", () => {
     expect(getRouteHandler(http, "/custom/auth/test", "GET")).toBeTruthy();
     expect(getRouteHandler(http, "/custom/auth/test", "OPTIONS")).toBeTruthy();
 
-    const optionsHandler = getRouteHandler(
-      http,
-      "/custom/auth/test",
-      "OPTIONS"
-    );
+    const optionsHandler = getRouteHandler(http, "/custom/auth/test", "OPTIONS");
     expect(optionsHandler).toBeTruthy();
     const response = await optionsHandler!._handler(
       {},
@@ -90,12 +84,10 @@ describe("createClient route registration", () => {
           origin: "https://app.example.com",
           "access-control-request-method": "GET",
         },
-      })
+      }),
     );
 
-    expect(response.headers.get("access-control-allow-origin")).toBe(
-      "https://app.example.com"
-    );
+    expect(response.headers.get("access-control-allow-origin")).toBe("https://app.example.com");
     expect(createAuth).toHaveBeenCalledTimes(1);
 
     const getHandler = getRouteHandler(http, "/custom/auth/test", "GET");
@@ -104,7 +96,7 @@ describe("createClient route registration", () => {
       {},
       new Request("https://deployment.convex.site/custom/auth/test", {
         method: "GET",
-      })
+      }),
     );
     expect(createAuth).toHaveBeenCalledTimes(2);
   });
@@ -140,7 +132,7 @@ describe("createClient route registration", () => {
           "x-better-auth-forwarded-host": "app.example.com",
           "x-better-auth-forwarded-proto": "https",
         },
-      })
+      }),
     );
 
     const forwardedRequest = handler.mock.calls[0]?.[0];
@@ -178,11 +170,11 @@ describe("createClient route registration", () => {
           origin: "https://fallback.example.com",
           "access-control-request-method": "GET",
         },
-      })
+      }),
     );
 
     expect(response.headers.get("access-control-allow-origin")).toBe(
-      "https://fallback.example.com"
+      "https://fallback.example.com",
     );
     expect(createAuth).toHaveBeenCalledTimes(1);
   });
