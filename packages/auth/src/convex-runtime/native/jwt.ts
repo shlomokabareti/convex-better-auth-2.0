@@ -17,7 +17,11 @@ export async function getJwtPrivateKey(): Promise<CryptoKey> {
     throw new Error("JWT_PRIVATE_KEY environment variable is not set");
   }
   const jwk = JSON.parse(raw) as JsonWebKey;
-  cachedPrivateKey = await importJWK(jwk, "RS256");
+  const keyLike = await importJWK(jwk, "RS256");
+  if (keyLike instanceof Uint8Array) {
+    throw new Error("JWT_PRIVATE_KEY must be an asymmetric key, not a symmetric secret");
+  }
+  cachedPrivateKey = keyLike;
   return cachedPrivateKey;
 }
 

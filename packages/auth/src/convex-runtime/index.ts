@@ -9,6 +9,7 @@ export * from "./glue";
 export * from "./identity";
 export * from "./machine";
 export * from "./mcp";
+export * from "./native";
 export * from "./organization";
 export * from "./principal";
 export * from "./webhooks";
