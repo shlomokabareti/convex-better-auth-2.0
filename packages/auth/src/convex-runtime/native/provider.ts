@@ -467,7 +467,10 @@ export function nativeEmailAndPassword(
   }
 
   const sendEmailVerification = action({
-    args: { email: v.string() },
+    args: {
+      email: v.string(),
+      callbackURL: v.optional(v.string()),
+    },
     returns: v.object({
       status: v.union(v.literal("queued"), v.literal("not_configured"), v.literal("failed")),
       reason: v.optional(v.string()),
@@ -477,12 +480,23 @@ export function nativeEmailAndPassword(
       return queueVerificationEmail(ctx, {
         email: args.email,
         type: "email_verification",
-        urlBuilder: (token) =>
-          buildEmailVerificationUrl({
+        urlBuilder: (token) => {
+          if (args.callbackURL) {
+            const appOrigin = emailConfig.appOrigin?.trim() ?? "";
+            if (!appOrigin) {
+              return null;
+            }
+            const callback = args.callbackURL.startsWith("http")
+              ? args.callbackURL
+              : `${trimTrailingSlash(appOrigin)}${args.callbackURL}`;
+            return `${trimTrailingSlash(appOrigin)}/api/auth/verify-email?token=${encodeURIComponent(token)}&callbackURL=${encodeURIComponent(callback)}`;
+          }
+          return buildEmailVerificationUrl({
             token,
             appOrigin: emailConfig.appOrigin,
             verifyPath: emailConfig.verifyPath,
-          }),
+          });
+        },
         draftBuilder: async (params) =>
           createEmailVerificationEmailDraft({
             from: params.from,

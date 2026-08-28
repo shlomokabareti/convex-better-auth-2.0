@@ -71,4 +71,86 @@ export function addNativeAuthHttpRoutes(
       return buildTokenRedirect(callbackURL, token);
     }),
   });
+
+  http.route({
+    path: "/api/auth/verify-email",
+    method: "GET",
+    handler: httpActionGeneric(async (ctx, request) => {
+      const url = new URL(request.url);
+      const token = url.searchParams.get("token") ?? "";
+      const callbackURL = url.searchParams.get("callbackURL");
+
+      const tokenHash = hashToken(token);
+      const code = await ctx.runQuery(component.native.codes.getVerificationCodeByTokenHash, {
+        tokenHash,
+        type: "email_verification",
+      });
+
+      if (!code) {
+        if (callbackURL) {
+          return buildErrorRedirect(callbackURL, "INVALID_TOKEN");
+        }
+        return new Response(JSON.stringify({ success: false, reason: "invalid" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      if (isTokenExpired(code.expiresAt)) {
+        await ctx.runMutation(component.native.codes.consumeVerificationCode, {
+          tokenHash,
+          type: "email_verification",
+        });
+        if (callbackURL) {
+          return buildErrorRedirect(callbackURL, "INVALID_TOKEN");
+        }
+        return new Response(JSON.stringify({ success: false, reason: "expired" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const consumed = await ctx.runMutation(component.native.codes.consumeVerificationCode, {
+        tokenHash,
+        type: "email_verification",
+      });
+
+      if (!consumed) {
+        if (callbackURL) {
+          return buildErrorRedirect(callbackURL, "INVALID_TOKEN");
+        }
+        return new Response(JSON.stringify({ success: false, reason: "invalid" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
+        userId: consumed.userId,
+        provider: "password",
+        issuer: "native",
+      });
+
+      if (identity) {
+        await ctx.runMutation(component.native.identities.markEmailVerified, {
+          identityId: identity._id,
+          emailVerified: true,
+        });
+      }
+
+      await ctx.runMutation(component.native.users.markEmailVerified, {
+        userId: consumed.userId,
+        emailVerified: true,
+      });
+
+      if (callbackURL) {
+        return buildTokenRedirect(callbackURL, token);
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }),
+  });
 }

@@ -52,7 +52,10 @@ function createMockComponent(): MockComponent {
         getUserById: vi.fn(),
         markEmailVerified: vi.fn(),
       },
-      identities: {} as unknown as NativeEmailAndPasswordComponentHandle["native"]["identities"],
+      identities: {
+        getNativeIdentityByUser: vi.fn(),
+        markEmailVerified: vi.fn(),
+      } as unknown as NativeEmailAndPasswordComponentHandle["native"]["identities"],
       sessions: {
         createSession: vi.fn(),
         revokeSession: vi.fn(),
@@ -75,7 +78,9 @@ function createContext() {
     runQuery: vi.fn(
       (ref: (args: Record<string, unknown>) => unknown, args: Record<string, unknown>) => ref(args),
     ),
-    runMutation: vi.fn(),
+    runMutation: vi.fn(
+      (ref: (args: Record<string, unknown>) => unknown, args: Record<string, unknown>) => ref(args),
+    ),
     db: {},
   };
 }
@@ -173,6 +178,73 @@ describe("addNativeAuthHttpRoutes", () => {
     expect(body.keys).toBeInstanceOf(Array);
   });
 
+  it("verifies an email and redirects when callbackURL is provided", async () => {
+    const component = createMockComponent();
+    const token = "verify-token";
+    component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue({
+      _id: "code_1",
+      tokenHash: "hashed",
+      userId: "user_1",
+      type: "email_verification",
+      expiresAt: Date.now() + 60_000,
+    });
+    component.native.codes.consumeVerificationCode.mockResolvedValue({
+      _id: "code_1",
+      tokenHash: "hashed",
+      userId: "user_1",
+      type: "email_verification",
+      expiresAt: Date.now() + 60_000,
+    });
+    const identity = {
+      _id: "identity_1",
+      userId: "user_1",
+      provider: "password",
+      issuer: "native",
+      subject: "subject_1",
+      emailVerified: false,
+      createdAt: 0,
+      updatedAt: 0,
+    };
+    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
+    component.native.identities.markEmailVerified.mockResolvedValue(undefined);
+    component.native.users.markEmailVerified.mockResolvedValue(undefined);
+
+    const routes: {
+      path: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http: HttpRouter = {
+      route: (r) => {
+        routes.push(r);
+        return http;
+      },
+    } as unknown as HttpRouter;
+
+    addNativeAuthHttpRoutes(http, component);
+    const verifyRoute = routes.find(
+      (r) => r.path === "/api/auth/verify-email" && r.method === "GET",
+    );
+    expect(verifyRoute).toBeDefined();
+
+    const callbackURL = "https://app.example.com/welcome";
+    const response = await verifyRoute!.handler(
+      createContext(),
+      new Request(
+        "https://api.example.com/api/auth/verify-email?token=" +
+          encodeURIComponent(token) +
+          "&callbackURL=" +
+          encodeURIComponent(callbackURL),
+      ),
+    );
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe(callbackURL + "?token=" + token);
+    expect(component.native.users.markEmailVerified).toHaveBeenCalledWith({
+      userId: "user_1",
+      emailVerified: true,
+    });
+  });
+
   it("redirects a valid reset token to the callback URL with the token", async () => {
     const component = createMockComponent();
     component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue({
@@ -211,5 +283,39 @@ describe("addNativeAuthHttpRoutes", () => {
     expect(response.status).toBe(302);
     const location = response.headers.get("Location");
     expect(location).toBe(callbackURL + "?token=the-token");
+  });
+
+  it("redirects an invalid reset token to the callback URL with an error", async () => {
+    const component = createMockComponent();
+    component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(null);
+    const routes: {
+      path: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http: HttpRouter = {
+      route: (r) => {
+        routes.push(r);
+        return http;
+      },
+    } as unknown as HttpRouter;
+
+    addNativeAuthHttpRoutes(http, component);
+    const resetRoute = routes.find(
+      (r) => r.path === "/api/auth/reset-password/:token" && r.method === "GET",
+    );
+    expect(resetRoute).toBeDefined();
+
+    const callbackURL = "https://app.example.com/reset";
+    const response = await resetRoute!.handler(
+      createContext(),
+      new Request(
+        "https://api.example.com/api/auth/reset-password/bad-token?callbackURL=" +
+          encodeURIComponent(callbackURL),
+      ),
+    );
+    expect(response.status).toBe(302);
+    const location = response.headers.get("Location");
+    expect(location).toBe(callbackURL + "?error=INVALID_TOKEN");
   });
 });

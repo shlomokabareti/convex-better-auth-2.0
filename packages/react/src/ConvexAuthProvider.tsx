@@ -65,7 +65,7 @@ export type NativeAuthActions = {
   sendEmailVerification: FunctionReference<
     "action",
     "public",
-    { email: string },
+    { email: string; callbackURL?: string },
     NativeAuthSendResult
   >;
   verifyEmail: FunctionReference<"action", "public", { token: string }, NativeAuthVerifyResult>;
@@ -179,10 +179,10 @@ export function useAuthActions() {
   }, [signOutAction, ctx]);
 
   const sendEmailVerification = useCallback(
-    async (email: string) => {
+    async (args: { email: string; callbackURL?: string }) => {
       setIsLoading(true);
       try {
-        return await sendEmailVerificationAction({ email });
+        return await sendEmailVerificationAction(args);
       } finally {
         setIsLoading(false);
       }
