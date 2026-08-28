@@ -23,7 +23,9 @@ async function dispatch(ref: unknown, args: Record<string, unknown>) {
   return undefined;
 }
 
-let hunter2Hash: string;
+const DEFAULT_PASSWORD = "hunter2!";
+const NEW_PASSWORD = "newHunter2!";
+let defaultPasswordHash: string;
 
 async function setupTestKeysAndHashes() {
   const { publicKey, privateKey } = await generateKeyPair("RS256", { extractable: true });
@@ -31,7 +33,7 @@ async function setupTestKeysAndHashes() {
   const publicJwk = await exportJWK(publicKey);
   process.env.JWT_PRIVATE_KEY = JSON.stringify(privateJwk);
   process.env.JWKS = JSON.stringify({ keys: [publicJwk] });
-  hunter2Hash = await hashPassword("hunter2");
+  defaultPasswordHash = await hashPassword(DEFAULT_PASSWORD);
 }
 
 function exec(registered: unknown) {
@@ -146,7 +148,7 @@ function makeAccount(overrides: Partial<NativeAccountDoc> = {}): NativeAccountDo
     provider: "password",
     issuer: "native",
     subject: "subject_1",
-    credentialHash: hunter2Hash,
+    credentialHash: defaultPasswordHash,
     createdAt: 0,
     updatedAt: 0,
     ...overrides,
@@ -206,7 +208,8 @@ describe("nativeEmailAndPassword", () => {
     const { handler } = exec(signUp);
     const result = (await handler(createContext(), {
       email: "Shlomo@example.com ",
-      password: "hunter2",
+      password: DEFAULT_PASSWORD,
+      name: "Shlomo",
     })) as {
       token: string;
       userId: string;
@@ -234,7 +237,7 @@ describe("nativeEmailAndPassword", () => {
       issuer: "native",
       subject: expect.any(String),
     });
-    expect(await verifyPassword("hunter2", createAccountCall.credentialHash)).toBe(true);
+    expect(await verifyPassword(DEFAULT_PASSWORD, createAccountCall.credentialHash)).toBe(true);
 
     const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
     expect(createSessionCall).toMatchObject({
@@ -248,6 +251,28 @@ describe("nativeEmailAndPassword", () => {
     expect(payload.sub).toBe("user_1");
     expect(payload.sessionId).toBe(result.sessionId);
     expect(payload.identityId).toBe("identity_1");
+  });
+
+  it("signUp rejects an invalid email", async () => {
+    const component = createMockComponent();
+    const { signUp } = createActions(component);
+    const { handler } = exec(signUp);
+    await expect(
+      handler(createContext(), {
+        email: "not-an-email",
+        password: DEFAULT_PASSWORD,
+        name: "Shlomo",
+      }),
+    ).rejects.toThrow("Invalid email");
+  });
+
+  it("signUp rejects a short password", async () => {
+    const component = createMockComponent();
+    const { signUp } = createActions(component);
+    const { handler } = exec(signUp);
+    await expect(
+      handler(createContext(), { email: "shlomo@example.com", password: "short", name: "Shlomo" }),
+    ).rejects.toThrow("too short");
   });
 
   it("signs in an existing user with a valid password", async () => {
@@ -264,7 +289,7 @@ describe("nativeEmailAndPassword", () => {
     const { handler } = exec(signIn);
     const result = (await handler(createContext(), {
       email: "shlomo@example.com",
-      password: "hunter2",
+      password: DEFAULT_PASSWORD,
     })) as {
       token: string;
       userId: string;
@@ -304,7 +329,7 @@ describe("nativeEmailAndPassword", () => {
     const { handler } = exec(signIn);
 
     await expect(
-      handler(createContext(), { email: "shlomo@example.com", password: "hunter2" }),
+      handler(createContext(), { email: "shlomo@example.com", password: DEFAULT_PASSWORD }),
     ).rejects.toThrow("Email not verified");
 
     expect(component.native.sessions.createSession).not.toHaveBeenCalled();
@@ -324,7 +349,7 @@ describe("nativeEmailAndPassword", () => {
     const { handler } = exec(signIn);
     const result = (await handler(createContext(), {
       email: "shlomo@example.com",
-      password: "hunter2",
+      password: DEFAULT_PASSWORD,
     })) as {
       token: string;
       userId: string;
@@ -354,7 +379,7 @@ describe("nativeEmailAndPassword", () => {
     const { handler } = exec(signIn);
     const result = (await handler(createContext(), {
       email: "shlomo@example.com",
-      password: "hunter2",
+      password: DEFAULT_PASSWORD,
     })) as {
       token: string;
       userId: string;
@@ -383,7 +408,7 @@ describe("nativeEmailAndPassword", () => {
     const { signIn, signOut } = createActions(component);
     const signInResult = (await exec(signIn).handler(createContext(), {
       email: "shlomo@example.com",
-      password: "hunter2",
+      password: DEFAULT_PASSWORD,
     })) as {
       token: string;
       sessionId: string;
@@ -747,7 +772,7 @@ describe("nativeEmailAndPassword", () => {
       const { resetPassword } = createActions(component);
       const result = (await exec(resetPassword).handler(createContext(), {
         token,
-        newPassword: "newHunter2",
+        newPassword: NEW_PASSWORD,
       })) as {
         success: boolean;
         token: string;
@@ -772,7 +797,7 @@ describe("nativeEmailAndPassword", () => {
 
       const updateCall = component.native.accounts.updateCredentialHash.mock.calls[0]?.[0];
       expect(updateCall.accountId).toBe(account._id);
-      expect(await verifyPassword("newHunter2", updateCall.credentialHash)).toBe(true);
+      expect(await verifyPassword(NEW_PASSWORD, updateCall.credentialHash)).toBe(true);
 
       expect(component.native.sessions.createSession).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -801,7 +826,7 @@ describe("nativeEmailAndPassword", () => {
       const { resetPassword } = createActions(component);
       const result = await exec(resetPassword).handler(createContext(), {
         token: "missing",
-        newPassword: "newHunter2",
+        newPassword: NEW_PASSWORD,
       });
 
       expect(result).toEqual({ success: false, reason: "invalid" });
@@ -821,7 +846,7 @@ describe("nativeEmailAndPassword", () => {
       const { resetPassword } = createActions(component);
       const result = await exec(resetPassword).handler(createContext(), {
         token,
-        newPassword: "newHunter2",
+        newPassword: NEW_PASSWORD,
       });
 
       expect(result).toEqual({ success: false, reason: "expired" });
@@ -844,7 +869,7 @@ describe("nativeEmailAndPassword", () => {
       const { resetPassword } = createActions(component);
       const identityResult = await exec(resetPassword).handler(createContext(), {
         token,
-        newPassword: "newHunter2",
+        newPassword: NEW_PASSWORD,
       });
       expect(identityResult).toEqual({ success: false, reason: "invalid" });
 
@@ -853,7 +878,7 @@ describe("nativeEmailAndPassword", () => {
       component.native.accounts.getAccountBySubject.mockResolvedValue(null);
       const accountResult = await exec(resetPassword).handler(createContext(), {
         token,
-        newPassword: "newHunter2",
+        newPassword: NEW_PASSWORD,
       });
       expect(accountResult).toEqual({ success: false, reason: "invalid" });
     });

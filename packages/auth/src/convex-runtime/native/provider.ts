@@ -38,6 +38,8 @@ export type NativeEmailAndPasswordConfig = {
   verificationCodeTtlMs?: number;
   passwordResetCodeTtlMs?: number;
   sessionTtlMs?: number;
+  minPasswordLength?: number;
+  maxPasswordLength?: number;
 };
 
 export type NativeEmailAndPasswordActions = {
@@ -58,6 +60,30 @@ type EmailSendResult =
 const DEFAULT_VERIFICATION_CODE_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_PASSWORD_RESET_CODE_TTL_MS = 60 * 60 * 1000;
 const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_MIN_PASSWORD_LENGTH = 8;
+const DEFAULT_MAX_PASSWORD_LENGTH = 128;
+
+// Approximation of the `z.email()` check used by Better Auth.
+const EMAIL_REGEX =
+  /^(?!\.)(?!.*\.\.)([A-Z0-9_+-]\.?)+[A-Z0-9_+-]@([A-Z0-9][A-Z0-9-]*\.)+[A-Z]{2,}$/i;
+
+function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email);
+}
+
+function validatePassword(
+  password: string,
+  minLength: number,
+  maxLength: number,
+): { valid: true } | { valid: false; reason: "too_short" | "too_long" } {
+  if (password.length < minLength) {
+    return { valid: false, reason: "too_short" };
+  }
+  if (password.length > maxLength) {
+    return { valid: false, reason: "too_long" };
+  }
+  return { valid: true };
+}
 
 function resolveEmailConfig(args: NativeEmailAndPasswordConfig): {
   from?: string;
@@ -86,12 +112,14 @@ export function nativeEmailAndPassword(
     config.passwordResetCodeTtlMs ?? DEFAULT_PASSWORD_RESET_CODE_TTL_MS;
   const sessionTtlMs = config.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
   const requireVerifiedEmail = config.requireVerifiedEmail ?? false;
+  const minPasswordLength = config.minPasswordLength ?? DEFAULT_MIN_PASSWORD_LENGTH;
+  const maxPasswordLength = config.maxPasswordLength ?? DEFAULT_MAX_PASSWORD_LENGTH;
 
   const signUp = action({
     args: {
       email: v.string(),
       password: v.string(),
-      name: v.optional(v.string()),
+      name: v.string(),
     },
     returns: v.object({
       token: v.string(),
@@ -102,6 +130,21 @@ export function nativeEmailAndPassword(
     handler: async (ctx, args) => {
       const now = Date.now();
       const normalizedEmail = args.email.trim().toLowerCase();
+      if (!isValidEmail(normalizedEmail)) {
+        throw new Error("Invalid email");
+      }
+      const passwordValidation = validatePassword(
+        args.password,
+        minPasswordLength,
+        maxPasswordLength,
+      );
+      if (!passwordValidation.valid) {
+        throw new Error(
+          passwordValidation.reason === "too_short"
+            ? "Password is too short"
+            : "Password is too long",
+        );
+      }
       const subject = crypto.randomUUID();
       const credentialHash = await hashPassword(args.password);
 
@@ -423,6 +466,19 @@ export function nativeEmailAndPassword(
       sessionId: v.optional(v.string()),
     }),
     handler: async (ctx, args) => {
+      const passwordValidation = validatePassword(
+        args.newPassword,
+        minPasswordLength,
+        maxPasswordLength,
+      );
+      if (!passwordValidation.valid) {
+        return {
+          success: false,
+          reason:
+            passwordValidation.reason === "too_short" ? "password_too_short" : "password_too_long",
+        };
+      }
+
       const tokenHash = hashToken(args.token);
 
       const code = await ctx.runQuery(component.native.codes.getVerificationCodeByTokenHash, {
