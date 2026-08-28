@@ -16,10 +16,10 @@ export async function handleUpdateSession<DataModel extends GenericDataModel>(
   refreshToken: string,
 ): Promise<NativeAuthSession> {
   const now = Date.now();
-  const tokenHash = hashToken(refreshToken);
+  const oldRefreshTokenHash = hashToken(refreshToken);
 
-  const refresh = await ctx.runMutation(component.native.refreshTokens.consumeRefreshToken, {
-    tokenHash,
+  const refresh = await ctx.runQuery(component.native.refreshTokens.getRefreshTokenByTokenHash, {
+    tokenHash: oldRefreshTokenHash,
   });
   if (!refresh) {
     throw new Error("Invalid refresh token");
@@ -32,21 +32,20 @@ export async function handleUpdateSession<DataModel extends GenericDataModel>(
     throw new Error("Invalid refresh token");
   }
 
-  const user = await ctx.runQuery(component.native.users.getUserById, { userId: refresh.userId });
+  const [user, identity] = await Promise.all([
+    ctx.runQuery(component.native.users.getUserById, { userId: refresh.userId }),
+    ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
+      userId: refresh.userId,
+      provider: "password",
+      issuer: "native",
+    }),
+  ]);
   if (!user) {
     throw new Error("User not found");
   }
-
-  const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
-    userId: refresh.userId,
-    provider: "password",
-    issuer: "native",
-  });
   if (!identity) {
     throw new Error("Identity not found");
   }
-
-  await ctx.runMutation(component.native.sessions.revokeSession, { sessionId: refresh.sessionId });
 
   const sessionId = crypto.randomUUID();
   const newRefreshToken = generateVerificationToken();
@@ -56,32 +55,33 @@ export async function handleUpdateSession<DataModel extends GenericDataModel>(
   const expiresAt = now + sessionTtlMs;
 
   const token = await mintToken(
-    refresh.userId,
+    user._id,
     sessionId,
     { identityId: identity._id },
     { expiresInSeconds: Math.floor(sessionTtlMs / 1000) },
   );
 
-  await ctx.runMutation(component.native.sessions.createSession, {
-    sessionId,
-    userId: refresh.userId,
-    token,
-    expiresAt,
+  const result = await ctx.runMutation(component.native.sessions.rotateSession, {
+    oldRefreshTokenHash,
+    newSessionId: sessionId,
+    newSessionToken: token,
+    newSessionExpiresAt: expiresAt,
+    newRefreshTokenHash,
+    newRefreshTokenExpiresAt: now + refreshTokenTtlMs,
+    provider: "password",
+    issuer: "native",
   });
 
-  await ctx.runMutation(component.native.refreshTokens.createRefreshToken, {
-    tokenHash: newRefreshTokenHash,
-    sessionId,
-    userId: refresh.userId,
-    expiresAt: now + refreshTokenTtlMs,
-  });
+  if (!result) {
+    throw new Error("Invalid refresh token");
+  }
 
   return {
     token,
     refreshToken: newRefreshToken,
-    user: toNativeAuthUser(user),
-    userId: user._id,
-    identityId: identity._id,
+    user: toNativeAuthUser(result.user),
+    userId: result.user._id,
+    identityId: result.identityId,
     sessionId,
   };
 }

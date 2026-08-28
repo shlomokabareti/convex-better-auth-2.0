@@ -284,6 +284,24 @@ export type NativeEmailAndPasswordComponentHandle = {
         number,
         string
       >;
+      rotateSession: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          oldRefreshTokenHash: string;
+          newSessionId: string;
+          newSessionToken: string;
+          newSessionExpiresAt: number;
+          newSessionIpAddress?: string;
+          newSessionUserAgent?: string;
+          newRefreshTokenHash: string;
+          newRefreshTokenExpiresAt: number;
+          provider: string;
+          issuer: string;
+        },
+        { user: NativeUserDoc; identityId: string } | null,
+        string
+      >;
     };
     refreshTokens: {
       createRefreshToken: FunctionReference<

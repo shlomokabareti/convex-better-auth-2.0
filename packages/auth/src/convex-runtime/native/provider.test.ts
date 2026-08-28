@@ -85,6 +85,7 @@ function createMockComponent(): MockedComponent {
         getSessionByToken: vi.fn(),
         getSessionBySessionId: vi.fn(),
         revokeSessionsForUser: vi.fn(),
+        rotateSession: vi.fn(),
       },
       refreshTokens: {
         createRefreshToken: vi.fn(),
@@ -975,6 +976,81 @@ describe("nativeEmailAndPassword", () => {
         password: DEFAULT_PASSWORD,
       });
       expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe("updateSession", () => {
+    it("rotates a refresh token into a new session and token pair", async () => {
+      const component = createMockComponent();
+      const user = makeUser();
+      const identity = makeIdentity();
+      const refreshToken = "refresh-token";
+      const refreshTokenHash = hashToken(refreshToken);
+
+      component.native.refreshTokens.getRefreshTokenByTokenHash.mockResolvedValue({
+        _id: "refresh_doc_1",
+        _creationTime: 0,
+        tokenHash: refreshTokenHash,
+        sessionId: "session_1",
+        userId: "user_1",
+        expiresAt: Date.now() + 60_000,
+        createdAt: 0,
+        updatedAt: 0,
+      });
+      component.native.sessions.getSessionBySessionId.mockResolvedValue({
+        _id: "session_doc_1",
+        _creationTime: 0,
+        sessionId: "session_1",
+        userId: "user_1",
+        token: "old-token",
+        expiresAt: Date.now() + 60_000,
+        createdAt: 0,
+        updatedAt: 0,
+      });
+      component.native.users.getUserById.mockResolvedValue(user);
+      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
+      component.native.sessions.rotateSession.mockResolvedValue({
+        user,
+        identityId: "identity_1",
+      });
+
+      const { updateSession } = createActions(component);
+      const result = (await exec(updateSession).handler(createContext(), {
+        refreshToken,
+      })) as { token: string; refreshToken: string; userId: string; sessionId: string; identityId: string };
+
+      expect(result).toMatchObject({
+        token: expect.any(String),
+        refreshToken: expect.any(String),
+        userId: "user_1",
+        identityId: "identity_1",
+        sessionId: expect.any(String),
+      });
+
+      const rotateCall = component.native.sessions.rotateSession.mock.calls[0]?.[0];
+      expect(rotateCall.oldRefreshTokenHash).toBe(refreshTokenHash);
+      expect(rotateCall.newSessionId).toBe(result.sessionId);
+      expect(rotateCall.newSessionToken).toBe(result.token);
+      expect(rotateCall.newSessionExpiresAt).toBeGreaterThan(Date.now());
+      expect(rotateCall.newRefreshTokenHash).toBe(hashToken(result.refreshToken));
+      expect(rotateCall.newRefreshTokenExpiresAt).toBeGreaterThan(Date.now());
+      expect(rotateCall.provider).toBe("password");
+      expect(rotateCall.issuer).toBe("native");
+
+      const payload = await verifyToken(result.token);
+      expect(payload.sub).toBe("user_1");
+      expect(payload.sessionId).toBe(result.sessionId);
+      expect(payload.identityId).toBe("identity_1");
+    });
+
+    it("rejects an unknown refresh token", async () => {
+      const component = createMockComponent();
+      component.native.refreshTokens.getRefreshTokenByTokenHash.mockResolvedValue(null);
+
+      const { updateSession } = createActions(component);
+      await expect(
+        exec(updateSession).handler(createContext(), { refreshToken: "unknown" }),
+      ).rejects.toThrow("Invalid refresh token");
     });
   });
 });
