@@ -37,11 +37,11 @@ export type NativeAuthUser = {
 };
 
 export type NativeAuthSession = {
-  token: string;
+  token?: string;
   user: NativeAuthUser;
-  userId: string;
-  identityId: string;
-  sessionId: string;
+  userId?: string;
+  identityId?: string;
+  sessionId?: string;
 };
 
 export type NativeEmailAndPasswordConfig = {
@@ -52,6 +52,10 @@ export type NativeEmailAndPasswordConfig = {
     resetPath?: string;
     sendEmail: EmailSender;
   };
+  enabled?: boolean;
+  disableSignUp?: boolean;
+  autoSignIn?: boolean;
+  sendVerificationEmailOnSignUp?: boolean;
   requireVerifiedEmail?: boolean;
   verificationCodeTtlMs?: number;
   passwordResetCodeTtlMs?: number;
@@ -90,6 +94,22 @@ function isValidEmail(email: string): boolean {
   return EMAIL_REGEX.test(email);
 }
 
+function buildGenericDuplicateResponse(
+  email: string,
+  name: string,
+  now: number,
+): NativeAuthSession {
+  const syntheticUser: NativeAuthUser = {
+    id: crypto.randomUUID(),
+    email,
+    name,
+    emailVerified: false,
+    createdAt: now,
+    updatedAt: now,
+  };
+  return { user: syntheticUser };
+}
+
 function resolveSessionTtlMs(rememberMe: boolean | undefined, sessionTtlMs: number): number {
   return rememberMe === false ? DONT_REMEMBER_SESSION_TTL_MS : sessionTtlMs;
 }
@@ -119,11 +139,11 @@ const nativeAuthUserValidator = v.object({
 });
 
 const nativeAuthSessionValidator = v.object({
-  token: v.string(),
+  token: v.optional(v.string()),
   user: nativeAuthUserValidator,
-  userId: v.string(),
-  identityId: v.string(),
-  sessionId: v.string(),
+  userId: v.optional(v.string()),
+  identityId: v.optional(v.string()),
+  sessionId: v.optional(v.string()),
 });
 
 function toNativeAuthUser(user: {
@@ -171,10 +191,18 @@ export function nativeEmailAndPassword(
   const verificationCodeTtlMs = config.verificationCodeTtlMs ?? DEFAULT_VERIFICATION_CODE_TTL_MS;
   const passwordResetCodeTtlMs =
     config.passwordResetCodeTtlMs ?? DEFAULT_PASSWORD_RESET_CODE_TTL_MS;
+  const enabled = config.enabled ?? true;
+  const disableSignUp = config.disableSignUp ?? false;
+  const autoSignIn = config.autoSignIn ?? true;
+  const sendVerificationEmailOnSignUp = config.sendVerificationEmailOnSignUp ?? false;
   const sessionTtlMs = config.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
   const requireVerifiedEmail = config.requireVerifiedEmail ?? false;
   const minPasswordLength = config.minPasswordLength ?? DEFAULT_MIN_PASSWORD_LENGTH;
   const maxPasswordLength = config.maxPasswordLength ?? DEFAULT_MAX_PASSWORD_LENGTH;
+
+  const shouldReturnGenericDuplicateResponse = requireVerifiedEmail || autoSignIn === false;
+  const shouldSkipAutoSignIn = autoSignIn === false || shouldReturnGenericDuplicateResponse;
+  const shouldSendVerificationEmail = sendVerificationEmailOnSignUp || requireVerifiedEmail;
 
   const signUp = action({
     args: {
@@ -185,6 +213,13 @@ export function nativeEmailAndPassword(
     },
     returns: nativeAuthSessionValidator,
     handler: async (ctx, args) => {
+      if (!enabled) {
+        throw new Error("Email and password authentication is disabled");
+      }
+      if (disableSignUp) {
+        throw new Error("Sign up is disabled");
+      }
+
       const now = Date.now();
       const normalizedEmail = args.email.trim().toLowerCase();
       if (!isValidEmail(normalizedEmail)) {
@@ -202,8 +237,22 @@ export function nativeEmailAndPassword(
             : "Password is too long",
         );
       }
-      const subject = crypto.randomUUID();
+
+      // Hash the password before the duplicate check so both the success and
+      // duplicate paths perform the same slow work, mitigating timing attacks.
       const credentialHash = await hashPassword(args.password);
+
+      const existingUser = await ctx.runQuery(component.native.users.getUserByEmail, {
+        email: normalizedEmail,
+      });
+      if (existingUser) {
+        if (shouldReturnGenericDuplicateResponse) {
+          return buildGenericDuplicateResponse(normalizedEmail, args.name, now);
+        }
+        throw new Error("User already exists");
+      }
+
+      const subject = crypto.randomUUID();
 
       const { userId, identityId } = await ctx.runMutation(
         component.identity.provisionFromIdentity,
@@ -234,6 +283,38 @@ export function nativeEmailAndPassword(
         credentialHash,
       });
 
+      const createdUser = await ctx.runQuery(component.native.users.getUserByEmail, {
+        email: normalizedEmail,
+      });
+      if (!createdUser) {
+        throw new Error("Failed to create user");
+      }
+
+      if (shouldSendVerificationEmail) {
+        await queueVerificationEmail(ctx, {
+          email: normalizedEmail,
+          type: "email_verification",
+          urlBuilder: (token) =>
+            buildEmailVerificationUrl({
+              token,
+              appOrigin: emailConfig.appOrigin,
+              verifyPath: emailConfig.verifyPath,
+            }),
+          draftBuilder: async (params) =>
+            createEmailVerificationEmailDraft({
+              from: params.from,
+              to: params.to,
+              verifyUrl: params.url,
+              expiresAt: params.expiresAt,
+            }),
+          ttlMs: verificationCodeTtlMs,
+        });
+      }
+
+      if (shouldSkipAutoSignIn) {
+        return { user: toNativeAuthUser(createdUser) };
+      }
+
       const sessionId = crypto.randomUUID();
       const effectiveSessionTtlMs = resolveSessionTtlMs(args.rememberMe, sessionTtlMs);
       const expiresAt = now + effectiveSessionTtlMs;
@@ -252,13 +333,6 @@ export function nativeEmailAndPassword(
         token,
         expiresAt,
       });
-
-      const createdUser = await ctx.runQuery(component.native.users.getUserByEmail, {
-        email: normalizedEmail,
-      });
-      if (!createdUser) {
-        throw new Error("Failed to create user");
-      }
 
       return {
         token,

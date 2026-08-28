@@ -204,7 +204,7 @@ describe("nativeEmailAndPassword", () => {
     component.native.accounts.createAccount.mockResolvedValue("account_1");
     component.native.sessions.createSession.mockResolvedValue("session_1");
     const user = makeUser();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
+    component.native.users.getUserByEmail.mockResolvedValueOnce(null).mockResolvedValueOnce(user);
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -213,11 +213,11 @@ describe("nativeEmailAndPassword", () => {
       password: DEFAULT_PASSWORD,
       name: "Shlomo",
     })) as {
-      token: string;
+      token?: string;
       user: { id: string; email?: string };
-      userId: string;
-      identityId: string;
-      sessionId: string;
+      userId?: string;
+      identityId?: string;
+      sessionId?: string;
     };
 
     expect(result).toMatchObject({
@@ -272,7 +272,7 @@ describe("nativeEmailAndPassword", () => {
     component.native.accounts.createAccount.mockResolvedValue("account_1");
     component.native.sessions.createSession.mockResolvedValue("session_1");
     const user = makeUser();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
+    component.native.users.getUserByEmail.mockResolvedValueOnce(null).mockResolvedValueOnce(user);
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -283,9 +283,9 @@ describe("nativeEmailAndPassword", () => {
       name: "Shlomo",
       rememberMe: false,
     })) as {
-      token: string;
+      token?: string;
       user: { id: string };
-      sessionId: string;
+      sessionId?: string;
     };
     const after = Date.now();
 
@@ -320,6 +320,62 @@ describe("nativeEmailAndPassword", () => {
     await expect(
       handler(createContext(), { email: "shlomo@example.com", password: "short", name: "Shlomo" }),
     ).rejects.toThrow("too short");
+  });
+
+  it("signUp rejects when email and password is disabled", async () => {
+    const component = createMockComponent();
+    const { signUp } = createActions(component, { enabled: false });
+    const { handler } = exec(signUp);
+    await expect(
+      handler(createContext(), {
+        email: "shlomo@example.com",
+        password: DEFAULT_PASSWORD,
+        name: "Shlomo",
+      }),
+    ).rejects.toThrow("disabled");
+  });
+
+  it("signUp rejects when sign up is disabled", async () => {
+    const component = createMockComponent();
+    const { signUp } = createActions(component, { disableSignUp: true });
+    const { handler } = exec(signUp);
+    await expect(
+      handler(createContext(), {
+        email: "shlomo@example.com",
+        password: DEFAULT_PASSWORD,
+        name: "Shlomo",
+      }),
+    ).rejects.toThrow("Sign up is disabled");
+  });
+
+  it("signUp throws when the email already exists", async () => {
+    const component = createMockComponent();
+    component.native.users.getUserByEmail.mockResolvedValue(makeUser());
+    const { signUp } = createActions(component);
+    const { handler } = exec(signUp);
+    await expect(
+      handler(createContext(), {
+        email: "shlomo@example.com",
+        password: DEFAULT_PASSWORD,
+        name: "Shlomo",
+      }),
+    ).rejects.toThrow("already exists");
+  });
+
+  it("signUp returns a generic duplicate response when requireVerifiedEmail is true", async () => {
+    const component = createMockComponent();
+    component.native.users.getUserByEmail.mockResolvedValue(makeUser());
+    const { signUp } = createActions(component, { requireVerifiedEmail: true });
+    const { handler } = exec(signUp);
+    const result = (await handler(createContext(), {
+      email: "shlomo@example.com",
+      password: DEFAULT_PASSWORD,
+      name: "Shlomo",
+    })) as { token?: string; user: { id: string; email?: string } };
+    expect(result.token).toBeUndefined();
+    expect(result.user.email).toBe("shlomo@example.com");
+    expect(result.user.id).toEqual(expect.any(String));
+    expect(component.native.sessions.createSession).not.toHaveBeenCalled();
   });
 
   it("signs in an existing user with a valid password", async () => {

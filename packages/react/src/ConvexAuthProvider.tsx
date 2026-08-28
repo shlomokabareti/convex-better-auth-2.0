@@ -38,11 +38,11 @@ export type NativeAuthUser = {
 };
 
 export type NativeAuthSession = {
-  token: string;
+  token?: string;
   user: NativeAuthUser;
-  userId: string;
-  identityId: string;
-  sessionId: string;
+  userId?: string;
+  identityId?: string;
+  sessionId?: string;
 };
 
 export type NativeAuthSendResult = {
@@ -137,7 +137,7 @@ export function useAuthActions() {
       setIsLoading(true);
       try {
         const session = await signUpAction(args);
-        ctx.setToken(session.token);
+        ctx.setToken(session.token ?? null);
         return session;
       } finally {
         setIsLoading(false);
@@ -151,7 +151,7 @@ export function useAuthActions() {
       setIsLoading(true);
       try {
         const session = await signInAction(args);
-        ctx.setToken(session.token);
+        ctx.setToken(session.token ?? null);
         return session;
       } finally {
         setIsLoading(false);
