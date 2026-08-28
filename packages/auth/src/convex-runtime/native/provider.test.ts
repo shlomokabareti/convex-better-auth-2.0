@@ -385,8 +385,8 @@ describe("nativeEmailAndPassword", () => {
       email: "shlomo@example.com",
       password: DEFAULT_PASSWORD,
       name: "Shlomo",
-    })) as { token?: string; user: { id: string; email?: string } };
-    expect(result.token).toBeUndefined();
+    })) as { token: string | null; user: { id: string; email?: string } };
+    expect(result.token).toBeNull();
     expect(result.user.email).toBe("shlomo@example.com");
     expect(result.user.id).toEqual(expect.any(String));
     expect(component.native.sessions.createSession).not.toHaveBeenCalled();

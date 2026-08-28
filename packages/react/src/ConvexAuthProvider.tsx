@@ -1,4 +1,4 @@
-import { useAction, useConvex } from "convex/react";
+import { useAction, useConvex, useQuery } from "convex/react";
 import type { FunctionReference } from "convex/server";
 import {
   createContext,
@@ -14,17 +14,21 @@ export type NativeAuthSignUpArgs = {
   email: string;
   password: string;
   name: string;
+  image?: string;
+  callbackURL?: string;
   rememberMe?: boolean;
 };
 
 export type NativeAuthSignInArgs = {
   email: string;
   password: string;
+  callbackURL?: string;
   rememberMe?: boolean;
 };
 
 export type NativeAuthSignOutArgs = {
   token: string;
+  callbackURL?: string;
 };
 
 export type NativeAuthUser = {
@@ -38,7 +42,7 @@ export type NativeAuthUser = {
 };
 
 export type NativeAuthSession = {
-  token?: string;
+  token: string | null;
   user: NativeAuthUser;
   userId?: string;
   identityId?: string;
@@ -86,6 +90,12 @@ export type NativeAuthActions = {
     "public",
     { token: string; password: string },
     { success: boolean }
+  >;
+  verifySession: FunctionReference<
+    "query",
+    "public",
+    { token: string },
+    { user?: NativeAuthUser; sessionId?: string }
   >;
 };
 
@@ -164,19 +174,22 @@ export function useAuthActions() {
     [signInAction, ctx],
   );
 
-  const signOut = useCallback(async () => {
-    if (ctx.token === null) {
-      return { success: true as const };
-    }
-    setIsLoading(true);
-    try {
-      const result = await signOutAction({ token: ctx.token });
-      ctx.setToken(null);
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [signOutAction, ctx]);
+  const signOut = useCallback(
+    async (args?: { callbackURL?: string }) => {
+      if (ctx.token === null) {
+        return { success: true as const };
+      }
+      setIsLoading(true);
+      try {
+        const result = await signOutAction({ token: ctx.token, callbackURL: args?.callbackURL });
+        ctx.setToken(null);
+        return result;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [signOutAction, ctx],
+  );
 
   const sendEmailVerification = useCallback(
     async (args: { email: string; callbackURL?: string }) => {
@@ -238,6 +251,11 @@ export function useAuthActions() {
     [verifyPasswordAction],
   );
 
+  const session = useQuery(ctx.verifySession, ctx.token ? { token: ctx.token } : "skip");
+  const isSessionLoading = ctx.token !== null && session === undefined;
+  const user = session?.user ?? null;
+  const sessionId = session?.sessionId ?? null;
+
   return {
     signUp,
     signIn,
@@ -248,7 +266,35 @@ export function useAuthActions() {
     resetPassword,
     verifyPassword,
     token: ctx.token,
-    isLoading,
-    isAuthenticated: ctx.token !== null,
+    user,
+    sessionId,
+    isLoading: isLoading || isSessionLoading,
+    isAuthenticated: user !== null,
   };
+}
+
+export function useSession(): {
+  user: NativeAuthUser | null;
+  sessionId: string | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+} {
+  const ctx = useContext(ConvexAuthContext);
+  if (ctx === null) {
+    throw new Error("useSession must be used within a ConvexAuthProvider");
+  }
+  const session = useQuery(ctx.verifySession, ctx.token ? { token: ctx.token } : "skip");
+  const isLoading = ctx.token !== null && session === undefined;
+  const user = session?.user ?? null;
+  return {
+    user,
+    sessionId: session?.sessionId ?? null,
+    isLoading,
+    isAuthenticated: user !== null,
+  };
+}
+
+export function useUser(): NativeAuthUser | null {
+  const { user } = useSession();
+  return user;
 }

@@ -34,7 +34,7 @@ export type EmailDraft = {
 export type EmailSender = (draft: EmailDraft) => Promise<string>;
 
 export type NativeAuthSession = {
-  token?: string;
+  token?: string | null;
   user: NativeAuthUser;
   userId?: string;
   identityId?: string;
@@ -97,17 +97,19 @@ function isValidEmail(email: string): boolean {
 function buildGenericDuplicateResponse(
   email: string,
   name: string,
+  image: string | undefined,
   now: number,
 ): NativeAuthSession {
   const syntheticUser: NativeAuthUser = {
     id: crypto.randomUUID(),
     email,
     name,
+    image,
     emailVerified: false,
     createdAt: now,
     updatedAt: now,
   };
-  return { user: syntheticUser };
+  return { token: null, user: syntheticUser };
 }
 
 function resolveSessionTtlMs(rememberMe: boolean | undefined, sessionTtlMs: number): number {
@@ -129,7 +131,7 @@ function validatePassword(
 }
 
 const nativeAuthSessionValidator = v.object({
-  token: v.optional(v.string()),
+  token: v.optional(v.union(v.string(), v.null())),
   user: nativeAuthUserValidator,
   userId: v.optional(v.string()),
   identityId: v.optional(v.string()),
@@ -170,8 +172,9 @@ export function nativeEmailAndPassword(
   const minPasswordLength = config.minPasswordLength ?? DEFAULT_MIN_PASSWORD_LENGTH;
   const maxPasswordLength = config.maxPasswordLength ?? DEFAULT_MAX_PASSWORD_LENGTH;
 
-  const shouldReturnGenericDuplicateResponse = requireVerifiedEmail || autoSignIn === false;
-  const shouldSkipAutoSignIn = autoSignIn === false || shouldReturnGenericDuplicateResponse;
+  const shouldReturnGenericDuplicateResponse =
+    requireVerifiedEmail || sendVerificationEmailOnSignUp || autoSignIn === false;
+  const shouldSkipAutoSignIn = shouldReturnGenericDuplicateResponse;
   const shouldSendVerificationEmail = sendVerificationEmailOnSignUp || requireVerifiedEmail;
   const revokeSessionsOnPasswordReset = config.revokeSessionsOnPasswordReset ?? false;
 
@@ -180,6 +183,8 @@ export function nativeEmailAndPassword(
       email: v.string(),
       password: v.string(),
       name: v.string(),
+      image: v.optional(v.string()),
+      callbackURL: v.optional(v.string()),
       rememberMe: v.optional(v.boolean()),
     },
     returns: nativeAuthSessionValidator,
@@ -241,6 +246,7 @@ export function nativeEmailAndPassword(
         user: {
           email: normalizedEmail,
           name: args.name,
+          image: args.image,
           emailVerified: false,
         },
         account,
@@ -250,7 +256,7 @@ export function nativeEmailAndPassword(
 
       if (result.duplicate) {
         if (shouldReturnGenericDuplicateResponse) {
-          return buildGenericDuplicateResponse(normalizedEmail, args.name, now);
+          return buildGenericDuplicateResponse(normalizedEmail, args.name, args.image, now);
         }
         throw new Error("User already exists");
       }
@@ -264,12 +270,23 @@ export function nativeEmailAndPassword(
           user: result.user,
           token: verificationToken,
           type: "email_verification",
-          urlBuilder: (token) =>
-            buildEmailVerificationUrl({
+          urlBuilder: (token) => {
+            if (args.callbackURL) {
+              const appOrigin = emailConfig.appOrigin?.trim() ?? "";
+              if (!appOrigin) {
+                return null;
+              }
+              const callback = args.callbackURL.startsWith("http")
+                ? args.callbackURL
+                : `${trimTrailingSlash(appOrigin)}${args.callbackURL}`;
+              return `${trimTrailingSlash(appOrigin)}/api/auth/verify-email?token=${encodeURIComponent(token)}&callbackURL=${encodeURIComponent(callback)}`;
+            }
+            return buildEmailVerificationUrl({
               token,
               appOrigin: emailConfig.appOrigin,
               verifyPath: emailConfig.verifyPath,
-            }),
+            });
+          },
           draftBuilder: async (params) =>
             createEmailVerificationEmailDraft({
               from: params.from,
@@ -282,7 +299,7 @@ export function nativeEmailAndPassword(
       }
 
       if (shouldSkipAutoSignIn) {
-        return { user: toNativeAuthUser(result.user) };
+        return { token: null, user: toNativeAuthUser(result.user) };
       }
 
       const sessionId = crypto.randomUUID();
@@ -316,6 +333,7 @@ export function nativeEmailAndPassword(
     args: {
       email: v.string(),
       password: v.string(),
+      callbackURL: v.optional(v.string()),
       rememberMe: v.optional(v.boolean()),
     },
     returns: nativeAuthSessionValidator,
@@ -367,7 +385,10 @@ export function nativeEmailAndPassword(
   });
 
   const signOut = action({
-    args: { token: v.string() },
+    args: {
+      token: v.string(),
+      callbackURL: v.optional(v.string()),
+    },
     returns: v.object({ success: v.boolean() }),
     handler: async (ctx, args) => {
       const payload = await verifyToken(args.token);
