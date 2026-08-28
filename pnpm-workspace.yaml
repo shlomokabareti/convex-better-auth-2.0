@@ -2,6 +2,9 @@ packages:
   - "packages/*"
   - "site"
 
+onlyBuiltDependencies:
+  - "argon2"
+
 overrides:
   vitest: 4.1.10
   "@better-auth/utils": "0.5.0"

@@ -148,9 +148,12 @@ export async function handleCallback<DataModel extends GenericDataModel>(
   const now = Date.now();
   const sessionTtlMs = config.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
   const expiresAt = now + sessionTtlMs;
-  const token = await mintToken(identityResult.userId, sessionId, {
-    identityId: identityResult.identityId,
-  });
+  const token = await mintToken(
+    identityResult.userId,
+    sessionId,
+    { identityId: identityResult.identityId },
+    { expiresInSeconds: Math.floor(sessionTtlMs / 1000) },
+  );
 
   await ctx.runMutation(component.native.sessions.createSession, {
     sessionId,

@@ -13,23 +13,36 @@ import {
 export type NativeAuthSignUpArgs = {
   email: string;
   password: string;
-  name?: string;
+  name: string;
+  rememberMe?: boolean;
 };
 
 export type NativeAuthSignInArgs = {
   email: string;
   password: string;
+  rememberMe?: boolean;
 };
 
 export type NativeAuthSignOutArgs = {
   token: string;
 };
 
+export type NativeAuthUser = {
+  id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  emailVerified: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type NativeAuthSession = {
-  token: string;
-  userId: string;
-  identityId: string;
-  sessionId: string;
+  token?: string;
+  user: NativeAuthUser;
+  userId?: string;
+  identityId?: string;
+  sessionId?: string;
 };
 
 export type NativeAuthSendResult = {
@@ -43,15 +56,7 @@ export type NativeAuthVerifyResult = {
   reason?: string;
 };
 
-export type NativeAuthResetResult =
-  | {
-      success: true;
-      token: string;
-      userId: string;
-      identityId: string;
-      sessionId: string;
-    }
-  | { success: false; reason?: string };
+export type NativeAuthResetResult = { success: boolean; reason?: string };
 
 export type NativeAuthActions = {
   signUp: FunctionReference<"action", "public", NativeAuthSignUpArgs, NativeAuthSession>;
@@ -60,16 +65,27 @@ export type NativeAuthActions = {
   sendEmailVerification: FunctionReference<
     "action",
     "public",
-    { email: string },
+    { email: string; callbackURL?: string },
     NativeAuthSendResult
   >;
   verifyEmail: FunctionReference<"action", "public", { token: string }, NativeAuthVerifyResult>;
-  sendPasswordReset: FunctionReference<"action", "public", { email: string }, NativeAuthSendResult>;
+  sendPasswordReset: FunctionReference<
+    "action",
+    "public",
+    { email: string; redirectTo?: string },
+    NativeAuthSendResult
+  >;
   resetPassword: FunctionReference<
     "action",
     "public",
     { token: string; newPassword: string },
     NativeAuthResetResult
+  >;
+  verifyPassword: FunctionReference<
+    "action",
+    "public",
+    { token: string; password: string },
+    { success: boolean }
   >;
 };
 
@@ -116,6 +132,7 @@ export function useAuthActions() {
   const verifyEmailAction = useAction(ctx.verifyEmail);
   const sendPasswordResetAction = useAction(ctx.sendPasswordReset);
   const resetPasswordAction = useAction(ctx.resetPassword);
+  const verifyPasswordAction = useAction(ctx.verifyPassword);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -124,7 +141,7 @@ export function useAuthActions() {
       setIsLoading(true);
       try {
         const session = await signUpAction(args);
-        ctx.setToken(session.token);
+        ctx.setToken(session.token ?? null);
         return session;
       } finally {
         setIsLoading(false);
@@ -138,7 +155,7 @@ export function useAuthActions() {
       setIsLoading(true);
       try {
         const session = await signInAction(args);
-        ctx.setToken(session.token);
+        ctx.setToken(session.token ?? null);
         return session;
       } finally {
         setIsLoading(false);
@@ -162,10 +179,10 @@ export function useAuthActions() {
   }, [signOutAction, ctx]);
 
   const sendEmailVerification = useCallback(
-    async (email: string) => {
+    async (args: { email: string; callbackURL?: string }) => {
       setIsLoading(true);
       try {
-        return await sendEmailVerificationAction({ email });
+        return await sendEmailVerificationAction(args);
       } finally {
         setIsLoading(false);
       }
@@ -186,10 +203,10 @@ export function useAuthActions() {
   );
 
   const sendPasswordReset = useCallback(
-    async (email: string) => {
+    async (args: { email: string; redirectTo?: string }) => {
       setIsLoading(true);
       try {
-        return await sendPasswordResetAction({ email });
+        return await sendPasswordResetAction(args);
       } finally {
         setIsLoading(false);
       }
@@ -201,16 +218,24 @@ export function useAuthActions() {
     async (args: { token: string; newPassword: string }) => {
       setIsLoading(true);
       try {
-        const result = await resetPasswordAction(args);
-        if ("token" in result) {
-          ctx.setToken(result.token);
-        }
-        return result;
+        return await resetPasswordAction(args);
       } finally {
         setIsLoading(false);
       }
     },
-    [resetPasswordAction, ctx],
+    [resetPasswordAction],
+  );
+
+  const verifyPassword = useCallback(
+    async (args: { token: string; password: string }) => {
+      setIsLoading(true);
+      try {
+        return await verifyPasswordAction(args);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [verifyPasswordAction],
   );
 
   return {
@@ -221,6 +246,7 @@ export function useAuthActions() {
     verifyEmail,
     sendPasswordReset,
     resetPassword,
+    verifyPassword,
     token: ctx.token,
     isLoading,
     isAuthenticated: ctx.token !== null,
