@@ -553,7 +553,7 @@ describe("nativeEmailAndPassword", () => {
     const signOutResult = await exec(signOut).handler(createContext(), {
       token: signInResult.token,
     });
-    expect(signOutResult).toEqual({ success: true });
+    expect(signOutResult).toEqual({ success: true, redirect: false, url: undefined });
 
     expect(component.native.sessions.revokeSession).toHaveBeenCalledWith({
       sessionId: signInResult.sessionId,
@@ -841,19 +841,19 @@ describe("nativeEmailAndPassword", () => {
   });
 
   describe("resetPassword", () => {
-    it("returns success, hashes the new password, and does not create a session by default", async () => {
+    it("returns status, hashes the new password, and does not create a session by default", async () => {
       const component = createMockComponent();
       const token = "reset-token";
       const user = makeUser();
-      component.identity.resetPassword.mockResolvedValue({ success: true, user });
+      component.identity.resetPassword.mockResolvedValue({ status: true, user });
 
       const { resetPassword } = createActions(component);
       const result = (await exec(resetPassword).handler(createContext(), {
         token,
         newPassword: NEW_PASSWORD,
-      })) as { success: boolean; reason?: string };
+      })) as { status: boolean; reason?: string };
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ status: true });
       expect(component.identity.resetPassword).toHaveBeenCalledWith({
         tokenHash: hashToken(token),
         credentialHash: expect.any(String),
@@ -869,15 +869,15 @@ describe("nativeEmailAndPassword", () => {
 
     it("revokes all sessions when revokeSessionsOnPasswordReset is true", async () => {
       const component = createMockComponent();
-      component.identity.resetPassword.mockResolvedValue({ success: true });
+      component.identity.resetPassword.mockResolvedValue({ status: true });
 
       const { resetPassword } = createActions(component, { revokeSessionsOnPasswordReset: true });
       const result = (await exec(resetPassword).handler(createContext(), {
         token: "reset-token",
         newPassword: NEW_PASSWORD,
-      })) as { success: boolean };
+      })) as { status: boolean };
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ status: true });
       expect(component.identity.resetPassword).toHaveBeenCalledWith(
         expect.objectContaining({ revokeSessions: true }),
       );
@@ -885,7 +885,7 @@ describe("nativeEmailAndPassword", () => {
 
     it("returns invalid for a non-existent token", async () => {
       const component = createMockComponent();
-      component.identity.resetPassword.mockResolvedValue({ success: false, reason: "invalid" });
+      component.identity.resetPassword.mockResolvedValue({ status: false, reason: "invalid" });
 
       const { resetPassword } = createActions(component);
       const result = await exec(resetPassword).handler(createContext(), {
@@ -893,12 +893,12 @@ describe("nativeEmailAndPassword", () => {
         newPassword: NEW_PASSWORD,
       });
 
-      expect(result).toEqual({ success: false, reason: "invalid" });
+      expect(result).toEqual({ status: false, reason: "invalid" });
     });
 
     it("returns expired for an expired token", async () => {
       const component = createMockComponent();
-      component.identity.resetPassword.mockResolvedValue({ success: false, reason: "expired" });
+      component.identity.resetPassword.mockResolvedValue({ status: false, reason: "expired" });
 
       const { resetPassword } = createActions(component);
       const result = await exec(resetPassword).handler(createContext(), {
@@ -906,7 +906,7 @@ describe("nativeEmailAndPassword", () => {
         newPassword: NEW_PASSWORD,
       });
 
-      expect(result).toEqual({ success: false, reason: "expired" });
+      expect(result).toEqual({ status: false, reason: "expired" });
     });
 
     it("rejects a short or long password", async () => {
@@ -917,29 +917,29 @@ describe("nativeEmailAndPassword", () => {
         token: "reset-token",
         newPassword: "short",
       });
-      expect(short).toEqual({ success: false, reason: "password_too_short" });
+      expect(short).toEqual({ status: false, reason: "password_too_short" });
       expect(component.identity.resetPassword).not.toHaveBeenCalled();
 
       const long = await exec(resetPassword).handler(createContext(), {
         token: "reset-token",
         newPassword: "a".repeat(129),
       });
-      expect(long).toEqual({ success: false, reason: "password_too_long" });
+      expect(long).toEqual({ status: false, reason: "password_too_long" });
     });
 
     it("calls onPasswordReset after a successful reset", async () => {
       const component = createMockComponent();
       const user = makeUser();
-      component.identity.resetPassword.mockResolvedValue({ success: true, user });
+      component.identity.resetPassword.mockResolvedValue({ status: true, user });
       const onPasswordReset = vi.fn().mockResolvedValue(undefined);
 
       const { resetPassword } = createActions(component, { onPasswordReset });
       const result = (await exec(resetPassword).handler(createContext(), {
         token: "reset-token",
         newPassword: NEW_PASSWORD,
-      })) as { success: boolean };
+      })) as { status: boolean };
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ status: true });
       expect(onPasswordReset).toHaveBeenCalledWith({
         user: {
           id: user._id,

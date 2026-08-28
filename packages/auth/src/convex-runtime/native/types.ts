@@ -50,6 +50,8 @@ export type NativeAuthSession = {
   userId?: string;
   identityId?: string;
   sessionId?: string;
+  redirect?: boolean;
+  url?: string;
 };
 
 export type NativeVerificationCodeDoc = {
@@ -200,7 +202,7 @@ export type NativeEmailAndPasswordComponentHandle = {
         issuer: string;
         revokeSessions?: boolean;
       },
-      { success: boolean; user?: NativeUserDoc; reason?: string },
+      { status: boolean; user?: NativeUserDoc; reason?: string },
       string
     >;
   };

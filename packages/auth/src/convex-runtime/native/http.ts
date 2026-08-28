@@ -1,10 +1,16 @@
 import { httpActionGeneric, type HttpRouter } from "convex/server";
 import { v } from "convex/values";
-import { getJwks } from "./jwt.js";
+import { getJwks, verifyToken } from "./jwt.js";
 import { parse } from "../helpers/index.js";
 import { hashToken, isTokenExpired } from "./tokens.js";
 import { handleUpdateSession } from "./updateSession.js";
+import type { NativeEmailAndPasswordFunctionReferences } from "./provider.js";
+import { toNativeAuthUser } from "./types.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
+
+const ACCESS_TOKEN_COOKIE = "convex-auth-token";
+const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
+const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 function buildErrorRedirect(callbackURL: string, error: string): Response {
   const redirect = new URL(
@@ -30,9 +36,55 @@ function buildTokenRedirect(callbackURL: string, token: string): Response {
   });
 }
 
+function getTokenExpiry(token: string): number | null {
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return null;
+  }
+  const payload = parts[1];
+  if (!payload) {
+    return null;
+  }
+  const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = (4 - (normalized.length % 4)) % 4;
+  const base64 = normalized + "=".repeat(padding);
+  try {
+    const json = Buffer.from(base64, "base64").toString("utf8");
+    const parsed = JSON.parse(json) as { exp?: number };
+    if (typeof parsed.exp !== "number") {
+      return null;
+    }
+    return parsed.exp * 1000;
+  } catch {
+    return null;
+  }
+}
+
+function setCookieHeader(name: string, value: string, maxAgeSeconds?: number): string {
+  let cookie = `${name}=${value}; Path=/; HttpOnly; SameSite=Lax`;
+  if (maxAgeSeconds !== undefined) {
+    cookie += `; Max-Age=${maxAgeSeconds}`;
+  }
+  return cookie;
+}
+
+function clearCookieHeader(name: string): string {
+  return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+}
+
+function readCookie(request: Request, name: string): string | undefined {
+  const cookieHeader = request.headers.get("cookie");
+  if (!cookieHeader) {
+    return undefined;
+  }
+  const match = cookieHeader.match(new RegExp(`(?:^|;)\\s*${name}=([^;]+)`));
+  return match?.[1];
+}
+
 export function addNativeAuthHttpRoutes(
   http: HttpRouter,
   component?: NativeEmailAndPasswordComponentHandle,
+  actions?: NativeEmailAndPasswordFunctionReferences,
 ): void {
   http.route({
     path: "/.well-known/jwks.json",
@@ -69,6 +121,151 @@ export function addNativeAuthHttpRoutes(
       });
     }),
   });
+
+  if (actions) {
+    http.route({
+      path: "/api/auth/sign-up",
+      method: "POST",
+      handler: httpActionGeneric(async (ctx, request) => {
+        const body = await request.json().catch(() => undefined);
+
+        let parsed: {
+          email: string;
+          password: string;
+          name: string;
+          image?: string;
+          callbackURL?: string;
+          rememberMe?: boolean;
+        };
+        try {
+          parsed = parse(
+            v.object({
+              email: v.string(),
+              password: v.string(),
+              name: v.string(),
+              image: v.optional(v.string()),
+              callbackURL: v.optional(v.string()),
+              rememberMe: v.optional(v.boolean()),
+            }),
+            body,
+          );
+        } catch {
+          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const session = await ctx.runAction(actions.signUp, parsed);
+
+        const headers = new Headers({ "Content-Type": "application/json" });
+        if (session.token) {
+          const expiry = getTokenExpiry(session.token);
+          const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
+          headers.append("Set-Cookie", setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge));
+        }
+        if (session.refreshToken) {
+          const maxAge = parsed.rememberMe ? REFRESH_TOKEN_MAX_AGE_SECONDS : undefined;
+          headers.append(
+            "Set-Cookie",
+            setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge),
+          );
+        }
+
+        return new Response(JSON.stringify(session), { status: 200, headers });
+      }),
+    });
+
+    http.route({
+      path: "/api/auth/sign-in",
+      method: "POST",
+      handler: httpActionGeneric(async (ctx, request) => {
+        const body = await request.json().catch(() => undefined);
+
+        let parsed: {
+          email: string;
+          password: string;
+          callbackURL?: string;
+          rememberMe?: boolean;
+        };
+        try {
+          parsed = parse(
+            v.object({
+              email: v.string(),
+              password: v.string(),
+              callbackURL: v.optional(v.string()),
+              rememberMe: v.optional(v.boolean()),
+            }),
+            body,
+          );
+        } catch {
+          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const session = await ctx.runAction(actions.signIn, parsed);
+
+        const headers = new Headers({ "Content-Type": "application/json" });
+        if (session.token) {
+          const expiry = getTokenExpiry(session.token);
+          const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
+          headers.append("Set-Cookie", setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge));
+        }
+        if (session.refreshToken) {
+          const maxAge = parsed.rememberMe ? REFRESH_TOKEN_MAX_AGE_SECONDS : undefined;
+          headers.append(
+            "Set-Cookie",
+            setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge),
+          );
+        }
+
+        if (session.url) {
+          headers.append("Location", session.url);
+        }
+
+        return new Response(JSON.stringify(session), { status: 200, headers });
+      }),
+    });
+
+    http.route({
+      path: "/api/auth/sign-out",
+      method: "POST",
+      handler: httpActionGeneric(async (ctx, request) => {
+        const body = await request.json().catch(() => undefined);
+
+        let parsed: { token?: string; callbackURL?: string };
+        try {
+          parsed = parse(
+            v.object({
+              token: v.optional(v.string()),
+              callbackURL: v.optional(v.string()),
+            }),
+            body,
+          );
+        } catch {
+          parsed = {};
+        }
+
+        const token = parsed.token ?? readCookie(request, ACCESS_TOKEN_COOKIE);
+        const result = token
+          ? await ctx.runAction(actions.signOut, { token, callbackURL: parsed.callbackURL })
+          : { success: true, redirect: false as const };
+
+        const headers = new Headers({ "Content-Type": "application/json" });
+        headers.append("Set-Cookie", clearCookieHeader(ACCESS_TOKEN_COOKIE));
+        headers.append("Set-Cookie", clearCookieHeader(REFRESH_TOKEN_COOKIE));
+
+        if (result.url) {
+          headers.append("Location", result.url);
+          return new Response(JSON.stringify(result), { status: 302, headers });
+        }
+
+        return new Response(JSON.stringify(result), { status: 200, headers });
+      }),
+    });
+  }
 
   if (!component) {
     return;
@@ -164,6 +361,60 @@ export function addNativeAuthHttpRoutes(
           headers: { "Content-Type": "application/json" },
         });
       }
+    }),
+  });
+
+  http.route({
+    path: "/api/auth/session",
+    method: "GET",
+    handler: httpActionGeneric(async (ctx, request) => {
+      const token = readCookie(request, ACCESS_TOKEN_COOKIE);
+      if (!token) {
+        return new Response(JSON.stringify({ user: null, sessionId: null }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      let payload;
+      try {
+        payload = await verifyToken(token);
+      } catch {
+        return new Response(JSON.stringify({ user: null, sessionId: null }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const userId = payload.sub;
+      const sessionId = payload.sessionId;
+      if (typeof userId !== "string" || typeof sessionId !== "string") {
+        return new Response(JSON.stringify({ user: null, sessionId: null }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const session = await ctx.runQuery(component.native.sessions.getSessionByToken, { token });
+      if (!session || session.sessionId !== sessionId || (session.expiresAt ?? 0) < Date.now()) {
+        return new Response(JSON.stringify({ user: null, sessionId: null }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const user = await ctx.runQuery(component.native.users.getUserById, { userId });
+      if (!user) {
+        return new Response(JSON.stringify({ user: null, sessionId: null }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(
+        JSON.stringify({ user: toNativeAuthUser(user), sessionId }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
     }),
   });
 }

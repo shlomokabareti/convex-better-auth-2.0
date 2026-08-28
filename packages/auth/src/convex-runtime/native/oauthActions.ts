@@ -1,6 +1,6 @@
 import { action } from "../../component/_generated/server.js";
 import { v } from "convex/values";
-import type { GenericActionCtx } from "convex/server";
+import type { FunctionReference, GenericActionCtx } from "convex/server";
 import type { DataModel } from "../../component/_generated/dataModel.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
 import { handleCallback, handleSignIn, type NativeOAuthConfig } from "./oauthHandlers.js";
@@ -10,6 +10,10 @@ export type { NativeOAuthConfig } from "./oauthHandlers.js";
 export type NativeOAuthActions = {
   signIn: ReturnType<typeof action>;
   callback: ReturnType<typeof action>;
+};
+
+export type NativeOAuthFunctionReferences = {
+  [K in keyof NativeOAuthActions]: FunctionReference<"action", "public">;
 };
 
 export function nativeOAuth(

@@ -121,7 +121,7 @@ const emailVerificationResultValidator = v.object({
 });
 
 const passwordResetResultValidator = v.object({
-  success: v.boolean(),
+  status: v.boolean(),
   user: v.optional(userReturnValidator),
   reason: v.optional(v.string()),
 });
@@ -168,6 +168,7 @@ export const provisionFromIdentity = mutation({
         createdUser: false,
         linkedExistingIdentity: false,
         duplicate: true,
+        user: existingUserByEmail,
       };
     }
 
@@ -364,7 +365,7 @@ export const resetPassword = mutation({
       .unique();
 
     if (!code || code.consumedAt || code.expiresAt <= now) {
-      return { success: false, reason: !code ? "invalid" : "expired" };
+      return { status: false, reason: !code ? "invalid" : "expired" };
     }
 
     const identity = await findIdentityByUserAndProvider(ctx, {
@@ -373,7 +374,7 @@ export const resetPassword = mutation({
       issuer: args.issuer,
     });
     if (!identity) {
-      return { success: false, reason: "invalid" };
+      return { status: false, reason: "invalid" };
     }
 
     const account = await ctx.db
@@ -383,7 +384,7 @@ export const resetPassword = mutation({
       )
       .unique();
     if (!account) {
-      return { success: false, reason: "invalid" };
+      return { status: false, reason: "invalid" };
     }
 
     const writes: Promise<unknown>[] = [
@@ -407,7 +408,7 @@ export const resetPassword = mutation({
     await Promise.all(writes);
 
     const userRecord = await ctx.db.get("users", code.userId);
-    return { success: true, user: userRecord ? toUserReturn(userRecord) : undefined };
+    return { status: true, user: userRecord ? toUserReturn(userRecord) : undefined };
   },
 });
 

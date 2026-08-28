@@ -183,7 +183,7 @@ describe("identity verification and password reset", () => {
       revokeSessions: true,
     });
 
-    expect(result.success).toBe(true);
+    expect(result.status).toBe(true);
 
     const code = await t.query(api.native.codes.getVerificationCodeByTokenHash, {
       tokenHash,
@@ -208,7 +208,7 @@ describe("identity verification and password reset", () => {
       issuer: "native",
     });
 
-    expect(result.success).toBe(false);
+    expect(result.status).toBe(false);
     expect(result.reason).toBe("invalid");
   });
 });

@@ -1,6 +1,6 @@
 "use node";
 import { action } from "../../component/_generated/server.js";
-import type { GenericActionCtx } from "convex/server";
+import type { FunctionReference, GenericActionCtx } from "convex/server";
 import type { DataModel } from "../../component/_generated/dataModel.js";
 import { v } from "convex/values";
 import {
@@ -42,11 +42,16 @@ export type NativeEmailAndPasswordConfig = {
     verifyPath?: string;
     resetPath?: string;
     sendEmail: EmailSender;
+    sendOnSignUp?: boolean;
+    sendOnSignIn?: boolean;
   };
   enabled?: boolean;
   disableSignUp?: boolean;
   autoSignIn?: boolean;
+  /** @deprecated use `email.sendOnSignUp` instead. */
   sendVerificationEmailOnSignUp?: boolean;
+  /** @deprecated use `email.sendOnSignIn` instead. */
+  sendVerificationEmailOnSignIn?: boolean;
   requireVerifiedEmail?: boolean;
   verificationCodeTtlMs?: number;
   passwordResetCodeTtlMs?: number;
@@ -55,6 +60,7 @@ export type NativeEmailAndPasswordConfig = {
   minPasswordLength?: number;
   maxPasswordLength?: number;
   revokeSessionsOnPasswordReset?: boolean;
+  onExistingUserSignUp?: (data: { user: NativeAuthUser }) => Promise<void>;
   onPasswordReset?: (data: { user: NativeAuthUser }) => Promise<void>;
 };
 
@@ -68,6 +74,10 @@ export type NativeEmailAndPasswordActions = {
   sendPasswordReset: ReturnType<typeof action>;
   resetPassword: ReturnType<typeof action>;
   verifyPassword: ReturnType<typeof action>;
+};
+
+export type NativeEmailAndPasswordFunctionReferences = {
+  [K in keyof NativeEmailAndPasswordActions]: FunctionReference<"action", "public">;
 };
 
 type EmailSendResult =
@@ -134,6 +144,8 @@ const nativeAuthSessionValidator = v.object({
   userId: v.optional(v.string()),
   identityId: v.optional(v.string()),
   sessionId: v.optional(v.string()),
+  redirect: v.optional(v.boolean()),
+  url: v.optional(v.string()),
 });
 
 function resolveEmailConfig(args: NativeEmailAndPasswordConfig): {
@@ -142,6 +154,8 @@ function resolveEmailConfig(args: NativeEmailAndPasswordConfig): {
   verifyPath: string;
   resetPath: string;
   sendEmail?: EmailSender;
+  sendOnSignUp?: boolean;
+  sendOnSignIn?: boolean;
 } {
   const email = args.email;
   return {
@@ -150,6 +164,8 @@ function resolveEmailConfig(args: NativeEmailAndPasswordConfig): {
     verifyPath: email?.verifyPath ?? "/verify-email",
     resetPath: email?.resetPath ?? "/reset-password",
     sendEmail: email?.sendEmail,
+    sendOnSignUp: email?.sendOnSignUp ?? args.sendVerificationEmailOnSignUp,
+    sendOnSignIn: email?.sendOnSignIn ?? args.sendVerificationEmailOnSignIn,
   };
 }
 
@@ -164,17 +180,19 @@ export function nativeEmailAndPassword(
   const enabled = config.enabled ?? true;
   const disableSignUp = config.disableSignUp ?? false;
   const autoSignIn = config.autoSignIn ?? true;
-  const sendVerificationEmailOnSignUp = config.sendVerificationEmailOnSignUp ?? false;
+  const sendOnSignUp = emailConfig.sendOnSignUp;
+  const sendOnSignIn = emailConfig.sendOnSignIn ?? false;
   const sessionTtlMs = config.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
   const refreshTokenTtlMs = config.refreshTokenTtlMs ?? DEFAULT_REFRESH_TOKEN_TTL_MS;
   const requireVerifiedEmail = config.requireVerifiedEmail ?? false;
   const minPasswordLength = config.minPasswordLength ?? DEFAULT_MIN_PASSWORD_LENGTH;
   const maxPasswordLength = config.maxPasswordLength ?? DEFAULT_MAX_PASSWORD_LENGTH;
+  const onExistingUserSignUp = config.onExistingUserSignUp;
 
-  const shouldReturnGenericDuplicateResponse =
-    requireVerifiedEmail || sendVerificationEmailOnSignUp || autoSignIn === false;
+  const shouldReturnGenericDuplicateResponse = requireVerifiedEmail || autoSignIn === false;
   const shouldSkipAutoSignIn = shouldReturnGenericDuplicateResponse;
-  const shouldSendVerificationEmail = sendVerificationEmailOnSignUp || requireVerifiedEmail;
+  const shouldSendVerificationEmail = sendOnSignUp ?? requireVerifiedEmail;
+  const shouldSendVerificationEmailOnSignIn = sendOnSignIn;
   const revokeSessionsOnPasswordReset = config.revokeSessionsOnPasswordReset ?? false;
 
   async function createSessionAndRefreshToken(
@@ -292,6 +310,9 @@ export function nativeEmailAndPassword(
       });
 
       if (result.duplicate) {
+        if (result.user && onExistingUserSignUp) {
+          await onExistingUserSignUp({ user: toNativeAuthUser(result.user) });
+        }
         if (shouldReturnGenericDuplicateResponse) {
           return buildGenericDuplicateResponse(normalizedEmail, args.name, args.image, now);
         }
@@ -365,21 +386,50 @@ export function nativeEmailAndPassword(
     },
     returns: nativeAuthSessionValidator,
     handler: async (ctx, args) => {
+      if (!enabled) {
+        throw new Error("Email and password authentication is disabled");
+      }
+
       const normalizedEmail = args.email.trim().toLowerCase();
+      if (!isValidEmail(normalizedEmail)) {
+        throw new Error("Invalid email");
+      }
 
       const auth = await ctx.runQuery(component.identity.getUserAndAccount, {
         email: normalizedEmail,
       });
       if (!auth) {
+        await hashPassword(args.password);
         throw new Error("Invalid email or password");
       }
       const { user, identity, account } = auth;
 
-      if (!(await verifyPasswordHash(args.password, account.credentialHash))) {
+      if (!account || !(await verifyPasswordHash(args.password, account.credentialHash))) {
+        await hashPassword(args.password);
         throw new Error("Invalid email or password");
       }
 
       if (requireVerifiedEmail && !user.emailVerified) {
+        if (shouldSendVerificationEmailOnSignIn) {
+          await queueVerificationEmail(ctx, {
+            email: normalizedEmail,
+            type: "email_verification",
+            urlBuilder: (token) =>
+              buildEmailVerificationUrl({
+                token,
+                appOrigin: emailConfig.appOrigin,
+                verifyPath: emailConfig.verifyPath,
+              }),
+            draftBuilder: async (params) =>
+              createEmailVerificationEmailDraft({
+                from: params.from,
+                to: params.to,
+                verifyUrl: params.url,
+                expiresAt: params.expiresAt,
+              }),
+            ttlMs: verificationCodeTtlMs,
+          });
+        }
         throw new Error("Email not verified");
       }
 
@@ -396,6 +446,8 @@ export function nativeEmailAndPassword(
         userId: user._id,
         identityId: identity._id,
         sessionId,
+        redirect: !!args.callbackURL,
+        url: args.callbackURL,
       };
     },
   });
@@ -405,7 +457,11 @@ export function nativeEmailAndPassword(
       token: v.string(),
       callbackURL: v.optional(v.string()),
     },
-    returns: v.object({ success: v.boolean() }),
+    returns: v.object({
+      success: v.boolean(),
+      redirect: v.optional(v.boolean()),
+      url: v.optional(v.string()),
+    }),
     handler: async (ctx, args) => {
       const payload = await verifyToken(args.token);
       const sessionId = payload.sessionId;
@@ -418,7 +474,11 @@ export function nativeEmailAndPassword(
       await ctx.runMutation(component.native.refreshTokens.revokeRefreshTokensForSession, {
         sessionId,
       });
-      return { success: true };
+      return {
+        success: true,
+        redirect: !!args.callbackURL,
+        url: args.callbackURL,
+      };
     },
   });
 
@@ -644,7 +704,7 @@ export function nativeEmailAndPassword(
       newPassword: v.string(),
     },
     returns: v.object({
-      success: v.boolean(),
+      status: v.boolean(),
       reason: v.optional(v.string()),
     }),
     handler: async (ctx, args) => {
@@ -655,7 +715,7 @@ export function nativeEmailAndPassword(
       );
       if (!passwordValidation.valid) {
         return {
-          success: false,
+          status: false,
           reason:
             passwordValidation.reason === "too_short" ? "password_too_short" : "password_too_long",
         };
@@ -672,15 +732,15 @@ export function nativeEmailAndPassword(
         revokeSessions: revokeSessionsOnPasswordReset,
       });
 
-      if (!result.success) {
-        return { success: false, reason: result.reason ?? "invalid" };
+      if (!result.status) {
+        return { status: false, reason: result.reason ?? "invalid" };
       }
 
       if (config.onPasswordReset && result.user) {
         await config.onPasswordReset({ user: toNativeAuthUser(result.user) });
       }
 
-      return { success: true };
+      return { status: true };
     },
   });
 
