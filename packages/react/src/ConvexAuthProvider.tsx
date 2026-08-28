@@ -43,6 +43,7 @@ export type NativeAuthUser = {
 
 export type NativeAuthSession = {
   token: string | null;
+  refreshToken?: string;
   user: NativeAuthUser;
   userId?: string;
   identityId?: string;
@@ -91,6 +92,12 @@ export type NativeAuthActions = {
     { token: string; password: string },
     { success: boolean }
   >;
+  updateSession: FunctionReference<
+    "action",
+    "public",
+    { refreshToken: string },
+    NativeAuthSession
+  >;
   verifySession: FunctionReference<
     "query",
     "public",
@@ -102,6 +109,8 @@ export type NativeAuthActions = {
 type ConvexAuthContextValue = NativeAuthActions & {
   token: string | null;
   setToken: (token: string | null) => void;
+  refreshToken: string | null;
+  setRefreshToken: (refreshToken: string | null) => void;
 };
 
 const ConvexAuthContext = createContext<ConvexAuthContextValue | null>(null);
@@ -114,6 +123,7 @@ export type ConvexAuthProviderProps = {
 export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
   const client = useConvex();
   const [token, setToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
   useEffect(() => {
     client.setAuth(() => Promise.resolve(token));
@@ -125,7 +135,10 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
     };
   }, [client]);
 
-  const value = useMemo(() => ({ ...props.actions, token, setToken }), [props.actions, token]);
+  const value = useMemo(
+    () => ({ ...props.actions, token, setToken, refreshToken, setRefreshToken }),
+    [props.actions, token, refreshToken],
+  );
   return <ConvexAuthContext.Provider value={value}>{props.children}</ConvexAuthContext.Provider>;
 }
 
@@ -138,6 +151,7 @@ export function useAuthActions() {
   const signUpAction = useAction(ctx.signUp);
   const signInAction = useAction(ctx.signIn);
   const signOutAction = useAction(ctx.signOut);
+  const updateSessionAction = useAction(ctx.updateSession);
   const sendEmailVerificationAction = useAction(ctx.sendEmailVerification);
   const verifyEmailAction = useAction(ctx.verifyEmail);
   const sendPasswordResetAction = useAction(ctx.sendPasswordReset);
@@ -152,6 +166,9 @@ export function useAuthActions() {
       try {
         const session = await signUpAction(args);
         ctx.setToken(session.token ?? null);
+        if (session.refreshToken) {
+          ctx.setRefreshToken(session.refreshToken);
+        }
         return session;
       } finally {
         setIsLoading(false);
@@ -166,6 +183,9 @@ export function useAuthActions() {
       try {
         const session = await signInAction(args);
         ctx.setToken(session.token ?? null);
+        if (session.refreshToken) {
+          ctx.setRefreshToken(session.refreshToken);
+        }
         return session;
       } finally {
         setIsLoading(false);
@@ -177,18 +197,40 @@ export function useAuthActions() {
   const signOut = useCallback(
     async (args?: { callbackURL?: string }) => {
       if (ctx.token === null) {
+        ctx.setRefreshToken(null);
         return { success: true as const };
       }
       setIsLoading(true);
       try {
         const result = await signOutAction({ token: ctx.token, callbackURL: args?.callbackURL });
         ctx.setToken(null);
+        ctx.setRefreshToken(null);
         return result;
       } finally {
         setIsLoading(false);
       }
     },
     [signOutAction, ctx],
+  );
+
+  const updateSession = useCallback(
+    async () => {
+      if (ctx.refreshToken === null) {
+        throw new Error("No refresh token available");
+      }
+      setIsLoading(true);
+      try {
+        const session = await updateSessionAction({ refreshToken: ctx.refreshToken });
+        ctx.setToken(session.token ?? null);
+        if (session.refreshToken) {
+          ctx.setRefreshToken(session.refreshToken);
+        }
+        return session;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [updateSessionAction, ctx],
   );
 
   const sendEmailVerification = useCallback(
@@ -260,12 +302,14 @@ export function useAuthActions() {
     signUp,
     signIn,
     signOut,
+    updateSession,
     sendEmailVerification,
     verifyEmail,
     sendPasswordReset,
     resetPassword,
     verifyPassword,
     token: ctx.token,
+    refreshToken: ctx.refreshToken,
     user,
     sessionId,
     isLoading: isLoading || isSessionLoading,

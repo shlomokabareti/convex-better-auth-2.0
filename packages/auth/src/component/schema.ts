@@ -696,6 +696,19 @@ export default defineSchema({
     .index("by_token", ["token"])
     .index("by_user", ["userId"]),
 
+  authRefreshTokens: defineTable({
+    tokenHash: v.string(),
+    sessionId: v.string(),
+    userId: v.id("users"),
+    expiresAt: v.number(),
+    revokedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_token_hash", ["tokenHash"])
+    .index("by_session", ["sessionId"])
+    .index("by_user", ["userId"]),
+
   mcp_oauth_refresh_tokens: defineTable({
     tokenHash: v.string(),
     tokenId: v.string(),

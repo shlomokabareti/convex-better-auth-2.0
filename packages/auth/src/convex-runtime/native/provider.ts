@@ -35,6 +35,7 @@ export type EmailSender = (draft: EmailDraft) => Promise<string>;
 
 export type NativeAuthSession = {
   token?: string | null;
+  refreshToken?: string;
   user: NativeAuthUser;
   userId?: string;
   identityId?: string;
@@ -57,6 +58,7 @@ export type NativeEmailAndPasswordConfig = {
   verificationCodeTtlMs?: number;
   passwordResetCodeTtlMs?: number;
   sessionTtlMs?: number;
+  refreshTokenTtlMs?: number;
   minPasswordLength?: number;
   maxPasswordLength?: number;
   revokeSessionsOnPasswordReset?: boolean;
@@ -67,6 +69,7 @@ export type NativeEmailAndPasswordActions = {
   signUp: ReturnType<typeof action>;
   signIn: ReturnType<typeof action>;
   signOut: ReturnType<typeof action>;
+  updateSession: ReturnType<typeof action>;
   sendEmailVerification: ReturnType<typeof action>;
   verifyEmail: ReturnType<typeof action>;
   sendPasswordReset: ReturnType<typeof action>;
@@ -82,6 +85,7 @@ type EmailSendResult =
 const DEFAULT_VERIFICATION_CODE_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_PASSWORD_RESET_CODE_TTL_MS = 60 * 60 * 1000;
 const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DONT_REMEMBER_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_MIN_PASSWORD_LENGTH = 8;
 const DEFAULT_MAX_PASSWORD_LENGTH = 128;
@@ -132,6 +136,7 @@ function validatePassword(
 
 const nativeAuthSessionValidator = v.object({
   token: v.optional(v.union(v.string(), v.null())),
+  refreshToken: v.optional(v.string()),
   user: nativeAuthUserValidator,
   userId: v.optional(v.string()),
   identityId: v.optional(v.string()),
@@ -168,6 +173,7 @@ export function nativeEmailAndPassword(
   const autoSignIn = config.autoSignIn ?? true;
   const sendVerificationEmailOnSignUp = config.sendVerificationEmailOnSignUp ?? false;
   const sessionTtlMs = config.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
+  const refreshTokenTtlMs = config.refreshTokenTtlMs ?? DEFAULT_REFRESH_TOKEN_TTL_MS;
   const requireVerifiedEmail = config.requireVerifiedEmail ?? false;
   const minPasswordLength = config.minPasswordLength ?? DEFAULT_MIN_PASSWORD_LENGTH;
   const maxPasswordLength = config.maxPasswordLength ?? DEFAULT_MAX_PASSWORD_LENGTH;
@@ -177,6 +183,44 @@ export function nativeEmailAndPassword(
   const shouldSkipAutoSignIn = shouldReturnGenericDuplicateResponse;
   const shouldSendVerificationEmail = sendVerificationEmailOnSignUp || requireVerifiedEmail;
   const revokeSessionsOnPasswordReset = config.revokeSessionsOnPasswordReset ?? false;
+
+  async function createSessionAndRefreshToken(
+    ctx: GenericActionCtx<DataModel>,
+    args: {
+      userId: string;
+      identityId: string;
+      rememberMe: boolean | undefined;
+    },
+  ): Promise<{ sessionId: string; token: string; refreshToken: string }> {
+    const now = Date.now();
+    const sessionId = crypto.randomUUID();
+    const refreshToken = generateVerificationToken();
+    const refreshTokenHash = hashToken(refreshToken);
+    const effectiveSessionTtlMs = resolveSessionTtlMs(args.rememberMe, sessionTtlMs);
+    const expiresAt = now + effectiveSessionTtlMs;
+    const token = await mintToken(
+      args.userId,
+      sessionId,
+      { identityId: args.identityId },
+      { expiresInSeconds: Math.floor(effectiveSessionTtlMs / 1000) },
+    );
+
+    await ctx.runMutation(component.native.sessions.createSession, {
+      sessionId,
+      userId: args.userId,
+      token,
+      expiresAt,
+    });
+
+    await ctx.runMutation(component.native.refreshTokens.createRefreshToken, {
+      tokenHash: refreshTokenHash,
+      sessionId,
+      userId: args.userId,
+      expiresAt: now + refreshTokenTtlMs,
+    });
+
+    return { sessionId, token, refreshToken };
+  }
 
   const signUp = action({
     args: {
@@ -302,25 +346,15 @@ export function nativeEmailAndPassword(
         return { token: null, user: toNativeAuthUser(result.user) };
       }
 
-      const sessionId = crypto.randomUUID();
-      const effectiveSessionTtlMs = resolveSessionTtlMs(args.rememberMe, sessionTtlMs);
-      const expiresAt = now + effectiveSessionTtlMs;
-      const token = await mintToken(
-        result.userId,
-        sessionId,
-        { identityId: result.identityId },
-        { expiresInSeconds: Math.floor(effectiveSessionTtlMs / 1000) },
-      );
-
-      await ctx.runMutation(component.native.sessions.createSession, {
-        sessionId,
+      const { sessionId, token, refreshToken } = await createSessionAndRefreshToken(ctx, {
         userId: result.userId,
-        token,
-        expiresAt,
+        identityId: result.identityId,
+        rememberMe: args.rememberMe,
       });
 
       return {
         token,
+        refreshToken,
         user: toNativeAuthUser(result.user),
         userId: result.userId,
         identityId: result.identityId,
@@ -338,7 +372,6 @@ export function nativeEmailAndPassword(
     },
     returns: nativeAuthSessionValidator,
     handler: async (ctx, args) => {
-      const now = Date.now();
       const normalizedEmail = args.email.trim().toLowerCase();
 
       const auth = await ctx.runQuery(component.identity.getUserAndAccount, {
@@ -357,25 +390,15 @@ export function nativeEmailAndPassword(
         throw new Error("Email not verified");
       }
 
-      const sessionId = crypto.randomUUID();
-      const effectiveSessionTtlMs = resolveSessionTtlMs(args.rememberMe, sessionTtlMs);
-      const expiresAt = now + effectiveSessionTtlMs;
-      const token = await mintToken(
-        user._id,
-        sessionId,
-        { identityId: identity._id },
-        { expiresInSeconds: Math.floor(effectiveSessionTtlMs / 1000) },
-      );
-
-      await ctx.runMutation(component.native.sessions.createSession, {
-        sessionId,
+      const { sessionId, token, refreshToken } = await createSessionAndRefreshToken(ctx, {
         userId: user._id,
-        token,
-        expiresAt,
+        identityId: identity._id,
+        rememberMe: args.rememberMe,
       });
 
       return {
         token,
+        refreshToken,
         user: toNativeAuthUser(user),
         userId: user._id,
         identityId: identity._id,
@@ -399,7 +422,64 @@ export function nativeEmailAndPassword(
       await ctx.runMutation(component.native.sessions.revokeSession, {
         sessionId,
       });
+      await ctx.runMutation(component.native.refreshTokens.revokeRefreshTokensForSession, {
+        sessionId,
+      });
       return { success: true };
+    },
+  });
+
+  const updateSession = action({
+    args: { refreshToken: v.string() },
+    returns: nativeAuthSessionValidator,
+    handler: async (ctx, args) => {
+      const now = Date.now();
+      const tokenHash = hashToken(args.refreshToken);
+
+      const refresh = await ctx.runMutation(component.native.refreshTokens.consumeRefreshToken, {
+        tokenHash,
+      });
+      if (!refresh) {
+        throw new Error("Invalid refresh token");
+      }
+
+      const session = await ctx.runQuery(component.native.sessions.getSessionBySessionId, {
+        sessionId: refresh.sessionId,
+      });
+      if (!session || session.revokedAt !== undefined || session.expiresAt <= now) {
+        throw new Error("Invalid refresh token");
+      }
+
+      const user = await ctx.runQuery(component.native.users.getUserById, { userId: refresh.userId });
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
+        userId: refresh.userId,
+        provider: "password",
+        issuer: "native",
+      });
+      if (!identity) {
+        throw new Error("Identity not found");
+      }
+
+      await ctx.runMutation(component.native.sessions.revokeSession, { sessionId: refresh.sessionId });
+
+      const { sessionId, token, refreshToken } = await createSessionAndRefreshToken(ctx, {
+        userId: refresh.userId,
+        identityId: identity._id,
+        rememberMe: undefined,
+      });
+
+      return {
+        token,
+        refreshToken,
+        user: toNativeAuthUser(user),
+        userId: user._id,
+        identityId: identity._id,
+        sessionId,
+      };
     },
   });
 
@@ -705,6 +785,7 @@ export function nativeEmailAndPassword(
     signUp,
     signIn,
     signOut,
+    updateSession,
     sendEmailVerification,
     verifyEmail,
     sendPasswordReset,

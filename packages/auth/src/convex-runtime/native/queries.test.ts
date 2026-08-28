@@ -66,7 +66,15 @@ function createMockComponent(): MockComponent {
         revokeSession: vi.fn(),
         listSessionsByUser: vi.fn(),
         getSessionByToken: vi.fn(),
+        getSessionBySessionId: vi.fn(),
         revokeSessionsForUser: vi.fn(),
+      },
+      refreshTokens: {
+        createRefreshToken: vi.fn(),
+        getRefreshTokenByTokenHash: vi.fn(),
+        consumeRefreshToken: vi.fn(),
+        revokeRefreshTokensForSession: vi.fn(),
+        revokeRefreshTokensForUser: vi.fn(),
       },
       codes: {
         createVerificationCode: vi.fn(),

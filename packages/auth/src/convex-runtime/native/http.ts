@@ -1,7 +1,10 @@
-import { httpActionGeneric, type HttpRouter } from "convex/server";
+import { httpActionGeneric, type HttpRouter, type FunctionReference } from "convex/server";
+import { v } from "convex/values";
 import { getJwks } from "./jwt.js";
+import { parse } from "../helpers/index.js";
 import { hashToken, isTokenExpired } from "./tokens.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
+import type { NativeAuthSession } from "./provider.js";
 
 function buildErrorRedirect(callbackURL: string, error: string): Response {
   const redirect = new URL(
@@ -30,6 +33,9 @@ function buildTokenRedirect(callbackURL: string, token: string): Response {
 export function addNativeAuthHttpRoutes(
   http: HttpRouter,
   component?: NativeEmailAndPasswordComponentHandle,
+  actions?: {
+    updateSession: FunctionReference<"action", "public", { refreshToken: string }, NativeAuthSession>;
+  },
 ): void {
   http.route({
     path: "/.well-known/jwks.json",
@@ -102,6 +108,40 @@ export function addNativeAuthHttpRoutes(
       }
 
       return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }),
+  });
+
+  http.route({
+    path: "/api/auth/update-session",
+    method: "POST",
+    handler: httpActionGeneric(async (ctx, request) => {
+      if (!actions?.updateSession) {
+        return new Response(JSON.stringify({ success: false, reason: "not_configured" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const body = await request.json().catch(() => undefined);
+
+      let parsed: { refreshToken: string };
+      try {
+        parsed = parse(v.object({ refreshToken: v.string() }), body);
+      } catch {
+        return new Response(JSON.stringify({ success: false, reason: "missing_refresh_token" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const result = await ctx.runAction(actions.updateSession, {
+        refreshToken: parsed.refreshToken,
+      });
+
+      return new Response(JSON.stringify({ success: true, ...result }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });

@@ -6,8 +6,6 @@ import type {
   NativeEmailAndPasswordComponentHandle,
   NativeIdentityDoc,
   NativeUserDoc,
-  NativeVerificationCodeDoc,
-  VerificationCodeType,
 } from "./types.js";
 import { hashToken } from "./tokens.js";
 import { hashPassword, verifyPassword } from "./password.js";
@@ -85,7 +83,15 @@ function createMockComponent(): MockedComponent {
         revokeSession: vi.fn(),
         listSessionsByUser: vi.fn(),
         getSessionByToken: vi.fn(),
+        getSessionBySessionId: vi.fn(),
         revokeSessionsForUser: vi.fn(),
+      },
+      refreshTokens: {
+        createRefreshToken: vi.fn(),
+        getRefreshTokenByTokenHash: vi.fn(),
+        consumeRefreshToken: vi.fn(),
+        revokeRefreshTokensForSession: vi.fn(),
+        revokeRefreshTokensForUser: vi.fn(),
       },
       identities: {
         getNativeIdentityByUser: vi.fn(),
@@ -157,28 +163,6 @@ function makeAccount(overrides: Partial<NativeAccountDoc> = {}): NativeAccountDo
     createdAt: 0,
     updatedAt: 0,
     ...overrides,
-  };
-}
-
-function makeCode(
-  args: {
-    token?: string;
-    tokenHash?: string;
-    type: VerificationCodeType;
-    userId?: string;
-    expiresAt?: number;
-  } = { type: "email_verification" },
-): NativeVerificationCodeDoc {
-  const token = args.token ?? "test-token";
-  return {
-    _id: "code_1",
-    _creationTime: 0,
-    userId: args.userId ?? "user_1",
-    type: args.type,
-    tokenHash: args.tokenHash ?? hashToken(token),
-    expiresAt: args.expiresAt ?? Date.now() + 60_000,
-    createdAt: 0,
-    updatedAt: 0,
   };
 }
 

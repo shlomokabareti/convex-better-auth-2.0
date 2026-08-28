@@ -17,6 +17,7 @@ import type * as mcp from "../mcp.js";
 import type * as native_accounts from "../native/accounts.js";
 import type * as native_codes from "../native/codes.js";
 import type * as native_identities from "../native/identities.js";
+import type * as native_refreshTokens from "../native/refreshTokens.js";
 import type * as native_sessions from "../native/sessions.js";
 import type * as native_users from "../native/users.js";
 import type * as organizations from "../organizations.js";
@@ -42,6 +43,7 @@ const fullApi: ApiFromModules<{
   "native/accounts": typeof native_accounts;
   "native/codes": typeof native_codes;
   "native/identities": typeof native_identities;
+  "native/refreshTokens": typeof native_refreshTokens;
   "native/sessions": typeof native_sessions;
   "native/users": typeof native_users;
   organizations: typeof organizations;

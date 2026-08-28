@@ -103,6 +103,18 @@ export type NativeSessionDoc = {
   updatedAt: number;
 };
 
+export type NativeRefreshTokenDoc = {
+  _id: string;
+  _creationTime: number;
+  tokenHash: string;
+  sessionId: string;
+  userId: string;
+  expiresAt: number;
+  revokedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type NativeIdentityDoc = {
   _id: string;
   _creationTime: number;
@@ -247,10 +259,54 @@ export type NativeEmailAndPasswordComponentHandle = {
         NativeSessionDoc | null,
         string
       >;
+      getSessionBySessionId: FunctionReference<
+        "query",
+        "public" | "internal",
+        { sessionId: string },
+        NativeSessionDoc | null,
+        string
+      >;
       revokeSessionsForUser: FunctionReference<
         "mutation",
         "public" | "internal",
         { userId: string; excludeSessionId?: string },
+        number,
+        string
+      >;
+    };
+    refreshTokens: {
+      createRefreshToken: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { tokenHash: string; sessionId: string; userId: string; expiresAt: number },
+        string,
+        string
+      >;
+      getRefreshTokenByTokenHash: FunctionReference<
+        "query",
+        "public" | "internal",
+        { tokenHash: string },
+        NativeRefreshTokenDoc | null,
+        string
+      >;
+      consumeRefreshToken: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { tokenHash: string },
+        NativeRefreshTokenDoc | null,
+        string
+      >;
+      revokeRefreshTokensForSession: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { sessionId: string },
+        number,
+        string
+      >;
+      revokeRefreshTokensForUser: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { userId: string },
         number,
         string
       >;

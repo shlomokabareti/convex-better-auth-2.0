@@ -129,7 +129,7 @@ describe("identity verification and password reset", () => {
       }),
     );
 
-    const identityId = await t.run(async (ctx) =>
+    const _identityId = await t.run(async (ctx) =>
       ctx.db.insert("auth_identities", {
         identityId: "subject_1",
         userId,
