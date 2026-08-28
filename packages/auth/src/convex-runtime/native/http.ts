@@ -60,16 +60,28 @@ function getTokenExpiry(token: string): number | null {
   }
 }
 
-function setCookieHeader(name: string, value: string, maxAgeSeconds?: number): string {
+function setCookieHeader(
+  name: string,
+  value: string,
+  maxAgeSeconds?: number,
+  secure?: boolean,
+): string {
   let cookie = `${name}=${value}; Path=/; HttpOnly; SameSite=Lax`;
   if (maxAgeSeconds !== undefined) {
     cookie += `; Max-Age=${maxAgeSeconds}`;
   }
+  if (secure) {
+    cookie += "; Secure";
+  }
   return cookie;
 }
 
-function clearCookieHeader(name: string): string {
-  return `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+function clearCookieHeader(name: string, secure?: boolean): string {
+  let cookie = `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  if (secure) {
+    cookie += "; Secure";
+  }
+  return cookie;
 }
 
 function readCookie(request: Request, name: string): string | undefined {
@@ -157,18 +169,22 @@ export function addNativeAuthHttpRoutes(
         }
 
         const session = await ctx.runAction(actions.signUp, parsed);
+        const secure = new URL(request.url).protocol === "https:";
 
         const headers = new Headers({ "Content-Type": "application/json" });
         if (session.token) {
           const expiry = getTokenExpiry(session.token);
           const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
-          headers.append("Set-Cookie", setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge));
+          headers.append(
+            "Set-Cookie",
+            setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure),
+          );
         }
         if (session.refreshToken) {
           const maxAge = parsed.rememberMe ? REFRESH_TOKEN_MAX_AGE_SECONDS : undefined;
           headers.append(
             "Set-Cookie",
-            setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge),
+            setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge, secure),
           );
         }
 
@@ -206,18 +222,22 @@ export function addNativeAuthHttpRoutes(
         }
 
         const session = await ctx.runAction(actions.signIn, parsed);
+        const secure = new URL(request.url).protocol === "https:";
 
         const headers = new Headers({ "Content-Type": "application/json" });
         if (session.token) {
           const expiry = getTokenExpiry(session.token);
           const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
-          headers.append("Set-Cookie", setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge));
+          headers.append(
+            "Set-Cookie",
+            setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure),
+          );
         }
         if (session.refreshToken) {
           const maxAge = parsed.rememberMe ? REFRESH_TOKEN_MAX_AGE_SECONDS : undefined;
           headers.append(
             "Set-Cookie",
-            setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge),
+            setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge, secure),
           );
         }
 
@@ -253,9 +273,10 @@ export function addNativeAuthHttpRoutes(
           ? await ctx.runAction(actions.signOut, { token, callbackURL: parsed.callbackURL })
           : { success: true, redirect: false as const };
 
+        const secure = new URL(request.url).protocol === "https:";
         const headers = new Headers({ "Content-Type": "application/json" });
-        headers.append("Set-Cookie", clearCookieHeader(ACCESS_TOKEN_COOKIE));
-        headers.append("Set-Cookie", clearCookieHeader(REFRESH_TOKEN_COOKIE));
+        headers.append("Set-Cookie", clearCookieHeader(ACCESS_TOKEN_COOKIE, secure));
+        headers.append("Set-Cookie", clearCookieHeader(REFRESH_TOKEN_COOKIE, secure));
 
         if (result.url) {
           headers.append("Location", result.url);
