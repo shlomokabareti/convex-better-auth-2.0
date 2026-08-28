@@ -12,7 +12,9 @@ export {
 } from "./oauthHandlers.js";
 export {
   createGitHubProvider,
+  createGoogleProvider,
   type GitHubProviderConfig,
+  type GoogleProviderConfig,
   type NativeOAuthProvider,
   type OAuthToken,
   type OAuthUserInfo,

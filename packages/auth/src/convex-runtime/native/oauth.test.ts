@@ -3,7 +3,9 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { addNativeOAuthHttpRoutes } from "./oauthHttp.js";
 import {
   createGitHubProvider,
+  createGoogleProvider,
   type GitHubProviderConfig,
+  type GoogleProviderConfig,
   type NativeOAuthProvider,
 } from "./oauth.js";
 import { nativeOAuth } from "./oauthActions.js";
@@ -102,9 +104,20 @@ function createGitHubConfig(overrides: Partial<GitHubProviderConfig> = {}): GitH
   };
 }
 
+function createGoogleConfig(overrides: Partial<GoogleProviderConfig> = {}): GoogleProviderConfig {
+  const { fetch } = createMockFetch();
+  return {
+    clientId: "google-client-id",
+    clientSecret: "google-client-secret",
+    fetchImpl: fetch as unknown as typeof globalThis.fetch,
+    ...overrides,
+  };
+}
+
 function createOAuthConfig(overrides: Partial<NativeOAuthConfig> = {}): NativeOAuthConfig {
   return {
     github: createGitHubConfig(),
+    google: createGoogleConfig(),
     redirectURI: "https://app.example.com/api/auth/callback/github",
     sessionTtlMs: 60_000,
     ...overrides,
@@ -132,6 +145,21 @@ function setupGitHubResponses(
       { email: "octocat@example.com", primary: true, verified: true, visibility: "public" },
       { email: "other@example.com", primary: false, verified: false, visibility: "private" },
     ],
+  });
+}
+
+function setupGoogleResponses(responses: ReturnType<typeof createMockFetch>["responses"]) {
+  responses.set("https://oauth2.googleapis.com/token", {
+    body: { access_token: "google-access-token", token_type: "Bearer" },
+  });
+  responses.set("https://openidconnect.googleapis.com/v1/userinfo", {
+    body: {
+      sub: "google-12345",
+      name: "Google User",
+      email: "google@example.com",
+      email_verified: true,
+      picture: "https://google-avatar",
+    },
   });
 }
 
@@ -224,6 +252,69 @@ describe("GitHub provider", () => {
     expect(user.name).toBe("The Octocat");
     expect(user.email).toBe("octocat@example.com");
     expect(user.image).toBe("https://avatar");
+    expect(user.emailVerified).toBe(true);
+  });
+});
+
+describe("Google provider", () => {
+  beforeAll(setupTestKeys);
+
+  it("creates an authorization URL with client_id, PKCE, and state", () => {
+    const config = createGoogleConfig();
+    const provider = createGoogleProvider(config);
+    const url = provider.createAuthorizationURL({
+      state: "state-token",
+      codeChallenge: "challenge",
+      redirectURI: "https://app.example.com/api/auth/callback/google",
+    });
+    expect(url.origin).toBe("https://accounts.google.com");
+    expect(url.pathname).toBe("/o/oauth2/v2/auth");
+    expect(url.searchParams.get("client_id")).toBe("google-client-id");
+    expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("state")).toBe("state-token");
+    expect(url.searchParams.get("code_challenge")).toBe("challenge");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(url.searchParams.get("scope")).toContain("openid");
+  });
+
+  it("exchanges a code for an access token", async () => {
+    const config = createGoogleConfig();
+    const { fetch, responses } = createMockFetch();
+    config.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    const provider = createGoogleProvider(config);
+    responses.set("https://oauth2.googleapis.com/token", {
+      body: { access_token: "token-123", token_type: "Bearer" },
+    });
+
+    const token = await provider.exchangeAuthorizationCode({
+      code: "code-123",
+      codeVerifier: "verifier",
+      redirectURI: "https://app.example.com/api/auth/callback/google",
+    });
+
+    expect(token.accessToken).toBe("token-123");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://oauth2.googleapis.com/token",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.any(URLSearchParams),
+      }),
+    );
+  });
+
+  it("fetches user info from the OIDC userinfo endpoint", async () => {
+    const config = createGoogleConfig();
+    const { fetch, responses } = createMockFetch();
+    config.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    const provider = createGoogleProvider(config);
+    setupGoogleResponses(responses);
+
+    const { user } = await provider.getUserInfo({ accessToken: "google-access-token" });
+
+    expect(user.id).toBe("google-12345");
+    expect(user.name).toBe("Google User");
+    expect(user.email).toBe("google@example.com");
+    expect(user.image).toBe("https://google-avatar");
     expect(user.emailVerified).toBe(true);
   });
 });
@@ -336,6 +427,71 @@ describe("OAuth handlers", () => {
     );
 
     expect(result.redirectUrl).toBe("https://app.example.com/welcome");
+  });
+
+  it("handleSignIn returns a Google authorization URL", async () => {
+    const config = createOAuthConfig({
+      redirectURI: "https://app.example.com/api/auth/callback/google",
+    });
+
+    const { url } = await handleSignIn(config, { provider: "google" });
+    const parsed = new URL(url);
+    expect(parsed.hostname).toBe("accounts.google.com");
+    expect(parsed.pathname).toBe("/o/oauth2/v2/auth");
+    expect(parsed.searchParams.get("client_id")).toBe("google-client-id");
+    expect(parsed.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(parsed.searchParams.get("state")).toBeTruthy();
+    expect(parsed.searchParams.get("redirect_uri")).toBe(
+      "https://app.example.com/api/auth/callback/google",
+    );
+  });
+
+  it("handleCallback provisions a new user from Google and creates a session", async () => {
+    const config = createOAuthConfig({
+      redirectURI: "https://app.example.com/api/auth/callback/google",
+    });
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.google!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGoogleResponses(responses);
+
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_2",
+      identityId: "identity_2",
+      createdUser: true,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.getAccountBySubject.mockResolvedValue(null);
+    component.native.sessions.createSession.mockResolvedValue("session_doc_2");
+
+    const { url } = await handleSignIn(config, { provider: "google" });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "google", code: "code-123", state },
+    );
+
+    expect(result.createdUser).toBe(true);
+    expect(result.userId).toBe("user_2");
+
+    expect(component.identity.provisionFromIdentity).toHaveBeenCalledWith({
+      identity: expect.objectContaining({
+        provider: "google",
+        issuer: "https://accounts.google.com",
+        subject: "google-12345",
+        identityId: "https://accounts.google.com:google-12345",
+        tokenIdentifier: "https://accounts.google.com:google-12345",
+      }),
+      user: expect.objectContaining({
+        name: "Google User",
+        email: "google@example.com",
+        image: "https://google-avatar",
+        emailVerified: true,
+      }),
+    });
   });
 });
 

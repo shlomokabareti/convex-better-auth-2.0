@@ -1,6 +1,6 @@
 import type { GenericActionCtx, GenericDataModel } from "convex/server";
-import { createGitHubProvider, type NativeOAuthProvider } from "./oauth.js";
-import type { GitHubProviderConfig } from "./oauth.js";
+import { createGitHubProvider, createGoogleProvider, type NativeOAuthProvider } from "./oauth.js";
+import type { GitHubProviderConfig, GoogleProviderConfig } from "./oauth.js";
 import {
   generateCodeChallenge,
   generateCodeVerifier,
@@ -11,7 +11,8 @@ import { mintToken } from "./jwt.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
 
 export type NativeOAuthConfig = {
-  github: GitHubProviderConfig;
+  github?: GitHubProviderConfig;
+  google?: GoogleProviderConfig;
   /** Full callback URL registered with the OAuth provider. */
   redirectURI?: string;
   /** @default 7 days */
@@ -45,6 +46,9 @@ const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export function getProvider(config: NativeOAuthConfig, providerId: string): NativeOAuthProvider {
   if (providerId === "github" && config.github) {
     return createGitHubProvider(config.github);
+  }
+  if (providerId === "google" && config.google) {
+    return createGoogleProvider(config.google);
   }
   throw new Error(`Unsupported OAuth provider: ${providerId}`);
 }
