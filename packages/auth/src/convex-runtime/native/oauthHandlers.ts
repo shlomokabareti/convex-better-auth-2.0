@@ -160,7 +160,10 @@ export async function handleCallback<DataModel extends GenericDataModel>(
       codeVerifier: statePayload.codeVerifier,
       redirectURI,
     });
-    userInfo = await provider.getUserInfo({ accessToken: tokens.accessToken });
+    userInfo = await provider.getUserInfo({
+      accessToken: tokens.accessToken,
+      idToken: tokens.idToken,
+    });
   } catch (e) {
     return {
       error: "token_exchange_failed",
@@ -239,6 +242,22 @@ export async function handleCallback<DataModel extends GenericDataModel>(
       issuer: provider.issuer,
       subject: user.id,
       credentialHash: "",
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      idToken: tokens.idToken,
+      tokenType: tokens.tokenType,
+      scopes: tokens.scopes,
+      accessTokenExpiresAt: tokens.expiresAt,
+    });
+  } else if (existingAccount) {
+    await ctx.runMutation(component.native.accounts.updateAccountTokens, {
+      accountId: existingAccount._id,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      idToken: tokens.idToken,
+      tokenType: tokens.tokenType,
+      scopes: tokens.scopes,
+      accessTokenExpiresAt: tokens.expiresAt,
     });
   }
 

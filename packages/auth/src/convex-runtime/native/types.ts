@@ -44,6 +44,13 @@ export type NativeAccountDoc = {
   issuer: string;
   subject: string;
   credentialHash: string;
+  accessToken?: string;
+  refreshToken?: string;
+  idToken?: string;
+  tokenType?: string;
+  scopes?: string[];
+  accessTokenExpiresAt?: number;
+  refreshTokenExpiresAt?: number;
   createdAt: number;
   updatedAt: number;
 };
@@ -121,6 +128,13 @@ export type NativeEmailAndPasswordComponentHandle = {
           issuer: string;
           subject: string;
           credentialHash: string;
+          accessToken?: string;
+          refreshToken?: string;
+          idToken?: string;
+          tokenType?: string;
+          scopes?: string[];
+          accessTokenExpiresAt?: number;
+          refreshTokenExpiresAt?: number;
         },
         string,
         string
@@ -129,6 +143,22 @@ export type NativeEmailAndPasswordComponentHandle = {
         "mutation",
         "public" | "internal",
         { accountId: string; credentialHash: string },
+        void,
+        string
+      >;
+      updateAccountTokens: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          accountId: string;
+          accessToken?: string;
+          refreshToken?: string;
+          idToken?: string;
+          tokenType?: string;
+          scopes?: string[];
+          accessTokenExpiresAt?: number;
+          refreshTokenExpiresAt?: number;
+        },
         void,
         string
       >;

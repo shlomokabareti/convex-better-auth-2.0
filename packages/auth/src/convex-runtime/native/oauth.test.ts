@@ -1,4 +1,4 @@
-import { exportJWK, generateKeyPair } from "jose";
+import { exportJWK, generateKeyPair, importJWK, SignJWT } from "jose";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { addNativeOAuthHttpRoutes } from "./oauthHttp.js";
 import {
@@ -21,6 +21,25 @@ import type { NativeOAuthComponentHandle } from "./types.js";
 import type { GenericActionCtx } from "convex/server";
 import type { DataModel } from "../../component/_generated/dataModel.js";
 
+async function mintGoogleIdToken(payload: Record<string, unknown> = {}) {
+  const privateJwk = JSON.parse(process.env.JWT_PRIVATE_KEY!);
+  const privateKey = await importJWK(privateJwk, "RS256");
+  return await new SignJWT({
+    sub: "google-12345",
+    name: "Google User",
+    email: "google@example.com",
+    email_verified: true,
+    picture: "https://google-avatar",
+    iss: "https://accounts.google.com",
+    aud: "google-client-id",
+    ...payload,
+  })
+    .setProtectedHeader({ alg: "RS256" })
+    .setIssuedAt()
+    .setExpirationTime("5m")
+    .sign(privateKey);
+}
+
 async function setupTestKeys() {
   const { publicKey, privateKey } = await generateKeyPair("RS256", { extractable: true });
   const privateJwk = await exportJWK(privateKey);
@@ -34,6 +53,7 @@ type MockComponent = {
   native: {
     accounts: {
       createAccount: ReturnType<typeof vi.fn>;
+      updateAccountTokens: ReturnType<typeof vi.fn>;
       getAccountBySubject: ReturnType<typeof vi.fn>;
     };
     sessions: { createSession: ReturnType<typeof vi.fn> };
@@ -49,6 +69,7 @@ function createMockComponent(): MockComponent {
     native: {
       accounts: {
         createAccount: vi.fn(),
+        updateAccountTokens: vi.fn(),
         getAccountBySubject: vi.fn().mockResolvedValue(null),
       },
       sessions: {
@@ -152,9 +173,19 @@ function setupGitHubResponses(
   });
 }
 
-function setupGoogleResponses(responses: ReturnType<typeof createMockFetch>["responses"]) {
+async function setupGoogleResponses(
+  responses: ReturnType<typeof createMockFetch>["responses"],
+  { idToken }: { idToken?: string } = {},
+) {
+  responses.set("https://www.googleapis.com/oauth2/v3/certs", {
+    body: JSON.parse(process.env.JWKS!),
+  });
   responses.set("https://oauth2.googleapis.com/token", {
-    body: { access_token: "google-access-token", token_type: "Bearer" },
+    body: {
+      access_token: "google-access-token",
+      token_type: "Bearer",
+      id_token: idToken,
+    },
   });
   responses.set("https://openidconnect.googleapis.com/v1/userinfo", {
     body: {
@@ -311,9 +342,29 @@ describe("Google provider", () => {
     const { fetch, responses } = createMockFetch();
     config.fetchImpl = fetch as unknown as typeof globalThis.fetch;
     const provider = createGoogleProvider(config);
-    setupGoogleResponses(responses);
+    await setupGoogleResponses(responses);
 
     const { user } = await provider.getUserInfo({ accessToken: "google-access-token" });
+
+    expect(user.id).toBe("google-12345");
+    expect(user.name).toBe("Google User");
+    expect(user.email).toBe("google@example.com");
+    expect(user.image).toBe("https://google-avatar");
+    expect(user.emailVerified).toBe(true);
+  });
+
+  it("verifies id_token and uses its claims when present", async () => {
+    const config = createGoogleConfig();
+    const { fetch, responses } = createMockFetch();
+    config.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    const provider = createGoogleProvider(config);
+    const idToken = await mintGoogleIdToken();
+    await setupGoogleResponses(responses, { idToken });
+
+    const { user } = await provider.getUserInfo({
+      accessToken: "google-access-token",
+      idToken,
+    });
 
     expect(user.id).toBe("google-12345");
     expect(user.name).toBe("Google User");
@@ -457,7 +508,8 @@ describe("OAuth handlers", () => {
     const component = createMockComponent();
     const { fetch, responses } = createMockFetch();
     config.google!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
-    setupGoogleResponses(responses);
+    const idToken = await mintGoogleIdToken();
+    await setupGoogleResponses(responses, { idToken });
 
     component.identity.provisionFromIdentity.mockResolvedValue({
       userId: "user_2",
@@ -663,6 +715,85 @@ describe("OAuth handlers", () => {
     }
     expect(component.identity.provisionFromIdentity).toHaveBeenCalled();
     expect(component.native.sessions.createSession).not.toHaveBeenCalled();
+  });
+
+  it("persists OAuth token material on new account creation", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      createdUser: true,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.getAccountBySubject.mockResolvedValue(null);
+    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+
+    const { url } = await handleSignIn(config, { provider: "github" });
+    const state = new URL(url).searchParams.get("state")!;
+
+    await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    const createAccountCall = component.native.accounts.createAccount.mock.calls[0]?.[0];
+    expect(createAccountCall).toMatchObject({
+      userId: "user_1",
+      provider: "github",
+      issuer: "https://github.com/login/oauth",
+      subject: "12345",
+      accessToken: "github-access-token",
+      tokenType: "bearer",
+    });
+  });
+
+  it("updates OAuth token material on an existing linked account", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    component.native.accounts.getAccountBySubject.mockResolvedValue({
+      _id: "account_1",
+      userId: "user_1",
+      provider: "github",
+      issuer: "https://github.com/login/oauth",
+      subject: "12345",
+      credentialHash: "",
+    });
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      createdUser: false,
+      linkedExistingIdentity: false,
+    });
+    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+
+    const { url } = await handleSignIn(config, { provider: "github" });
+    const state = new URL(url).searchParams.get("state")!;
+
+    await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect(component.native.accounts.createAccount).not.toHaveBeenCalled();
+    const updateCall = component.native.accounts.updateAccountTokens.mock.calls[0]?.[0];
+    expect(updateCall).toMatchObject({
+      accountId: "account_1",
+      accessToken: "github-access-token",
+      tokenType: "bearer",
+    });
   });
 });
 

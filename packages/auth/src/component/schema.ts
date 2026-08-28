@@ -674,6 +674,13 @@ export default defineSchema({
     issuer: v.string(),
     subject: v.string(),
     credentialHash: v.string(),
+    accessToken: v.optional(v.string()),
+    refreshToken: v.optional(v.string()),
+    idToken: v.optional(v.string()),
+    tokenType: v.optional(v.string()),
+    scopes: v.optional(v.array(v.string())),
+    accessTokenExpiresAt: v.optional(v.number()),
+    refreshTokenExpiresAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

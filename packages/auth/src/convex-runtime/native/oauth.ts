@@ -1,3 +1,5 @@
+import { createLocalJWKSet, jwtVerify, type JSONWebKeySet } from "jose";
+
 export type OAuthUserInfo = {
   id: string;
   name?: string;
@@ -9,8 +11,10 @@ export type OAuthUserInfo = {
 export type OAuthToken = {
   accessToken: string;
   refreshToken?: string;
+  idToken?: string;
   tokenType?: string;
   expiresAt?: number;
+  scopes?: string[];
 };
 
 export type OAuthProviderOptions = {
@@ -40,7 +44,10 @@ export type NativeOAuthProvider = {
     codeVerifier: string;
     redirectURI: string;
   }): Promise<OAuthToken>;
-  getUserInfo(args: { accessToken: string }): Promise<{ user: OAuthUserInfo; data: unknown }>;
+  getUserInfo(args: {
+    accessToken: string;
+    idToken?: string;
+  }): Promise<{ user: OAuthUserInfo; data: unknown }>;
 };
 
 export type GitHubProfile = {
@@ -119,6 +126,8 @@ export type GoogleProviderConfig = OAuthProviderOptions & {
   hd?: string;
   /** Forward granted scopes from previous authorizations. */
   includeGrantedScopes?: boolean;
+  /** Maximum age in seconds for a Google ID token. */
+  maxTokenAge?: number;
 };
 
 export function createGoogleProvider(config: GoogleProviderConfig): NativeOAuthProvider {
@@ -200,6 +209,7 @@ export function createGoogleProvider(config: GoogleProviderConfig): NativeOAuthP
             token_type?: string;
             scope?: string;
             refresh_token?: string;
+            id_token?: string;
             expires_in?: number;
           }
         | { error: string; error_description?: string; error_uri?: string };
@@ -214,11 +224,44 @@ export function createGoogleProvider(config: GoogleProviderConfig): NativeOAuthP
         accessToken: data.access_token,
         tokenType: data.token_type,
         refreshToken: data.refresh_token,
+        idToken: data.id_token,
         expiresAt: data.expires_in ? Date.now() + data.expires_in * 1000 : undefined,
+        scopes: data.scope ? data.scope.split(" ") : undefined,
       };
     },
 
-    async getUserInfo({ accessToken }) {
+    async getUserInfo({ accessToken, idToken }) {
+      if (idToken) {
+        const jwksResponse = await fetchImpl("https://www.googleapis.com/oauth2/v3/certs");
+        if (!jwksResponse.ok) {
+          throw new Error(`Google JWKS request failed: ${jwksResponse.status}`);
+        }
+        const jwks = (await jwksResponse.json()) as JSONWebKeySet;
+        const jwksSet = createLocalJWKSet(jwks);
+        const { payload } = await jwtVerify(idToken, jwksSet, {
+          algorithms: ["RS256"],
+          issuer: ["https://accounts.google.com", "accounts.google.com"],
+          audience: config.clientId,
+          maxTokenAge: config.maxTokenAge,
+        });
+
+        const hd = config.hd;
+        if (hd && payload.hd !== hd) {
+          throw new Error(`Google id_token hosted domain mismatch: expected ${hd}`);
+        }
+
+        return {
+          user: {
+            id: String(payload.sub),
+            name: payload.name as string | undefined,
+            email: payload.email as string | undefined,
+            image: payload.picture as string | undefined,
+            emailVerified: payload.email_verified === true,
+          },
+          data: payload,
+        };
+      }
+
       const response = await fetchImpl("https://openidconnect.googleapis.com/v1/userinfo", {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -317,6 +360,7 @@ export function createGitHubProvider(config: GitHubProviderConfig): NativeOAuthP
             token_type?: string;
             scope?: string;
             refresh_token?: string;
+            id_token?: string;
             expires_in?: number;
           }
         | { error: string; error_description?: string; error_uri?: string };
@@ -331,7 +375,9 @@ export function createGitHubProvider(config: GitHubProviderConfig): NativeOAuthP
         accessToken: data.access_token,
         tokenType: data.token_type,
         refreshToken: data.refresh_token,
+        idToken: data.id_token,
         expiresAt: data.expires_in ? Date.now() + data.expires_in * 1000 : undefined,
+        scopes: data.scope ? data.scope.split(",") : undefined,
       };
     },
 
