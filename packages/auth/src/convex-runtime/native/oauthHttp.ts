@@ -3,8 +3,15 @@ import { handleCallback, handleSignIn, type NativeOAuthConfig } from "./oauthHan
 import { verifyOAuthState } from "./oauthState.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
 
-function setCookieHeader(token: string): string {
-  return `convex-auth-token=${token}; Path=/; HttpOnly; SameSite=Lax`;
+function setCookieHeader(token: string, maxAgeMs?: number, secure?: boolean): string {
+  let header = `convex-auth-token=${token}; Path=/; HttpOnly; SameSite=Lax`;
+  if (maxAgeMs !== undefined) {
+    header += `; Max-Age=${Math.floor(maxAgeMs / 1000)}`;
+  }
+  if (secure) {
+    header += "; Secure";
+  }
+  return header;
 }
 
 function parseProvider(url: URL): string {
@@ -38,12 +45,16 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
         url.searchParams.get("redirectTo") ?? url.searchParams.get("callbackURL") ?? undefined;
       const errorURL = url.searchParams.get("errorURL") ?? undefined;
       const newUserURL = url.searchParams.get("newUserURL") ?? undefined;
+      const requestSignUp = url.searchParams.get("requestSignUp") === "true";
+      const link = url.searchParams.get("link") === "true";
 
       const result = await handleSignIn(config.oauth, {
         provider,
         callbackURL,
         errorURL,
         newUserURL,
+        requestSignUp,
+        link,
       });
 
       return new Response(null, {
@@ -78,32 +89,30 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
       }
 
       if (!code || !state) {
-        return new Response("Missing code or state", { status: 400 });
+        const base = process.env.SITE_URL ?? "/";
+        return buildErrorRedirect(base, "no_code", "Missing code or state");
       }
 
-      try {
-        const result = await handleCallback(ctx, config.component, config.oauth, {
-          provider,
-          code,
-          state,
-        });
-        const headers = new Headers();
-        headers.set("Location", result.redirectUrl);
-        headers.set("Set-Cookie", setCookieHeader(result.token));
-        return new Response(null, { status: 302, headers });
-      } catch (e) {
-        const errorURL = await (async () => {
-          try {
-            const statePayload = await verifyOAuthState(state);
-            return statePayload.errorURL;
-          } catch {
-            return undefined;
-          }
-        })();
-        const base = errorURL ?? process.env.SITE_URL ?? "/";
-        const description = e instanceof Error ? e.message : "callback_failed";
-        return buildErrorRedirect(base, "callback_failed", description);
+      const result = await handleCallback(ctx, config.component, config.oauth, {
+        provider,
+        code,
+        state,
+      });
+      if ("error" in result) {
+        return buildErrorRedirect(result.redirectUrl, result.error, result.errorDescription);
       }
+
+      const headers = new Headers();
+      headers.set("Location", result.redirectUrl);
+      headers.set(
+        "Set-Cookie",
+        setCookieHeader(
+          result.token,
+          config.oauth.sessionTtlMs,
+          process.env.NODE_ENV === "production",
+        ),
+      );
+      return new Response(null, { status: 302, headers });
     }),
   });
 }

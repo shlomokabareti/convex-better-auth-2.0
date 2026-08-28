@@ -13,10 +13,22 @@ export type OAuthToken = {
   expiresAt?: number;
 };
 
+export type OAuthProviderOptions = {
+  /** Disable all sign ups for this provider, even with `requestSignUp`. */
+  disableSignUp?: boolean;
+  /** Disable sign up unless the client explicitly passes `requestSignUp`. */
+  disableImplicitSignUp?: boolean;
+  /** Require the provider to report the email as verified before issuing a session. */
+  requireEmailVerification?: boolean;
+  /** Extra query parameters to append to the authorization URL. */
+  additionalParams?: Record<string, string>;
+};
+
 export type NativeOAuthProvider = {
   id: string;
   name: string;
   issuer: string;
+  options: OAuthProviderOptions;
   createAuthorizationURL(args: {
     state: string;
     codeChallenge: string;
@@ -46,7 +58,7 @@ export type GitHubEmail = {
   visibility?: string | null;
 };
 
-export type GitHubProviderConfig = {
+export type GitHubProviderConfig = OAuthProviderOptions & {
   clientId: string;
   clientSecret: string;
   /** @default "https://github.com" */
@@ -90,23 +102,41 @@ export type GoogleProfile = {
   picture?: string;
 };
 
-export type GoogleProviderConfig = {
+export type GoogleProviderConfig = OAuthProviderOptions & {
   clientId: string;
   clientSecret: string;
   /** @default ["openid", "email", "profile"] */
   scopes?: string[];
   /** Override fetch for testing. */
   fetchImpl?: typeof fetch;
+  /** Request a refresh token by setting `access_type=offline`. */
+  accessType?: "online" | "offline";
+  /** @default "consent" when `accessType` is "offline" */
+  prompt?: "none" | "select_account" | "consent" | "login";
+  /** Pre-fill the login hint. */
+  loginHint?: string;
+  /** Restrict to a Google Workspace hosted domain. */
+  hd?: string;
+  /** Forward granted scopes from previous authorizations. */
+  includeGrantedScopes?: boolean;
 };
 
 export function createGoogleProvider(config: GoogleProviderConfig): NativeOAuthProvider {
   const fetchImpl = config.fetchImpl ?? fetch;
   const defaultScopes = ["openid", "email", "profile"];
 
+  const providerOptions: OAuthProviderOptions = {
+    disableSignUp: config.disableSignUp,
+    disableImplicitSignUp: config.disableImplicitSignUp,
+    requireEmailVerification: config.requireEmailVerification,
+    additionalParams: config.additionalParams,
+  };
+
   return {
     id: "google",
     name: "Google",
     issuer: "https://accounts.google.com",
+    options: providerOptions,
 
     createAuthorizationURL({ state, codeChallenge, redirectURI, scopes }) {
       const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
@@ -126,6 +156,21 @@ export function createGoogleProvider(config: GoogleProviderConfig): NativeOAuthP
         }
       }
       url.searchParams.set("scope", requestedScopes.join(" "));
+
+      if (config.accessType) url.searchParams.set("access_type", config.accessType);
+      if (config.prompt) url.searchParams.set("prompt", config.prompt);
+      if (config.loginHint) url.searchParams.set("login_hint", config.loginHint);
+      if (config.hd) url.searchParams.set("hd", config.hd);
+      if (config.includeGrantedScopes !== false) {
+        url.searchParams.set("include_granted_scopes", "true");
+      }
+      if (config.additionalParams) {
+        for (const [key, value] of Object.entries(config.additionalParams)) {
+          if (!url.searchParams.has(key)) {
+            url.searchParams.set(key, value);
+          }
+        }
+      }
 
       return url;
     },
@@ -204,10 +249,18 @@ export function createGitHubProvider(config: GitHubProviderConfig): NativeOAuthP
   const fetchImpl = config.fetchImpl ?? fetch;
   const defaultScopes = ["read:user", "user:email"];
 
+  const providerOptions: OAuthProviderOptions = {
+    disableSignUp: config.disableSignUp,
+    disableImplicitSignUp: config.disableImplicitSignUp,
+    requireEmailVerification: config.requireEmailVerification,
+    additionalParams: config.additionalParams,
+  };
+
   return {
     id: "github",
     name: "GitHub",
     issuer: urls.issuer,
+    options: providerOptions,
 
     createAuthorizationURL({ state, codeChallenge, redirectURI, scopes }) {
       const url = new URL(urls.authorize);
@@ -227,6 +280,14 @@ export function createGitHubProvider(config: GitHubProviderConfig): NativeOAuthP
         }
       }
       url.searchParams.set("scope", requestedScopes.join(" "));
+
+      if (config.additionalParams) {
+        for (const [key, value] of Object.entries(config.additionalParams)) {
+          if (!url.searchParams.has(key)) {
+            url.searchParams.set(key, value);
+          }
+        }
+      }
 
       return url;
     },

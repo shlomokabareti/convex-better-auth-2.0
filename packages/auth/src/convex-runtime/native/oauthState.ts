@@ -7,6 +7,9 @@ export type OAuthStatePayload = {
   callbackURL?: string;
   errorURL?: string;
   newUserURL?: string;
+  requestSignUp?: boolean;
+  link?: boolean;
+  additionalData?: Record<string, unknown>;
 };
 
 function base64url(bytes: Uint8Array): string {
@@ -60,5 +63,11 @@ export async function verifyOAuthState(token: string): Promise<OAuthStatePayload
     callbackURL: typeof payload.callbackURL === "string" ? payload.callbackURL : undefined,
     errorURL: typeof payload.errorURL === "string" ? payload.errorURL : undefined,
     newUserURL: typeof payload.newUserURL === "string" ? payload.newUserURL : undefined,
+    requestSignUp: payload.requestSignUp === true,
+    link: payload.link === true,
+    additionalData:
+      typeof payload.additionalData === "object" && payload.additionalData !== null
+        ? (payload.additionalData as Record<string, unknown>)
+        : undefined,
   };
 }

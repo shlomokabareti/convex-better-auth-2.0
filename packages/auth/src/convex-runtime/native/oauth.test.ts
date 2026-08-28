@@ -37,6 +37,7 @@ type MockComponent = {
       getAccountBySubject: ReturnType<typeof vi.fn>;
     };
     sessions: { createSession: ReturnType<typeof vi.fn> };
+    users: { getUserByEmail: ReturnType<typeof vi.fn> };
   };
 };
 
@@ -48,10 +49,13 @@ function createMockComponent(): MockComponent {
     native: {
       accounts: {
         createAccount: vi.fn(),
-        getAccountBySubject: vi.fn(),
+        getAccountBySubject: vi.fn().mockResolvedValue(null),
       },
       sessions: {
         createSession: vi.fn(),
+      },
+      users: {
+        getUserByEmail: vi.fn().mockResolvedValue(null),
       },
     },
   } as MockComponent;
@@ -492,6 +496,173 @@ describe("OAuth handlers", () => {
         emailVerified: true,
       }),
     });
+  });
+
+  it("handleCallback returns signup_disabled when disableSignUp is set", async () => {
+    const config = createOAuthConfig({
+      github: createGitHubConfig({ disableSignUp: true }),
+    });
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    const { url } = await handleSignIn(config, {
+      provider: "github",
+      errorURL: "https://app.example.com/error",
+    });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toBe("signup_disabled");
+      expect(result.redirectUrl).toBe("https://app.example.com/error");
+    }
+    expect(component.identity.provisionFromIdentity).not.toHaveBeenCalled();
+  });
+
+  it("handleCallback links to an existing user by email when verified", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    component.native.users.getUserByEmail.mockResolvedValue({
+      _id: "existing_user_1",
+    });
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "existing_user_1",
+      identityId: "identity_1",
+      createdUser: false,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.getAccountBySubject.mockResolvedValue(null);
+    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+
+    const { url } = await handleSignIn(config, { provider: "github" });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect(result.createdUser).toBe(false);
+    expect(result.userId).toBe("existing_user_1");
+    expect(component.native.accounts.createAccount).toHaveBeenCalled();
+  });
+
+  it("handleCallback blocks linking when email is unverified and provider is not trusted", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    responses.set("https://github.com/login/oauth/access_token", {
+      body: { access_token: "github-access-token", token_type: "bearer" },
+    });
+    responses.set("https://api.github.com/user", {
+      body: {
+        id: 12345,
+        login: "octocat",
+        name: "The Octocat",
+        email: null,
+        avatar_url: "https://avatar",
+      },
+    });
+    responses.set("https://api.github.com/user/emails", {
+      body: [
+        { email: "octocat@example.com", primary: true, verified: false, visibility: "public" },
+      ],
+    });
+
+    component.native.users.getUserByEmail.mockResolvedValue({
+      _id: "existing_user_1",
+    });
+
+    const { url } = await handleSignIn(config, {
+      provider: "github",
+      errorURL: "https://app.example.com/error",
+    });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toBe("account_not_linked");
+      expect(result.redirectUrl).toBe("https://app.example.com/error");
+    }
+    expect(component.identity.provisionFromIdentity).not.toHaveBeenCalled();
+  });
+
+  it("handleCallback returns email_not_verified when requireEmailVerification is set", async () => {
+    const config = createOAuthConfig({
+      github: createGitHubConfig({ requireEmailVerification: true }),
+    });
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    responses.set("https://github.com/login/oauth/access_token", {
+      body: { access_token: "github-access-token", token_type: "bearer" },
+    });
+    responses.set("https://api.github.com/user", {
+      body: {
+        id: 12345,
+        login: "octocat",
+        name: "The Octocat",
+        email: null,
+        avatar_url: "https://avatar",
+      },
+    });
+    responses.set("https://api.github.com/user/emails", {
+      body: [
+        { email: "octocat@example.com", primary: true, verified: false, visibility: "public" },
+      ],
+    });
+
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      createdUser: true,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.getAccountBySubject.mockResolvedValue(null);
+
+    const { url } = await handleSignIn(config, {
+      provider: "github",
+      errorURL: "https://app.example.com/error",
+    });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toBe("email_not_verified");
+      expect(result.redirectUrl).toBe("https://app.example.com/error");
+    }
+    expect(component.identity.provisionFromIdentity).toHaveBeenCalled();
+    expect(component.native.sessions.createSession).not.toHaveBeenCalled();
   });
 });
 
