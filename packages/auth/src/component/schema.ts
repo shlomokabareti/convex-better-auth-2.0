@@ -200,7 +200,8 @@ export default defineSchema({
     .index("by_provider_issuer_subject", ["provider", "issuer", "subject"])
     .index("by_issuer_subject", ["issuer", "subject"])
     .index("by_token_identifier", ["tokenIdentifier"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_user_provider_issuer", ["userId", "provider", "issuer"]),
 
   organizations: defineTable({
     name: v.string(),
@@ -702,6 +703,19 @@ export default defineSchema({
     .index("by_token", ["token"])
     .index("by_user", ["userId"]),
 
+  authRefreshTokens: defineTable({
+    tokenHash: v.string(),
+    sessionId: v.string(),
+    userId: v.id("users"),
+    expiresAt: v.number(),
+    revokedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_token_hash", ["tokenHash"])
+    .index("by_session", ["sessionId"])
+    .index("by_user", ["userId"]),
+
   mcp_oauth_refresh_tokens: defineTable({
     tokenHash: v.string(),
     tokenId: v.string(),
@@ -740,6 +754,32 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_token_hash", ["tokenHash"])
+    .index("by_token_hash", ["tokenHash", "type"])
     .index("by_user_type", ["userId", "type"]),
+
+  authVerifiers: defineTable({
+    verifierId: v.string(),
+    type: v.string(),
+    provider: v.optional(v.string()),
+    codeChallenge: v.optional(v.string()),
+    codeChallengeMethod: v.optional(v.string()),
+    redirectUri: v.optional(v.string()),
+    metadata: v.optional(v.string()),
+    expiresAt: v.number(),
+    consumedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_verifier_id", ["verifierId"])
+    .index("by_expires_at", ["expiresAt"]),
+
+  authRateLimits: defineTable({
+    identifier: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_identifier_window", ["identifier", "windowStart"])
+    .index("by_window", ["windowStart"]),
 });

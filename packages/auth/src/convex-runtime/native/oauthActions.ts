@@ -1,6 +1,6 @@
 import { action } from "../../component/_generated/server.js";
 import { v } from "convex/values";
-import type { GenericActionCtx } from "convex/server";
+import type { FunctionReference, GenericActionCtx } from "convex/server";
 import type { DataModel } from "../../component/_generated/dataModel.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
 import { handleCallback, handleSignIn, type NativeOAuthConfig } from "./oauthHandlers.js";
@@ -10,6 +10,10 @@ export type { NativeOAuthConfig } from "./oauthHandlers.js";
 export type NativeOAuthActions = {
   signIn: ReturnType<typeof action>;
   callback: ReturnType<typeof action>;
+};
+
+export type NativeOAuthFunctionReferences = {
+  [K in keyof NativeOAuthActions]: FunctionReference<"action", "public">;
 };
 
 export function nativeOAuth(
@@ -46,10 +50,12 @@ export function nativeOAuth(
       provider: v.string(),
       code: v.string(),
       state: v.string(),
+      linkingUserId: v.optional(v.string()),
     },
     returns: v.union(
       v.object({
         token: v.string(),
+        refreshToken: v.string(),
         userId: v.string(),
         identityId: v.string(),
         sessionId: v.string(),
@@ -64,7 +70,7 @@ export function nativeOAuth(
     ),
     handler: async (
       ctx: GenericActionCtx<DataModel>,
-      args: { provider: string; code: string; state: string },
+      args: { provider: string; code: string; state: string; linkingUserId?: string },
     ) => {
       const result = await handleCallback(ctx, component, config, args);
       if ("error" in result) {

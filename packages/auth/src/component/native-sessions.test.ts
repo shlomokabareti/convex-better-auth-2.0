@@ -20,6 +20,29 @@ async function insertUser(t: ReturnType<typeof convexTest>) {
   );
 }
 
+async function insertIdentity(
+  t: ReturnType<typeof convexTest>,
+  userId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  return await t.run(async (ctx) =>
+    ctx.db.insert("auth_identities", {
+      identityId: "subject_1",
+      userId,
+      provider: "password",
+      issuer: "native",
+      subject: "subject_1",
+      tokenIdentifier: "subject_1",
+      email: "shlomo@example.com",
+      emailVerified: false,
+      sessionId: null,
+      createdAt: 0,
+      updatedAt: 0,
+      ...overrides,
+    }),
+  );
+}
+
 describe("native sessions", () => {
   it("creates and lists sessions for a user", async () => {
     const t = convexTest(schema, modules);
@@ -108,5 +131,73 @@ describe("native sessions", () => {
 
     const sessions = await t.query(api.native.sessions.listSessionsByUser, { userId });
     expect(sessions[0].revokedAt).toBeUndefined();
+  });
+
+  it("rotateSession consumes the old refresh token and session and creates a new pair", async () => {
+    const t = convexTest(schema, modules);
+    const userId = await insertUser(t);
+    await insertIdentity(t, userId);
+    const now = Date.now();
+
+    await t.mutation(api.native.sessions.createSession, {
+      sessionId: "session-1",
+      userId,
+      token: "token-1",
+      expiresAt: now + 1_000_000,
+    });
+
+    await t.mutation(api.native.refreshTokens.createRefreshToken, {
+      tokenHash: "old-hash",
+      sessionId: "session-1",
+      userId,
+      expiresAt: now + 1_000_000,
+    });
+
+    const result = await t.mutation(api.native.sessions.rotateSession, {
+      oldRefreshTokenHash: "old-hash",
+      newSessionId: "session-2",
+      newSessionToken: "token-2",
+      newSessionExpiresAt: now + 1_000_000,
+      newRefreshTokenHash: "new-hash",
+      newRefreshTokenExpiresAt: now + 1_000_000,
+      provider: "password",
+      issuer: "native",
+    });
+
+    expect(result).toMatchObject({
+      user: {
+        _id: userId,
+        email: "shlomo@example.com",
+      },
+      identityId: expect.any(String),
+    });
+
+    const [oldSession, newSession, oldRefresh, newRefresh] = await t.run(async (ctx) =>
+      Promise.all([
+        ctx.db
+          .query("authSessions")
+          .withIndex("by_session_id", (q) => q.eq("sessionId", "session-1"))
+          .unique(),
+        ctx.db
+          .query("authSessions")
+          .withIndex("by_session_id", (q) => q.eq("sessionId", "session-2"))
+          .unique(),
+        ctx.db
+          .query("authRefreshTokens")
+          .withIndex("by_token_hash", (q) => q.eq("tokenHash", "old-hash"))
+          .unique(),
+        ctx.db
+          .query("authRefreshTokens")
+          .withIndex("by_token_hash", (q) => q.eq("tokenHash", "new-hash"))
+          .unique(),
+      ]),
+    );
+
+    expect(oldSession?.revokedAt).toBeDefined();
+    expect(newSession?.sessionId).toBe("session-2");
+    expect(newSession?.token).toBe("token-2");
+    expect(oldRefresh?.revokedAt).toBeDefined();
+    expect(newRefresh?.sessionId).toBe("session-2");
+    expect(newRefresh?.userId).toBe(userId);
   });
 });

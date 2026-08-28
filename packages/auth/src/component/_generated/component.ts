@@ -971,10 +971,57 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         },
         Name
       >;
+      getUserAndAccount: FunctionReference<
+        "query",
+        "internal",
+        { email: string },
+        null | {
+          account: {
+            _creationTime: number;
+            _id: string;
+            createdAt?: number;
+            credentialHash: string;
+            issuer: string;
+            provider: string;
+            subject: string;
+            updatedAt?: number;
+            userId: string;
+          };
+          identity: {
+            _creationTime: number;
+            _id: string;
+            createdAt?: number;
+            email?: string;
+            emailVerified: boolean;
+            identityId: string;
+            issuer: string;
+            provider: string;
+            sessionId?: string | null;
+            subject: string;
+            tokenIdentifier: string;
+            updatedAt?: number;
+            userId: string;
+          };
+          user: {
+            _creationTime: number;
+            _id: string;
+            createdAt?: number;
+            email?: string;
+            emailVerified: boolean;
+            image?: string;
+            isActive?: boolean;
+            name?: string;
+            updatedAt?: number;
+          };
+        },
+        Name
+      >;
       provisionFromIdentity: FunctionReference<
         "mutation",
         "internal",
         {
+          account?: { credentialHash: string };
+          allowLink?: boolean;
           identity: {
             email?: string;
             emailVerified: boolean;
@@ -991,11 +1038,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             image?: string;
             name?: string;
           };
+          verificationCode?: { expiresAt: number; tokenHash: string };
         },
         {
           createdUser: boolean;
-          identityId: string;
+          duplicate?: boolean;
+          identityId?: string;
           linkedExistingIdentity: boolean;
+          user?: {
+            _creationTime: number;
+            _id: string;
+            createdAt?: number;
+            email?: string;
+            emailVerified: boolean;
+            image?: string;
+            isActive?: boolean;
+            name?: string;
+            updatedAt?: number;
+          };
           userId: string;
         },
         Name

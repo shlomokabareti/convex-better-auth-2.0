@@ -1,6 +1,58 @@
+import { v } from "convex/values";
 import type { FunctionReference } from "convex/server";
 
 export type VerificationCodeType = "email_verification" | "password_reset";
+
+export type NativeAuthUser = {
+  id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  emailVerified: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export function toNativeAuthUser(user: {
+  _id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  emailVerified: boolean;
+  createdAt: number;
+  updatedAt: number;
+}): NativeAuthUser {
+  return {
+    id: user._id,
+    email: user.email,
+    name: user.name,
+    image: user.image,
+    emailVerified: user.emailVerified,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
+export const nativeAuthUserValidator = v.object({
+  id: v.string(),
+  email: v.optional(v.string()),
+  name: v.optional(v.string()),
+  image: v.optional(v.string()),
+  emailVerified: v.boolean(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+});
+
+export type NativeAuthSession = {
+  token: string | null;
+  refreshToken?: string;
+  user: NativeAuthUser;
+  userId?: string;
+  identityId?: string;
+  sessionId?: string;
+  redirect?: boolean;
+  url?: string;
+};
 
 export type NativeVerificationCodeDoc = {
   _id: string;
@@ -69,6 +121,18 @@ export type NativeSessionDoc = {
   updatedAt: number;
 };
 
+export type NativeRefreshTokenDoc = {
+  _id: string;
+  _creationTime: number;
+  tokenHash: string;
+  sessionId: string;
+  userId: string;
+  expiresAt: number;
+  revokedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type NativeIdentityDoc = {
   _id: string;
   _creationTime: number;
@@ -107,13 +171,45 @@ export type NativeEmailAndPasswordComponentHandle = {
           image?: string;
           emailVerified: boolean;
         };
+        account?: { credentialHash: string };
+        verificationCode?: { tokenHash: string; expiresAt: number };
+        allowLink?: boolean;
       },
       {
         createdUser: boolean;
-        identityId: string;
+        identityId?: string;
         linkedExistingIdentity: boolean;
         userId: string;
+        duplicate?: boolean;
+        user?: NativeUserDoc;
       },
+      string
+    >;
+    getUserAndAccount: FunctionReference<
+      "query",
+      "public" | "internal",
+      { email: string },
+      { user: NativeUserDoc; identity: NativeIdentityDoc; account: NativeAccountDoc } | null,
+      string
+    >;
+    verifyEmail: FunctionReference<
+      "mutation",
+      "public" | "internal",
+      { tokenHash: string; provider: string; issuer: string },
+      { success: boolean; user?: NativeUserDoc; reason?: string },
+      string
+    >;
+    resetPassword: FunctionReference<
+      "mutation",
+      "public" | "internal",
+      {
+        tokenHash: string;
+        credentialHash: string;
+        provider: string;
+        issuer: string;
+        revokeSessions?: boolean;
+      },
+      { status: boolean; user?: NativeUserDoc; reason?: string },
       string
     >;
   };
@@ -197,10 +293,79 @@ export type NativeEmailAndPasswordComponentHandle = {
         NativeSessionDoc[],
         string
       >;
+      getSessionByToken: FunctionReference<
+        "query",
+        "public" | "internal",
+        { token: string },
+        NativeSessionDoc | null,
+        string
+      >;
+      getSessionBySessionId: FunctionReference<
+        "query",
+        "public" | "internal",
+        { sessionId: string },
+        NativeSessionDoc | null,
+        string
+      >;
       revokeSessionsForUser: FunctionReference<
         "mutation",
         "public" | "internal",
         { userId: string; excludeSessionId?: string },
+        number,
+        string
+      >;
+      rotateSession: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          oldRefreshTokenHash: string;
+          newSessionId: string;
+          newSessionToken: string;
+          newSessionExpiresAt: number;
+          newSessionIpAddress?: string;
+          newSessionUserAgent?: string;
+          newRefreshTokenHash: string;
+          newRefreshTokenExpiresAt: number;
+          provider: string;
+          issuer: string;
+        },
+        { user: NativeUserDoc; identityId: string } | null,
+        string
+      >;
+    };
+    refreshTokens: {
+      createRefreshToken: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { tokenHash: string; sessionId: string; userId: string; expiresAt: number },
+        string,
+        string
+      >;
+      getRefreshTokenByTokenHash: FunctionReference<
+        "query",
+        "public" | "internal",
+        { tokenHash: string },
+        NativeRefreshTokenDoc | null,
+        string
+      >;
+      consumeRefreshToken: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { tokenHash: string },
+        NativeRefreshTokenDoc | null,
+        string
+      >;
+      revokeRefreshTokensForSession: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { sessionId: string },
+        number,
+        string
+      >;
+      revokeRefreshTokensForUser: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { userId: string },
         number,
         string
       >;
@@ -226,6 +391,13 @@ export type NativeEmailAndPasswordComponentHandle = {
         "query",
         "public" | "internal",
         { email: string },
+        NativeUserDoc | null,
+        string
+      >;
+      getUserById: FunctionReference<
+        "query",
+        "public" | "internal",
+        { userId: string },
         NativeUserDoc | null,
         string
       >;

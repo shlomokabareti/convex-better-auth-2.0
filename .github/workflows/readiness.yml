@@ -30,4 +30,4 @@ jobs:
           cache: pnpm
 
       - name: Run production readiness scan
-        run: pnpm dlx @marinjursic/prc quick
+        run: pnpm dlx --package @marinjursic/prc --package @marinjursic/prc-linux-x64 prc quick

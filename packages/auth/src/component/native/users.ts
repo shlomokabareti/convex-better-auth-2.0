@@ -11,6 +11,13 @@ export const getUserByEmail = query({
   },
 });
 
+export const getUserById = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get("users", args.userId);
+  },
+});
+
 export const markEmailVerified = mutation({
   args: {
     userId: v.id("users"),

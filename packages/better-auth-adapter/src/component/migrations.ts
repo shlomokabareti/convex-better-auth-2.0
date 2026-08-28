@@ -111,6 +111,8 @@ const targetAccountIdentity = (account: Doc<"account">, providerIssuers: Provide
   return { accountId, issuer };
 };
 
+const MAX_ACCOUNT_IDENTITY_CANDIDATES = 1000;
+
 const assertNoAccountIdentityCollision = async (
   ctx: Pick<QueryCtx, "db">,
   account: Doc<"account">,
@@ -120,7 +122,7 @@ const assertNoAccountIdentityCollision = async (
   const candidates = await ctx.db
     .query("account")
     .withIndex("accountId", (index) => index.eq("accountId", target.accountId))
-    .collect();
+    .take(MAX_ACCOUNT_IDENTITY_CANDIDATES);
 
   if (account.providerId === "credential") {
     const credentialCandidates = await ctx.db
@@ -128,7 +130,7 @@ const assertNoAccountIdentityCollision = async (
       .withIndex("providerId_userId", (index) =>
         index.eq("providerId", "credential").eq("userId", account.userId),
       )
-      .collect();
+      .take(MAX_ACCOUNT_IDENTITY_CANDIDATES);
     const candidateIds = new Set(candidates.map((candidate) => candidate._id));
     candidates.push(
       ...credentialCandidates.filter((candidate) => !candidateIds.has(candidate._id)),

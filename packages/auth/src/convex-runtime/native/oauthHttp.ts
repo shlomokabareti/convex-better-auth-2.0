@@ -2,11 +2,30 @@ import { httpActionGeneric, type HttpRouter } from "convex/server";
 import { handleCallback, handleSignIn, type NativeOAuthConfig } from "./oauthHandlers.js";
 import { verifyOAuthState } from "./oauthState.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
+import { verifyToken } from "./jwt.js";
 
-function setCookieHeader(token: string, maxAgeMs?: number, secure?: boolean): string {
-  let header = `convex-auth-token=${token}; Path=/; HttpOnly; SameSite=Lax`;
-  if (maxAgeMs !== undefined) {
-    header += `; Max-Age=${Math.floor(maxAgeMs / 1000)}`;
+const ACCESS_TOKEN_COOKIE = "convex-auth-token";
+const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
+const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+
+function readCookie(request: Request, name: string): string | undefined {
+  const cookieHeader = request.headers.get("cookie");
+  if (!cookieHeader) {
+    return undefined;
+  }
+  const match = cookieHeader.match(new RegExp(`(?:^|;)\\s*${name}=([^;]+)`));
+  return match?.[1];
+}
+
+function setCookieHeader(
+  name: string,
+  value: string,
+  maxAgeSeconds?: number,
+  secure?: boolean,
+): string {
+  let header = `${name}=${value}; Path=/; HttpOnly; SameSite=Lax`;
+  if (maxAgeSeconds !== undefined) {
+    header += `; Max-Age=${maxAgeSeconds}`;
   }
   if (secure) {
     header += "; Secure";
@@ -93,24 +112,44 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
         return buildErrorRedirect(base, "no_code", "Missing code or state");
       }
 
+      let linkingUserId: string | undefined;
+      const accessToken = readCookie(request, ACCESS_TOKEN_COOKIE);
+      if (accessToken) {
+        try {
+          const payload = await verifyToken(accessToken);
+          if (typeof payload.sub === "string") {
+            linkingUserId = payload.sub;
+          }
+        } catch {
+          // Invalid access token; treat as unauthenticated.
+        }
+      }
+
       const result = await handleCallback(ctx, config.component, config.oauth, {
         provider,
         code,
         state,
+        linkingUserId,
       });
       if ("error" in result) {
         return buildErrorRedirect(result.redirectUrl, result.error, result.errorDescription);
       }
 
+      const secure = new URL(request.url).protocol === "https:";
+      const accessTokenMaxAge =
+        config.oauth.sessionTtlMs !== undefined
+          ? Math.floor(config.oauth.sessionTtlMs / 1000)
+          : undefined;
+
       const headers = new Headers();
       headers.set("Location", result.redirectUrl);
-      headers.set(
+      headers.append(
         "Set-Cookie",
-        setCookieHeader(
-          result.token,
-          config.oauth.sessionTtlMs,
-          process.env.NODE_ENV === "production",
-        ),
+        setCookieHeader(ACCESS_TOKEN_COOKIE, result.token, accessTokenMaxAge, secure),
+      );
+      headers.append(
+        "Set-Cookie",
+        setCookieHeader(REFRESH_TOKEN_COOKIE, result.refreshToken, REFRESH_TOKEN_MAX_AGE_SECONDS, secure),
       );
       return new Response(null, { status: 302, headers });
     }),

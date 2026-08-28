@@ -1,6 +1,6 @@
 {
   "name": "convex-auth",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Convex + Better Auth server, component, and integration.",
   "license": "Apache-2.0",
   "repository": {
@@ -136,6 +136,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "argon2": "^0.45.1",
     "convex-auth-core": "workspace:*",
     "convex-auth-react": "workspace:*",
     "convex-auth-react-native": "workspace:*",
