@@ -162,6 +162,26 @@ export type NativeEmailAndPasswordComponentHandle = {
       { user: NativeUserDoc; identity: NativeIdentityDoc; account: NativeAccountDoc } | null,
       string
     >;
+    verifyEmail: FunctionReference<
+      "mutation",
+      "public" | "internal",
+      { tokenHash: string; provider: string; issuer: string },
+      { success: boolean; user?: NativeUserDoc; reason?: string },
+      string
+    >;
+    resetPassword: FunctionReference<
+      "mutation",
+      "public" | "internal",
+      {
+        tokenHash: string;
+        credentialHash: string;
+        provider: string;
+        issuer: string;
+        revokeSessions?: boolean;
+      },
+      { success: boolean; user?: NativeUserDoc; reason?: string },
+      string
+    >;
   };
   native: {
     accounts: {

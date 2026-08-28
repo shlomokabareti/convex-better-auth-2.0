@@ -6,6 +6,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { mutation, query } from "./_generated/server.js";
 
 const MAX_EMAIL_VERIFICATION_CODE_REVOKE_BATCH = 100;
+const MAX_PASSWORD_RESET_SESSION_REVOKE_BATCH = 1000;
 
 type IdentityLookupCtx = Pick<MutationCtx | QueryCtx, "db">;
 
@@ -112,6 +113,18 @@ const userAndAccountResultValidator = v.union(
     account: userAndAccountAccountValidator,
   }),
 );
+
+const emailVerificationResultValidator = v.object({
+  success: v.boolean(),
+  user: v.optional(userReturnValidator),
+  reason: v.optional(v.string()),
+});
+
+const passwordResetResultValidator = v.object({
+  success: v.boolean(),
+  user: v.optional(userReturnValidator),
+  reason: v.optional(v.string()),
+});
 
 export const provisionFromIdentity = mutation({
   args: {
@@ -287,6 +300,114 @@ export const getUserAndAccount = query({
       return null;
     }
     return { user, identity, account };
+  },
+});
+
+export const verifyEmail = mutation({
+  args: {
+    tokenHash: v.string(),
+    provider: v.string(),
+    issuer: v.string(),
+  },
+  returns: emailVerificationResultValidator,
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const code = await ctx.db
+      .query("authVerificationCodes")
+      .withIndex("by_token_hash", (q) =>
+        q.eq("tokenHash", args.tokenHash).eq("type", "email_verification"),
+      )
+      .unique();
+
+    if (!code) {
+      return { success: false, reason: "invalid" };
+    }
+
+    if (code.consumedAt || code.expiresAt <= now) {
+      return { success: false, reason: "expired" };
+    }
+
+    const identity = await findIdentityByUserAndProvider(ctx, {
+      userId: code.userId,
+      provider: args.provider,
+      issuer: args.issuer,
+    });
+
+    if (identity) {
+      await ctx.db.patch(identity._id, { emailVerified: true, updatedAt: now });
+    }
+
+    await ctx.db.patch("users", code.userId, { emailVerified: true, updatedAt: now });
+    await ctx.db.patch(code._id, { consumedAt: now, updatedAt: now });
+
+    const userRecord = await ctx.db.get("users", code.userId);
+    return { success: true, user: userRecord ? toUserReturn(userRecord) : undefined };
+  },
+});
+
+export const resetPassword = mutation({
+  args: {
+    tokenHash: v.string(),
+    credentialHash: v.string(),
+    provider: v.string(),
+    issuer: v.string(),
+    revokeSessions: v.optional(v.boolean()),
+  },
+  returns: passwordResetResultValidator,
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const code = await ctx.db
+      .query("authVerificationCodes")
+      .withIndex("by_token_hash", (q) =>
+        q.eq("tokenHash", args.tokenHash).eq("type", "password_reset"),
+      )
+      .unique();
+
+    if (!code || code.consumedAt || code.expiresAt <= now) {
+      return { success: false, reason: !code ? "invalid" : "expired" };
+    }
+
+    const identity = await findIdentityByUserAndProvider(ctx, {
+      userId: code.userId,
+      provider: args.provider,
+      issuer: args.issuer,
+    });
+    if (!identity) {
+      return { success: false, reason: "invalid" };
+    }
+
+    const account = await ctx.db
+      .query("authAccounts")
+      .withIndex("by_provider_issuer_subject", (q) =>
+        q.eq("provider", args.provider).eq("issuer", args.issuer).eq("subject", identity.subject),
+      )
+      .unique();
+    if (!account) {
+      return { success: false, reason: "invalid" };
+    }
+
+    const writes: Promise<unknown>[] = [
+      ctx.db.patch(code._id, { consumedAt: now, updatedAt: now }),
+      ctx.db.patch(account._id, { credentialHash: args.credentialHash, updatedAt: now }),
+    ];
+
+    if (args.revokeSessions) {
+      const sessions = await ctx.db
+        .query("authSessions")
+        .withIndex("by_user", (q) => q.eq("userId", code.userId))
+        .take(MAX_PASSWORD_RESET_SESSION_REVOKE_BATCH);
+
+      for (const session of sessions) {
+        if (session.revokedAt === undefined && session.expiresAt > now) {
+          writes.push(ctx.db.patch(session._id, { revokedAt: now, updatedAt: now }));
+        }
+      }
+    }
+
+    await Promise.all(writes);
+
+    const userRecord = await ctx.db.get("users", code.userId);
+    return { success: true, user: userRecord ? toUserReturn(userRecord) : undefined };
   },
 });
 

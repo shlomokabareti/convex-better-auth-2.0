@@ -81,67 +81,21 @@ export function addNativeAuthHttpRoutes(
       const callbackURL = url.searchParams.get("callbackURL");
 
       const tokenHash = hashToken(token);
-      const code = await ctx.runQuery(component.native.codes.getVerificationCodeByTokenHash, {
+      const result = await ctx.runMutation(component.identity.verifyEmail, {
         tokenHash,
-        type: "email_verification",
-      });
-
-      if (!code) {
-        if (callbackURL) {
-          return buildErrorRedirect(callbackURL, "INVALID_TOKEN");
-        }
-        return new Response(JSON.stringify({ success: false, reason: "invalid" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      if (isTokenExpired(code.expiresAt)) {
-        await ctx.runMutation(component.native.codes.consumeVerificationCode, {
-          tokenHash,
-          type: "email_verification",
-        });
-        if (callbackURL) {
-          return buildErrorRedirect(callbackURL, "INVALID_TOKEN");
-        }
-        return new Response(JSON.stringify({ success: false, reason: "expired" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      const consumed = await ctx.runMutation(component.native.codes.consumeVerificationCode, {
-        tokenHash,
-        type: "email_verification",
-      });
-
-      if (!consumed) {
-        if (callbackURL) {
-          return buildErrorRedirect(callbackURL, "INVALID_TOKEN");
-        }
-        return new Response(JSON.stringify({ success: false, reason: "invalid" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
-      const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
-        userId: consumed.userId,
         provider: "password",
         issuer: "native",
       });
 
-      if (identity) {
-        await ctx.runMutation(component.native.identities.markEmailVerified, {
-          identityId: identity._id,
-          emailVerified: true,
+      if (!result.success) {
+        if (callbackURL) {
+          return buildErrorRedirect(callbackURL, result.reason === "expired" ? "EXPIRED_TOKEN" : "INVALID_TOKEN");
+        }
+        return new Response(JSON.stringify({ success: false, reason: result.reason ?? "invalid" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
         });
       }
-
-      await ctx.runMutation(component.native.users.markEmailVerified, {
-        userId: consumed.userId,
-        emailVerified: true,
-      });
 
       if (callbackURL) {
         return buildTokenRedirect(callbackURL, token);

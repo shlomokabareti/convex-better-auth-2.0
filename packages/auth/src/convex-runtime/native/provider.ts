@@ -14,7 +14,7 @@ import {
 } from "../account/passwordResetEmail.js";
 import { mintToken, verifyToken } from "./jwt.js";
 import { hashPassword, verifyPassword as verifyPasswordHash } from "./password.js";
-import { generateVerificationToken, hashToken, isTokenExpired } from "./tokens.js";
+import { generateVerificationToken, hashToken } from "./tokens.js";
 import {
   type NativeAuthUser,
   type NativeEmailAndPasswordComponentHandle,
@@ -535,51 +535,14 @@ export function nativeEmailAndPassword(
     }),
     handler: async (ctx, args) => {
       const tokenHash = hashToken(args.token);
-
-      const code = await ctx.runQuery(component.native.codes.getVerificationCodeByTokenHash, {
+      const result = await ctx.runMutation(component.identity.verifyEmail, {
         tokenHash,
-        type: "email_verification",
-      });
-
-      if (!code) {
-        return { success: false, reason: "invalid" };
-      }
-
-      if (isTokenExpired(code.expiresAt)) {
-        await ctx.runMutation(component.native.codes.consumeVerificationCode, {
-          tokenHash,
-          type: "email_verification",
-        });
-        return { success: false, reason: "expired" };
-      }
-
-      const consumed = await ctx.runMutation(component.native.codes.consumeVerificationCode, {
-        tokenHash,
-        type: "email_verification",
-      });
-
-      if (!consumed) {
-        return { success: false, reason: "invalid" };
-      }
-
-      const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
-        userId: consumed.userId,
         provider: "password",
         issuer: "native",
       });
-
-      if (identity) {
-        await ctx.runMutation(component.native.identities.markEmailVerified, {
-          identityId: identity._id,
-          emailVerified: true,
-        });
+      if (!result.success) {
+        return { success: false, reason: result.reason ?? "invalid" };
       }
-
-      await ctx.runMutation(component.native.users.markEmailVerified, {
-        userId: consumed.userId,
-        emailVerified: true,
-      });
-
       return { success: true };
     },
   });
@@ -651,75 +614,22 @@ export function nativeEmailAndPassword(
       }
 
       const tokenHash = hashToken(args.token);
-
-      const code = await ctx.runQuery(component.native.codes.getVerificationCodeByTokenHash, {
-        tokenHash,
-        type: "password_reset",
-      });
-
-      if (!code) {
-        return { success: false, reason: "invalid" };
-      }
-
-      if (isTokenExpired(code.expiresAt)) {
-        await ctx.runMutation(component.native.codes.consumeVerificationCode, {
-          tokenHash,
-          type: "password_reset",
-        });
-        return { success: false, reason: "expired" };
-      }
-
-      const consumed = await ctx.runMutation(component.native.codes.consumeVerificationCode, {
-        tokenHash,
-        type: "password_reset",
-      });
-
-      if (!consumed) {
-        return { success: false, reason: "invalid" };
-      }
-
-      const user = await ctx.runQuery(component.native.users.getUserById, {
-        userId: consumed.userId,
-      });
-      if (!user) {
-        return { success: false, reason: "invalid" };
-      }
-
-      const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
-        userId: consumed.userId,
-        provider: "password",
-        issuer: "native",
-      });
-
-      if (!identity) {
-        return { success: false, reason: "invalid" };
-      }
-
-      const account = await ctx.runQuery(component.native.accounts.getAccountBySubject, {
-        provider: "password",
-        issuer: "native",
-        subject: identity.subject,
-      });
-
-      if (!account) {
-        return { success: false, reason: "invalid" };
-      }
-
       const credentialHash = await hashPassword(args.newPassword);
 
-      await ctx.runMutation(component.native.accounts.updateCredentialHash, {
-        accountId: account._id,
+      const result = await ctx.runMutation(component.identity.resetPassword, {
+        tokenHash,
         credentialHash,
+        provider: "password",
+        issuer: "native",
+        revokeSessions: revokeSessionsOnPasswordReset,
       });
 
-      if (revokeSessionsOnPasswordReset) {
-        await ctx.runMutation(component.native.sessions.revokeSessionsForUser, {
-          userId: consumed.userId,
-        });
+      if (!result.success) {
+        return { success: false, reason: result.reason ?? "invalid" };
       }
 
-      if (config.onPasswordReset) {
-        await config.onPasswordReset({ user: toNativeAuthUser(user) });
+      if (config.onPasswordReset && result.user) {
+        await config.onPasswordReset({ user: toNativeAuthUser(result.user) });
       }
 
       return { success: true };
