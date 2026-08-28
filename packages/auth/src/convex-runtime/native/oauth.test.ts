@@ -2,8 +2,10 @@ import { exportJWK, generateKeyPair, importJWK, SignJWT } from "jose";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { addNativeOAuthHttpRoutes } from "./oauthHttp.js";
 import {
+  createDiscordProvider,
   createGitHubProvider,
   createGoogleProvider,
+  type DiscordProviderConfig,
   type GitHubProviderConfig,
   type GoogleProviderConfig,
   type NativeOAuthProvider,
@@ -138,6 +140,18 @@ function createGoogleConfig(overrides: Partial<GoogleProviderConfig> = {}): Goog
   return {
     clientId: "google-client-id",
     clientSecret: "google-client-secret",
+    fetchImpl: fetch as unknown as typeof globalThis.fetch,
+    ...overrides,
+  };
+}
+
+function createDiscordConfig(
+  overrides: Partial<DiscordProviderConfig> = {},
+): DiscordProviderConfig {
+  const { fetch } = createMockFetch();
+  return {
+    clientId: "discord-client-id",
+    clientSecret: "discord-client-secret",
     fetchImpl: fetch as unknown as typeof globalThis.fetch,
     ...overrides,
   };
@@ -374,6 +388,76 @@ describe("Google provider", () => {
     expect(user.name).toBe("Google User");
     expect(user.email).toBe("google@example.com");
     expect(user.image).toBe("https://google-avatar");
+    expect(user.emailVerified).toBe(true);
+  });
+});
+
+describe("Discord provider", () => {
+  it("creates an authorization URL with client_id, PKCE, state, and scopes", () => {
+    const config = createDiscordConfig();
+    const provider = createDiscordProvider(config);
+    const url = provider.createAuthorizationURL({
+      state: "state-token",
+      codeChallenge: "challenge",
+      redirectURI: "https://app.example.com/api/auth/callback/discord",
+    });
+    expect(url.origin).toBe("https://discord.com");
+    expect(url.pathname).toBe("/oauth2/authorize");
+    expect(url.searchParams.get("client_id")).toBe("discord-client-id");
+    expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("state")).toBe("state-token");
+    expect(url.searchParams.get("code_challenge")).toBe("challenge");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(url.searchParams.get("scope")).toContain("identify");
+    expect(url.searchParams.get("scope")).toContain("email");
+  });
+
+  it("exchanges a code for an access token", async () => {
+    const config = createDiscordConfig();
+    const { fetch, responses } = createMockFetch();
+    config.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    const provider = createDiscordProvider(config);
+    responses.set("https://discord.com/api/oauth2/token", {
+      body: { access_token: "discord-token", token_type: "Bearer" },
+    });
+
+    const token = await provider.exchangeAuthorizationCode({
+      code: "code-123",
+      codeVerifier: "verifier",
+      redirectURI: "https://app.example.com/api/auth/callback/discord",
+    });
+
+    expect(token.accessToken).toBe("discord-token");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://discord.com/api/oauth2/token",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.any(URLSearchParams),
+      }),
+    );
+  });
+
+  it("fetches user info from the Discord user endpoint", async () => {
+    const config = createDiscordConfig();
+    const { fetch, responses } = createMockFetch();
+    config.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    const provider = createDiscordProvider(config);
+    responses.set("https://discord.com/api/users/@me", {
+      body: {
+        id: "discord-12345",
+        username: "Discord User",
+        email: "discord@example.com",
+        verified: true,
+        avatar: "avatar-hash",
+      },
+    });
+
+    const { user } = await provider.getUserInfo({ accessToken: "discord-token" });
+
+    expect(user.id).toBe("discord-12345");
+    expect(user.name).toBe("Discord User");
+    expect(user.email).toBe("discord@example.com");
+    expect(user.image).toBe("https://cdn.discordapp.com/avatars/discord-12345/avatar-hash.png");
     expect(user.emailVerified).toBe(true);
   });
 });

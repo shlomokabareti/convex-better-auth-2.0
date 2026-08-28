@@ -1,12 +1,13 @@
 import type { GenericActionCtx, GenericDataModel } from "convex/server";
 import {
+  createDiscordProvider,
   createGitHubProvider,
   createGoogleProvider,
   type NativeOAuthProvider,
   type OAuthToken,
   type OAuthUserInfo,
 } from "./oauth.js";
-import type { GitHubProviderConfig, GoogleProviderConfig } from "./oauth.js";
+import type { DiscordProviderConfig, GitHubProviderConfig, GoogleProviderConfig } from "./oauth.js";
 import type { NativeUserDoc } from "./types.js";
 import {
   generateCodeChallenge,
@@ -33,6 +34,7 @@ export type AccountLinkingConfig = {
 export type NativeOAuthConfig = {
   github?: GitHubProviderConfig;
   google?: GoogleProviderConfig;
+  discord?: DiscordProviderConfig;
   /** Full callback URL registered with the OAuth provider. */
   redirectURI?: string;
   /** @default 7 days */
@@ -88,6 +90,9 @@ export function getProvider(config: NativeOAuthConfig, providerId: string): Nati
   }
   if (providerId === "google" && config.google) {
     return createGoogleProvider(config.google);
+  }
+  if (providerId === "discord" && config.discord) {
+    return createDiscordProvider(config.discord);
   }
   throw new Error(`Unsupported OAuth provider: ${providerId}`);
 }

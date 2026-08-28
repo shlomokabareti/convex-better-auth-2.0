@@ -425,3 +425,141 @@ export function createGitHubProvider(config: GitHubProviderConfig): NativeOAuthP
     },
   };
 }
+
+export type DiscordProfile = {
+  id: string;
+  username: string;
+  email?: string;
+  verified?: boolean;
+  avatar?: string | null;
+};
+
+export type DiscordProviderConfig = OAuthProviderOptions & {
+  clientId: string;
+  clientSecret: string;
+  /** @default ["identify", "email"] */
+  scopes?: string[];
+  /** Override fetch for testing. */
+  fetchImpl?: typeof fetch;
+};
+
+export function createDiscordProvider(config: DiscordProviderConfig): NativeOAuthProvider {
+  const fetchImpl = config.fetchImpl ?? fetch;
+  const defaultScopes = ["identify", "email"];
+
+  const providerOptions: OAuthProviderOptions = {
+    disableSignUp: config.disableSignUp,
+    disableImplicitSignUp: config.disableImplicitSignUp,
+    requireEmailVerification: config.requireEmailVerification,
+    additionalParams: config.additionalParams,
+  };
+
+  return {
+    id: "discord",
+    name: "Discord",
+    issuer: "https://discord.com",
+    options: providerOptions,
+
+    createAuthorizationURL({ state, codeChallenge, redirectURI, scopes }) {
+      const url = new URL("https://discord.com/oauth2/authorize");
+      url.searchParams.set("client_id", config.clientId);
+      url.searchParams.set("response_type", "code");
+      url.searchParams.set("redirect_uri", redirectURI);
+      url.searchParams.set("state", state);
+      url.searchParams.set("code_challenge", codeChallenge);
+      url.searchParams.set("code_challenge_method", "S256");
+
+      const requestedScopes = [...defaultScopes];
+      if (scopes?.length) {
+        for (const scope of scopes) {
+          if (!requestedScopes.includes(scope)) {
+            requestedScopes.push(scope);
+          }
+        }
+      }
+      url.searchParams.set("scope", requestedScopes.join(" "));
+
+      if (config.additionalParams) {
+        for (const [key, value] of Object.entries(config.additionalParams)) {
+          if (!url.searchParams.has(key)) {
+            url.searchParams.set(key, value);
+          }
+        }
+      }
+
+      return url;
+    },
+
+    async exchangeAuthorizationCode({ code, codeVerifier, redirectURI }) {
+      const body = new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectURI,
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
+        code_verifier: codeVerifier,
+      });
+
+      const response = await fetchImpl("https://discord.com/api/oauth2/token", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body,
+      });
+
+      const data = (await response.json()) as
+        | {
+            access_token: string;
+            token_type?: string;
+            scope?: string;
+            refresh_token?: string;
+            expires_in?: number;
+          }
+        | { error: string; error_description?: string };
+
+      if ("error" in data) {
+        throw new Error(
+          `Discord token exchange failed: ${data.error} ${data.error_description ?? ""}`.trim(),
+        );
+      }
+
+      return {
+        accessToken: data.access_token,
+        tokenType: data.token_type,
+        refreshToken: data.refresh_token,
+        expiresAt: data.expires_in ? Date.now() + data.expires_in * 1000 : undefined,
+        scopes: data.scope ? data.scope.split(" ") : undefined,
+      };
+    },
+
+    async getUserInfo({ accessToken }) {
+      const response = await fetchImpl("https://discord.com/api/users/@me", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Discord userinfo request failed: ${response.status}`);
+      }
+      const profile = (await response.json()) as DiscordProfile;
+
+      const image = profile.avatar
+        ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png`
+        : undefined;
+
+      return {
+        user: {
+          id: profile.id,
+          name: profile.username,
+          email: profile.email,
+          image,
+          emailVerified: profile.verified ?? false,
+        },
+        data: profile,
+      };
+    },
+  };
+}
