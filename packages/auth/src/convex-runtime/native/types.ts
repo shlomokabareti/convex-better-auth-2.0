@@ -9,6 +9,17 @@ export type NativeAuthUser = {
   name?: string;
   image?: string;
   emailVerified: boolean;
+  emailTwoFactorStatus?: "disabled" | "enabled" | "reset_required";
+  emailTwoFactorEmail?: string;
+  emailTwoFactorEnabledAt?: number;
+  emailTwoFactorDisabledAt?: number;
+  emailTwoFactorLastVerifiedAt?: number;
+  emailTwoFactorResetAt?: number;
+  emailTwoFactorResetReason?: "missing_email" | "email_not_verified" | "email_changed";
+  activeOrganizationId?: string;
+  isActive: boolean;
+  isSuperAdmin?: boolean;
+  metadataJson?: string;
   createdAt: number;
   updatedAt: number;
 };
@@ -19,18 +30,49 @@ export function toNativeAuthUser(user: {
   name?: string;
   image?: string;
   emailVerified: boolean;
+  emailTwoFactorStatus?: "disabled" | "enabled" | "reset_required";
+  emailTwoFactorEmail?: string;
+  emailTwoFactorEnabledAt?: number;
+  emailTwoFactorDisabledAt?: number;
+  emailTwoFactorLastVerifiedAt?: number;
+  emailTwoFactorResetAt?: number;
+  emailTwoFactorResetReason?: "missing_email" | "email_not_verified" | "email_changed";
+  activeOrganizationId?: string;
+  isActive?: boolean;
+  isSuperAdmin?: boolean;
+  metadataJson?: string;
   createdAt: number;
   updatedAt: number;
 }): NativeAuthUser {
-  return {
+  const nativeUser: NativeAuthUser = {
     id: user._id,
     email: user.email,
     name: user.name,
     image: user.image,
     emailVerified: user.emailVerified,
+    isActive: user.isActive ?? true,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
+  if (user.emailTwoFactorStatus !== undefined)
+    nativeUser.emailTwoFactorStatus = user.emailTwoFactorStatus;
+  if (user.emailTwoFactorEmail !== undefined)
+    nativeUser.emailTwoFactorEmail = user.emailTwoFactorEmail;
+  if (user.emailTwoFactorEnabledAt !== undefined)
+    nativeUser.emailTwoFactorEnabledAt = user.emailTwoFactorEnabledAt;
+  if (user.emailTwoFactorDisabledAt !== undefined)
+    nativeUser.emailTwoFactorDisabledAt = user.emailTwoFactorDisabledAt;
+  if (user.emailTwoFactorLastVerifiedAt !== undefined)
+    nativeUser.emailTwoFactorLastVerifiedAt = user.emailTwoFactorLastVerifiedAt;
+  if (user.emailTwoFactorResetAt !== undefined)
+    nativeUser.emailTwoFactorResetAt = user.emailTwoFactorResetAt;
+  if (user.emailTwoFactorResetReason !== undefined)
+    nativeUser.emailTwoFactorResetReason = user.emailTwoFactorResetReason;
+  if (user.activeOrganizationId !== undefined)
+    nativeUser.activeOrganizationId = user.activeOrganizationId;
+  if (user.isSuperAdmin !== undefined) nativeUser.isSuperAdmin = user.isSuperAdmin;
+  if (user.metadataJson !== undefined) nativeUser.metadataJson = user.metadataJson;
+  return nativeUser;
 }
 
 export const nativeAuthUserValidator = v.object({
@@ -39,6 +81,25 @@ export const nativeAuthUserValidator = v.object({
   name: v.optional(v.string()),
   image: v.optional(v.string()),
   emailVerified: v.boolean(),
+  emailTwoFactorStatus: v.optional(
+    v.union(v.literal("disabled"), v.literal("enabled"), v.literal("reset_required")),
+  ),
+  emailTwoFactorEmail: v.optional(v.string()),
+  emailTwoFactorEnabledAt: v.optional(v.number()),
+  emailTwoFactorDisabledAt: v.optional(v.number()),
+  emailTwoFactorLastVerifiedAt: v.optional(v.number()),
+  emailTwoFactorResetAt: v.optional(v.number()),
+  emailTwoFactorResetReason: v.optional(
+    v.union(
+      v.literal("missing_email"),
+      v.literal("email_not_verified"),
+      v.literal("email_changed"),
+    ),
+  ),
+  activeOrganizationId: v.optional(v.string()),
+  isActive: v.boolean(),
+  isSuperAdmin: v.optional(v.boolean()),
+  metadataJson: v.optional(v.string()),
   createdAt: v.number(),
   updatedAt: v.number(),
 });

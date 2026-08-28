@@ -5,6 +5,7 @@ import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { mutation, query } from "./_generated/server.js";
 import { mintToken } from "../convex-runtime/native/jwt.js";
+import { emailTwoFactorResetReasonValidator, emailTwoFactorStatusValidator } from "./schema.js";
 
 const MAX_EMAIL_VERIFICATION_CODE_REVOKE_BATCH = 100;
 const MAX_PASSWORD_RESET_SESSION_REVOKE_BATCH = 1000;
@@ -51,6 +52,17 @@ const userReturnValidator = v.object({
   name: v.optional(v.string()),
   image: v.optional(v.string()),
   emailVerified: v.boolean(),
+  emailTwoFactorStatus: v.optional(emailTwoFactorStatusValidator),
+  emailTwoFactorEmail: v.optional(v.string()),
+  emailTwoFactorEnabledAt: v.optional(v.number()),
+  emailTwoFactorDisabledAt: v.optional(v.number()),
+  emailTwoFactorLastVerifiedAt: v.optional(v.number()),
+  emailTwoFactorResetAt: v.optional(v.number()),
+  emailTwoFactorResetReason: v.optional(emailTwoFactorResetReasonValidator),
+  activeOrganizationId: v.optional(v.id("organizations")),
+  isActive: v.boolean(),
+  isSuperAdmin: v.optional(v.boolean()),
+  metadataJson: v.optional(v.string()),
   createdAt: v.number(),
   updatedAt: v.number(),
 });
@@ -567,6 +579,17 @@ function toUserReturn(user: Doc<"users">) {
     name: user.name,
     image: user.image,
     emailVerified: user.emailVerified,
+    emailTwoFactorStatus: user.emailTwoFactorStatus,
+    emailTwoFactorEmail: user.emailTwoFactorEmail,
+    emailTwoFactorEnabledAt: user.emailTwoFactorEnabledAt,
+    emailTwoFactorDisabledAt: user.emailTwoFactorDisabledAt,
+    emailTwoFactorLastVerifiedAt: user.emailTwoFactorLastVerifiedAt,
+    emailTwoFactorResetAt: user.emailTwoFactorResetAt,
+    emailTwoFactorResetReason: user.emailTwoFactorResetReason,
+    activeOrganizationId: user.activeOrganizationId,
+    isActive: user.isActive,
+    isSuperAdmin: user.isSuperAdmin,
+    metadataJson: user.metadataJson,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

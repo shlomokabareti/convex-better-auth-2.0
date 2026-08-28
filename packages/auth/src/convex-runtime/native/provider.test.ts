@@ -969,6 +969,7 @@ describe("nativeEmailAndPassword", () => {
           email: user.email,
           name: user.name,
           emailVerified: user.emailVerified,
+          isActive: true,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
         },

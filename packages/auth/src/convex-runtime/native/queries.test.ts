@@ -140,6 +140,7 @@ describe("nativeAuthQueries", () => {
       email: "shlomo@example.com",
       name: "Shlomo",
       emailVerified: true,
+      isActive: true,
       createdAt: 0,
       updatedAt: 0,
     });

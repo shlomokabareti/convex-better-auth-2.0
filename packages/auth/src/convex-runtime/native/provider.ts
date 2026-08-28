@@ -113,6 +113,7 @@ function buildGenericDuplicateResponse(
     name,
     image,
     emailVerified: false,
+    isActive: true,
     createdAt: now,
     updatedAt: now,
   };
