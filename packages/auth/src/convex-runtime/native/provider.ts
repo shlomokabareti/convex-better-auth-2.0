@@ -14,7 +14,13 @@ import {
 import { mintToken, verifyToken } from "./jwt.js";
 import { hashPassword, verifyPassword } from "./password.js";
 import { generateVerificationToken, hashToken, isTokenExpired } from "./tokens.js";
-import type { NativeEmailAndPasswordComponentHandle, VerificationCodeType } from "./types.js";
+import {
+  type NativeAuthUser,
+  type NativeEmailAndPasswordComponentHandle,
+  nativeAuthUserValidator,
+  toNativeAuthUser,
+  type VerificationCodeType,
+} from "./types.js";
 
 export type EmailDraft = {
   from: string;
@@ -25,16 +31,6 @@ export type EmailDraft = {
 };
 
 export type EmailSender = (draft: EmailDraft) => Promise<string>;
-
-export type NativeAuthUser = {
-  id: string;
-  email?: string;
-  name?: string;
-  image?: string;
-  emailVerified: boolean;
-  createdAt: number;
-  updatedAt: number;
-};
 
 export type NativeAuthSession = {
   token?: string;
@@ -128,16 +124,6 @@ function validatePassword(
   return { valid: true };
 }
 
-const nativeAuthUserValidator = v.object({
-  id: v.string(),
-  email: v.optional(v.string()),
-  name: v.optional(v.string()),
-  image: v.optional(v.string()),
-  emailVerified: v.boolean(),
-  createdAt: v.number(),
-  updatedAt: v.number(),
-});
-
 const nativeAuthSessionValidator = v.object({
   token: v.optional(v.string()),
   user: nativeAuthUserValidator,
@@ -145,26 +131,6 @@ const nativeAuthSessionValidator = v.object({
   identityId: v.optional(v.string()),
   sessionId: v.optional(v.string()),
 });
-
-function toNativeAuthUser(user: {
-  _id: string;
-  email?: string;
-  name?: string;
-  image?: string;
-  emailVerified: boolean;
-  createdAt: number;
-  updatedAt: number;
-}): NativeAuthUser {
-  return {
-    id: user._id,
-    email: user.email,
-    name: user.name,
-    image: user.image,
-    emailVerified: user.emailVerified,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-  };
-}
 
 function resolveEmailConfig(args: NativeEmailAndPasswordConfig): {
   from?: string;

@@ -45,6 +45,16 @@ export const listSessionsByUser = query({
   },
 });
 
+export const getSessionByToken = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("authSessions")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .unique();
+  },
+});
+
 export const revokeSessionsForUser = mutation({
   args: {
     userId: v.id("users"),

@@ -1,6 +1,47 @@
+import { v } from "convex/values";
 import type { FunctionReference } from "convex/server";
 
 export type VerificationCodeType = "email_verification" | "password_reset";
+
+export type NativeAuthUser = {
+  id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  emailVerified: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export function toNativeAuthUser(user: {
+  _id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  emailVerified: boolean;
+  createdAt: number;
+  updatedAt: number;
+}): NativeAuthUser {
+  return {
+    id: user._id,
+    email: user.email,
+    name: user.name,
+    image: user.image,
+    emailVerified: user.emailVerified,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
+export const nativeAuthUserValidator = v.object({
+  id: v.string(),
+  email: v.optional(v.string()),
+  name: v.optional(v.string()),
+  image: v.optional(v.string()),
+  emailVerified: v.boolean(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+});
 
 export type NativeVerificationCodeDoc = {
   _id: string;
@@ -167,6 +208,13 @@ export type NativeEmailAndPasswordComponentHandle = {
         NativeSessionDoc[],
         string
       >;
+      getSessionByToken: FunctionReference<
+        "query",
+        "public" | "internal",
+        { token: string },
+        NativeSessionDoc | null,
+        string
+      >;
       revokeSessionsForUser: FunctionReference<
         "mutation",
         "public" | "internal",
@@ -196,6 +244,13 @@ export type NativeEmailAndPasswordComponentHandle = {
         "query",
         "public" | "internal",
         { email: string },
+        NativeUserDoc | null,
+        string
+      >;
+      getUserById: FunctionReference<
+        "query",
+        "public" | "internal",
+        { userId: string },
         NativeUserDoc | null,
         string
       >;
