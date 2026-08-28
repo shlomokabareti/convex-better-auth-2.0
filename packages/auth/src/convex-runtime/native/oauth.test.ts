@@ -56,8 +56,7 @@ type MockComponent = {
       updateAccountTokens: ReturnType<typeof vi.fn>;
       getAccountBySubject: ReturnType<typeof vi.fn>;
     };
-    sessions: { createSession: ReturnType<typeof vi.fn> };
-    refreshTokens: { createRefreshToken: ReturnType<typeof vi.fn> };
+    sessions: { createSessionAndRefreshToken: ReturnType<typeof vi.fn> };
     users: {
       getUserByEmail: ReturnType<typeof vi.fn>;
       getUserById: ReturnType<typeof vi.fn>;
@@ -77,10 +76,7 @@ function createMockComponent(): MockComponent {
         getAccountBySubject: vi.fn().mockResolvedValue(null),
       },
       sessions: {
-        createSession: vi.fn(),
-      },
-      refreshTokens: {
-        createRefreshToken: vi.fn(),
+        createSessionAndRefreshToken: vi.fn(),
       },
       users: {
         getUserByEmail: vi.fn().mockResolvedValue(null),
@@ -414,7 +410,7 @@ describe("OAuth handlers", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const { url } = await handleSignIn(config, { provider: "github" });
     const state = new URL(url).searchParams.get("state")!;
@@ -451,7 +447,7 @@ describe("OAuth handlers", () => {
         emailVerified: true,
       }),
     });
-    expect(component.native.sessions.createSession).toHaveBeenCalledWith(
+    expect(component.native.sessions.createSessionAndRefreshToken).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user_1",
         token: result.token,
@@ -459,12 +455,6 @@ describe("OAuth handlers", () => {
     );
     expect(result.refreshToken).toBeDefined();
     expect(result.refreshToken).not.toBe(result.token);
-    expect(component.native.refreshTokens.createRefreshToken).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionId: result.sessionId,
-        userId: "user_1",
-      }),
-    );
   });
 
   it("handleCallback redirects to newUserURL for new users", async () => {
@@ -481,7 +471,7 @@ describe("OAuth handlers", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const { url } = await handleSignIn(config, {
       provider: "github",
@@ -534,7 +524,7 @@ describe("OAuth handlers", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_2");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_2");
 
     const { url } = await handleSignIn(config, { provider: "google" });
     const state = new URL(url).searchParams.get("state")!;
@@ -613,7 +603,7 @@ describe("OAuth handlers", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const { url } = await handleSignIn(config, { provider: "github" });
     const state = new URL(url).searchParams.get("state")!;
@@ -730,7 +720,7 @@ describe("OAuth handlers", () => {
       expect(result.redirectUrl).toBe("https://app.example.com/error");
     }
     expect(component.identity.provisionFromIdentity).toHaveBeenCalled();
-    expect(component.native.sessions.createSession).not.toHaveBeenCalled();
+    expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
   });
 
   it("persists OAuth token material on new account creation", async () => {
@@ -747,7 +737,7 @@ describe("OAuth handlers", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const { url } = await handleSignIn(config, { provider: "github" });
     const state = new URL(url).searchParams.get("state")!;
@@ -820,7 +810,7 @@ describe("OAuth handlers", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const { url } = await handleSignIn(config, { provider: "github", requestSignUp: true });
     const state = new URL(url).searchParams.get("state")!;
@@ -882,7 +872,7 @@ describe("OAuth handlers", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const { url } = await handleSignIn(config, { provider: "github", link: true });
     const state = new URL(url).searchParams.get("state")!;
@@ -1025,7 +1015,7 @@ describe("OAuth handlers", () => {
       createdUser: false,
       linkedExistingIdentity: false,
     });
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const { url } = await handleSignIn(config, { provider: "github" });
     const state = new URL(url).searchParams.get("state")!;
@@ -1064,7 +1054,7 @@ describe("OAuth handlers", () => {
       createdUser: false,
       linkedExistingIdentity: false,
     });
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const { url } = await handleSignIn(config, { provider: "github" });
     const state = new URL(url).searchParams.get("state")!;
@@ -1127,7 +1117,7 @@ describe("addNativeOAuthHttpRoutes", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const routes: {
       path: string;

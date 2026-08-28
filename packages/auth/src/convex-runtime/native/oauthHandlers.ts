@@ -310,7 +310,7 @@ export async function handleCallback<DataModel extends GenericDataModel>(
   const sessionId = crypto.randomUUID();
   const now = Date.now();
   const sessionTtlMs = config.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
-  const expiresAt = now + sessionTtlMs;
+  const sessionExpiresAt = now + sessionTtlMs;
   const token = await mintToken(
     identityResult.userId,
     sessionId,
@@ -318,21 +318,16 @@ export async function handleCallback<DataModel extends GenericDataModel>(
     { expiresInSeconds: Math.floor(sessionTtlMs / 1000) },
   );
 
-  await ctx.runMutation(component.native.sessions.createSession, {
-    sessionId,
-    userId: identityResult.userId,
-    token,
-    expiresAt,
-  });
-
   const refreshToken = generateVerificationToken();
   const refreshTokenHash = hashToken(refreshToken);
   const refreshTokenExpiresAt = now + REFRESH_TOKEN_TTL_MS;
-  await ctx.runMutation(component.native.refreshTokens.createRefreshToken, {
-    tokenHash: refreshTokenHash,
+  await ctx.runMutation(component.native.sessions.createSessionAndRefreshToken, {
     sessionId,
     userId: identityResult.userId,
-    expiresAt: refreshTokenExpiresAt,
+    token,
+    sessionExpiresAt,
+    refreshTokenHash,
+    refreshTokenExpiresAt,
   });
 
   const redirectUrl = resolveCallbackURL(statePayload, identityResult.createdUser);
