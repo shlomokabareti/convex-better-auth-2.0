@@ -244,3 +244,8 @@ export type NativeEmailAndPasswordComponentHandle = {
     };
   };
 };
+
+/**
+ * OAuth reuses the same component functions as native email/password.
+ */
+export type NativeOAuthComponentHandle = NativeEmailAndPasswordComponentHandle;
