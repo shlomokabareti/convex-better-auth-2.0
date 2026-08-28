@@ -200,7 +200,8 @@ export default defineSchema({
     .index("by_provider_issuer_subject", ["provider", "issuer", "subject"])
     .index("by_issuer_subject", ["issuer", "subject"])
     .index("by_token_identifier", ["tokenIdentifier"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_user_provider_issuer", ["userId", "provider", "issuer"]),
 
   organizations: defineTable({
     name: v.string(),
@@ -733,6 +734,6 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_token_hash", ["tokenHash"])
+    .index("by_token_hash", ["tokenHash", "type"])
     .index("by_user_type", ["userId", "type"]),
 });

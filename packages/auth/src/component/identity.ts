@@ -1,9 +1,11 @@
 import { paginationOptsValidator, paginationResultValidator } from "convex/server";
 import { v } from "convex/values";
 
-import type { Doc } from "./_generated/dataModel.js";
+import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { mutation, query } from "./_generated/server.js";
+
+const MAX_EMAIL_VERIFICATION_CODE_REVOKE_BATCH = 100;
 
 type IdentityLookupCtx = Pick<MutationCtx | QueryCtx, "db">;
 
@@ -25,11 +27,32 @@ const userProfileInputValidator = v.object({
   emailVerified: v.boolean(),
 });
 
+const accountInputValidator = v.object({
+  credentialHash: v.string(),
+});
+
+const verificationCodeInputValidator = v.object({
+  tokenHash: v.string(),
+  expiresAt: v.number(),
+});
+
+const userReturnValidator = v.object({
+  _id: v.id("users"),
+  email: v.optional(v.string()),
+  name: v.optional(v.string()),
+  image: v.optional(v.string()),
+  emailVerified: v.boolean(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+});
+
 const provisionResultValidator = v.object({
   userId: v.id("users"),
-  identityId: v.id("auth_identities"),
+  identityId: v.optional(v.id("auth_identities")),
   createdUser: v.boolean(),
   linkedExistingIdentity: v.boolean(),
+  duplicate: v.optional(v.boolean()),
+  user: v.optional(userReturnValidator),
 });
 
 const identityLookupResultValidator = v.union(
@@ -52,15 +75,57 @@ const listedIdentityValidator = v.object({
   emailVerified: v.boolean(),
 });
 
+const userAndAccountUserValidator = v.object({
+  _id: v.id("users"),
+  email: v.optional(v.string()),
+  name: v.optional(v.string()),
+  image: v.optional(v.string()),
+  emailVerified: v.boolean(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+});
+
+const userAndAccountIdentityValidator = v.object({
+  _id: v.id("auth_identities"),
+  userId: v.id("users"),
+  provider: v.string(),
+  issuer: v.string(),
+  subject: v.string(),
+  email: v.optional(v.string()),
+  emailVerified: v.boolean(),
+});
+
+const userAndAccountAccountValidator = v.object({
+  _id: v.id("authAccounts"),
+  userId: v.id("users"),
+  provider: v.string(),
+  issuer: v.string(),
+  subject: v.string(),
+  credentialHash: v.string(),
+});
+
+const userAndAccountResultValidator = v.union(
+  v.null(),
+  v.object({
+    user: userAndAccountUserValidator,
+    identity: userAndAccountIdentityValidator,
+    account: userAndAccountAccountValidator,
+  }),
+);
+
 export const provisionFromIdentity = mutation({
   args: {
     identity: identityInputValidator,
     user: userProfileInputValidator,
+    account: v.optional(accountInputValidator),
+    verificationCode: v.optional(verificationCodeInputValidator),
+    allowLink: v.optional(v.boolean()),
   },
   returns: provisionResultValidator,
   handler: async (ctx, args) => {
     const now = Date.now();
     const normalizedEmail = normalizeEmail(args.user.email ?? args.identity.email);
+    const allowLink = args.allowLink ?? true;
     const existingIdentity =
       (await findIdentityByIdentityId(ctx, args.identity.identityId)) ??
       (await findIdentityByProviderIssuerSubject(ctx, {
@@ -78,6 +143,20 @@ export const provisionFromIdentity = mutation({
           .unique()
       : null;
     const user = existingUserByIdentity ?? existingUserByEmail;
+
+    if (!allowLink && existingUserByEmail && !existingIdentity) {
+      const identitiesForUser = await ctx.db
+        .query("auth_identities")
+        .withIndex("by_user", (q) => q.eq("userId", existingUserByEmail._id))
+        .take(1);
+      return {
+        userId: existingUserByEmail._id,
+        identityId: identitiesForUser[0]?._id,
+        createdUser: false,
+        linkedExistingIdentity: false,
+        duplicate: true,
+      };
+    }
 
     const userPatch = {
       email: normalizedEmail ?? undefined,
@@ -114,11 +193,13 @@ export const provisionFromIdentity = mutation({
 
     if (existingIdentity) {
       await ctx.db.patch("auth_identities", existingIdentity._id, identityPatch);
+      const userRecord = await ctx.db.get("users", userId);
       return {
         userId,
         identityId: existingIdentity._id,
         createdUser: false,
         linkedExistingIdentity: true,
+        user: userRecord ? toUserReturn(userRecord) : undefined,
       };
     }
 
@@ -127,12 +208,85 @@ export const provisionFromIdentity = mutation({
       createdAt: now,
     });
 
+    if (args.account) {
+      await ctx.db.insert("authAccounts", {
+        userId,
+        provider: args.identity.provider,
+        issuer: args.identity.issuer,
+        subject: args.identity.subject,
+        credentialHash: args.account.credentialHash,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    if (args.verificationCode) {
+      const existingCodes = await ctx.db
+        .query("authVerificationCodes")
+        .withIndex("by_user_type", (q) =>
+          q.eq("userId", userId).eq("type", "email_verification"),
+        )
+        .take(MAX_EMAIL_VERIFICATION_CODE_REVOKE_BATCH);
+      await Promise.all(
+        existingCodes.map((code) =>
+          ctx.db.patch(code._id, { consumedAt: now, updatedAt: now }),
+        ),
+      );
+      await ctx.db.insert("authVerificationCodes", {
+        userId,
+        type: "email_verification",
+        tokenHash: args.verificationCode.tokenHash,
+        expiresAt: args.verificationCode.expiresAt,
+        consumedAt: undefined,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    const userRecord = await ctx.db.get("users", userId);
     return {
       userId,
       identityId,
       createdUser: user === null,
       linkedExistingIdentity: false,
+      user: userRecord ? toUserReturn(userRecord) : undefined,
     };
+  },
+});
+
+export const getUserAndAccount = query({
+  args: { email: v.string() },
+  returns: userAndAccountResultValidator,
+  handler: async (ctx, args) => {
+    const normalizedEmail = normalizeEmail(args.email);
+    if (!normalizedEmail) {
+      return null;
+    }
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+      .unique();
+    if (!user) {
+      return null;
+    }
+    const identity = await findIdentityByUserAndProvider(ctx, {
+      userId: user._id,
+      provider: "password",
+      issuer: "native",
+    });
+    if (!identity) {
+      return null;
+    }
+    const account = await ctx.db
+      .query("authAccounts")
+      .withIndex("by_provider_issuer_subject", (q) =>
+        q.eq("provider", "password").eq("issuer", "native").eq("subject", identity.subject),
+      )
+      .unique();
+    if (!account) {
+      return null;
+    }
+    return { user, identity, account };
   },
 });
 
@@ -227,4 +381,28 @@ function toIdentityLookupResult(identity: Doc<"auth_identities">) {
 function normalizeEmail(email: string | undefined): string | undefined {
   const normalized = email?.trim().toLowerCase();
   return normalized && normalized.length > 0 ? normalized : undefined;
+}
+
+async function findIdentityByUserAndProvider(
+  ctx: IdentityLookupCtx,
+  args: { userId: Id<"users">; provider: string; issuer: string },
+) {
+  return await ctx.db
+    .query("auth_identities")
+    .withIndex("by_user_provider_issuer", (q) =>
+      q.eq("userId", args.userId).eq("provider", args.provider).eq("issuer", args.issuer),
+    )
+    .first();
+}
+
+function toUserReturn(user: Doc<"users">) {
+  return {
+    _id: user._id,
+    email: user.email,
+    name: user.name,
+    image: user.image,
+    emailVerified: user.emailVerified,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 }

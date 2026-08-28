@@ -129,6 +129,10 @@ export async function handleCallback<DataModel extends GenericDataModel>(
     },
   });
 
+  if (!identityResult.identityId) {
+    throw new Error("OAuth identity was not provisioned");
+  }
+
   const existingAccount = await ctx.runQuery(component.native.accounts.getAccountBySubject, {
     provider: provider.id,
     issuer: provider.issuer,

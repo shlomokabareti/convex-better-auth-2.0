@@ -70,6 +70,7 @@ function createMockComponent(): MockedComponent {
   return {
     identity: {
       provisionFromIdentity: vi.fn(),
+      getUserAndAccount: vi.fn(),
     },
     native: {
       accounts: {
@@ -197,16 +198,15 @@ describe("nativeEmailAndPassword", () => {
 
   it("signs up a new user", async () => {
     const component = createMockComponent();
+    const user = makeUser();
     component.identity.provisionFromIdentity.mockResolvedValue({
       userId: "user_1",
       identityId: "identity_1",
       createdUser: true,
       linkedExistingIdentity: false,
+      user,
     });
-    component.native.accounts.createAccount.mockResolvedValue("account_1");
     component.native.sessions.createSession.mockResolvedValue("session_1");
-    const user = makeUser();
-    component.native.users.getUserByEmail.mockResolvedValueOnce(null).mockResolvedValueOnce(user);
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -239,15 +239,16 @@ describe("nativeEmailAndPassword", () => {
     expect(provisionCall.identity.provider).toBe("password");
     expect(provisionCall.identity.issuer).toBe("native");
     expect(provisionCall.user.email).toBe("shlomo@example.com");
+    expect(provisionCall.allowLink).toBe(false);
 
-    const createAccountCall = component.native.accounts.createAccount.mock.calls[0]?.[0];
-    expect(createAccountCall).toMatchObject({
-      userId: "user_1",
-      provider: "password",
-      issuer: "native",
-      subject: expect.any(String),
+    const account = provisionCall.account;
+    expect(account).toMatchObject({
+      credentialHash: expect.any(String),
     });
-    expect(await verifyPassword(DEFAULT_PASSWORD, createAccountCall.credentialHash)).toBe(true);
+    expect(await verifyPassword(DEFAULT_PASSWORD, account.credentialHash)).toBe(true);
+
+    expect(provisionCall.verificationCode).toBeUndefined();
+    expect(provisionCall.session).toBeUndefined();
 
     const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
     expect(createSessionCall).toMatchObject({
@@ -265,16 +266,15 @@ describe("nativeEmailAndPassword", () => {
 
   it("signs up with rememberMe false uses a 1-day session and token TTL", async () => {
     const component = createMockComponent();
+    const user = makeUser();
     component.identity.provisionFromIdentity.mockResolvedValue({
       userId: "user_1",
       identityId: "identity_1",
       createdUser: true,
       linkedExistingIdentity: false,
+      user,
     });
-    component.native.accounts.createAccount.mockResolvedValue("account_1");
     component.native.sessions.createSession.mockResolvedValue("session_1");
-    const user = makeUser();
-    component.native.users.getUserByEmail.mockResolvedValueOnce(null).mockResolvedValueOnce(user);
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -352,7 +352,12 @@ describe("nativeEmailAndPassword", () => {
 
   it("signUp throws when the email already exists", async () => {
     const component = createMockComponent();
-    component.native.users.getUserByEmail.mockResolvedValue(makeUser());
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      createdUser: false,
+      linkedExistingIdentity: false,
+      duplicate: true,
+    });
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
     await expect(
@@ -366,7 +371,12 @@ describe("nativeEmailAndPassword", () => {
 
   it("signUp returns a generic duplicate response when requireVerifiedEmail is true", async () => {
     const component = createMockComponent();
-    component.native.users.getUserByEmail.mockResolvedValue(makeUser());
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      createdUser: false,
+      linkedExistingIdentity: false,
+      duplicate: true,
+    });
     const { signUp } = createActions(component, { requireVerifiedEmail: true });
     const { handler } = exec(signUp);
     const result = (await handler(createContext(), {
@@ -385,9 +395,7 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: true });
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
     component.native.sessions.createSession.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component);
@@ -415,10 +423,8 @@ describe("nativeEmailAndPassword", () => {
       name: user.name,
     });
 
-    expect(component.native.accounts.getAccountBySubject).toHaveBeenCalledWith({
-      provider: "password",
-      issuer: "native",
-      subject: identity.subject,
+    expect(component.identity.getUserAndAccount).toHaveBeenCalledWith({
+      email: "shlomo@example.com",
     });
 
     const payload = await verifyToken(result.token);
@@ -432,9 +438,7 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: true });
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
     component.native.sessions.createSession.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component);
@@ -463,9 +467,7 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: false });
     const identity = makeIdentity({ emailVerified: false });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
 
     const { signIn } = createActions(component, { requireVerifiedEmail: true });
     const { handler } = exec(signIn);
@@ -482,9 +484,7 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: false });
     const identity = makeIdentity({ emailVerified: false });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
     component.native.sessions.createSession.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component);
@@ -518,9 +518,7 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: true });
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
     component.native.sessions.createSession.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component, { requireVerifiedEmail: true });
@@ -554,9 +552,7 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: true });
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
     component.native.sessions.createSession.mockResolvedValue("session_1");
 
     const { signIn, signOut } = createActions(component);

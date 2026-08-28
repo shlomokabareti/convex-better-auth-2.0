@@ -66,11 +66,11 @@ const ops = createConvexAuthOrganizationOperations<
   resolveLocalOrganizationId: async (ctx, _componentOrganizationId) => {
     // ctx.db is the typed reader — proven below, used here without a cast.
     const typedReader: QueryCtx["db"] = ctx.db;
-    await typedReader.query("organizations").collect();
+    await typedReader.query("organizations").take(1);
     return null;
   },
   resolveLocalUserId: async (ctx, _componentUserId) => {
-    await ctx.db.query("users").collect();
+    await ctx.db.query("users").take(1);
     return null;
   },
   validateRoleKey: (key): key is TestRole => key === "owner" || key === "admin" || key === "member",
@@ -79,7 +79,7 @@ const ops = createConvexAuthOrganizationOperations<
   loadOrganizationForUpsert: async (ctx, _localOrganizationId) => {
     // ctx.db is the typed WRITER (insert/patch available) — no cast.
     const typedWriter: MutationCtx["db"] = ctx.db;
-    await typedWriter.query("organizations").collect();
+    await typedWriter.query("organizations").take(1);
     return null;
   },
   backfillOrganizationBridgeId: async (ctx, _localOrganizationId, componentOrganizationId) => {

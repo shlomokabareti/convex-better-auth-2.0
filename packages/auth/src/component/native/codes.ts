@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server.js";
 
+const MAX_VERIFICATION_CODES_PER_USER = 1000;
+
 export const createVerificationCode = mutation({
   args: {
     userId: v.id("users"),
@@ -14,11 +16,11 @@ export const createVerificationCode = mutation({
     const existing = await ctx.db
       .query("authVerificationCodes")
       .withIndex("by_user_type", (q) => q.eq("userId", args.userId).eq("type", args.type))
-      .collect();
+      .take(MAX_VERIFICATION_CODES_PER_USER);
 
-    for (const code of existing) {
-      await ctx.db.patch(code._id, { consumedAt: now });
-    }
+    await Promise.all(
+      existing.map((code) => ctx.db.patch(code._id, { consumedAt: now })),
+    );
 
     return await ctx.db.insert("authVerificationCodes", {
       ...args,
@@ -37,8 +39,9 @@ export const getVerificationCodeByTokenHash = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("authVerificationCodes")
-      .withIndex("by_token_hash", (q) => q.eq("tokenHash", args.tokenHash))
-      .filter((q) => q.eq(q.field("type"), args.type))
+      .withIndex("by_token_hash", (q) =>
+        q.eq("tokenHash", args.tokenHash).eq("type", args.type),
+      )
       .unique();
   },
 });
@@ -53,8 +56,9 @@ export const consumeVerificationCode = mutation({
 
     const code = await ctx.db
       .query("authVerificationCodes")
-      .withIndex("by_token_hash", (q) => q.eq("tokenHash", args.tokenHash))
-      .filter((q) => q.eq(q.field("type"), args.type))
+      .withIndex("by_token_hash", (q) =>
+        q.eq("tokenHash", args.tokenHash).eq("type", args.type),
+      )
       .unique();
 
     if (!code) {
@@ -81,13 +85,16 @@ export const revokeVerificationCodesForUser = mutation({
     const existing = await ctx.db
       .query("authVerificationCodes")
       .withIndex("by_user_type", (q) => q.eq("userId", args.userId).eq("type", args.type))
-      .filter((q) => q.eq(q.field("consumedAt"), undefined))
-      .collect();
+      .take(MAX_VERIFICATION_CODES_PER_USER);
 
-    for (const code of existing) {
-      await ctx.db.patch(code._id, { consumedAt: now, updatedAt: now });
-    }
+    const unconsumed = existing.filter((code) => code.consumedAt === undefined);
 
-    return existing.length;
+    await Promise.all(
+      unconsumed.map((code) =>
+        ctx.db.patch(code._id, { consumedAt: now, updatedAt: now }),
+      ),
+    );
+
+    return unconsumed.length;
   },
 });

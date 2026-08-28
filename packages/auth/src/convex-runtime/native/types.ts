@@ -141,13 +141,25 @@ export type NativeEmailAndPasswordComponentHandle = {
           image?: string;
           emailVerified: boolean;
         };
+        account?: { credentialHash: string };
+        verificationCode?: { tokenHash: string; expiresAt: number };
+        allowLink?: boolean;
       },
       {
         createdUser: boolean;
-        identityId: string;
+        identityId?: string;
         linkedExistingIdentity: boolean;
         userId: string;
+        duplicate?: boolean;
+        user?: NativeUserDoc;
       },
+      string
+    >;
+    getUserAndAccount: FunctionReference<
+      "query",
+      "public" | "internal",
+      { email: string },
+      { user: NativeUserDoc; identity: NativeIdentityDoc; account: NativeAccountDoc } | null,
       string
     >;
   };

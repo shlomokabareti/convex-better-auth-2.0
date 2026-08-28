@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server.js";
 
+const MAX_SESSIONS_PER_USER = 1000;
+
 export const createSession = mutation({
   args: {
     sessionId: v.string(),
@@ -41,7 +43,7 @@ export const listSessionsByUser = query({
     return await ctx.db
       .query("authSessions")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
+      .take(MAX_SESSIONS_PER_USER);
   },
 });
 
@@ -65,12 +67,14 @@ export const revokeSessionsForUser = mutation({
     const sessions = await ctx.db
       .query("authSessions")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .filter((q) => q.eq(q.field("revokedAt"), undefined))
-      .filter((q) => q.gt(q.field("expiresAt"), now))
-      .collect();
+      .take(MAX_SESSIONS_PER_USER);
+
+    const active = sessions.filter(
+      (session) => session.revokedAt === undefined && session.expiresAt > now,
+    );
 
     let revoked = 0;
-    for (const session of sessions) {
+    for (const session of active) {
       if (args.excludeSessionId && session.sessionId === args.excludeSessionId) {
         continue;
       }

@@ -36,7 +36,7 @@ describe("backfillAccountIssuers", () => {
       paginationOpts: { cursor: null, numItems: 10 },
     });
 
-    const accounts = await t.run((ctx) => ctx.db.query("account").collect());
+    const accounts = await t.run((ctx) => ctx.db.query("account").take(1000));
     expect(accounts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -69,7 +69,7 @@ describe("backfillAccountIssuers", () => {
         paginationOpts: { cursor: null, numItems: 10 },
       }),
     ).rejects.toThrow("Missing trusted issuer mapping");
-    const [account] = await t.run((ctx) => ctx.db.query("account").collect());
+    const [account] = await t.run((ctx) => ctx.db.query("account").take(1000));
     expect(account?.issuer).toBeUndefined();
   });
 
@@ -96,7 +96,7 @@ describe("backfillAccountIssuers", () => {
       "Missing trusted issuer mapping",
     );
 
-    const [account] = await t.run((ctx) => ctx.db.query("account").collect());
+    const [account] = await t.run((ctx) => ctx.db.query("account").take(1000));
     expect(account?.issuer).toBeUndefined();
   });
 
@@ -171,7 +171,7 @@ describe("backfillAccountIssuers", () => {
       "is not a valid Better Auth account identity",
     );
 
-    const [account] = await t.run((ctx) => ctx.db.query("account").collect());
+    const [account] = await t.run((ctx) => ctx.db.query("account").take(1000));
     expect(account).toMatchObject({ accountId });
     expect(account?.issuer).toBeUndefined();
   });
@@ -289,7 +289,7 @@ describe("backfillAccountIssuers", () => {
         paginationOpts: { cursor: null, numItems: 10 },
       }),
     ).rejects.toThrow("Account identity collision");
-    const accounts = await t.run((ctx) => ctx.db.query("account").collect());
+    const accounts = await t.run((ctx) => ctx.db.query("account").take(1000));
     expect(accounts.every((account) => account.issuer === undefined)).toBe(true);
   });
 
@@ -326,7 +326,7 @@ describe("backfillAccountIssuers", () => {
       "Account identity collision",
     );
 
-    const accounts = await t.run((ctx) => ctx.db.query("account").collect());
+    const accounts = await t.run((ctx) => ctx.db.query("account").take(1000));
     expect(accounts.every((account) => account.issuer === undefined)).toBe(true);
   });
 
@@ -355,7 +355,7 @@ describe("backfillAccountIssuers", () => {
         paginationOpts: { cursor: null, numItems: 1 },
       }),
     ).rejects.toThrow("Account identity collision");
-    const accounts = await t.run((ctx) => ctx.db.query("account").collect());
+    const accounts = await t.run((ctx) => ctx.db.query("account").take(1000));
     expect(accounts.every((account) => account.issuer === undefined)).toBe(true);
   });
 
@@ -419,7 +419,7 @@ describe("backfillAccountIssuers", () => {
       alreadyMigrated: 2,
     });
 
-    const accounts = await t.run((ctx) => ctx.db.query("account").collect());
+    const accounts = await t.run((ctx) => ctx.db.query("account").take(1000));
     expect(accounts.map(({ issuer }) => issuer).sort()).toEqual([
       "https://login.microsoftonline.com/tenant-a/v2.0",
       "https://login.microsoftonline.com/tenant-b/v2.0",
@@ -460,7 +460,7 @@ describe("backfillAccountIssuers", () => {
       "does not match trusted issuer",
     );
 
-    const accounts = await t.run((ctx) => ctx.db.query("account").collect());
+    const accounts = await t.run((ctx) => ctx.db.query("account").take(1000));
     expect(
       accounts
         .map(({ issuer, accountId }) => ({ issuer, accountId }))
@@ -524,7 +524,7 @@ describe("backfillAccountIssuers", () => {
       if (result.isDone) break;
     } while (cursor);
     expect(migrated).toBe(3);
-    const accounts = await t.run((ctx) => ctx.db.query("account").collect());
+    const accounts = await t.run((ctx) => ctx.db.query("account").take(1000));
     expect(accounts.every((account) => account.issuer === "local:oauth:github")).toBe(true);
   });
 
@@ -654,8 +654,8 @@ describe("backfillAccountIssuers", () => {
       "Migration cursor is not valid for clearLegacyOAuthProviderRecords:oauthConsent",
     );
 
-    const [account] = await t.run((ctx) => ctx.db.query("account").collect());
-    const consents = await t.run((ctx) => ctx.db.query("oauthConsent").collect());
+    const [account] = await t.run((ctx) => ctx.db.query("account").take(1000));
+    const consents = await t.run((ctx) => ctx.db.query("oauthConsent").take(1000));
     expect(account?.issuer).toBeUndefined();
     expect(consents).toHaveLength(1);
   });
@@ -724,9 +724,9 @@ describe("backfillAccountIssuers", () => {
       expect(deleted).toBe(table === "oauthApplication" ? 1 : 2);
     }
     const remaining = await t.run(async (ctx) => ({
-      applications: await ctx.db.query("oauthApplication").collect(),
-      tokens: await ctx.db.query("oauthAccessToken").collect(),
-      consents: await ctx.db.query("oauthConsent").collect(),
+      applications: await ctx.db.query("oauthApplication").take(1000),
+      tokens: await ctx.db.query("oauthAccessToken").take(1000),
+      consents: await ctx.db.query("oauthConsent").take(1000),
     }));
     expect(remaining).toEqual({ applications: [], tokens: [], consents: [] });
   });

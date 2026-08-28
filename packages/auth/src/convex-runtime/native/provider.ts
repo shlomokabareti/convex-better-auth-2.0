@@ -209,61 +209,60 @@ export function nativeEmailAndPassword(
         );
       }
 
-      // Hash the password before the duplicate check so both the success and
+      // Hash the password before the transaction so both the success and
       // duplicate paths perform the same slow work, mitigating timing attacks.
       const credentialHash = await hashPassword(args.password);
 
-      const existingUser = await ctx.runQuery(component.native.users.getUserByEmail, {
-        email: normalizedEmail,
+      const subject = crypto.randomUUID();
+      const account = { credentialHash };
+
+      let verificationToken: string | undefined;
+      let verificationCode: { tokenHash: string; expiresAt: number } | undefined;
+      if (shouldSendVerificationEmail) {
+        verificationToken = generateVerificationToken();
+        const tokenHash = hashToken(verificationToken);
+        verificationCode = {
+          tokenHash,
+          expiresAt: now + verificationCodeTtlMs,
+        };
+      }
+
+      const result = await ctx.runMutation(component.identity.provisionFromIdentity, {
+        identity: {
+          identityId: subject,
+          provider: "password",
+          issuer: "native",
+          subject,
+          tokenIdentifier: subject,
+          email: normalizedEmail,
+          emailVerified: false,
+          sessionId: null,
+        },
+        user: {
+          email: normalizedEmail,
+          name: args.name,
+          emailVerified: false,
+        },
+        account,
+        verificationCode,
+        allowLink: false,
       });
-      if (existingUser) {
+
+      if (result.duplicate) {
         if (shouldReturnGenericDuplicateResponse) {
           return buildGenericDuplicateResponse(normalizedEmail, args.name, now);
         }
         throw new Error("User already exists");
       }
 
-      const subject = crypto.randomUUID();
-
-      const { userId, identityId } = await ctx.runMutation(
-        component.identity.provisionFromIdentity,
-        {
-          identity: {
-            identityId: subject,
-            provider: "password",
-            issuer: "native",
-            subject,
-            tokenIdentifier: subject,
-            email: normalizedEmail,
-            emailVerified: false,
-            sessionId: null,
-          },
-          user: {
-            email: normalizedEmail,
-            name: args.name,
-            emailVerified: false,
-          },
-        },
-      );
-
-      await ctx.runMutation(component.native.accounts.createAccount, {
-        userId,
-        provider: "password",
-        issuer: "native",
-        subject,
-        credentialHash,
-      });
-
-      const createdUser = await ctx.runQuery(component.native.users.getUserByEmail, {
-        email: normalizedEmail,
-      });
-      if (!createdUser) {
+      if (!result.user || !result.identityId) {
         throw new Error("Failed to create user");
       }
 
-      if (shouldSendVerificationEmail) {
-        await queueVerificationEmail(ctx, {
-          email: normalizedEmail,
+      if (shouldSendVerificationEmail && verificationToken) {
+        await sendVerificationEmail(ctx, {
+          user: result.user,
+          token: verificationToken,
           type: "email_verification",
           urlBuilder: (token) =>
             buildEmailVerificationUrl({
@@ -278,38 +277,36 @@ export function nativeEmailAndPassword(
               verifyUrl: params.url,
               expiresAt: params.expiresAt,
             }),
-          ttlMs: verificationCodeTtlMs,
+          expiresAt: verificationCode!.expiresAt,
         });
       }
 
       if (shouldSkipAutoSignIn) {
-        return { user: toNativeAuthUser(createdUser) };
+        return { user: toNativeAuthUser(result.user) };
       }
 
       const sessionId = crypto.randomUUID();
       const effectiveSessionTtlMs = resolveSessionTtlMs(args.rememberMe, sessionTtlMs);
       const expiresAt = now + effectiveSessionTtlMs;
       const token = await mintToken(
-        userId,
+        result.userId,
         sessionId,
-        { identityId },
-        {
-          expiresInSeconds: Math.floor(effectiveSessionTtlMs / 1000),
-        },
+        { identityId: result.identityId },
+        { expiresInSeconds: Math.floor(effectiveSessionTtlMs / 1000) },
       );
 
       await ctx.runMutation(component.native.sessions.createSession, {
         sessionId,
-        userId,
+        userId: result.userId,
         token,
         expiresAt,
       });
 
       return {
         token,
-        user: toNativeAuthUser(createdUser),
-        userId,
-        identityId,
+        user: toNativeAuthUser(result.user),
+        userId: result.userId,
+        identityId: result.identityId,
         sessionId,
       };
     },
@@ -326,28 +323,15 @@ export function nativeEmailAndPassword(
       const now = Date.now();
       const normalizedEmail = args.email.trim().toLowerCase();
 
-      const user = await ctx.runQuery(component.native.users.getUserByEmail, {
+      const auth = await ctx.runQuery(component.identity.getUserAndAccount, {
         email: normalizedEmail,
       });
-      if (!user) {
+      if (!auth) {
         throw new Error("Invalid email or password");
       }
+      const { user, identity, account } = auth;
 
-      const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
-        userId: user._id,
-        provider: "password",
-        issuer: "native",
-      });
-      if (!identity) {
-        throw new Error("Invalid email or password");
-      }
-
-      const account = await ctx.runQuery(component.native.accounts.getAccountBySubject, {
-        provider: "password",
-        issuer: "native",
-        subject: identity.subject,
-      });
-      if (!account || !(await verifyPasswordHash(args.password, account.credentialHash))) {
+      if (!(await verifyPasswordHash(args.password, account.credentialHash))) {
         throw new Error("Invalid email or password");
       }
 
@@ -398,6 +382,56 @@ export function nativeEmailAndPassword(
     },
   });
 
+  async function sendVerificationEmail(
+    ctx: GenericActionCtx<DataModel>,
+    args: {
+      user: { _id: string; email?: string };
+      token: string;
+      type: VerificationCodeType;
+      urlBuilder: (token: string) => string | null;
+      draftBuilder: (params: {
+        from: string;
+        to: string;
+        url: string | null;
+        expiresAt: number;
+      }) => Promise<EmailDraft | { status: "not_configured"; reason: string }>;
+      expiresAt: number;
+      fallbackEmail?: string;
+    },
+  ): Promise<EmailSendResult> {
+    const emailConfig = resolveEmailConfig(config);
+
+    if (!emailConfig.from || !emailConfig.sendEmail) {
+      return { status: "not_configured", reason: "missing_email_config" };
+    }
+
+    const url = args.urlBuilder(args.token);
+    const draft = await args.draftBuilder({
+      from: emailConfig.from,
+      to: args.user.email ?? args.fallbackEmail ?? "",
+      url,
+      expiresAt: args.expiresAt,
+    });
+
+    if ("status" in draft) {
+      return { status: "not_configured", reason: draft.reason };
+    }
+
+    if (url === null) {
+      return { status: "not_configured", reason: "missing_url" };
+    }
+
+    try {
+      const emailId = await emailConfig.sendEmail(draft);
+      return { status: "queued", emailId };
+    } catch (error) {
+      return {
+        status: "failed",
+        reason: error instanceof Error ? error.message : "email_send_failed",
+      };
+    }
+  }
+
   async function queueVerificationEmail(
     ctx: GenericActionCtx<DataModel>,
     args: {
@@ -439,31 +473,15 @@ export function nativeEmailAndPassword(
       expiresAt,
     });
 
-    const url = args.urlBuilder(token);
-    const draft = await args.draftBuilder({
-      from: emailConfig.from,
-      to: user.email ?? args.email,
-      url,
+    return sendVerificationEmail(ctx, {
+      user,
+      token,
+      type: args.type,
+      urlBuilder: args.urlBuilder,
+      draftBuilder: args.draftBuilder,
       expiresAt,
+      fallbackEmail: args.email,
     });
-
-    if ("status" in draft) {
-      return { status: "not_configured", reason: draft.reason };
-    }
-
-    if (url === null) {
-      return { status: "not_configured", reason: "missing_url" };
-    }
-
-    try {
-      const emailId = await emailConfig.sendEmail(draft);
-      return { status: "queued", emailId };
-    } catch (error) {
-      return {
-        status: "failed",
-        reason: error instanceof Error ? error.message : "email_send_failed",
-      };
-    }
   }
 
   const sendEmailVerification = action({
