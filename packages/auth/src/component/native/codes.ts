@@ -66,7 +66,7 @@ export const consumeVerificationCode = mutation({
     }
 
     await ctx.db.patch(code._id, { consumedAt: now, updatedAt: now });
-    return code;
+    return (await ctx.db.get(code._id)) ?? null;
   },
 });
 

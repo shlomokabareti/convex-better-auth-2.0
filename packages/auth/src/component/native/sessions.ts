@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "../_generated/server.js";
+import { mutation, query } from "../_generated/server.js";
 
 export const createSession = mutation({
   args: {
@@ -32,5 +32,41 @@ export const revokeSession = mutation({
       await ctx.db.patch(session._id, { revokedAt: Date.now() });
     }
     return session?._id ?? null;
+  },
+});
+
+export const listSessionsByUser = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("authSessions")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+  },
+});
+
+export const revokeSessionsForUser = mutation({
+  args: {
+    userId: v.id("users"),
+    excludeSessionId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const sessions = await ctx.db
+      .query("authSessions")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("revokedAt"), undefined))
+      .filter((q) => q.gt(q.field("expiresAt"), now))
+      .collect();
+
+    let revoked = 0;
+    for (const session of sessions) {
+      if (args.excludeSessionId && session.sessionId === args.excludeSessionId) {
+        continue;
+      }
+      await ctx.db.patch(session._id, { revokedAt: now, updatedAt: now });
+      revoked++;
+    }
+    return revoked;
   },
 });

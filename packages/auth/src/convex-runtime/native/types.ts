@@ -160,6 +160,20 @@ export type NativeEmailAndPasswordComponentHandle = {
         string | null,
         string
       >;
+      listSessionsByUser: FunctionReference<
+        "query",
+        "public" | "internal",
+        { userId: string },
+        NativeSessionDoc[],
+        string
+      >;
+      revokeSessionsForUser: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { userId: string; excludeSessionId?: string },
+        number,
+        string
+      >;
     };
     identities: {
       getNativeIdentityByUser: FunctionReference<
