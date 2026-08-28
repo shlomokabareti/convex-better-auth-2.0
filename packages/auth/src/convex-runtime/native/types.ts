@@ -279,6 +279,20 @@ export type NativeEmailAndPasswordComponentHandle = {
         string,
         string
       >;
+      createSessionAndRefreshToken: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          sessionId: string;
+          userId: string;
+          token: string;
+          sessionExpiresAt: number;
+          refreshTokenHash: string;
+          refreshTokenExpiresAt: number;
+        },
+        string,
+        string
+      >;
       revokeSession: FunctionReference<
         "mutation",
         "public" | "internal",

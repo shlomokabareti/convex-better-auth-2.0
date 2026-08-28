@@ -216,18 +216,13 @@ export function nativeEmailAndPassword(
       { expiresInSeconds: Math.floor(effectiveSessionTtlMs / 1000) },
     );
 
-    await ctx.runMutation(component.native.sessions.createSession, {
+    await ctx.runMutation(component.native.sessions.createSessionAndRefreshToken, {
       sessionId,
       userId: args.userId,
       token,
-      expiresAt,
-    });
-
-    await ctx.runMutation(component.native.refreshTokens.createRefreshToken, {
-      tokenHash: refreshTokenHash,
-      sessionId,
-      userId: args.userId,
-      expiresAt: now + refreshTokenTtlMs,
+      sessionExpiresAt: expiresAt,
+      refreshTokenHash,
+      refreshTokenExpiresAt: now + refreshTokenTtlMs,
     });
 
     return { sessionId, token, refreshToken };

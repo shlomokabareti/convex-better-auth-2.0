@@ -54,6 +54,41 @@ export const createSession = mutation({
   },
 });
 
+export const createSessionAndRefreshToken = mutation({
+  args: {
+    sessionId: v.string(),
+    userId: v.id("users"),
+    token: v.string(),
+    sessionExpiresAt: v.number(),
+    refreshTokenHash: v.string(),
+    refreshTokenExpiresAt: v.number(),
+  },
+  returns: v.id("authSessions"),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    await ctx.db.insert("authRefreshTokens", {
+      tokenHash: args.refreshTokenHash,
+      sessionId: args.sessionId,
+      userId: args.userId,
+      expiresAt: args.refreshTokenExpiresAt,
+      revokedAt: undefined,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return await ctx.db.insert("authSessions", {
+      sessionId: args.sessionId,
+      userId: args.userId,
+      token: args.token,
+      expiresAt: args.sessionExpiresAt,
+      ipAddress: undefined,
+      userAgent: undefined,
+      revokedAt: undefined,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
 export const revokeSession = mutation({
   args: { sessionId: v.string() },
   handler: async (ctx, args) => {

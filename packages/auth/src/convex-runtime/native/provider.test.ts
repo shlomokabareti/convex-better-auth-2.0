@@ -79,7 +79,7 @@ function createMockComponent(): MockedComponent {
         getAccountBySubject: vi.fn(),
       },
       sessions: {
-        createSession: vi.fn(),
+        createSessionAndRefreshToken: vi.fn(),
         revokeSession: vi.fn(),
         listSessionsByUser: vi.fn(),
         getSessionByToken: vi.fn(),
@@ -88,7 +88,6 @@ function createMockComponent(): MockedComponent {
         rotateSession: vi.fn(),
       },
       refreshTokens: {
-        createRefreshToken: vi.fn(),
         getRefreshTokenByTokenHash: vi.fn(),
         consumeRefreshToken: vi.fn(),
         revokeRefreshTokensForSession: vi.fn(),
@@ -193,7 +192,7 @@ describe("nativeEmailAndPassword", () => {
       linkedExistingIdentity: false,
       user,
     });
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -237,12 +236,15 @@ describe("nativeEmailAndPassword", () => {
     expect(provisionCall.verificationCode).toBeUndefined();
     expect(provisionCall.session).toBeUndefined();
 
-    const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
-    expect(createSessionCall).toMatchObject({
+    const createSessionAndRefreshTokenCall =
+      component.native.sessions.createSessionAndRefreshToken.mock.calls[0]?.[0];
+    expect(createSessionAndRefreshTokenCall).toMatchObject({
       userId: "user_1",
       sessionId: result.sessionId,
       token: result.token,
-      expiresAt: expect.any(Number),
+      sessionExpiresAt: expect.any(Number),
+      refreshTokenHash: expect.any(String),
+      refreshTokenExpiresAt: expect.any(Number),
     });
 
     const payload = await verifyToken(result.token);
@@ -261,7 +263,7 @@ describe("nativeEmailAndPassword", () => {
       linkedExistingIdentity: false,
       user,
     });
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -278,9 +280,14 @@ describe("nativeEmailAndPassword", () => {
     };
     const after = Date.now();
 
-    const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
-    expect(createSessionCall.expiresAt).toBeGreaterThanOrEqual(before + 24 * 60 * 60 * 1000);
-    expect(createSessionCall.expiresAt).toBeLessThanOrEqual(after + 24 * 60 * 60 * 1000);
+    const createSessionAndRefreshTokenCall =
+      component.native.sessions.createSessionAndRefreshToken.mock.calls[0]?.[0];
+    expect(createSessionAndRefreshTokenCall.sessionExpiresAt).toBeGreaterThanOrEqual(
+      before + 24 * 60 * 60 * 1000,
+    );
+    expect(createSessionAndRefreshTokenCall.sessionExpiresAt).toBeLessThanOrEqual(
+      after + 24 * 60 * 60 * 1000,
+    );
 
     const payload = await verifyToken(result.token);
     expect(payload.sub).toBe("user_1");
@@ -374,7 +381,7 @@ describe("nativeEmailAndPassword", () => {
     expect(result.token).toBeNull();
     expect(result.user.email).toBe("shlomo@example.com");
     expect(result.user.id).toEqual(expect.any(String));
-    expect(component.native.sessions.createSession).not.toHaveBeenCalled();
+    expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
   });
 
   it("signs in an existing user with a valid password", async () => {
@@ -383,7 +390,7 @@ describe("nativeEmailAndPassword", () => {
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
     component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component);
     const { handler } = exec(signIn);
@@ -426,7 +433,7 @@ describe("nativeEmailAndPassword", () => {
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
     component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component);
     const { handler } = exec(signIn);
@@ -441,9 +448,14 @@ describe("nativeEmailAndPassword", () => {
     };
     const after = Date.now();
 
-    const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
-    expect(createSessionCall.expiresAt).toBeGreaterThanOrEqual(before + 24 * 60 * 60 * 1000);
-    expect(createSessionCall.expiresAt).toBeLessThanOrEqual(after + 24 * 60 * 60 * 1000);
+    const createSessionAndRefreshTokenCall =
+      component.native.sessions.createSessionAndRefreshToken.mock.calls[0]?.[0];
+    expect(createSessionAndRefreshTokenCall.sessionExpiresAt).toBeGreaterThanOrEqual(
+      before + 24 * 60 * 60 * 1000,
+    );
+    expect(createSessionAndRefreshTokenCall.sessionExpiresAt).toBeLessThanOrEqual(
+      after + 24 * 60 * 60 * 1000,
+    );
 
     const payload = await verifyToken(result.token);
     expect((payload.exp as number) - (payload.iat as number)).toBe(24 * 60 * 60);
@@ -463,7 +475,7 @@ describe("nativeEmailAndPassword", () => {
       handler(createContext(), { email: "shlomo@example.com", password: DEFAULT_PASSWORD }),
     ).rejects.toThrow("Email not verified");
 
-    expect(component.native.sessions.createSession).not.toHaveBeenCalled();
+    expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
   });
 
   it("signIn allows an unverified email by default", async () => {
@@ -472,7 +484,7 @@ describe("nativeEmailAndPassword", () => {
     const identity = makeIdentity({ emailVerified: false });
     const account = makeAccount();
     component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component);
     const { handler } = exec(signIn);
@@ -506,7 +518,7 @@ describe("nativeEmailAndPassword", () => {
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
     component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component, { requireVerifiedEmail: true });
     const { handler } = exec(signIn);
@@ -540,7 +552,7 @@ describe("nativeEmailAndPassword", () => {
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
     component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signIn, signOut } = createActions(component);
     const signInResult = (await exec(signIn).handler(createContext(), {
@@ -865,7 +877,7 @@ describe("nativeEmailAndPassword", () => {
 
       const resetCall = component.identity.resetPassword.mock.calls[0]?.[0];
       expect(await verifyPassword(NEW_PASSWORD, resetCall.credentialHash)).toBe(true);
-      expect(component.native.sessions.createSession).not.toHaveBeenCalled();
+      expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
     });
 
     it("revokes all sessions when revokeSessionsOnPasswordReset is true", async () => {
