@@ -93,6 +93,30 @@ function readCookie(request: Request, name: string): string | undefined {
   return match?.[1];
 }
 
+function errorStatusAndReason(error: unknown): { status: number; reason: string } {
+  const message = error instanceof Error ? error.message : "unknown";
+  const map: Record<string, { status: number; reason: string }> = {
+    "Email and password authentication is disabled": { status: 400, reason: "auth_disabled" },
+    "Sign up is disabled": { status: 400, reason: "sign_up_disabled" },
+    "Invalid email": { status: 400, reason: "invalid_email" },
+    "Password is too short": { status: 400, reason: "password_too_short" },
+    "Password is too long": { status: 400, reason: "password_too_long" },
+    "User already exists": { status: 400, reason: "user_already_exists" },
+    "Invalid email or password": { status: 401, reason: "invalid_email_or_password" },
+    "Email not verified": { status: 401, reason: "email_not_verified" },
+    "Failed to create session": { status: 500, reason: "session_creation_failed" },
+    "Invalid session token": { status: 401, reason: "invalid_session" },
+  };
+  return map[message] ?? { status: 500, reason: "unknown" };
+}
+
+function buildErrorResponse(status: number, reason: string): Response {
+  return new Response(JSON.stringify({ success: false, reason }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 export function addNativeAuthHttpRoutes(
   http: HttpRouter,
   component?: NativeEmailAndPasswordComponentHandle,
@@ -168,7 +192,13 @@ export function addNativeAuthHttpRoutes(
           });
         }
 
-        const session = await ctx.runAction(actions.signUp, parsed);
+        let session;
+        try {
+          session = await ctx.runAction(actions.signUp, parsed);
+        } catch (error) {
+          const { status, reason } = errorStatusAndReason(error);
+          return buildErrorResponse(status, reason);
+        }
         const secure = new URL(request.url).protocol === "https:";
 
         const headers = new Headers({ "Content-Type": "application/json" });
@@ -221,7 +251,13 @@ export function addNativeAuthHttpRoutes(
           });
         }
 
-        const session = await ctx.runAction(actions.signIn, parsed);
+        let session;
+        try {
+          session = await ctx.runAction(actions.signIn, parsed);
+        } catch (error) {
+          const { status, reason } = errorStatusAndReason(error);
+          return buildErrorResponse(status, reason);
+        }
         const secure = new URL(request.url).protocol === "https:";
 
         const headers = new Headers({ "Content-Type": "application/json" });
@@ -269,9 +305,15 @@ export function addNativeAuthHttpRoutes(
         }
 
         const token = parsed.token ?? readCookie(request, ACCESS_TOKEN_COOKIE);
-        const result = token
-          ? await ctx.runAction(actions.signOut, { token, callbackURL: parsed.callbackURL })
-          : { success: true, redirect: false as const };
+        let result;
+        try {
+          result = token
+            ? await ctx.runAction(actions.signOut, { token, callbackURL: parsed.callbackURL })
+            : { success: true, redirect: false as const };
+        } catch (error) {
+          const { status, reason } = errorStatusAndReason(error);
+          return buildErrorResponse(status, reason);
+        }
 
         const secure = new URL(request.url).protocol === "https:";
         const headers = new Headers({ "Content-Type": "application/json" });
