@@ -173,6 +173,12 @@ export type NativeEmailAndPasswordComponentHandle = {
         };
         account?: { credentialHash: string };
         verificationCode?: { tokenHash: string; expiresAt: number };
+        initialSession?: {
+          sessionId: string;
+          sessionExpiresAt: number;
+          refreshTokenHash: string;
+          refreshTokenExpiresAt: number;
+        };
         allowLink?: boolean;
       },
       {
@@ -182,6 +188,8 @@ export type NativeEmailAndPasswordComponentHandle = {
         userId: string;
         duplicate?: boolean;
         user?: NativeUserDoc;
+        sessionId?: string;
+        token?: string;
       },
       string
     >;

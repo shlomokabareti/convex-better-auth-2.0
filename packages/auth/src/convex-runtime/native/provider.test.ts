@@ -24,6 +24,8 @@ async function dispatch(ref: unknown, args: Record<string, unknown>) {
 const DEFAULT_PASSWORD = "hunter2!";
 const NEW_PASSWORD = "newHunter2!";
 let defaultPasswordHash: string;
+let defaultToken: string;
+let oneDayToken: string;
 
 async function setupTestKeysAndHashes() {
   const { publicKey, privateKey } = await generateKeyPair("RS256", { extractable: true });
@@ -32,6 +34,15 @@ async function setupTestKeysAndHashes() {
   process.env.JWT_PRIVATE_KEY = JSON.stringify(privateJwk);
   process.env.JWKS = JSON.stringify({ keys: [publicJwk] });
   defaultPasswordHash = await hashPassword(DEFAULT_PASSWORD);
+  defaultToken = await mintToken("user_1", "session_1", { identityId: "identity_1" });
+  oneDayToken = await mintToken(
+    "user_1",
+    "session_1",
+    { identityId: "identity_1" },
+    {
+      expiresInSeconds: 24 * 60 * 60,
+    },
+  );
 }
 
 function exec(registered: unknown) {
@@ -191,8 +202,9 @@ describe("nativeEmailAndPassword", () => {
       createdUser: true,
       linkedExistingIdentity: false,
       user,
+      sessionId: "session_1",
+      token: defaultToken,
     });
-    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -211,8 +223,8 @@ describe("nativeEmailAndPassword", () => {
     expect(result).toMatchObject({
       userId: "user_1",
       identityId: "identity_1",
-      token: expect.any(String),
-      sessionId: expect.any(String),
+      token: defaultToken,
+      sessionId: "session_1",
     });
     expect(result.user).toMatchObject({
       id: user._id,
@@ -234,18 +246,14 @@ describe("nativeEmailAndPassword", () => {
     expect(await verifyPassword(DEFAULT_PASSWORD, account.credentialHash)).toBe(true);
 
     expect(provisionCall.verificationCode).toBeUndefined();
-    expect(provisionCall.session).toBeUndefined();
-
-    const createSessionAndRefreshTokenCall =
-      component.native.sessions.createSessionAndRefreshToken.mock.calls[0]?.[0];
-    expect(createSessionAndRefreshTokenCall).toMatchObject({
-      userId: "user_1",
-      sessionId: result.sessionId,
-      token: result.token,
+    expect(provisionCall.initialSession).toBeDefined();
+    expect(provisionCall.initialSession).toMatchObject({
+      sessionId: expect.any(String),
       sessionExpiresAt: expect.any(Number),
       refreshTokenHash: expect.any(String),
       refreshTokenExpiresAt: expect.any(Number),
     });
+    expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
 
     const payload = await verifyToken(result.token);
     expect(payload.sub).toBe("user_1");
@@ -262,8 +270,9 @@ describe("nativeEmailAndPassword", () => {
       createdUser: true,
       linkedExistingIdentity: false,
       user,
+      sessionId: "session_1",
+      token: oneDayToken,
     });
-    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -280,12 +289,11 @@ describe("nativeEmailAndPassword", () => {
     };
     const after = Date.now();
 
-    const createSessionAndRefreshTokenCall =
-      component.native.sessions.createSessionAndRefreshToken.mock.calls[0]?.[0];
-    expect(createSessionAndRefreshTokenCall.sessionExpiresAt).toBeGreaterThanOrEqual(
+    const provisionCall = component.identity.provisionFromIdentity.mock.calls[0]?.[0];
+    expect(provisionCall.initialSession.sessionExpiresAt).toBeGreaterThanOrEqual(
       before + 24 * 60 * 60 * 1000,
     );
-    expect(createSessionAndRefreshTokenCall.sessionExpiresAt).toBeLessThanOrEqual(
+    expect(provisionCall.initialSession.sessionExpiresAt).toBeLessThanOrEqual(
       after + 24 * 60 * 60 * 1000,
     );
 
@@ -381,6 +389,8 @@ describe("nativeEmailAndPassword", () => {
     expect(result.token).toBeNull();
     expect(result.user.email).toBe("shlomo@example.com");
     expect(result.user.id).toEqual(expect.any(String));
+    const provisionCall = component.identity.provisionFromIdentity.mock.calls[0]?.[0];
+    expect(provisionCall.initialSession).toBeUndefined();
     expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
   });
 

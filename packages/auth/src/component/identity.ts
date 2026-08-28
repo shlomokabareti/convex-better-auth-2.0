@@ -4,6 +4,7 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { mutation, query } from "./_generated/server.js";
+import { mintToken } from "../convex-runtime/native/jwt.js";
 
 const MAX_EMAIL_VERIFICATION_CODE_REVOKE_BATCH = 100;
 const MAX_PASSWORD_RESET_SESSION_REVOKE_BATCH = 1000;
@@ -37,6 +38,13 @@ const verificationCodeInputValidator = v.object({
   expiresAt: v.number(),
 });
 
+const initialSessionInputValidator = v.object({
+  sessionId: v.string(),
+  sessionExpiresAt: v.number(),
+  refreshTokenHash: v.string(),
+  refreshTokenExpiresAt: v.number(),
+});
+
 const userReturnValidator = v.object({
   _id: v.id("users"),
   email: v.optional(v.string()),
@@ -54,6 +62,8 @@ const provisionResultValidator = v.object({
   linkedExistingIdentity: v.boolean(),
   duplicate: v.optional(v.boolean()),
   user: v.optional(userReturnValidator),
+  sessionId: v.optional(v.string()),
+  token: v.optional(v.string()),
 });
 
 const identityLookupResultValidator = v.union(
@@ -132,11 +142,13 @@ export const provisionFromIdentity = mutation({
     user: userProfileInputValidator,
     account: v.optional(accountInputValidator),
     verificationCode: v.optional(verificationCodeInputValidator),
+    initialSession: v.optional(initialSessionInputValidator),
     allowLink: v.optional(v.boolean()),
   },
   returns: provisionResultValidator,
   handler: async (ctx, args) => {
     const now = Date.now();
+    let token: string | undefined;
     const normalizedEmail = normalizeEmail(args.user.email ?? args.identity.email);
     const allowLink = args.allowLink ?? true;
     const existingIdentity =
@@ -234,6 +246,39 @@ export const provisionFromIdentity = mutation({
       });
     }
 
+    if (args.initialSession) {
+      const sessionExpiresInSeconds = Math.max(
+        0,
+        Math.floor((args.initialSession.sessionExpiresAt - now) / 1000),
+      );
+      token = await mintToken(
+        userId,
+        args.initialSession.sessionId,
+        { identityId },
+        { expiresInSeconds: sessionExpiresInSeconds },
+      );
+      await ctx.db.insert("authRefreshTokens", {
+        tokenHash: args.initialSession.refreshTokenHash,
+        sessionId: args.initialSession.sessionId,
+        userId,
+        expiresAt: args.initialSession.refreshTokenExpiresAt,
+        revokedAt: undefined,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("authSessions", {
+        sessionId: args.initialSession.sessionId,
+        userId,
+        token,
+        expiresAt: args.initialSession.sessionExpiresAt,
+        ipAddress: undefined,
+        userAgent: undefined,
+        revokedAt: undefined,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
     if (args.verificationCode) {
       const existingCodes = await ctx.db
         .query("authVerificationCodes")
@@ -260,6 +305,8 @@ export const provisionFromIdentity = mutation({
       createdUser: user === null,
       linkedExistingIdentity: false,
       user: userRecord ? toUserReturn(userRecord) : undefined,
+      sessionId: args.initialSession?.sessionId,
+      token,
     };
   },
 });

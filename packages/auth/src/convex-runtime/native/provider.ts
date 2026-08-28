@@ -282,6 +282,28 @@ export function nativeEmailAndPassword(
         };
       }
 
+      let initialSession:
+        | {
+            sessionId: string;
+            sessionExpiresAt: number;
+            refreshTokenHash: string;
+            refreshTokenExpiresAt: number;
+          }
+        | undefined;
+      let refreshToken: string | undefined;
+      if (!shouldSkipAutoSignIn) {
+        const sessionId = crypto.randomUUID();
+        const effectiveSessionTtlMs = resolveSessionTtlMs(args.rememberMe, sessionTtlMs);
+        refreshToken = generateVerificationToken();
+        const refreshTokenHash = hashToken(refreshToken);
+        initialSession = {
+          sessionId,
+          sessionExpiresAt: now + effectiveSessionTtlMs,
+          refreshTokenHash,
+          refreshTokenExpiresAt: now + refreshTokenTtlMs,
+        };
+      }
+
       const result = await ctx.runMutation(component.identity.provisionFromIdentity, {
         identity: {
           identityId: subject,
@@ -301,6 +323,7 @@ export function nativeEmailAndPassword(
         },
         account,
         verificationCode,
+        initialSession,
         allowLink: false,
       });
 
@@ -355,19 +378,17 @@ export function nativeEmailAndPassword(
         return { token: null, user: toNativeAuthUser(result.user) };
       }
 
-      const { sessionId, token, refreshToken } = await createSessionAndRefreshToken(ctx, {
-        userId: result.userId,
-        identityId: result.identityId,
-        rememberMe: args.rememberMe,
-      });
+      if (!result.sessionId || !result.token || !refreshToken) {
+        throw new Error("Failed to create session");
+      }
 
       return {
-        token,
+        token: result.token,
         refreshToken,
         user: toNativeAuthUser(result.user),
         userId: result.userId,
         identityId: result.identityId,
-        sessionId,
+        sessionId: result.sessionId,
       };
     },
   });
