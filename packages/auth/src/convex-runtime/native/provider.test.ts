@@ -23,12 +23,15 @@ async function dispatch(ref: unknown, args: Record<string, unknown>) {
   return undefined;
 }
 
-async function setupTestKeys() {
+let hunter2Hash: string;
+
+async function setupTestKeysAndHashes() {
   const { publicKey, privateKey } = await generateKeyPair("RS256", { extractable: true });
   const privateJwk = await exportJWK(privateKey);
   const publicJwk = await exportJWK(publicKey);
   process.env.JWT_PRIVATE_KEY = JSON.stringify(privateJwk);
   process.env.JWKS = JSON.stringify({ keys: [publicJwk] });
+  hunter2Hash = await hashPassword("hunter2");
 }
 
 function exec(registered: unknown) {
@@ -143,7 +146,7 @@ function makeAccount(overrides: Partial<NativeAccountDoc> = {}): NativeAccountDo
     provider: "password",
     issuer: "native",
     subject: "subject_1",
-    credentialHash: hashPassword("hunter2"),
+    credentialHash: hunter2Hash,
     createdAt: 0,
     updatedAt: 0,
     ...overrides,
@@ -186,7 +189,7 @@ function createActions(component: MockedComponent, config?: NativeEmailAndPasswo
 }
 
 describe("nativeEmailAndPassword", () => {
-  beforeAll(setupTestKeys);
+  beforeAll(setupTestKeysAndHashes);
 
   it("signs up a new user", async () => {
     const component = createMockComponent();
@@ -231,7 +234,7 @@ describe("nativeEmailAndPassword", () => {
       issuer: "native",
       subject: expect.any(String),
     });
-    expect(verifyPassword("hunter2", createAccountCall.credentialHash)).toBe(true);
+    expect(await verifyPassword("hunter2", createAccountCall.credentialHash)).toBe(true);
 
     const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
     expect(createSessionCall).toMatchObject({
@@ -769,7 +772,7 @@ describe("nativeEmailAndPassword", () => {
 
       const updateCall = component.native.accounts.updateCredentialHash.mock.calls[0]?.[0];
       expect(updateCall.accountId).toBe(account._id);
-      expect(verifyPassword("newHunter2", updateCall.credentialHash)).toBe(true);
+      expect(await verifyPassword("newHunter2", updateCall.credentialHash)).toBe(true);
 
       expect(component.native.sessions.createSession).toHaveBeenCalledWith(
         expect.objectContaining({

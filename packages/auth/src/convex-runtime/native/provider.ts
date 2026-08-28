@@ -103,7 +103,7 @@ export function nativeEmailAndPassword(
       const now = Date.now();
       const normalizedEmail = args.email.trim().toLowerCase();
       const subject = crypto.randomUUID();
-      const credentialHash = hashPassword(args.password);
+      const credentialHash = await hashPassword(args.password);
 
       const { userId, identityId } = await ctx.runMutation(
         component.identity.provisionFromIdentity,
@@ -185,7 +185,7 @@ export function nativeEmailAndPassword(
         issuer: "native",
         subject: identity.subject,
       });
-      if (!account || !verifyPassword(args.password, account.credentialHash)) {
+      if (!account || !(await verifyPassword(args.password, account.credentialHash))) {
         throw new Error("Invalid email or password");
       }
 
@@ -472,7 +472,7 @@ export function nativeEmailAndPassword(
       }
 
       const now = Date.now();
-      const credentialHash = hashPassword(args.newPassword);
+      const credentialHash = await hashPassword(args.newPassword);
 
       await ctx.runMutation(component.native.accounts.updateCredentialHash, {
         accountId: account._id,

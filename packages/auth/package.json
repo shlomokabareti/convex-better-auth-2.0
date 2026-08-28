@@ -136,6 +136,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "argon2": "^0.45.1",
     "convex-auth-core": "workspace:*",
     "convex-auth-react": "workspace:*",
     "convex-auth-react-native": "workspace:*",

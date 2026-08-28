@@ -2,15 +2,15 @@
 
 ## Module map
 
-| Module                                                  | Responsibility                                              | Depends on                   |
-| ------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------- |
-| `packages/auth/src/convex-runtime/native/password.ts`   | argon2id hashing, legacy scrypt compatibility               | —                            |
-| `packages/auth/src/convex-runtime/native/provider.ts`   | sign-up/sign-in/sign-out, verification, reset actions       | `password`, `tokens`, `jwt`  |
-| `packages/auth/src/convex-runtime/native/jwt.ts`        | honour session TTL / rememberMe in token expiry             | `process.env.JWT_PRIVATE_KEY`|
-| `packages/auth/src/convex-runtime/native/sessions.ts`   | `verifySession` query, JWKS query                           | `jwt`                        |
-| `packages/auth/src/convex-runtime/native/http.ts`       | `/.well-known/jwks.json`, reset callback, verify redirect   | `sessions`                   |
-| `packages/react/src/ConvexAuthProvider.tsx`             | expose new client args/results                              | `provider` types             |
-| `packages/auth/src/convex-runtime/native/provider.test.ts` | updated and new parity tests                             | all above                    |
+| Module                                                     | Responsibility                                            | Depends on                    |
+| ---------------------------------------------------------- | --------------------------------------------------------- | ----------------------------- |
+| `packages/auth/src/convex-runtime/native/password.ts`      | argon2id hashing, legacy scrypt compatibility             | —                             |
+| `packages/auth/src/convex-runtime/native/provider.ts`      | sign-up/sign-in/sign-out, verification, reset actions     | `password`, `tokens`, `jwt`   |
+| `packages/auth/src/convex-runtime/native/jwt.ts`           | honour session TTL / rememberMe in token expiry           | `process.env.JWT_PRIVATE_KEY` |
+| `packages/auth/src/convex-runtime/native/sessions.ts`      | `verifySession` query, JWKS query                         | `jwt`                         |
+| `packages/auth/src/convex-runtime/native/http.ts`          | `/.well-known/jwks.json`, reset callback, verify redirect | `sessions`                    |
+| `packages/react/src/ConvexAuthProvider.tsx`                | expose new client args/results                            | `provider` types              |
+| `packages/auth/src/convex-runtime/native/provider.test.ts` | updated and new parity tests                              | all above                     |
 
 ## Build order
 
