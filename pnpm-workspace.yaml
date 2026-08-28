@@ -2,7 +2,8 @@ packages:
   - "packages/*"
   - "site"
 
-onlyBuiltDependencies: []
+onlyBuiltDependencies:
+  - "argon2"
 
 overrides:
   vitest: 4.1.10
