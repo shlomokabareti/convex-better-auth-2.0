@@ -1,3 +1,5 @@
+"use node";
+
 import { argon2id, hash as argon2Hash, verify as argon2Verify } from "argon2";
 import { scryptSync, timingSafeEqual } from "node:crypto";
 

@@ -1017,7 +1017,13 @@ describe("nativeEmailAndPassword", () => {
       const { updateSession } = createActions(component);
       const result = (await exec(updateSession).handler(createContext(), {
         refreshToken,
-      })) as { token: string; refreshToken: string; userId: string; sessionId: string; identityId: string };
+      })) as {
+        token: string;
+        refreshToken: string;
+        userId: string;
+        sessionId: string;
+        identityId: string;
+      };
 
       expect(result).toMatchObject({
         token: expect.any(String),

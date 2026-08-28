@@ -9,11 +9,7 @@ export default defineConfig({
     jsPlugins: ["@convex-dev/eslint-plugin"],
     overrides: [
       {
-        files: [
-          "**/convex/**/*.ts",
-          "**/src/component/**/*.ts",
-          "**/src/convex-runtime/**/*.ts",
-        ],
+        files: ["**/convex/**/*.ts", "**/src/component/**/*.ts", "**/src/convex-runtime/**/*.ts"],
         rules: {
           "@convex-dev/no-old-registered-function-syntax": "error",
           "@convex-dev/require-args-validator": "error",

@@ -149,7 +149,12 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
       );
       headers.append(
         "Set-Cookie",
-        setCookieHeader(REFRESH_TOKEN_COOKIE, result.refreshToken, REFRESH_TOKEN_MAX_AGE_SECONDS, secure),
+        setCookieHeader(
+          REFRESH_TOKEN_COOKIE,
+          result.refreshToken,
+          REFRESH_TOKEN_MAX_AGE_SECONDS,
+          secure,
+        ),
       );
       return new Response(null, { status: 302, headers });
     }),

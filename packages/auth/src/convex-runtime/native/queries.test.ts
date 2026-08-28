@@ -86,8 +86,15 @@ function createMockComponent(): MockComponent {
   } as unknown as MockComponent;
 }
 
-function createContext() {
+function createContext(authIdentity?: {
+  tokenIdentifier: string;
+  issuer: string;
+  subject: string;
+}) {
   return {
+    auth: {
+      getUserIdentity: vi.fn().mockResolvedValue(authIdentity ?? null),
+    },
     runQuery: vi.fn(
       (ref: (args: Record<string, unknown>) => unknown, args: Record<string, unknown>) => ref(args),
     ),

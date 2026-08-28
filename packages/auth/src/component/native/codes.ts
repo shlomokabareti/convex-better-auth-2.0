@@ -18,9 +18,7 @@ export const createVerificationCode = mutation({
       .withIndex("by_user_type", (q) => q.eq("userId", args.userId).eq("type", args.type))
       .take(MAX_VERIFICATION_CODES_PER_USER);
 
-    await Promise.all(
-      existing.map((code) => ctx.db.patch(code._id, { consumedAt: now })),
-    );
+    await Promise.all(existing.map((code) => ctx.db.patch(code._id, { consumedAt: now })));
 
     return await ctx.db.insert("authVerificationCodes", {
       ...args,
@@ -39,9 +37,7 @@ export const getVerificationCodeByTokenHash = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("authVerificationCodes")
-      .withIndex("by_token_hash", (q) =>
-        q.eq("tokenHash", args.tokenHash).eq("type", args.type),
-      )
+      .withIndex("by_token_hash", (q) => q.eq("tokenHash", args.tokenHash).eq("type", args.type))
       .unique();
   },
 });
@@ -56,9 +52,7 @@ export const consumeVerificationCode = mutation({
 
     const code = await ctx.db
       .query("authVerificationCodes")
-      .withIndex("by_token_hash", (q) =>
-        q.eq("tokenHash", args.tokenHash).eq("type", args.type),
-      )
+      .withIndex("by_token_hash", (q) => q.eq("tokenHash", args.tokenHash).eq("type", args.type))
       .unique();
 
     if (!code) {
@@ -90,9 +84,7 @@ export const revokeVerificationCodesForUser = mutation({
     const unconsumed = existing.filter((code) => code.consumedAt === undefined);
 
     await Promise.all(
-      unconsumed.map((code) =>
-        ctx.db.patch(code._id, { consumedAt: now, updatedAt: now }),
-      ),
+      unconsumed.map((code) => ctx.db.patch(code._id, { consumedAt: now, updatedAt: now })),
     );
 
     return unconsumed.length;

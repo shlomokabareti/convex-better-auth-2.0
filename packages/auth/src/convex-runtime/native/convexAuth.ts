@@ -23,10 +23,7 @@ export type ConvexAuth = NativeEmailAndPasswordFunctionReferences & {
 };
 
 export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
-  const emailAndPasswordActions = nativeEmailAndPassword(
-    config.component,
-    config.emailAndPassword,
-  );
+  const emailAndPasswordActions = nativeEmailAndPassword(config.component, config.emailAndPassword);
 
   const oauthActions = config.oauth ? nativeOAuth(config.component, config.oauth) : undefined;
 

@@ -237,14 +237,10 @@ export const provisionFromIdentity = mutation({
     if (args.verificationCode) {
       const existingCodes = await ctx.db
         .query("authVerificationCodes")
-        .withIndex("by_user_type", (q) =>
-          q.eq("userId", userId).eq("type", "email_verification"),
-        )
+        .withIndex("by_user_type", (q) => q.eq("userId", userId).eq("type", "email_verification"))
         .take(MAX_EMAIL_VERIFICATION_CODE_REVOKE_BATCH);
       await Promise.all(
-        existingCodes.map((code) =>
-          ctx.db.patch(code._id, { consumedAt: now, updatedAt: now }),
-        ),
+        existingCodes.map((code) => ctx.db.patch(code._id, { consumedAt: now, updatedAt: now })),
       );
       await ctx.db.insert("authVerificationCodes", {
         userId,

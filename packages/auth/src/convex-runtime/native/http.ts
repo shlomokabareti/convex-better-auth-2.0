@@ -314,12 +314,18 @@ export function addNativeAuthHttpRoutes(
 
       if (!result.success) {
         if (callbackURL) {
-          return buildErrorRedirect(callbackURL, result.reason === "expired" ? "EXPIRED_TOKEN" : "INVALID_TOKEN");
+          return buildErrorRedirect(
+            callbackURL,
+            result.reason === "expired" ? "EXPIRED_TOKEN" : "INVALID_TOKEN",
+          );
         }
-        return new Response(JSON.stringify({ success: false, reason: result.reason ?? "invalid" }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ success: false, reason: result.reason ?? "invalid" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
       }
 
       if (callbackURL) {
@@ -411,10 +417,10 @@ export function addNativeAuthHttpRoutes(
         });
       }
 
-      return new Response(
-        JSON.stringify({ user: toNativeAuthUser(user), sessionId }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ user: toNativeAuthUser(user), sessionId }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }),
   });
 }

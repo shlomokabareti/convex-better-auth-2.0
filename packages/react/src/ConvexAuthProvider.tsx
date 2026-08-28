@@ -13,6 +13,7 @@ import {
 
 const TOKEN_KEY = "convex-auth-token";
 const REFRESH_TOKEN_KEY = "convex-auth-refresh-token";
+const SESSION_ID_KEY = "convex-auth-session-id";
 const REFRESH_BUFFER_MS = 60_000;
 
 export type TokenStorage = {
@@ -183,16 +184,11 @@ export type NativeAuthActions = {
     { token: string; password: string },
     { success: boolean }
   >;
-  updateSession: FunctionReference<
-    "action",
-    "public",
-    { refreshToken: string },
-    NativeAuthSession
-  >;
+  updateSession: FunctionReference<"action", "public", { refreshToken: string }, NativeAuthSession>;
   verifySession: FunctionReference<
     "query",
     "public",
-    { token: string },
+    { token?: string; sessionId?: string },
     { user?: NativeAuthUser; sessionId?: string }
   >;
 };
@@ -202,6 +198,8 @@ type ConvexAuthContextValue = NativeAuthActions & {
   setToken: (token: string | null) => void;
   refreshToken: string | null;
   setRefreshToken: (refreshToken: string | null) => void;
+  sessionId: string | null;
+  setSessionId: (sessionId: string | null) => void;
 };
 
 const ConvexAuthContext = createContext<ConvexAuthContextValue | null>(null);
@@ -217,6 +215,7 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
   const updateSessionAction = useAction(props.actions.updateSession);
   const [token, setToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [storage, setStorage] = useState<TokenStorage | null>(null);
   const isHydrating = useRef(true);
 
@@ -225,10 +224,14 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
     setStorage(resolved);
     const storedToken = resolved.get(TOKEN_KEY);
     const storedRefresh = resolved.get(REFRESH_TOKEN_KEY);
+    const storedSessionId = resolved.get(SESSION_ID_KEY);
     if (storedToken) {
       setToken(storedToken);
       if (storedRefresh) {
         setRefreshToken(storedRefresh);
+      }
+      if (storedSessionId) {
+        setSessionId(storedSessionId);
       }
       const expiry = getTokenExpiry(storedToken);
       if (expiry !== null && expiry <= Date.now() + REFRESH_BUFFER_MS && storedRefresh) {
@@ -236,10 +239,12 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
           .then((session) => {
             setToken(session.token ?? null);
             setRefreshToken(session.refreshToken ?? null);
+            setSessionId(session.sessionId ?? null);
           })
           .catch(() => {
             setToken(null);
             setRefreshToken(null);
+            setSessionId(null);
           });
       }
     }
@@ -270,7 +275,12 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
     } else {
       storage.remove(REFRESH_TOKEN_KEY);
     }
-  }, [storage, token, refreshToken]);
+    if (sessionId) {
+      storage.set(SESSION_ID_KEY, sessionId);
+    } else {
+      storage.remove(SESSION_ID_KEY);
+    }
+  }, [storage, token, refreshToken, sessionId]);
 
   useEffect(() => {
     if (!token || !refreshToken) {
@@ -286,18 +296,28 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
         .then((session) => {
           setToken(session.token ?? null);
           setRefreshToken(session.refreshToken ?? null);
+          setSessionId(session.sessionId ?? null);
         })
         .catch(() => {
           setToken(null);
           setRefreshToken(null);
+          setSessionId(null);
         });
     }, delay);
     return () => clearTimeout(timeout);
   }, [token, refreshToken, updateSessionAction]);
 
   const value = useMemo(
-    () => ({ ...props.actions, token, setToken, refreshToken, setRefreshToken }),
-    [props.actions, token, refreshToken],
+    () => ({
+      ...props.actions,
+      token,
+      setToken,
+      refreshToken,
+      setRefreshToken,
+      sessionId,
+      setSessionId,
+    }),
+    [props.actions, token, refreshToken, sessionId],
   );
   return <ConvexAuthContext.Provider value={value}>{props.children}</ConvexAuthContext.Provider>;
 }
@@ -326,6 +346,7 @@ export function useAuthActions() {
       try {
         const session = await signUpAction(args);
         ctx.setToken(session.token ?? null);
+        ctx.setSessionId(session.sessionId ?? null);
         if (session.refreshToken) {
           ctx.setRefreshToken(session.refreshToken);
         }
@@ -343,6 +364,7 @@ export function useAuthActions() {
       try {
         const session = await signInAction(args);
         ctx.setToken(session.token ?? null);
+        ctx.setSessionId(session.sessionId ?? null);
         if (session.refreshToken) {
           ctx.setRefreshToken(session.refreshToken);
         }
@@ -365,6 +387,7 @@ export function useAuthActions() {
         const result = await signOutAction({ token: ctx.token, callbackURL: args?.callbackURL });
         ctx.setToken(null);
         ctx.setRefreshToken(null);
+        ctx.setSessionId(null);
         return result;
       } finally {
         setIsLoading(false);
@@ -373,25 +396,23 @@ export function useAuthActions() {
     [signOutAction, ctx],
   );
 
-  const updateSession = useCallback(
-    async () => {
-      if (ctx.refreshToken === null) {
-        throw new Error("No refresh token available");
+  const updateSession = useCallback(async () => {
+    if (ctx.refreshToken === null) {
+      throw new Error("No refresh token available");
+    }
+    setIsLoading(true);
+    try {
+      const session = await updateSessionAction({ refreshToken: ctx.refreshToken });
+      ctx.setToken(session.token ?? null);
+      ctx.setSessionId(session.sessionId ?? null);
+      if (session.refreshToken) {
+        ctx.setRefreshToken(session.refreshToken);
       }
-      setIsLoading(true);
-      try {
-        const session = await updateSessionAction({ refreshToken: ctx.refreshToken });
-        ctx.setToken(session.token ?? null);
-        if (session.refreshToken) {
-          ctx.setRefreshToken(session.refreshToken);
-        }
-        return session;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [updateSessionAction, ctx],
-  );
+      return session;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [updateSessionAction, ctx]);
 
   const sendEmailVerification = useCallback(
     async (args: { email: string; callbackURL?: string }) => {
@@ -453,7 +474,10 @@ export function useAuthActions() {
     [verifyPasswordAction],
   );
 
-  const session = useQuery(ctx.verifySession, ctx.token ? { token: ctx.token } : "skip");
+  const session = useQuery(
+    ctx.verifySession,
+    ctx.token ? { token: ctx.token, sessionId: ctx.sessionId ?? undefined } : "skip",
+  );
   const isSessionLoading = ctx.token !== null && session === undefined;
   const user = session?.user ?? null;
   const sessionId = session?.sessionId ?? null;
@@ -487,7 +511,10 @@ export function useSession(): {
   if (ctx === null) {
     throw new Error("useSession must be used within a ConvexAuthProvider");
   }
-  const session = useQuery(ctx.verifySession, ctx.token ? { token: ctx.token } : "skip");
+  const session = useQuery(
+    ctx.verifySession,
+    ctx.token ? { token: ctx.token, sessionId: ctx.sessionId ?? undefined } : "skip",
+  );
   const isLoading = ctx.token !== null && session === undefined;
   const user = session?.user ?? null;
   return {

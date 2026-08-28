@@ -1,10 +1,7 @@
 import type { GenericActionCtx, GenericDataModel } from "convex/server";
 import { mintToken } from "./jwt.js";
 import { generateVerificationToken, hashToken } from "./tokens.js";
-import type {
-  NativeAuthSession,
-  NativeEmailAndPasswordComponentHandle,
-} from "./types.js";
+import type { NativeAuthSession, NativeEmailAndPasswordComponentHandle } from "./types.js";
 import { toNativeAuthUser } from "./types.js";
 
 const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
