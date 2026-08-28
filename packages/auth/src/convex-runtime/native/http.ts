@@ -10,6 +10,8 @@ import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 
 const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
+const TWO_FACTOR_PENDING_COOKIE = "convex-auth-two-factor";
+const TWO_FACTOR_TRUSTED_DEVICE_COOKIE = "convex-auth-trusted-device";
 const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
 function buildErrorRedirect(callbackURL: string, error: string): Response {
@@ -36,6 +38,17 @@ function buildTokenRedirect(callbackURL: string, token: string): Response {
   });
 }
 
+function base64UrlDecode(value: string): string {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = (4 - (normalized.length % 4)) % 4;
+  const base64 = normalized + "=".repeat(padding);
+  try {
+    return atob(base64);
+  } catch {
+    return "";
+  }
+}
+
 function getTokenExpiry(token: string): number | null {
   const parts = token.split(".");
   if (parts.length !== 3) {
@@ -45,11 +58,8 @@ function getTokenExpiry(token: string): number | null {
   if (!payload) {
     return null;
   }
-  const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = (4 - (normalized.length % 4)) % 4;
-  const base64 = normalized + "=".repeat(padding);
   try {
-    const json = Buffer.from(base64, "base64").toString("utf8");
+    const json = base64UrlDecode(payload);
     const parsed = JSON.parse(json) as { exp?: number };
     if (typeof parsed.exp !== "number") {
       return null;
@@ -74,6 +84,39 @@ function setCookieHeader(
     cookie += "; Secure";
   }
   return cookie;
+}
+
+function buildTwoFactorVerifyResponse(
+  request: Request,
+  session: { token: string | null; refreshToken?: string; trustDeviceToken?: string; trustDeviceMaxAgeMs?: number },
+  trustDeviceToken?: string,
+): Response {
+  const secure = new URL(request.url).protocol === "https:";
+  const headers = new Headers({ "Content-Type": "application/json" });
+
+  if (session.token) {
+    const expiry = getTokenExpiry(session.token);
+    const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
+    headers.append("Set-Cookie", setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure));
+    headers.append("Set-Cookie", clearCookieHeader(TWO_FACTOR_PENDING_COOKIE, secure));
+  }
+  if (session.refreshToken) {
+    headers.append("Set-Cookie", setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, REFRESH_TOKEN_MAX_AGE_SECONDS, secure));
+  }
+  const trustedToken = trustDeviceToken ?? session.trustDeviceToken;
+  if (trustedToken) {
+    const maxAge = session.trustDeviceMaxAgeMs ? Math.floor(session.trustDeviceMaxAgeMs / 1000) : undefined;
+    headers.append("Set-Cookie", setCookieHeader(TWO_FACTOR_TRUSTED_DEVICE_COOKIE, trustedToken, maxAge, secure));
+  }
+
+  const responseBody = { success: true, ...session } as Record<string, unknown>;
+  if (responseBody.user && typeof responseBody.user === "object" && responseBody.user !== null) {
+    // user is already a plain object from toNativeAuthUser
+  }
+  return new Response(JSON.stringify(responseBody), {
+    status: 200,
+    headers,
+  });
 }
 
 function clearCookieHeader(name: string, secure?: boolean): string {
@@ -233,6 +276,7 @@ export function addNativeAuthHttpRoutes(
           password: string;
           callbackURL?: string;
           rememberMe?: boolean;
+          trustedDeviceToken?: string;
         };
         try {
           parsed = parse(
@@ -241,6 +285,7 @@ export function addNativeAuthHttpRoutes(
               password: v.string(),
               callbackURL: v.optional(v.string()),
               rememberMe: v.optional(v.boolean()),
+              trustedDeviceToken: v.optional(v.string()),
             }),
             body,
           );
@@ -250,6 +295,9 @@ export function addNativeAuthHttpRoutes(
             headers: { "Content-Type": "application/json" },
           });
         }
+
+        parsed.trustedDeviceToken =
+          parsed.trustedDeviceToken ?? readCookie(request, TWO_FACTOR_TRUSTED_DEVICE_COOKIE);
 
         let session;
         try {
@@ -268,12 +316,27 @@ export function addNativeAuthHttpRoutes(
             "Set-Cookie",
             setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure),
           );
+          if (session.twoFactorChallengeToken) {
+            headers.append(
+              "Set-Cookie",
+              clearCookieHeader(TWO_FACTOR_PENDING_COOKIE, secure),
+            );
+          }
         }
         if (session.refreshToken) {
           const maxAge = parsed.rememberMe ? REFRESH_TOKEN_MAX_AGE_SECONDS : undefined;
           headers.append(
             "Set-Cookie",
             setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge, secure),
+          );
+        }
+        if (session.twoFactorChallengeToken) {
+          const maxAge = session.twoFactorCookieMaxAgeMs
+            ? Math.floor(session.twoFactorCookieMaxAgeMs / 1000)
+            : undefined;
+          headers.append(
+            "Set-Cookie",
+            setCookieHeader(TWO_FACTOR_PENDING_COOKIE, session.twoFactorChallengeToken, maxAge, secure),
           );
         }
 
@@ -328,6 +391,246 @@ export function addNativeAuthHttpRoutes(
         return new Response(JSON.stringify(result), { status: 200, headers });
       }),
     });
+
+    http.route({
+      path: "/api/auth/two-factor/enable",
+      method: "POST",
+      handler: httpActionGeneric(async (ctx, request) => {
+        const body = await request.json().catch(() => undefined);
+        let parsed: { password: string; issuer?: string };
+        try {
+          parsed = parse(
+            v.object({
+              password: v.string(),
+              issuer: v.optional(v.string()),
+            }),
+            body,
+          );
+        } catch {
+          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const token = readCookie(request, ACCESS_TOKEN_COOKIE);
+        if (!token) {
+          return new Response(JSON.stringify({ success: false, reason: "unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        let result;
+        try {
+          result = await ctx.runAction(actions.twoFactorEnable, {
+            token,
+            password: parsed.password,
+            issuer: parsed.issuer,
+          });
+        } catch (error) {
+          const { status, reason } = errorStatusAndReason(error);
+          return buildErrorResponse(status, reason);
+        }
+
+        if (result.error) {
+          return buildErrorResponse(401, result.error);
+        }
+
+        return new Response(JSON.stringify({ success: true, ...result }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    });
+
+    http.route({
+      path: "/api/auth/two-factor/verify-totp",
+      method: "POST",
+      handler: httpActionGeneric(async (ctx, request) => {
+        const body = await request.json().catch(() => undefined);
+        let parsed: { code: string; trustDevice?: boolean };
+        try {
+          parsed = parse(
+            v.object({
+              code: v.string(),
+              trustDevice: v.optional(v.boolean()),
+            }),
+            body,
+          );
+        } catch {
+          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const token =
+          readCookie(request, TWO_FACTOR_PENDING_COOKIE) ??
+          readCookie(request, ACCESS_TOKEN_COOKIE);
+        if (!token) {
+          return new Response(JSON.stringify({ success: false, reason: "unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        let session;
+        try {
+          session = await ctx.runAction(actions.twoFactorVerifyTOTP, {
+            token,
+            code: parsed.code,
+            trustDevice: parsed.trustDevice,
+          });
+        } catch (error) {
+          const { status, reason } = errorStatusAndReason(error);
+          return buildErrorResponse(status, reason);
+        }
+
+        return buildTwoFactorVerifyResponse(request, session, session.trustDeviceToken);
+      }),
+    });
+
+    http.route({
+      path: "/api/auth/two-factor/verify-backup-code",
+      method: "POST",
+      handler: httpActionGeneric(async (ctx, request) => {
+        const body = await request.json().catch(() => undefined);
+        let parsed: { code: string; trustDevice?: boolean };
+        try {
+          parsed = parse(
+            v.object({
+              code: v.string(),
+              trustDevice: v.optional(v.boolean()),
+            }),
+            body,
+          );
+        } catch {
+          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const token = readCookie(request, TWO_FACTOR_PENDING_COOKIE);
+        if (!token) {
+          return new Response(JSON.stringify({ success: false, reason: "unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        let session;
+        try {
+          session = await ctx.runAction(actions.twoFactorVerifyBackupCode, {
+            token,
+            code: parsed.code,
+            trustDevice: parsed.trustDevice,
+          });
+        } catch (error) {
+          const { status, reason } = errorStatusAndReason(error);
+          return buildErrorResponse(status, reason);
+        }
+
+        return buildTwoFactorVerifyResponse(request, session, session.trustDeviceToken);
+      }),
+    });
+
+    http.route({
+      path: "/api/auth/two-factor/disable",
+      method: "POST",
+      handler: httpActionGeneric(async (ctx, request) => {
+        const body = await request.json().catch(() => undefined);
+        let parsed: { password: string };
+        try {
+          parsed = parse(
+            v.object({
+              password: v.string(),
+            }),
+            body,
+          );
+        } catch {
+          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const token = readCookie(request, ACCESS_TOKEN_COOKIE);
+        if (!token) {
+          return new Response(JSON.stringify({ success: false, reason: "unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        let result;
+        try {
+          result = await ctx.runAction(actions.twoFactorDisable, {
+            token,
+            password: parsed.password,
+          });
+        } catch (error) {
+          const { status, reason } = errorStatusAndReason(error);
+          return buildErrorResponse(status, reason);
+        }
+
+        return new Response(JSON.stringify(result), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    });
+
+    http.route({
+      path: "/api/auth/two-factor/generate-backup-codes",
+      method: "POST",
+      handler: httpActionGeneric(async (ctx, request) => {
+        const body = await request.json().catch(() => undefined);
+        let parsed: { password: string };
+        try {
+          parsed = parse(
+            v.object({
+              password: v.string(),
+            }),
+            body,
+          );
+        } catch {
+          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const token = readCookie(request, ACCESS_TOKEN_COOKIE);
+        if (!token) {
+          return new Response(JSON.stringify({ success: false, reason: "unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        let result;
+        try {
+          result = await ctx.runAction(actions.twoFactorGenerateBackupCodes, {
+            token,
+            password: parsed.password,
+          });
+        } catch (error) {
+          const { status, reason } = errorStatusAndReason(error);
+          return buildErrorResponse(status, reason);
+        }
+
+        if (result.error) {
+          return buildErrorResponse(401, result.error);
+        }
+
+        return new Response(JSON.stringify({ success: true, ...result }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    });
   }
 
   if (!component) {
@@ -346,7 +649,7 @@ export function addNativeAuthHttpRoutes(
         return new Response("Missing callbackURL", { status: 400 });
       }
 
-      const tokenHash = hashToken(token);
+      const tokenHash = await hashToken(token);
       const code = await ctx.runQuery(component.native.codes.getVerificationCodeByTokenHash, {
         tokenHash,
         type: "password_reset",
@@ -368,7 +671,7 @@ export function addNativeAuthHttpRoutes(
       const token = url.searchParams.get("token") ?? "";
       const callbackURL = url.searchParams.get("callbackURL");
 
-      const tokenHash = hashToken(token);
+      const tokenHash = await hashToken(token);
       const result = await ctx.runMutation(component.identity.verifyEmail, {
         tokenHash,
         provider: "password",

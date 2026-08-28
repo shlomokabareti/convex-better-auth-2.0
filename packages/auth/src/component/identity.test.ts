@@ -38,7 +38,7 @@ describe("identity verification and password reset", () => {
       }),
     );
 
-    const tokenHash = hashToken("verify-token");
+    const tokenHash = await hashToken("verify-token");
     await t.mutation(api.native.codes.createVerificationCode, {
       userId,
       type: "email_verification",
@@ -97,7 +97,7 @@ describe("identity verification and password reset", () => {
       }),
     );
 
-    const tokenHash = hashToken("expired-token");
+    const tokenHash = await hashToken("expired-token");
     await t.mutation(api.native.codes.createVerificationCode, {
       userId,
       type: "email_verification",
@@ -167,7 +167,7 @@ describe("identity verification and password reset", () => {
       }),
     );
 
-    const tokenHash = hashToken("reset-token");
+    const tokenHash = await hashToken("reset-token");
     await t.mutation(api.native.codes.createVerificationCode, {
       userId,
       type: "password_reset",
@@ -202,7 +202,7 @@ describe("identity verification and password reset", () => {
     const t = convexTest(schema, modules);
 
     const result = await t.mutation(api.identity.resetPassword, {
-      tokenHash: hashToken("missing"),
+      tokenHash: await hashToken("missing"),
       credentialHash: "new-hash",
       provider: "password",
       issuer: "native",

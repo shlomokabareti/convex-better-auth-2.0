@@ -73,7 +73,7 @@ export async function getSession(
   cookie: string,
   headers: Record<string, string> = { origin: ORIGIN_WEB },
 ): Promise<{ user?: { email?: string } } | null> {
-  const r = await fetch(`${site}/api/auth/get-session`, {
+  const r = await fetch(`${site}/api/auth/session`, {
     headers: { ...headers, cookie },
   });
   if (!r.ok) return null;

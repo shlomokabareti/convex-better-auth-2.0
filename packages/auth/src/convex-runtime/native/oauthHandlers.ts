@@ -18,6 +18,7 @@ import {
 } from "./oauthState.js";
 import { mintToken } from "./jwt.js";
 import { generateVerificationToken, hashToken } from "./tokens.js";
+import { encryptOAuthTokens } from "./oauthCrypto.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
 
 const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -279,6 +280,8 @@ export async function handleCallback<DataModel extends GenericDataModel>(
     throw new Error("OAuth identity was not provisioned");
   }
 
+  const encryptedTokens = await encryptOAuthTokens(tokens);
+
   if (!existingAccount) {
     await ctx.runMutation(component.native.accounts.createAccount, {
       userId: identityResult.userId,
@@ -286,22 +289,22 @@ export async function handleCallback<DataModel extends GenericDataModel>(
       issuer: provider.issuer,
       subject: user.id,
       credentialHash: "",
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      idToken: tokens.idToken,
-      tokenType: tokens.tokenType,
-      scopes: tokens.scopes,
-      accessTokenExpiresAt: tokens.expiresAt,
+      accessToken: encryptedTokens.accessToken,
+      refreshToken: encryptedTokens.refreshToken,
+      idToken: encryptedTokens.idToken,
+      tokenType: encryptedTokens.tokenType,
+      scopes: encryptedTokens.scopes,
+      accessTokenExpiresAt: encryptedTokens.expiresAt,
     });
   } else {
     await ctx.runMutation(component.native.accounts.updateAccountTokens, {
       accountId: existingAccount._id,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      idToken: tokens.idToken,
-      tokenType: tokens.tokenType,
-      scopes: tokens.scopes,
-      accessTokenExpiresAt: tokens.expiresAt,
+      accessToken: encryptedTokens.accessToken,
+      refreshToken: encryptedTokens.refreshToken,
+      idToken: encryptedTokens.idToken,
+      tokenType: encryptedTokens.tokenType,
+      scopes: encryptedTokens.scopes,
+      accessTokenExpiresAt: encryptedTokens.expiresAt,
     });
   }
 
@@ -324,7 +327,7 @@ export async function handleCallback<DataModel extends GenericDataModel>(
   );
 
   const refreshToken = generateVerificationToken();
-  const refreshTokenHash = hashToken(refreshToken);
+  const refreshTokenHash = await hashToken(refreshToken);
   const refreshTokenExpiresAt = now + REFRESH_TOKEN_TTL_MS;
   await ctx.runMutation(component.native.sessions.createSessionAndRefreshToken, {
     sessionId,

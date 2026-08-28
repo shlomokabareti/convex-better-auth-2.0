@@ -56,13 +56,7 @@ function totp(secret: string): string {
     .toString()
     .padStart(6, "0");
 }
-async function tokenAndSessionUsable(cookie: string): Promise<boolean> {
-  const tokRes = await fetch(`${site}/api/auth/convex/token`, {
-    headers: { origin: ORIGIN_WEB, cookie },
-  });
-  const tokenBody = await readJsonObject(tokRes);
-  const tok = typeof tokenBody.token === "string" ? tokenBody.token : undefined;
-  if (!tok) return false;
+async function sessionUsable(cookie: string): Promise<boolean> {
   const sess = await getSession(site, cookie);
   return !!sess?.user?.email;
 }
@@ -75,7 +69,7 @@ async function enroll(): Promise<{
 }> {
   const email = uniqueEmail("2ff");
   const pw = strongPassword("2ff");
-  const su = await fetch(`${site}/api/auth/sign-up/email`, {
+  const su = await fetch(`${site}/api/auth/sign-up`, {
     method: "POST",
     headers: J(),
     body: JSON.stringify({ email, password: pw, name: "2FA" }),
@@ -114,7 +108,7 @@ async function enroll(): Promise<{
 // A: sign-in round trip
 {
   const u = await enroll();
-  const si = await fetch(`${site}/api/auth/sign-in/email`, {
+  const si = await fetch(`${site}/api/auth/sign-in`, {
     method: "POST",
     headers: J(),
     body: JSON.stringify({ email: u.email, password: u.pw }),
@@ -125,7 +119,7 @@ async function enroll(): Promise<{
     process.exit(0);
   }
   const pending = mergeCookies(si);
-  if (await tokenAndSessionUsable(pending)) {
+  if (await sessionUsable(pending)) {
     r.bad("A: usable token issued BEFORE 2FA completed (session NOT withheld)");
   } else {
     r.ok("A: session withheld pre-2FA");
@@ -136,7 +130,7 @@ async function enroll(): Promise<{
     body: JSON.stringify({ code: totp(u.secret) }),
   });
   const final = mergeCookies(vt, pending);
-  if (vt.ok && (await tokenAndSessionUsable(final))) {
+  if (vt.ok && (await sessionUsable(final))) {
     r.ok("A: TOTP completes sign-in -> usable session");
   } else {
     r.bad(`A: 2FA completion did not yield a usable session (verify ${vt.status})`);
@@ -146,7 +140,7 @@ async function enroll(): Promise<{
 // B: backup code + no reuse
 {
   const u = await enroll();
-  const si = await fetch(`${site}/api/auth/sign-in/email`, {
+  const si = await fetch(`${site}/api/auth/sign-in`, {
     method: "POST",
     headers: J(),
     body: JSON.stringify({ email: u.email, password: u.pw }),
@@ -158,12 +152,12 @@ async function enroll(): Promise<{
     headers: J({ cookie: pending }),
     body: JSON.stringify({ code }),
   });
-  if (r1.ok && (await tokenAndSessionUsable(mergeCookies(r1, pending)))) {
+  if (r1.ok && (await sessionUsable(mergeCookies(r1, pending)))) {
     r.ok("B: backup code completes sign-in");
   } else {
     r.bad(`B: backup code did not complete sign-in (${r1.status})`);
   }
-  const si2 = await fetch(`${site}/api/auth/sign-in/email`, {
+  const si2 = await fetch(`${site}/api/auth/sign-in`, {
     method: "POST",
     headers: J(),
     body: JSON.stringify({ email: u.email, password: u.pw }),
@@ -180,7 +174,7 @@ async function enroll(): Promise<{
 // C: trusted device
 {
   const u = await enroll();
-  const si = await fetch(`${site}/api/auth/sign-in/email`, {
+  const si = await fetch(`${site}/api/auth/sign-in`, {
     method: "POST",
     headers: J(),
     body: JSON.stringify({ email: u.email, password: u.pw }),
@@ -192,7 +186,7 @@ async function enroll(): Promise<{
     body: JSON.stringify({ code: totp(u.secret), trustDevice: true }),
   });
   const trusted = mergeCookies(vt, pending);
-  const si2 = await fetch(`${site}/api/auth/sign-in/email`, {
+  const si2 = await fetch(`${site}/api/auth/sign-in`, {
     method: "POST",
     headers: J({ cookie: trusted }),
     body: JSON.stringify({ email: u.email, password: u.pw }),
@@ -210,13 +204,13 @@ async function enroll(): Promise<{
     headers: J({ cookie: u.cookie }),
     body: JSON.stringify({ password: u.pw }),
   });
-  const si = await fetch(`${site}/api/auth/sign-in/email`, {
+  const si = await fetch(`${site}/api/auth/sign-in`, {
     method: "POST",
     headers: J(),
     body: JSON.stringify({ email: u.email, password: u.pw }),
   });
   const b = await readJsonObject(si);
-  if (dis.ok && !b.twoFactorRedirect && (await tokenAndSessionUsable(mergeCookies(si)))) {
+  if (dis.ok && !b.twoFactorRedirect && (await sessionUsable(mergeCookies(si)))) {
     r.ok("D: disable 2FA -> sign-in not challenged");
   } else {
     r.bad(
@@ -236,7 +230,7 @@ async function enroll(): Promise<{
   if (!re.ok) {
     r.bad(`E: generate-backup-codes failed (${re.status})`);
   } else {
-    const si = await fetch(`${site}/api/auth/sign-in/email`, {
+    const si = await fetch(`${site}/api/auth/sign-in`, {
       method: "POST",
       headers: J(),
       body: JSON.stringify({ email: u.email, password: u.pw }),

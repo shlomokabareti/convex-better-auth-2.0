@@ -121,6 +121,8 @@ export const authMdCredentialStatusValidator = v.union(v.literal("active"), v.li
 export const verificationCodeTypeValidator = v.union(
   v.literal("email_verification"),
   v.literal("password_reset"),
+  v.literal("two_factor_pending"),
+  v.literal("two_factor_trusted_device"),
 );
 
 export const authMdAuditActorTypeValidator = v.union(
@@ -173,6 +175,9 @@ export default defineSchema({
     emailTwoFactorLastVerifiedAt: v.optional(v.number()),
     emailTwoFactorResetAt: v.optional(v.number()),
     emailTwoFactorResetReason: v.optional(emailTwoFactorResetReasonValidator),
+    twoFactorEnabled: v.optional(v.boolean()),
+    twoFactorSecret: v.optional(v.string()),
+    twoFactorBackupCodes: v.optional(v.array(v.string())),
     activeOrganizationId: v.optional(v.id("organizations")),
     isActive: v.boolean(),
     isSuperAdmin: v.optional(v.boolean()),

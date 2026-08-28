@@ -1,7 +1,11 @@
 import { v } from "convex/values";
 import type { FunctionReference } from "convex/server";
 
-export type VerificationCodeType = "email_verification" | "password_reset";
+export type VerificationCodeType =
+  | "email_verification"
+  | "password_reset"
+  | "two_factor_pending"
+  | "two_factor_trusted_device";
 
 export type NativeAuthUser = {
   id: string;
@@ -16,6 +20,7 @@ export type NativeAuthUser = {
   emailTwoFactorLastVerifiedAt?: number;
   emailTwoFactorResetAt?: number;
   emailTwoFactorResetReason?: "missing_email" | "email_not_verified" | "email_changed";
+  twoFactorEnabled: boolean;
   activeOrganizationId?: string;
   isActive: boolean;
   isSuperAdmin?: boolean;
@@ -37,6 +42,7 @@ export function toNativeAuthUser(user: {
   emailTwoFactorLastVerifiedAt?: number;
   emailTwoFactorResetAt?: number;
   emailTwoFactorResetReason?: "missing_email" | "email_not_verified" | "email_changed";
+  twoFactorEnabled?: boolean;
   activeOrganizationId?: string;
   isActive?: boolean;
   isSuperAdmin?: boolean;
@@ -50,6 +56,7 @@ export function toNativeAuthUser(user: {
     name: user.name,
     image: user.image,
     emailVerified: user.emailVerified,
+    twoFactorEnabled: user.twoFactorEnabled ?? false,
     isActive: user.isActive ?? true,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
@@ -96,6 +103,7 @@ export const nativeAuthUserValidator = v.object({
       v.literal("email_changed"),
     ),
   ),
+  twoFactorEnabled: v.boolean(),
   activeOrganizationId: v.optional(v.string()),
   isActive: v.boolean(),
   isSuperAdmin: v.optional(v.boolean()),
@@ -113,6 +121,12 @@ export type NativeAuthSession = {
   sessionId?: string;
   redirect?: boolean;
   url?: string;
+  twoFactorRedirect?: boolean;
+  twoFactorMethods?: string[];
+  twoFactorChallengeToken?: string;
+  twoFactorCookieMaxAgeMs?: number;
+  trustDeviceToken?: string;
+  trustDeviceMaxAgeMs?: number;
 };
 
 export type NativeVerificationCodeDoc = {
@@ -141,6 +155,9 @@ export type NativeUserDoc = {
   emailTwoFactorLastVerifiedAt?: number;
   emailTwoFactorResetAt?: number;
   emailTwoFactorResetReason?: "missing_email" | "email_not_verified" | "email_changed";
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string;
+  twoFactorBackupCodes?: string[];
   activeOrganizationId?: string;
   isActive: boolean;
   isSuperAdmin?: boolean;
@@ -489,6 +506,25 @@ export type NativeEmailAndPasswordComponentHandle = {
         "public" | "internal",
         { userId: string; emailVerified: boolean },
         void,
+        string
+      >;
+      setTwoFactor: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          userId: string;
+          twoFactorEnabled: boolean;
+          twoFactorSecret?: string;
+          twoFactorBackupCodes?: string[];
+        },
+        void,
+        string
+      >;
+      consumeBackupCode: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { userId: string; backupCodeHash: string },
+        { success: boolean },
         string
       >;
     };

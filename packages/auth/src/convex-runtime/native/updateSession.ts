@@ -13,7 +13,7 @@ export async function handleUpdateSession<DataModel extends GenericDataModel>(
   refreshToken: string,
 ): Promise<NativeAuthSession> {
   const now = Date.now();
-  const oldRefreshTokenHash = hashToken(refreshToken);
+  const oldRefreshTokenHash = await hashToken(refreshToken);
 
   const refresh = await ctx.runQuery(component.native.refreshTokens.getRefreshTokenByTokenHash, {
     tokenHash: oldRefreshTokenHash,
@@ -46,7 +46,7 @@ export async function handleUpdateSession<DataModel extends GenericDataModel>(
 
   const sessionId = crypto.randomUUID();
   const newRefreshToken = generateVerificationToken();
-  const newRefreshTokenHash = hashToken(newRefreshToken);
+  const newRefreshTokenHash = await hashToken(newRefreshToken);
   const sessionTtlMs = DEFAULT_SESSION_TTL_MS;
   const refreshTokenTtlMs = DEFAULT_REFRESH_TOKEN_TTL_MS;
   const expiresAt = now + sessionTtlMs;

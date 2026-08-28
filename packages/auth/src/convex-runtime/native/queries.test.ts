@@ -15,7 +15,7 @@ function exec(registered: unknown) {
     throw new TypeError("expected an executable handler");
   }
   return {
-    handler: async (ctx: unknown, args: Record<string, unknown>): Promise<unknown> =>
+    handler: async (ctx: unknown, args: unknown): Promise<unknown> =>
       await Reflect.apply(handler, registered, [ctx, args]),
   };
 }
@@ -140,6 +140,7 @@ describe("nativeAuthQueries", () => {
       email: "shlomo@example.com",
       name: "Shlomo",
       emailVerified: true,
+      twoFactorEnabled: false,
       isActive: true,
       createdAt: 0,
       updatedAt: 0,
@@ -190,7 +191,7 @@ describe("addNativeAuthHttpRoutes", () => {
     const jwksRoute = routes.find((r) => r.path === "/.well-known/jwks.json" && r.method === "GET");
     expect(jwksRoute).toBeDefined();
 
-    const response = await jwksRoute!.handler(
+    const response = await exec(jwksRoute!.handler).handler(
       createContext(),
       new Request("http://localhost/.well-known/jwks.json"),
     );
@@ -223,7 +224,7 @@ describe("addNativeAuthHttpRoutes", () => {
     expect(verifyRoute).toBeDefined();
 
     const callbackURL = "https://app.example.com/welcome";
-    const response = await verifyRoute!.handler(
+    const response = await exec(verifyRoute!.handler).handler(
       createContext(),
       new Request(
         "https://api.example.com/api/auth/verify-email?token=" +
@@ -269,7 +270,7 @@ describe("addNativeAuthHttpRoutes", () => {
     expect(resetRoute).toBeDefined();
 
     const callbackURL = "https://app.example.com/reset";
-    const response = await resetRoute!.handler(
+    const response = await exec(resetRoute!.handler).handler(
       createContext(),
       new Request(
         "https://api.example.com/api/auth/reset-password/the-token?callbackURL=" +
@@ -303,7 +304,7 @@ describe("addNativeAuthHttpRoutes", () => {
     expect(resetRoute).toBeDefined();
 
     const callbackURL = "https://app.example.com/reset";
-    const response = await resetRoute!.handler(
+    const response = await exec(resetRoute!.handler).handler(
       createContext(),
       new Request(
         "https://api.example.com/api/auth/reset-password/bad-token?callbackURL=" +

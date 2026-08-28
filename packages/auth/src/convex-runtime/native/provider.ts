@@ -16,10 +16,19 @@ import { mintToken, verifyToken } from "./jwt.js";
 import { hashPassword, verifyPassword as verifyPasswordHash } from "./password.js";
 import { generateVerificationToken, hashToken } from "./tokens.js";
 import { handleUpdateSession } from "./updateSession.js";
+import { decryptAccountToken, encryptAccountToken } from "./oauthCrypto.js";
+import {
+  buildTOTPURI,
+  decodeBase32,
+  encodeBase32,
+  generateSecret,
+  verifyTOTP,
+} from "./totp.js";
 import {
   type NativeAuthSession,
   type NativeAuthUser,
   type NativeEmailAndPasswordComponentHandle,
+  type NativeUserDoc,
   nativeAuthUserValidator,
   toNativeAuthUser,
   type VerificationCodeType,
@@ -74,6 +83,11 @@ export type NativeEmailAndPasswordActions = {
   sendPasswordReset: ReturnType<typeof action>;
   resetPassword: ReturnType<typeof action>;
   verifyPassword: ReturnType<typeof action>;
+  twoFactorEnable: ReturnType<typeof action>;
+  twoFactorVerifyTOTP: ReturnType<typeof action>;
+  twoFactorVerifyBackupCode: ReturnType<typeof action>;
+  twoFactorDisable: ReturnType<typeof action>;
+  twoFactorGenerateBackupCodes: ReturnType<typeof action>;
 };
 
 export type NativeEmailAndPasswordFunctionReferences = {
@@ -92,6 +106,11 @@ const DEFAULT_REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DONT_REMEMBER_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_MIN_PASSWORD_LENGTH = 8;
 const DEFAULT_MAX_PASSWORD_LENGTH = 128;
+const DEFAULT_TWO_FACTOR_BACKUP_CODES_COUNT = 10;
+const DEFAULT_TWO_FACTOR_BACKUP_CODE_BYTES = 10;
+const DEFAULT_TWO_FACTOR_SECRET_BYTES = 20;
+const DEFAULT_TWO_FACTOR_PENDING_TTL_MS = 10 * 60 * 1000;
+const DEFAULT_TRUST_DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 // Approximation of the `z.email()` check used by Better Auth.
 const EMAIL_REGEX =
@@ -113,6 +132,7 @@ function buildGenericDuplicateResponse(
     name,
     image,
     emailVerified: false,
+    twoFactorEnabled: false,
     isActive: true,
     createdAt: now,
     updatedAt: now,
@@ -147,6 +167,12 @@ const nativeAuthSessionValidator = v.object({
   sessionId: v.optional(v.string()),
   redirect: v.optional(v.boolean()),
   url: v.optional(v.string()),
+  twoFactorRedirect: v.optional(v.boolean()),
+  twoFactorMethods: v.optional(v.array(v.string())),
+  twoFactorChallengeToken: v.optional(v.string()),
+  twoFactorCookieMaxAgeMs: v.optional(v.number()),
+  trustDeviceToken: v.optional(v.string()),
+  trustDeviceMaxAgeMs: v.optional(v.number()),
 });
 
 function resolveEmailConfig(args: NativeEmailAndPasswordConfig): {
@@ -207,7 +233,7 @@ export function nativeEmailAndPassword(
     const now = Date.now();
     const sessionId = crypto.randomUUID();
     const refreshToken = generateVerificationToken();
-    const refreshTokenHash = hashToken(refreshToken);
+    const refreshTokenHash = await hashToken(refreshToken);
     const effectiveSessionTtlMs = resolveSessionTtlMs(args.rememberMe, sessionTtlMs);
     const expiresAt = now + effectiveSessionTtlMs;
     const token = await mintToken(
@@ -276,7 +302,7 @@ export function nativeEmailAndPassword(
       let verificationCode: { tokenHash: string; expiresAt: number } | undefined;
       if (shouldSendVerificationEmail) {
         verificationToken = generateVerificationToken();
-        const tokenHash = hashToken(verificationToken);
+        const tokenHash = await hashToken(verificationToken);
         verificationCode = {
           tokenHash,
           expiresAt: now + verificationCodeTtlMs,
@@ -296,7 +322,7 @@ export function nativeEmailAndPassword(
         const sessionId = crypto.randomUUID();
         const effectiveSessionTtlMs = resolveSessionTtlMs(args.rememberMe, sessionTtlMs);
         refreshToken = generateVerificationToken();
-        const refreshTokenHash = hashToken(refreshToken);
+        const refreshTokenHash = await hashToken(refreshToken);
         initialSession = {
           sessionId,
           sessionExpiresAt: now + effectiveSessionTtlMs,
@@ -400,6 +426,7 @@ export function nativeEmailAndPassword(
       password: v.string(),
       callbackURL: v.optional(v.string()),
       rememberMe: v.optional(v.boolean()),
+      trustedDeviceToken: v.optional(v.string()),
     },
     returns: nativeAuthSessionValidator,
     handler: async (ctx, args) => {
@@ -450,19 +477,16 @@ export function nativeEmailAndPassword(
         throw new Error("Email not verified");
       }
 
-      const { sessionId, token, refreshToken } = await createSessionAndRefreshToken(ctx, {
-        userId: user._id,
-        identityId: identity._id,
-        rememberMe: args.rememberMe,
-      });
+      const result = await handleTwoFactorSignIn(
+        ctx,
+        user,
+        identity._id,
+        args.rememberMe,
+        args.trustedDeviceToken,
+      );
 
       return {
-        token,
-        refreshToken,
-        user: toNativeAuthUser(user),
-        userId: user._id,
-        identityId: identity._id,
-        sessionId,
+        ...result,
         redirect: !!args.callbackURL,
         url: args.callbackURL,
       };
@@ -588,7 +612,7 @@ export function nativeEmailAndPassword(
     }
 
     const token = generateVerificationToken();
-    const tokenHash = hashToken(token);
+    const tokenHash = await hashToken(token);
     const expiresAt = now + args.ttlMs;
 
     await ctx.runMutation(component.native.codes.createVerificationCode, {
@@ -659,7 +683,7 @@ export function nativeEmailAndPassword(
       reason: v.optional(v.string()),
     }),
     handler: async (ctx, args) => {
-      const tokenHash = hashToken(args.token);
+      const tokenHash = await hashToken(args.token);
       const result = await ctx.runMutation(component.identity.verifyEmail, {
         tokenHash,
         provider: "password",
@@ -738,7 +762,7 @@ export function nativeEmailAndPassword(
         };
       }
 
-      const tokenHash = hashToken(args.token);
+      const tokenHash = await hashToken(args.token);
       const credentialHash = await hashPassword(args.newPassword);
 
       const result = await ctx.runMutation(component.identity.resetPassword, {
@@ -805,6 +829,414 @@ export function nativeEmailAndPassword(
     },
   });
 
+  async function getNativePasswordAccount(ctx: GenericActionCtx<DataModel>, userId: string) {
+    const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
+      userId,
+      provider: "password",
+      issuer: "native",
+    });
+    if (!identity) return null;
+    return await ctx.runQuery(component.native.accounts.getAccountBySubject, {
+      provider: "password",
+      issuer: "native",
+      subject: identity.subject,
+    });
+  }
+
+  async function verifyUserPassword(
+    ctx: GenericActionCtx<DataModel>,
+    userId: string,
+    password: string,
+  ) {
+    const account = await getNativePasswordAccount(ctx, userId);
+    if (!account) return false;
+    return await verifyPasswordHash(password, account.credentialHash);
+  }
+
+  async function resolveSessionUser(ctx: GenericActionCtx<DataModel>, token: string) {
+    const payload = await verifyToken(token);
+    const userId = payload.sub;
+    const sessionId = payload.sessionId;
+    if (typeof userId !== "string" || typeof sessionId !== "string") {
+      return null;
+    }
+    const session = await ctx.runQuery(component.native.sessions.getSessionByToken, { token });
+    if (!session || session.sessionId !== sessionId || (session.expiresAt ?? 0) < Date.now()) {
+      return null;
+    }
+    const user = await ctx.runQuery(component.native.users.getUserById, { userId });
+    if (!user) return null;
+    return { user, userId, session, payload };
+  }
+
+  async function generateBackupCodes(
+    count = DEFAULT_TWO_FACTOR_BACKUP_CODES_COUNT,
+  ): Promise<{ codes: string[]; hashes: string[] }> {
+    const codes: string[] = [];
+    const hashes: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const code = encodeBase32(generateSecret(DEFAULT_TWO_FACTOR_BACKUP_CODE_BYTES));
+      codes.push(code);
+      hashes.push(await hashPassword(code));
+    }
+    return { codes, hashes };
+  }
+
+  const twoFactorEnable = action({
+    args: {
+      token: v.string(),
+      password: v.string(),
+      issuer: v.optional(v.string()),
+    },
+    returns: v.object({
+      totpURI: v.optional(v.string()),
+      backupCodes: v.optional(v.array(v.string())),
+      error: v.optional(v.string()),
+    }),
+    handler: async (ctx, args) => {
+      const resolved = await resolveSessionUser(ctx, args.token);
+      if (!resolved) return { error: "unauthorized" };
+
+      const passwordValid = await verifyUserPassword(ctx, resolved.userId, args.password);
+      if (!passwordValid) return { error: "invalid_password" };
+
+      const secret = generateSecret(DEFAULT_TWO_FACTOR_SECRET_BYTES);
+      const secretPlain = encodeBase32(secret);
+      const encryptedSecret = await encryptAccountToken(secretPlain);
+
+      const { codes, hashes } = await generateBackupCodes();
+
+      await ctx.runMutation(component.native.users.setTwoFactor, {
+        userId: resolved.userId,
+        twoFactorEnabled: false,
+        twoFactorSecret: encryptedSecret,
+        twoFactorBackupCodes: hashes,
+      });
+
+      const label = resolved.user.email ?? resolved.user.name ?? resolved.userId;
+      const totpURI = buildTOTPURI(secretPlain, {
+        issuer: args.issuer ?? "Convex",
+        label,
+      });
+
+      return { totpURI, backupCodes: codes };
+    },
+  });
+
+  const TWO_FACTOR_SESSION_ID = "__two_factor";
+
+  async function resolveTwoFactorChallengeToken(ctx: GenericActionCtx<DataModel>, token: string) {
+    const payload = await verifyToken(token);
+    const userId = payload.sub;
+    if (typeof userId !== "string" || payload.sessionId !== TWO_FACTOR_SESSION_ID || payload.twoFactor !== true) {
+      return null;
+    }
+    const tokenHash = await hashToken(token);
+    const code = await ctx.runMutation(component.native.codes.consumeVerificationCode, {
+      tokenHash,
+      type: "two_factor_pending",
+    });
+    if (!code || (code.expiresAt ?? 0) < Date.now()) {
+      return null;
+    }
+    const user = await ctx.runQuery(component.native.users.getUserById, { userId });
+    if (!user) return null;
+    const identityId = typeof payload.identityId === "string" ? payload.identityId : userId;
+    const rememberMe = payload.rememberMe === true;
+    return { user, userId, identityId, rememberMe };
+  }
+
+  async function verifyTwoFactorCode(
+    ctx: GenericActionCtx<DataModel>,
+    user: NativeUserDoc,
+    code: string,
+    method: "totp" | "backup_code",
+  ): Promise<boolean> {
+    if (!user.twoFactorSecret) return false;
+    const secretPlain = await decryptAccountToken(user.twoFactorSecret);
+    if (method === "totp") {
+      return verifyTOTP(decodeBase32(secretPlain), code, undefined, 1);
+    }
+    if (!user.twoFactorBackupCodes) return false;
+    for (const hash of user.twoFactorBackupCodes) {
+      if (await verifyPasswordHash(code, hash)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async function consumeBackupCode(
+    ctx: GenericActionCtx<DataModel>,
+    user: NativeUserDoc,
+    userId: string,
+    code: string,
+  ): Promise<boolean> {
+    if (!user.twoFactorBackupCodes) return false;
+    for (const hash of user.twoFactorBackupCodes) {
+      if (await verifyPasswordHash(code, hash)) {
+        const result = await ctx.runMutation(component.native.users.consumeBackupCode, {
+          userId,
+          backupCodeHash: hash,
+        });
+        return result.success;
+      }
+    }
+    return false;
+  }
+
+  async function createTrustedDevice(
+    ctx: GenericActionCtx<DataModel>,
+    userId: string,
+  ): Promise<{ trustDeviceToken: string; trustDeviceMaxAgeMs: number } | undefined> {
+    const trustDeviceToken = generateVerificationToken();
+    const tokenHash = await hashToken(trustDeviceToken);
+    const trustDeviceMaxAgeMs = DEFAULT_TRUST_DEVICE_TTL_MS;
+    await ctx.runMutation(component.native.codes.createVerificationCode, {
+      userId,
+      type: "two_factor_trusted_device",
+      tokenHash,
+      expiresAt: Date.now() + trustDeviceMaxAgeMs,
+    });
+    return { trustDeviceToken, trustDeviceMaxAgeMs };
+  }
+
+  async function finishTwoFactorVerify(
+    ctx: GenericActionCtx<DataModel>,
+    user: NativeUserDoc,
+    userId: string,
+    identityId: string,
+    rememberMe: boolean | undefined,
+    trustDevice: boolean | undefined,
+  ): Promise<NativeAuthSession> {
+    const { sessionId, token, refreshToken } = await createSessionAndRefreshToken(ctx, {
+      userId,
+      identityId,
+      rememberMe,
+    });
+    let trustDeviceResult: { trustDeviceToken: string; trustDeviceMaxAgeMs: number } | undefined;
+    if (trustDevice) {
+      trustDeviceResult = await createTrustedDevice(ctx, userId);
+    }
+    return {
+      token,
+      refreshToken,
+      user: toNativeAuthUser(user),
+      userId,
+      identityId,
+      sessionId,
+      trustDeviceToken: trustDeviceResult?.trustDeviceToken,
+      trustDeviceMaxAgeMs: trustDeviceResult?.trustDeviceMaxAgeMs,
+    };
+  }
+
+  const twoFactorVerifyTOTP = action({
+    args: {
+      token: v.string(),
+      code: v.string(),
+      trustDevice: v.optional(v.boolean()),
+    },
+    returns: nativeAuthSessionValidator,
+    handler: async (ctx, args) => {
+      const resolved = await resolveTwoFactorChallengeToken(ctx, args.token);
+      if (resolved) {
+        const valid = await verifyTwoFactorCode(ctx, resolved.user, args.code, "totp");
+        if (!valid) throw new Error("Invalid two factor code");
+        return await finishTwoFactorVerify(
+          ctx,
+          resolved.user,
+          resolved.userId,
+          resolved.identityId,
+          resolved.rememberMe,
+          args.trustDevice,
+        );
+      }
+
+      const sessionResolved = await resolveSessionUser(ctx, args.token);
+      if (!sessionResolved) throw new Error("Unauthorized");
+
+      const user = await ctx.runQuery(component.native.users.getUserById, {
+        userId: sessionResolved.userId,
+      });
+      if (!user?.twoFactorSecret) throw new Error("Not enrolled");
+
+      const secretPlain = await decryptAccountToken(user.twoFactorSecret);
+      const valid = await verifyTOTP(decodeBase32(secretPlain), args.code, undefined, 1);
+      if (!valid) throw new Error("Invalid two factor code");
+
+      await ctx.runMutation(component.native.users.setTwoFactor, {
+        userId: sessionResolved.userId,
+        twoFactorEnabled: true,
+        twoFactorSecret: user.twoFactorSecret,
+        twoFactorBackupCodes: user.twoFactorBackupCodes,
+      });
+
+      return {
+        token: null,
+        user: toNativeAuthUser(user),
+        userId: sessionResolved.userId,
+        identityId: sessionResolved.payload.identityId as string | undefined,
+      };
+    },
+  });
+
+  const twoFactorVerifyBackupCode = action({
+    args: {
+      token: v.string(),
+      code: v.string(),
+      trustDevice: v.optional(v.boolean()),
+    },
+    returns: nativeAuthSessionValidator,
+    handler: async (ctx, args) => {
+      const resolved = await resolveTwoFactorChallengeToken(ctx, args.token);
+      if (!resolved) throw new Error("Invalid two factor token");
+
+      const consumed = await consumeBackupCode(ctx, resolved.user, resolved.userId, args.code);
+      if (!consumed) throw new Error("Invalid two factor code");
+
+      return await finishTwoFactorVerify(
+        ctx,
+        resolved.user,
+        resolved.userId,
+        resolved.identityId,
+        resolved.rememberMe,
+        args.trustDevice,
+      );
+    },
+  });
+
+  const twoFactorDisable = action({
+    args: {
+      token: v.string(),
+      password: v.string(),
+    },
+    returns: v.object({ success: v.boolean() }),
+    handler: async (ctx, args) => {
+      const resolved = await resolveSessionUser(ctx, args.token);
+      if (!resolved) return { success: false };
+
+      const passwordValid = await verifyUserPassword(ctx, resolved.userId, args.password);
+      if (!passwordValid) return { success: false };
+
+      await ctx.runMutation(component.native.users.setTwoFactor, {
+        userId: resolved.userId,
+        twoFactorEnabled: false,
+      });
+
+      await ctx.runMutation(component.native.codes.revokeVerificationCodesForUser, {
+        userId: resolved.userId,
+        type: "two_factor_trusted_device",
+      });
+
+      return { success: true };
+    },
+  });
+
+  const twoFactorGenerateBackupCodes = action({
+    args: {
+      token: v.string(),
+      password: v.string(),
+    },
+    returns: v.object({
+      backupCodes: v.array(v.string()),
+      error: v.optional(v.string()),
+    }),
+    handler: async (ctx, args) => {
+      const resolved = await resolveSessionUser(ctx, args.token);
+      if (!resolved) return { error: "unauthorized", backupCodes: [] };
+
+      const passwordValid = await verifyUserPassword(ctx, resolved.userId, args.password);
+      if (!passwordValid) return { error: "invalid_password", backupCodes: [] };
+
+      const user = await ctx.runQuery(component.native.users.getUserById, { userId: resolved.userId });
+      if (!user?.twoFactorEnabled || !user.twoFactorSecret) {
+        return { error: "two_factor_not_enabled", backupCodes: [] };
+      }
+
+      const { codes, hashes } = await generateBackupCodes();
+      await ctx.runMutation(component.native.users.setTwoFactor, {
+        userId: resolved.userId,
+        twoFactorEnabled: user.twoFactorEnabled,
+        twoFactorSecret: user.twoFactorSecret,
+        twoFactorBackupCodes: hashes,
+      });
+
+      return { backupCodes: codes };
+    },
+  });
+
+  async function handleTwoFactorSignIn(
+    ctx: GenericActionCtx<DataModel>,
+    user: NativeUserDoc,
+    identityId: string,
+    rememberMe: boolean | undefined,
+    trustedDeviceToken?: string,
+  ): Promise<NativeAuthSession> {
+    if (!user.twoFactorEnabled) {
+      const { sessionId, token, refreshToken } = await createSessionAndRefreshToken(ctx, {
+        userId: user._id,
+        identityId,
+        rememberMe,
+      });
+      return {
+        token,
+        refreshToken,
+        user: toNativeAuthUser(user),
+        userId: user._id,
+        identityId,
+        sessionId,
+      };
+    }
+
+    if (trustedDeviceToken) {
+      const tokenHash = await hashToken(trustedDeviceToken);
+      const trusted = await ctx.runQuery(component.native.codes.getVerificationCodeByTokenHash, {
+        tokenHash,
+        type: "two_factor_trusted_device",
+      });
+      if (trusted && (trusted.expiresAt ?? 0) > Date.now() && trusted.userId === user._id) {
+        const { sessionId, token, refreshToken } = await createSessionAndRefreshToken(ctx, {
+          userId: user._id,
+          identityId,
+          rememberMe,
+        });
+        return {
+          token,
+          refreshToken,
+          user: toNativeAuthUser(user),
+          userId: user._id,
+          identityId,
+          sessionId,
+        };
+      }
+    }
+
+    const challengeToken = await mintToken(
+      user._id,
+      TWO_FACTOR_SESSION_ID,
+      { identityId, rememberMe: rememberMe === true, twoFactor: true },
+      { expiresInSeconds: Math.floor(DEFAULT_TWO_FACTOR_PENDING_TTL_MS / 1000) },
+    );
+    const tokenHash = await hashToken(challengeToken);
+    await ctx.runMutation(component.native.codes.createVerificationCode, {
+      userId: user._id,
+      type: "two_factor_pending",
+      tokenHash,
+      expiresAt: Date.now() + DEFAULT_TWO_FACTOR_PENDING_TTL_MS,
+    });
+
+    return {
+      token: null,
+      user: toNativeAuthUser(user),
+      userId: user._id,
+      identityId,
+      twoFactorRedirect: true,
+      twoFactorMethods: ["totp"],
+      twoFactorChallengeToken: challengeToken,
+      twoFactorCookieMaxAgeMs: DEFAULT_TWO_FACTOR_PENDING_TTL_MS,
+    };
+  }
+
   return {
     signUp,
     signIn,
@@ -815,5 +1247,10 @@ export function nativeEmailAndPassword(
     sendPasswordReset,
     resetPassword,
     verifyPassword,
+    twoFactorEnable,
+    twoFactorVerifyTOTP,
+    twoFactorVerifyBackupCode,
+    twoFactorDisable,
+    twoFactorGenerateBackupCodes,
   };
 }

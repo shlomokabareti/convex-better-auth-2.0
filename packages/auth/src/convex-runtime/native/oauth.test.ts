@@ -19,6 +19,7 @@ import {
   verifyOAuthState,
 } from "./oauthState.js";
 import { verifyToken } from "./jwt.js";
+import { decryptAccountToken } from "./oauthCrypto.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
 import type { GenericActionCtx } from "convex/server";
 import type { DataModel } from "../../component/_generated/dataModel.js";
@@ -48,6 +49,13 @@ async function setupTestKeys() {
   const publicJwk = await exportJWK(publicKey);
   process.env.JWT_PRIVATE_KEY = JSON.stringify(privateJwk);
   process.env.JWKS = JSON.stringify({ keys: [publicJwk] });
+
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(32));
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  process.env.OAUTH_TOKEN_ENCRYPTION_KEY = btoa(binary);
 }
 
 type MockComponent = {
@@ -93,6 +101,20 @@ function dispatch(ref: unknown, args: Record<string, unknown>) {
     return (ref as (args: Record<string, unknown>) => unknown)(args);
   }
   return undefined;
+}
+
+function exec(registered: unknown) {
+  if ((typeof registered !== "object" && typeof registered !== "function") || registered === null) {
+    throw new TypeError("expected an executable spec");
+  }
+  const handler = Reflect.get(registered, "_handler");
+  if (typeof handler !== "function") {
+    throw new TypeError("expected an executable handler");
+  }
+  return {
+    handler: async (ctx: unknown, args: unknown): Promise<unknown> =>
+      await Reflect.apply(handler, registered, [ctx, args]),
+  };
 }
 
 function createContext() {
@@ -839,9 +861,9 @@ describe("OAuth handlers", () => {
       provider: "github",
       issuer: "https://github.com/login/oauth",
       subject: "12345",
-      accessToken: "github-access-token",
       tokenType: "bearer",
     });
+    expect(await decryptAccountToken(createAccountCall.accessToken)).toBe("github-access-token");
   });
 
   it("blocks sign up when disableImplicitSignUp is set and requestSignUp is not", async () => {
@@ -1154,9 +1176,9 @@ describe("OAuth handlers", () => {
     const updateCall = component.native.accounts.updateAccountTokens.mock.calls[0]?.[0];
     expect(updateCall).toMatchObject({
       accountId: "account_1",
-      accessToken: "github-access-token",
       tokenType: "bearer",
     });
+    expect(await decryptAccountToken(updateCall.accessToken)).toBe("github-access-token");
   });
 });
 
@@ -1225,22 +1247,22 @@ describe("addNativeOAuthHttpRoutes", () => {
     const signinRoute = routes.find((r) => r.path === "/api/auth/signin/:provider")!;
     const callbackRoute = routes.find((r) => r.path === "/api/auth/callback/:provider")!;
 
-    const signinResponse = await signinRoute.handler(
+    const signinResponse = (await exec(signinRoute.handler).handler(
       createContext(),
       new Request(
         "https://app.example.com/api/auth/signin/github?redirectTo=https://app.example.com/home",
       ),
-    );
+    )) as Response;
     expect(signinResponse.status).toBe(302);
     const location = signinResponse.headers.get("Location")!;
     const authUrl = new URL(location);
     const state = authUrl.searchParams.get("state")!;
     const code = "code-123";
 
-    const callbackResponse = await callbackRoute.handler(
+    const callbackResponse = (await exec(callbackRoute.handler).handler(
       createContext() as unknown as GenericActionCtx<DataModel>,
       new Request(`https://app.example.com/api/auth/callback/github?code=${code}&state=${state}`),
-    );
+    )) as Response;
 
     expect(callbackResponse.status).toBe(302);
     expect(callbackResponse.headers.get("Location")).toBe("https://app.example.com/home");

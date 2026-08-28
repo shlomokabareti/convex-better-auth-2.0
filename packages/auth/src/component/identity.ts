@@ -586,6 +586,7 @@ function toUserReturn(user: Doc<"users">) {
     emailTwoFactorLastVerifiedAt: user.emailTwoFactorLastVerifiedAt,
     emailTwoFactorResetAt: user.emailTwoFactorResetAt,
     emailTwoFactorResetReason: user.emailTwoFactorResetReason,
+    twoFactorEnabled: user.twoFactorEnabled,
     activeOrganizationId: user.activeOrganizationId,
     isActive: user.isActive,
     isSuperAdmin: user.isSuperAdmin,

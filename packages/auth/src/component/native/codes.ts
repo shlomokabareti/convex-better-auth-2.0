@@ -1,12 +1,13 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server.js";
+import { verificationCodeTypeValidator } from "../schema.js";
 
 const MAX_VERIFICATION_CODES_PER_USER = 1000;
 
 export const createVerificationCode = mutation({
   args: {
     userId: v.id("users"),
-    type: v.union(v.literal("email_verification"), v.literal("password_reset")),
+    type: verificationCodeTypeValidator,
     tokenHash: v.string(),
     expiresAt: v.number(),
   },
@@ -32,7 +33,7 @@ export const createVerificationCode = mutation({
 export const getVerificationCodeByTokenHash = query({
   args: {
     tokenHash: v.string(),
-    type: v.union(v.literal("email_verification"), v.literal("password_reset")),
+    type: verificationCodeTypeValidator,
   },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -45,7 +46,7 @@ export const getVerificationCodeByTokenHash = query({
 export const consumeVerificationCode = mutation({
   args: {
     tokenHash: v.string(),
-    type: v.union(v.literal("email_verification"), v.literal("password_reset")),
+    type: verificationCodeTypeValidator,
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -71,7 +72,7 @@ export const consumeVerificationCode = mutation({
 export const revokeVerificationCodesForUser = mutation({
   args: {
     userId: v.id("users"),
-    type: v.union(v.literal("email_verification"), v.literal("password_reset")),
+    type: verificationCodeTypeValidator,
   },
   handler: async (ctx, args) => {
     const now = Date.now();

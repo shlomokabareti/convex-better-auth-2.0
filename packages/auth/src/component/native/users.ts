@@ -31,3 +31,59 @@ export const markEmailVerified = mutation({
     });
   },
 });
+
+export const setTwoFactor = mutation({
+  args: {
+    userId: v.id("users"),
+    twoFactorEnabled: v.boolean(),
+    twoFactorSecret: v.optional(v.string()),
+    twoFactorBackupCodes: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const patch: {
+      twoFactorEnabled: boolean;
+      twoFactorSecret?: string;
+      twoFactorBackupCodes?: string[];
+      updatedAt: number;
+    } = {
+      twoFactorEnabled: args.twoFactorEnabled,
+      twoFactorSecret: args.twoFactorSecret,
+      twoFactorBackupCodes: args.twoFactorBackupCodes,
+      updatedAt: now,
+    };
+    if (args.twoFactorSecret === undefined) {
+      patch.twoFactorSecret = undefined;
+    }
+    if (args.twoFactorBackupCodes === undefined) {
+      patch.twoFactorBackupCodes = undefined;
+    }
+    await ctx.db.patch(args.userId, patch);
+  },
+});
+
+export const consumeBackupCode = mutation({
+  args: {
+    userId: v.id("users"),
+    backupCodeHash: v.string(),
+  },
+  returns: v.object({ success: v.boolean() }),
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get("users", args.userId);
+    if (!user) {
+      return { success: false };
+    }
+    const codes = user.twoFactorBackupCodes ?? [];
+    const index = codes.indexOf(args.backupCodeHash);
+    if (index < 0) {
+      return { success: false };
+    }
+    const next = codes.slice();
+    next.splice(index, 1);
+    await ctx.db.patch(args.userId, {
+      twoFactorBackupCodes: next,
+      updatedAt: Date.now(),
+    });
+    return { success: true };
+  },
+});
