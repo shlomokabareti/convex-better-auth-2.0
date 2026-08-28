@@ -69,7 +69,12 @@ export type NativeAuthActions = {
     NativeAuthSendResult
   >;
   verifyEmail: FunctionReference<"action", "public", { token: string }, NativeAuthVerifyResult>;
-  sendPasswordReset: FunctionReference<"action", "public", { email: string }, NativeAuthSendResult>;
+  sendPasswordReset: FunctionReference<
+    "action",
+    "public",
+    { email: string; redirectTo?: string },
+    NativeAuthSendResult
+  >;
   resetPassword: FunctionReference<
     "action",
     "public",
@@ -198,10 +203,10 @@ export function useAuthActions() {
   );
 
   const sendPasswordReset = useCallback(
-    async (email: string) => {
+    async (args: { email: string; redirectTo?: string }) => {
       setIsLoading(true);
       try {
-        return await sendPasswordResetAction({ email });
+        return await sendPasswordResetAction(args);
       } finally {
         setIsLoading(false);
       }

@@ -36,20 +36,23 @@ type MockComponent = NativeEmailAndPasswordComponentHandle & {
     sessions: {
       getSessionByToken: ReturnType<typeof vi.fn>;
     };
+    codes: {
+      getVerificationCodeByTokenHash: ReturnType<typeof vi.fn>;
+    };
   };
 };
 
 function createMockComponent(): MockComponent {
   return {
-    identity: {} as any,
+    identity: {} as unknown as NativeEmailAndPasswordComponentHandle["identity"],
     native: {
-      accounts: {} as any,
+      accounts: {} as unknown as NativeEmailAndPasswordComponentHandle["native"]["accounts"],
       users: {
         getUserByEmail: vi.fn(),
         getUserById: vi.fn(),
         markEmailVerified: vi.fn(),
       },
-      identities: {} as any,
+      identities: {} as unknown as NativeEmailAndPasswordComponentHandle["native"]["identities"],
       sessions: {
         createSession: vi.fn(),
         revokeSession: vi.fn(),
@@ -57,14 +60,21 @@ function createMockComponent(): MockComponent {
         getSessionByToken: vi.fn(),
         revokeSessionsForUser: vi.fn(),
       },
-      codes: {} as any,
+      codes: {
+        createVerificationCode: vi.fn(),
+        getVerificationCodeByTokenHash: vi.fn(),
+        consumeVerificationCode: vi.fn(),
+        revokeVerificationCodesForUser: vi.fn(),
+      },
     },
   } as unknown as MockComponent;
 }
 
 function createContext() {
   return {
-    runQuery: vi.fn((ref: any, args: any) => ref(args)),
+    runQuery: vi.fn(
+      (ref: (args: Record<string, unknown>) => unknown, args: Record<string, unknown>) => ref(args),
+    ),
     runMutation: vi.fn(),
     db: {},
   };
@@ -148,7 +158,7 @@ describe("addNativeAuthHttpRoutes", () => {
         routes.push(r);
         return http;
       },
-    } as any;
+    } as unknown as HttpRouter;
 
     addNativeAuthHttpRoutes(http);
     const jwksRoute = routes.find((r) => r.path === "/.well-known/jwks.json" && r.method === "GET");
@@ -161,5 +171,45 @@ describe("addNativeAuthHttpRoutes", () => {
     expect(response.status).toBe(200);
     const body = (await response.json()) as { keys: unknown[] };
     expect(body.keys).toBeInstanceOf(Array);
+  });
+
+  it("redirects a valid reset token to the callback URL with the token", async () => {
+    const component = createMockComponent();
+    component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue({
+      _id: "code_1",
+      tokenHash: "hashed",
+      userId: "user_1",
+      type: "password_reset",
+      expiresAt: Date.now() + 60_000,
+    });
+    const routes: {
+      path: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http: HttpRouter = {
+      route: (r) => {
+        routes.push(r);
+        return http;
+      },
+    } as unknown as HttpRouter;
+
+    addNativeAuthHttpRoutes(http, component);
+    const resetRoute = routes.find(
+      (r) => r.path === "/api/auth/reset-password/:token" && r.method === "GET",
+    );
+    expect(resetRoute).toBeDefined();
+
+    const callbackURL = "https://app.example.com/reset";
+    const response = await resetRoute!.handler(
+      createContext(),
+      new Request(
+        "https://api.example.com/api/auth/reset-password/the-token?callbackURL=" +
+          encodeURIComponent(callbackURL),
+      ),
+    );
+    expect(response.status).toBe(302);
+    const location = response.headers.get("Location");
+    expect(location).toBe(callbackURL + "?token=the-token");
   });
 });

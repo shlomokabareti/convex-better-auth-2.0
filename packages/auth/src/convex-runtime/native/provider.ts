@@ -7,6 +7,7 @@ import {
   buildEmailVerificationUrl,
   createEmailVerificationEmailDraft,
 } from "../account/emailVerificationEmail.js";
+import { trimTrailingSlash } from "../account/emailShared.js";
 import {
   buildPasswordResetUrl,
   createPasswordResetEmailDraft,
@@ -552,7 +553,10 @@ export function nativeEmailAndPassword(
   });
 
   const sendPasswordReset = action({
-    args: { email: v.string() },
+    args: {
+      email: v.string(),
+      redirectTo: v.optional(v.string()),
+    },
     returns: v.object({
       status: v.union(v.literal("queued"), v.literal("not_configured"), v.literal("failed")),
       reason: v.optional(v.string()),
@@ -562,12 +566,23 @@ export function nativeEmailAndPassword(
       return queueVerificationEmail(ctx, {
         email: args.email,
         type: "password_reset",
-        urlBuilder: (token) =>
-          buildPasswordResetUrl({
+        urlBuilder: (token) => {
+          if (args.redirectTo) {
+            const appOrigin = emailConfig.appOrigin?.trim() ?? "";
+            if (!appOrigin) {
+              return null;
+            }
+            const callbackURL = args.redirectTo.startsWith("http")
+              ? args.redirectTo
+              : `${trimTrailingSlash(appOrigin)}${args.redirectTo}`;
+            return `${trimTrailingSlash(appOrigin)}/api/auth/reset-password/${encodeURIComponent(token)}?callbackURL=${encodeURIComponent(callbackURL)}`;
+          }
+          return buildPasswordResetUrl({
             token,
             appOrigin: emailConfig.appOrigin,
             resetPath: emailConfig.resetPath,
-          }),
+          });
+        },
         draftBuilder: async (params) =>
           createPasswordResetEmailDraft({
             from: params.from,
