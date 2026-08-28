@@ -12,7 +12,7 @@ import {
   createPasswordResetEmailDraft,
 } from "../account/passwordResetEmail.js";
 import { mintToken, verifyToken } from "./jwt.js";
-import { hashPassword, verifyPassword } from "./password.js";
+import { hashPassword, verifyPassword as verifyPasswordHash } from "./password.js";
 import { generateVerificationToken, hashToken, isTokenExpired } from "./tokens.js";
 import {
   type NativeAuthUser,
@@ -58,6 +58,8 @@ export type NativeEmailAndPasswordConfig = {
   sessionTtlMs?: number;
   minPasswordLength?: number;
   maxPasswordLength?: number;
+  revokeSessionsOnPasswordReset?: boolean;
+  onPasswordReset?: (data: { user: NativeAuthUser }) => Promise<void>;
 };
 
 export type NativeEmailAndPasswordActions = {
@@ -68,6 +70,7 @@ export type NativeEmailAndPasswordActions = {
   verifyEmail: ReturnType<typeof action>;
   sendPasswordReset: ReturnType<typeof action>;
   resetPassword: ReturnType<typeof action>;
+  verifyPassword: ReturnType<typeof action>;
 };
 
 type EmailSendResult =
@@ -169,6 +172,7 @@ export function nativeEmailAndPassword(
   const shouldReturnGenericDuplicateResponse = requireVerifiedEmail || autoSignIn === false;
   const shouldSkipAutoSignIn = autoSignIn === false || shouldReturnGenericDuplicateResponse;
   const shouldSendVerificationEmail = sendVerificationEmailOnSignUp || requireVerifiedEmail;
+  const revokeSessionsOnPasswordReset = config.revokeSessionsOnPasswordReset ?? false;
 
   const signUp = action({
     args: {
@@ -342,7 +346,7 @@ export function nativeEmailAndPassword(
         issuer: "native",
         subject: identity.subject,
       });
-      if (!account || !(await verifyPassword(args.password, account.credentialHash))) {
+      if (!account || !(await verifyPasswordHash(args.password, account.credentialHash))) {
         throw new Error("Invalid email or password");
       }
 
@@ -584,10 +588,6 @@ export function nativeEmailAndPassword(
     returns: v.object({
       success: v.boolean(),
       reason: v.optional(v.string()),
-      token: v.optional(v.string()),
-      userId: v.optional(v.string()),
-      identityId: v.optional(v.string()),
-      sessionId: v.optional(v.string()),
     }),
     handler: async (ctx, args) => {
       const passwordValidation = validatePassword(
@@ -631,6 +631,13 @@ export function nativeEmailAndPassword(
         return { success: false, reason: "invalid" };
       }
 
+      const user = await ctx.runQuery(component.native.users.getUserById, {
+        userId: consumed.userId,
+      });
+      if (!user) {
+        return { success: false, reason: "invalid" };
+      }
+
       const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
         userId: consumed.userId,
         provider: "password",
@@ -651,7 +658,6 @@ export function nativeEmailAndPassword(
         return { success: false, reason: "invalid" };
       }
 
-      const now = Date.now();
       const credentialHash = await hashPassword(args.newPassword);
 
       await ctx.runMutation(component.native.accounts.updateCredentialHash, {
@@ -659,34 +665,61 @@ export function nativeEmailAndPassword(
         credentialHash,
       });
 
-      const sessionId = crypto.randomUUID();
-      const expiresAt = now + sessionTtlMs;
-      const token = await mintToken(
-        consumed.userId,
-        sessionId,
-        { identityId: identity._id },
-        { expiresInSeconds: Math.floor(sessionTtlMs / 1000) },
-      );
+      if (revokeSessionsOnPasswordReset) {
+        await ctx.runMutation(component.native.sessions.revokeSessionsForUser, {
+          userId: consumed.userId,
+        });
+      }
 
-      await ctx.runMutation(component.native.sessions.createSession, {
-        sessionId,
-        userId: consumed.userId,
-        token,
-        expiresAt,
+      if (config.onPasswordReset) {
+        await config.onPasswordReset({ user: toNativeAuthUser(user) });
+      }
+
+      return { success: true };
+    },
+  });
+
+  const verifyPassword = action({
+    args: {
+      token: v.string(),
+      password: v.string(),
+    },
+    returns: v.object({ success: v.boolean() }),
+    handler: async (ctx, args) => {
+      const payload = await verifyToken(args.token);
+      const userId = payload.sub;
+      const sessionId = payload.sessionId;
+      if (typeof userId !== "string" || typeof sessionId !== "string") {
+        return { success: false };
+      }
+
+      const session = await ctx.runQuery(component.native.sessions.getSessionByToken, {
+        token: args.token,
       });
+      if (!session || session.sessionId !== sessionId || (session.expiresAt ?? 0) < Date.now()) {
+        return { success: false };
+      }
 
-      await ctx.runMutation(component.native.sessions.revokeSessionsForUser, {
-        userId: consumed.userId,
-        excludeSessionId: sessionId,
+      const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
+        userId,
+        provider: "password",
+        issuer: "native",
       });
+      if (!identity) {
+        return { success: false };
+      }
 
-      return {
-        success: true,
-        token,
-        userId: consumed.userId,
-        identityId: identity._id,
-        sessionId,
-      };
+      const account = await ctx.runQuery(component.native.accounts.getAccountBySubject, {
+        provider: "password",
+        issuer: "native",
+        subject: identity.subject,
+      });
+      if (!account) {
+        return { success: false };
+      }
+
+      const valid = await verifyPasswordHash(args.password, account.credentialHash);
+      return { success: valid };
     },
   });
 
@@ -698,5 +731,6 @@ export function nativeEmailAndPassword(
     verifyEmail,
     sendPasswordReset,
     resetPassword,
+    verifyPassword,
   };
 }

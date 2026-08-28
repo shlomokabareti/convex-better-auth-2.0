@@ -56,15 +56,7 @@ export type NativeAuthVerifyResult = {
   reason?: string;
 };
 
-export type NativeAuthResetResult =
-  | {
-      success: true;
-      token: string;
-      userId: string;
-      identityId: string;
-      sessionId: string;
-    }
-  | { success: false; reason?: string };
+export type NativeAuthResetResult = { success: boolean; reason?: string };
 
 export type NativeAuthActions = {
   signUp: FunctionReference<"action", "public", NativeAuthSignUpArgs, NativeAuthSession>;
@@ -83,6 +75,12 @@ export type NativeAuthActions = {
     "public",
     { token: string; newPassword: string },
     NativeAuthResetResult
+  >;
+  verifyPassword: FunctionReference<
+    "action",
+    "public",
+    { token: string; password: string },
+    { success: boolean }
   >;
 };
 
@@ -129,6 +127,7 @@ export function useAuthActions() {
   const verifyEmailAction = useAction(ctx.verifyEmail);
   const sendPasswordResetAction = useAction(ctx.sendPasswordReset);
   const resetPasswordAction = useAction(ctx.resetPassword);
+  const verifyPasswordAction = useAction(ctx.verifyPassword);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -214,16 +213,24 @@ export function useAuthActions() {
     async (args: { token: string; newPassword: string }) => {
       setIsLoading(true);
       try {
-        const result = await resetPasswordAction(args);
-        if ("token" in result) {
-          ctx.setToken(result.token);
-        }
-        return result;
+        return await resetPasswordAction(args);
       } finally {
         setIsLoading(false);
       }
     },
-    [resetPasswordAction, ctx],
+    [resetPasswordAction],
+  );
+
+  const verifyPassword = useCallback(
+    async (args: { token: string; password: string }) => {
+      setIsLoading(true);
+      try {
+        return await verifyPasswordAction(args);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [verifyPasswordAction],
   );
 
   return {
@@ -234,6 +241,7 @@ export function useAuthActions() {
     verifyEmail,
     sendPasswordReset,
     resetPassword,
+    verifyPassword,
     token: ctx.token,
     isLoading,
     isAuthenticated: ctx.token !== null,
