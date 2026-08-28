@@ -26,6 +26,24 @@ export type EmailDraft = {
 
 export type EmailSender = (draft: EmailDraft) => Promise<string>;
 
+export type NativeAuthUser = {
+  id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  emailVerified: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type NativeAuthSession = {
+  token: string;
+  user: NativeAuthUser;
+  userId: string;
+  identityId: string;
+  sessionId: string;
+};
+
 export type NativeEmailAndPasswordConfig = {
   email?: {
     from: string;
@@ -85,6 +103,44 @@ function validatePassword(
   return { valid: true };
 }
 
+const nativeAuthUserValidator = v.object({
+  id: v.string(),
+  email: v.optional(v.string()),
+  name: v.optional(v.string()),
+  image: v.optional(v.string()),
+  emailVerified: v.boolean(),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+});
+
+const nativeAuthSessionValidator = v.object({
+  token: v.string(),
+  user: nativeAuthUserValidator,
+  userId: v.string(),
+  identityId: v.string(),
+  sessionId: v.string(),
+});
+
+function toNativeAuthUser(user: {
+  _id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  emailVerified: boolean;
+  createdAt: number;
+  updatedAt: number;
+}): NativeAuthUser {
+  return {
+    id: user._id,
+    email: user.email,
+    name: user.name,
+    image: user.image,
+    emailVerified: user.emailVerified,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+}
+
 function resolveEmailConfig(args: NativeEmailAndPasswordConfig): {
   from?: string;
   appOrigin?: string;
@@ -121,12 +177,7 @@ export function nativeEmailAndPassword(
       password: v.string(),
       name: v.string(),
     },
-    returns: v.object({
-      token: v.string(),
-      userId: v.string(),
-      identityId: v.string(),
-      sessionId: v.string(),
-    }),
+    returns: nativeAuthSessionValidator,
     handler: async (ctx, args) => {
       const now = Date.now();
       const normalizedEmail = args.email.trim().toLowerCase();
@@ -188,7 +239,20 @@ export function nativeEmailAndPassword(
         expiresAt,
       });
 
-      return { token, userId, identityId, sessionId };
+      const createdUser = await ctx.runQuery(component.native.users.getUserByEmail, {
+        email: normalizedEmail,
+      });
+      if (!createdUser) {
+        throw new Error("Failed to create user");
+      }
+
+      return {
+        token,
+        user: toNativeAuthUser(createdUser),
+        userId,
+        identityId,
+        sessionId,
+      };
     },
   });
 
@@ -197,12 +261,7 @@ export function nativeEmailAndPassword(
       email: v.string(),
       password: v.string(),
     },
-    returns: v.object({
-      token: v.string(),
-      userId: v.string(),
-      identityId: v.string(),
-      sessionId: v.string(),
-    }),
+    returns: nativeAuthSessionValidator,
     handler: async (ctx, args) => {
       const now = Date.now();
       const normalizedEmail = args.email.trim().toLowerCase();
@@ -249,7 +308,13 @@ export function nativeEmailAndPassword(
         expiresAt,
       });
 
-      return { token, userId: user._id, identityId: identity._id, sessionId };
+      return {
+        token,
+        user: toNativeAuthUser(user),
+        userId: user._id,
+        identityId: identity._id,
+        sessionId,
+      };
     },
   });
 

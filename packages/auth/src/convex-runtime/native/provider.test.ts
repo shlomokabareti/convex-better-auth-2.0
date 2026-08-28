@@ -203,6 +203,8 @@ describe("nativeEmailAndPassword", () => {
     });
     component.native.accounts.createAccount.mockResolvedValue("account_1");
     component.native.sessions.createSession.mockResolvedValue("session_1");
+    const user = makeUser();
+    component.native.users.getUserByEmail.mockResolvedValue(user);
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -212,6 +214,7 @@ describe("nativeEmailAndPassword", () => {
       name: "Shlomo",
     })) as {
       token: string;
+      user: { id: string; email?: string };
       userId: string;
       identityId: string;
       sessionId: string;
@@ -222,6 +225,11 @@ describe("nativeEmailAndPassword", () => {
       identityId: "identity_1",
       token: expect.any(String),
       sessionId: expect.any(String),
+    });
+    expect(result.user).toMatchObject({
+      id: user._id,
+      email: user.email,
+      name: user.name,
     });
 
     const provisionCall = component.identity.provisionFromIdentity.mock.calls[0]?.[0];
@@ -292,6 +300,7 @@ describe("nativeEmailAndPassword", () => {
       password: DEFAULT_PASSWORD,
     })) as {
       token: string;
+      user: { id: string; email?: string };
       userId: string;
       identityId: string;
       sessionId: string;
@@ -302,6 +311,11 @@ describe("nativeEmailAndPassword", () => {
       identityId: "identity_1",
       token: expect.any(String),
       sessionId: expect.any(String),
+    });
+    expect(result.user).toMatchObject({
+      id: user._id,
+      email: user.email,
+      name: user.name,
     });
 
     expect(component.native.accounts.getAccountBySubject).toHaveBeenCalledWith({
@@ -352,6 +366,7 @@ describe("nativeEmailAndPassword", () => {
       password: DEFAULT_PASSWORD,
     })) as {
       token: string;
+      user: { id: string; email?: string };
       userId: string;
       identityId: string;
       sessionId: string;
@@ -362,6 +377,11 @@ describe("nativeEmailAndPassword", () => {
       identityId: "identity_1",
       token: expect.any(String),
       sessionId: expect.any(String),
+    });
+    expect(result.user).toMatchObject({
+      id: user._id,
+      email: user.email,
+      name: user.name,
     });
   });
 
@@ -382,6 +402,7 @@ describe("nativeEmailAndPassword", () => {
       password: DEFAULT_PASSWORD,
     })) as {
       token: string;
+      user: { id: string; email?: string };
       userId: string;
       identityId: string;
       sessionId: string;
@@ -392,6 +413,11 @@ describe("nativeEmailAndPassword", () => {
       identityId: "identity_1",
       token: expect.any(String),
       sessionId: expect.any(String),
+    });
+    expect(result.user).toMatchObject({
+      id: user._id,
+      email: user.email,
+      name: user.name,
     });
   });
 

@@ -13,7 +13,7 @@ import {
 export type NativeAuthSignUpArgs = {
   email: string;
   password: string;
-  name?: string;
+  name: string;
 };
 
 export type NativeAuthSignInArgs = {
@@ -25,8 +25,19 @@ export type NativeAuthSignOutArgs = {
   token: string;
 };
 
+export type NativeAuthUser = {
+  id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  emailVerified: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type NativeAuthSession = {
   token: string;
+  user: NativeAuthUser;
   userId: string;
   identityId: string;
   sessionId: string;
