@@ -1,10 +1,10 @@
-import { httpActionGeneric, type HttpRouter, type FunctionReference } from "convex/server";
+import { httpActionGeneric, type HttpRouter } from "convex/server";
 import { v } from "convex/values";
 import { getJwks } from "./jwt.js";
 import { parse } from "../helpers/index.js";
 import { hashToken, isTokenExpired } from "./tokens.js";
+import { handleUpdateSession } from "./updateSession.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
-import type { NativeAuthSession } from "./provider.js";
 
 function buildErrorRedirect(callbackURL: string, error: string): Response {
   const redirect = new URL(
@@ -33,15 +33,37 @@ function buildTokenRedirect(callbackURL: string, token: string): Response {
 export function addNativeAuthHttpRoutes(
   http: HttpRouter,
   component?: NativeEmailAndPasswordComponentHandle,
-  actions?: {
-    updateSession: FunctionReference<"action", "public", { refreshToken: string }, NativeAuthSession>;
-  },
 ): void {
   http.route({
     path: "/.well-known/jwks.json",
     method: "GET",
     handler: httpActionGeneric(async () => {
       return new Response(JSON.stringify(getJwks()), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }),
+  });
+
+  http.route({
+    path: "/.well-known/openid-configuration",
+    method: "GET",
+    handler: httpActionGeneric(async (_ctx, request) => {
+      const origin = new URL(request.url).origin;
+      const config = {
+        issuer: `${origin}/`,
+        authorization_endpoint: `${origin}/api/auth/signin`,
+        token_endpoint: `${origin}/api/auth/token`,
+        userinfo_endpoint: `${origin}/api/auth/userinfo`,
+        jwks_uri: `${origin}/.well-known/jwks.json`,
+        response_types_supported: ["code"],
+        grant_types_supported: ["authorization_code", "refresh_token"],
+        subject_types_supported: ["public"],
+        id_token_signing_alg_values_supported: ["RS256"],
+        token_endpoint_auth_methods_supported: ["client_secret_post", "none"],
+        scopes_supported: ["openid", "profile", "email"],
+      };
+      return new Response(JSON.stringify(config), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
@@ -118,13 +140,6 @@ export function addNativeAuthHttpRoutes(
     path: "/api/auth/update-session",
     method: "POST",
     handler: httpActionGeneric(async (ctx, request) => {
-      if (!actions?.updateSession) {
-        return new Response(JSON.stringify({ success: false, reason: "not_configured" }), {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-
       const body = await request.json().catch(() => undefined);
 
       let parsed: { refreshToken: string };
@@ -137,14 +152,18 @@ export function addNativeAuthHttpRoutes(
         });
       }
 
-      const result = await ctx.runAction(actions.updateSession, {
-        refreshToken: parsed.refreshToken,
-      });
-
-      return new Response(JSON.stringify({ success: true, ...result }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      try {
+        const result = await handleUpdateSession(ctx, component, parsed.refreshToken);
+        return new Response(JSON.stringify({ success: true, ...result }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch {
+        return new Response(JSON.stringify({ success: false, reason: "invalid_refresh_token" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
     }),
   });
 }

@@ -15,7 +15,9 @@ import {
 import { mintToken, verifyToken } from "./jwt.js";
 import { hashPassword, verifyPassword as verifyPasswordHash } from "./password.js";
 import { generateVerificationToken, hashToken } from "./tokens.js";
+import { handleUpdateSession } from "./updateSession.js";
 import {
+  type NativeAuthSession,
   type NativeAuthUser,
   type NativeEmailAndPasswordComponentHandle,
   nativeAuthUserValidator,
@@ -32,15 +34,6 @@ export type EmailDraft = {
 };
 
 export type EmailSender = (draft: EmailDraft) => Promise<string>;
-
-export type NativeAuthSession = {
-  token?: string | null;
-  refreshToken?: string;
-  user: NativeAuthUser;
-  userId?: string;
-  identityId?: string;
-  sessionId?: string;
-};
 
 export type NativeEmailAndPasswordConfig = {
   email?: {
@@ -135,7 +128,7 @@ function validatePassword(
 }
 
 const nativeAuthSessionValidator = v.object({
-  token: v.optional(v.union(v.string(), v.null())),
+  token: v.union(v.string(), v.null()),
   refreshToken: v.optional(v.string()),
   user: nativeAuthUserValidator,
   userId: v.optional(v.string()),
@@ -433,53 +426,7 @@ export function nativeEmailAndPassword(
     args: { refreshToken: v.string() },
     returns: nativeAuthSessionValidator,
     handler: async (ctx, args) => {
-      const now = Date.now();
-      const tokenHash = hashToken(args.refreshToken);
-
-      const refresh = await ctx.runMutation(component.native.refreshTokens.consumeRefreshToken, {
-        tokenHash,
-      });
-      if (!refresh) {
-        throw new Error("Invalid refresh token");
-      }
-
-      const session = await ctx.runQuery(component.native.sessions.getSessionBySessionId, {
-        sessionId: refresh.sessionId,
-      });
-      if (!session || session.revokedAt !== undefined || session.expiresAt <= now) {
-        throw new Error("Invalid refresh token");
-      }
-
-      const user = await ctx.runQuery(component.native.users.getUserById, { userId: refresh.userId });
-      if (!user) {
-        throw new Error("User not found");
-      }
-
-      const identity = await ctx.runQuery(component.native.identities.getNativeIdentityByUser, {
-        userId: refresh.userId,
-        provider: "password",
-        issuer: "native",
-      });
-      if (!identity) {
-        throw new Error("Identity not found");
-      }
-
-      await ctx.runMutation(component.native.sessions.revokeSession, { sessionId: refresh.sessionId });
-
-      const { sessionId, token, refreshToken } = await createSessionAndRefreshToken(ctx, {
-        userId: refresh.userId,
-        identityId: identity._id,
-        rememberMe: undefined,
-      });
-
-      return {
-        token,
-        refreshToken,
-        user: toNativeAuthUser(user),
-        userId: user._id,
-        identityId: identity._id,
-        sessionId,
-      };
+      return await handleUpdateSession(ctx, component, args.refreshToken);
     },
   });
 

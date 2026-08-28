@@ -43,6 +43,15 @@ export const nativeAuthUserValidator = v.object({
   updatedAt: v.number(),
 });
 
+export type NativeAuthSession = {
+  token: string | null;
+  refreshToken?: string;
+  user: NativeAuthUser;
+  userId?: string;
+  identityId?: string;
+  sessionId?: string;
+};
+
 export type NativeVerificationCodeDoc = {
   _id: string;
   _creationTime: number;

@@ -749,4 +749,30 @@ export default defineSchema({
   })
     .index("by_token_hash", ["tokenHash", "type"])
     .index("by_user_type", ["userId", "type"]),
+
+  authVerifiers: defineTable({
+    verifierId: v.string(),
+    type: v.string(),
+    provider: v.optional(v.string()),
+    codeChallenge: v.optional(v.string()),
+    codeChallengeMethod: v.optional(v.string()),
+    redirectUri: v.optional(v.string()),
+    metadata: v.optional(v.string()),
+    expiresAt: v.number(),
+    consumedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_verifier_id", ["verifierId"])
+    .index("by_expires_at", ["expiresAt"]),
+
+  authRateLimits: defineTable({
+    identifier: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_identifier_window", ["identifier", "windowStart"])
+    .index("by_window", ["windowStart"]),
 });
