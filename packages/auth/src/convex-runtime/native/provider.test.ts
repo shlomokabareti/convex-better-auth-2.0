@@ -261,6 +261,45 @@ describe("nativeEmailAndPassword", () => {
     expect(payload.identityId).toBe("identity_1");
   });
 
+  it("signs up with rememberMe false uses a 1-day session and token TTL", async () => {
+    const component = createMockComponent();
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      createdUser: true,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.createAccount.mockResolvedValue("account_1");
+    component.native.sessions.createSession.mockResolvedValue("session_1");
+    const user = makeUser();
+    component.native.users.getUserByEmail.mockResolvedValue(user);
+
+    const { signUp } = createActions(component);
+    const { handler } = exec(signUp);
+    const before = Date.now();
+    const result = (await handler(createContext(), {
+      email: "shlomo@example.com",
+      password: DEFAULT_PASSWORD,
+      name: "Shlomo",
+      rememberMe: false,
+    })) as {
+      token: string;
+      user: { id: string };
+      sessionId: string;
+    };
+    const after = Date.now();
+
+    const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
+    expect(createSessionCall.expiresAt).toBeGreaterThanOrEqual(before + 24 * 60 * 60 * 1000);
+    expect(createSessionCall.expiresAt).toBeLessThanOrEqual(after + 24 * 60 * 60 * 1000);
+
+    const payload = await verifyToken(result.token);
+    expect(payload.sub).toBe("user_1");
+    expect(payload.exp).toBeDefined();
+    expect(payload.iat).toBeDefined();
+    expect((payload.exp as number) - (payload.iat as number)).toBe(24 * 60 * 60);
+  });
+
   it("signUp rejects an invalid email", async () => {
     const component = createMockComponent();
     const { signUp } = createActions(component);
@@ -328,6 +367,37 @@ describe("nativeEmailAndPassword", () => {
     expect(payload.sub).toBe("user_1");
     expect(payload.sessionId).toBe(result.sessionId);
     expect(payload.identityId).toBe("identity_1");
+  });
+
+  it("signs in with rememberMe false uses a 1-day session and token TTL", async () => {
+    const component = createMockComponent();
+    const user = makeUser({ emailVerified: true });
+    const identity = makeIdentity({ emailVerified: true });
+    const account = makeAccount();
+    component.native.users.getUserByEmail.mockResolvedValue(user);
+    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
+    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+    component.native.sessions.createSession.mockResolvedValue("session_1");
+
+    const { signIn } = createActions(component);
+    const { handler } = exec(signIn);
+    const before = Date.now();
+    const result = (await handler(createContext(), {
+      email: "shlomo@example.com",
+      password: DEFAULT_PASSWORD,
+      rememberMe: false,
+    })) as {
+      token: string;
+      sessionId: string;
+    };
+    const after = Date.now();
+
+    const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
+    expect(createSessionCall.expiresAt).toBeGreaterThanOrEqual(before + 24 * 60 * 60 * 1000);
+    expect(createSessionCall.expiresAt).toBeLessThanOrEqual(after + 24 * 60 * 60 * 1000);
+
+    const payload = await verifyToken(result.token);
+    expect((payload.exp as number) - (payload.iat as number)).toBe(24 * 60 * 60);
   });
 
   it("signIn rejects an unverified email when requireVerifiedEmail is true", async () => {

@@ -35,17 +35,22 @@ export function getJwks(): JSONWebKeySet {
   return cachedJwks;
 }
 
+const DEFAULT_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
+
 export async function mintToken(
   sub: string,
   sessionId: string,
   extra: Record<string, unknown> = {},
+  options: { expiresInSeconds?: number } = {},
 ): Promise<string> {
   const key = await getJwtPrivateKey();
+  const expiresInSeconds = options.expiresInSeconds ?? DEFAULT_TOKEN_TTL_SECONDS;
+  const exp = new Date(Date.now() + expiresInSeconds * 1000);
   return await new SignJWT({ sessionId, ...extra })
     .setProtectedHeader({ alg: "RS256", typ: "JWT" })
     .setSubject(sub)
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime(exp)
     .sign(key);
 }
 

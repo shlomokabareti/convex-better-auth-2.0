@@ -14,11 +14,13 @@ export type NativeAuthSignUpArgs = {
   email: string;
   password: string;
   name: string;
+  rememberMe?: boolean;
 };
 
 export type NativeAuthSignInArgs = {
   email: string;
   password: string;
+  rememberMe?: boolean;
 };
 
 export type NativeAuthSignOutArgs = {

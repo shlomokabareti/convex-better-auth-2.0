@@ -78,6 +78,7 @@ type EmailSendResult =
 const DEFAULT_VERIFICATION_CODE_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_PASSWORD_RESET_CODE_TTL_MS = 60 * 60 * 1000;
 const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DONT_REMEMBER_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_MIN_PASSWORD_LENGTH = 8;
 const DEFAULT_MAX_PASSWORD_LENGTH = 128;
 
@@ -87,6 +88,10 @@ const EMAIL_REGEX =
 
 function isValidEmail(email: string): boolean {
   return EMAIL_REGEX.test(email);
+}
+
+function resolveSessionTtlMs(rememberMe: boolean | undefined, sessionTtlMs: number): number {
+  return rememberMe === false ? DONT_REMEMBER_SESSION_TTL_MS : sessionTtlMs;
 }
 
 function validatePassword(
@@ -176,6 +181,7 @@ export function nativeEmailAndPassword(
       email: v.string(),
       password: v.string(),
       name: v.string(),
+      rememberMe: v.optional(v.boolean()),
     },
     returns: nativeAuthSessionValidator,
     handler: async (ctx, args) => {
@@ -229,8 +235,16 @@ export function nativeEmailAndPassword(
       });
 
       const sessionId = crypto.randomUUID();
-      const expiresAt = now + sessionTtlMs;
-      const token = await mintToken(userId, sessionId, { identityId });
+      const effectiveSessionTtlMs = resolveSessionTtlMs(args.rememberMe, sessionTtlMs);
+      const expiresAt = now + effectiveSessionTtlMs;
+      const token = await mintToken(
+        userId,
+        sessionId,
+        { identityId },
+        {
+          expiresInSeconds: Math.floor(effectiveSessionTtlMs / 1000),
+        },
+      );
 
       await ctx.runMutation(component.native.sessions.createSession, {
         sessionId,
@@ -260,6 +274,7 @@ export function nativeEmailAndPassword(
     args: {
       email: v.string(),
       password: v.string(),
+      rememberMe: v.optional(v.boolean()),
     },
     returns: nativeAuthSessionValidator,
     handler: async (ctx, args) => {
@@ -296,10 +311,14 @@ export function nativeEmailAndPassword(
       }
 
       const sessionId = crypto.randomUUID();
-      const expiresAt = now + sessionTtlMs;
-      const token = await mintToken(user._id, sessionId, {
-        identityId: identity._id,
-      });
+      const effectiveSessionTtlMs = resolveSessionTtlMs(args.rememberMe, sessionTtlMs);
+      const expiresAt = now + effectiveSessionTtlMs;
+      const token = await mintToken(
+        user._id,
+        sessionId,
+        { identityId: identity._id },
+        { expiresInSeconds: Math.floor(effectiveSessionTtlMs / 1000) },
+      );
 
       await ctx.runMutation(component.native.sessions.createSession, {
         sessionId,
@@ -602,9 +621,12 @@ export function nativeEmailAndPassword(
 
       const sessionId = crypto.randomUUID();
       const expiresAt = now + sessionTtlMs;
-      const token = await mintToken(consumed.userId, sessionId, {
-        identityId: identity._id,
-      });
+      const token = await mintToken(
+        consumed.userId,
+        sessionId,
+        { identityId: identity._id },
+        { expiresInSeconds: Math.floor(sessionTtlMs / 1000) },
+      );
 
       await ctx.runMutation(component.native.sessions.createSession, {
         sessionId,
