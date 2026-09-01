@@ -40,6 +40,17 @@ export function isTokenExpired(expiresAt: number, now = Date.now()): boolean {
   return now >= expiresAt;
 }
 
+export function generateEmailOtp(length = 6): string {
+  if (length <= 0) {
+    throw new Error("OTP length must be positive");
+  }
+  const modulus = 10 ** length;
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(4));
+  const view = new DataView(bytes.buffer);
+  const value = view.getUint32(0, true);
+  return (value % modulus).toString().padStart(length, "0");
+}
+
 export async function verifyTokenHash(token: string, tokenHash: string): Promise<boolean> {
   const actual = await hashToken(token);
   if (tokenHash.length !== actual.length) {
