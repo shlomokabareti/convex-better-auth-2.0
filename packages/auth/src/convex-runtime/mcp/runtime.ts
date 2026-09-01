@@ -1,4 +1,4 @@
-import { getSessionCookie } from "better-auth/cookies";
+import { getSessionCookie } from "../helpers/cookies.js";
 
 import { validateMcpOAuthDynamicClientRegistrationInput } from "./clientRegistration";
 import {

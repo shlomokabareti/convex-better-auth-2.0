@@ -1,4 +1,4 @@
-import { getSessionCookie } from "better-auth/cookies";
+import { getSessionCookie } from "../../../convex-runtime/helpers/cookies.js";
 
 import { validateMcpOAuthDynamicClientRegistrationInput } from "./clientRegistration";
 import {
