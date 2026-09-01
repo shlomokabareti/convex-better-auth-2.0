@@ -8,6 +8,7 @@ import { handleUpdateSession } from "./updateSession.js";
 import type { NativeEmailAndPasswordFunctionReferences } from "./provider.js";
 import { toNativeAuthUser } from "./types.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
+import { isAllowedRedirectUrl } from "./callback.js";
 
 const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
@@ -179,10 +180,15 @@ function buildErrorResponse(status: number, reason: string): Response {
   });
 }
 
+export type NativeAuthHttpOptions = {
+  trustedOrigins?: string[];
+};
+
 export function addNativeAuthHttpRoutes(
   http: HttpRouter,
   component?: NativeEmailAndPasswordComponentHandle,
   actions?: NativeEmailAndPasswordFunctionReferences,
+  options?: NativeAuthHttpOptions,
 ): void {
   http.route({
     path: "/.well-known/jwks.json",
@@ -663,11 +669,15 @@ export function addNativeAuthHttpRoutes(
     method: "GET",
     handler: httpActionGeneric(async (ctx, request) => {
       const url = new URL(request.url);
+      const requestOrigin = url.origin;
       const token = url.pathname.split("/").pop() ?? "";
       const callbackURL = url.searchParams.get("callbackURL");
 
       if (!callbackURL) {
         return new Response("Missing callbackURL", { status: 400 });
+      }
+      if (!isAllowedRedirectUrl(callbackURL, requestOrigin, options?.trustedOrigins ?? [])) {
+        return new Response("Invalid callbackURL", { status: 400 });
       }
 
       const tokenHash = await hashToken(token);
@@ -689,8 +699,16 @@ export function addNativeAuthHttpRoutes(
     method: "GET",
     handler: httpActionGeneric(async (ctx, request) => {
       const url = new URL(request.url);
+      const requestOrigin = url.origin;
       const token = url.searchParams.get("token") ?? "";
       const callbackURL = url.searchParams.get("callbackURL");
+
+      if (
+        callbackURL &&
+        !isAllowedRedirectUrl(callbackURL, requestOrigin, options?.trustedOrigins ?? [])
+      ) {
+        return buildErrorResponse(400, "invalid_callback_url");
+      }
 
       const tokenHash = await hashToken(token);
       const result = await ctx.runMutation(component.identity.verifyEmail, {

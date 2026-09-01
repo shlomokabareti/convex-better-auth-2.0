@@ -3,6 +3,7 @@ import { handleCallback, handleSignIn, type NativeOAuthConfig } from "./oauthHan
 import { verifyOAuthState } from "./oauthState.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
 import { verifyToken } from "./jwt.js";
+import { isAllowedRedirectUrl } from "./callback.js";
 
 const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
@@ -51,7 +52,17 @@ function buildErrorRedirect(base: string, error: string, description?: string): 
 export type NativeOAuthHttpConfig = {
   component: NativeOAuthComponentHandle;
   oauth: NativeOAuthConfig;
+  trustedOrigins?: string[];
 };
+
+function getTrustedOrigins(config: NativeOAuthHttpConfig, requestOrigin: string): string[] {
+  return [
+    requestOrigin,
+    ...(config.oauth.trustedOrigins ?? []),
+    ...(process.env.SITE_URL ? [process.env.SITE_URL] : []),
+    ...(process.env.CONVEX_SITE_URL ? [process.env.CONVEX_SITE_URL] : []),
+  ];
+}
 
 export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHttpConfig): void {
   http.route({
@@ -59,6 +70,8 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
     method: "GET",
     handler: httpActionGeneric(async (_ctx, request) => {
       const url = new URL(request.url);
+      const requestOrigin = url.origin;
+      const trustedOrigins = getTrustedOrigins(config, requestOrigin);
       const provider = parseProvider(url);
       const callbackURL =
         url.searchParams.get("redirectTo") ?? url.searchParams.get("callbackURL") ?? undefined;
@@ -66,6 +79,25 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
       const newUserURL = url.searchParams.get("newUserURL") ?? undefined;
       const requestSignUp = url.searchParams.get("requestSignUp") === "true";
       const link = url.searchParams.get("link") === "true";
+
+      if (callbackURL && !isAllowedRedirectUrl(callbackURL, requestOrigin, trustedOrigins)) {
+        return buildErrorRedirect(
+          process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/",
+          "invalid_callback_url",
+        );
+      }
+      if (errorURL && !isAllowedRedirectUrl(errorURL, requestOrigin, trustedOrigins)) {
+        return buildErrorRedirect(
+          process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/",
+          "invalid_error_url",
+        );
+      }
+      if (newUserURL && !isAllowedRedirectUrl(newUserURL, requestOrigin, trustedOrigins)) {
+        return buildErrorRedirect(
+          process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/",
+          "invalid_new_user_url",
+        );
+      }
 
       const result = await handleSignIn(config.oauth, {
         provider,

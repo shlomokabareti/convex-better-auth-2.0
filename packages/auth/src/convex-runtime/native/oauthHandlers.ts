@@ -38,6 +38,11 @@ export type NativeOAuthConfig = {
   discord?: DiscordProviderConfig;
   /** Full callback URL registered with the OAuth provider. */
   redirectURI?: string;
+  /**
+   * Origins allowed for `callbackURL`, `errorURL`, and `newUserURL` passed to
+   * `signInWithRedirect`. Defaults to `process.env.CONVEX_SITE_URL`.
+   */
+  trustedOrigins?: string[];
   /** @default 7 days */
   sessionTtlMs?: number;
   /** Providers whose `emailVerified` claim is trusted enough to link accounts by email. */

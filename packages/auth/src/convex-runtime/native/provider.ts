@@ -38,6 +38,11 @@ export type EmailDraft = {
 export type EmailSender = (draft: EmailDraft) => Promise<string>;
 
 export type NativeEmailAndPasswordConfig = {
+  /**
+   * Origins allowed for `callbackURL` in verify-email and reset-password routes.
+   * Defaults to `email.appOrigin` and the Convex site URL.
+   */
+  trustedOrigins?: string[];
   email?: {
     from: string;
     appOrigin?: string;

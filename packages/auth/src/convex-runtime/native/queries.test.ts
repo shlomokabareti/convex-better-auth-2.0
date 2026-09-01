@@ -217,13 +217,13 @@ describe("addNativeAuthHttpRoutes", () => {
       },
     } as unknown as HttpRouter;
 
-    addNativeAuthHttpRoutes(http, component);
+    const callbackURL = "https://app.example.com/welcome";
+    addNativeAuthHttpRoutes(http, component, undefined, { trustedOrigins: [callbackURL] });
     const verifyRoute = routes.find(
       (r) => r.path === "/api/auth/verify-email" && r.method === "GET",
     );
     expect(verifyRoute).toBeDefined();
 
-    const callbackURL = "https://app.example.com/welcome";
     const response = await exec(verifyRoute!.handler).handler(
       createContext(),
       new Request(
@@ -264,13 +264,13 @@ describe("addNativeAuthHttpRoutes", () => {
       },
     } as unknown as HttpRouter;
 
-    addNativeAuthHttpRoutes(http, component);
+    const callbackURL = "https://app.example.com/reset";
+    addNativeAuthHttpRoutes(http, component, undefined, { trustedOrigins: [callbackURL] });
     const resetRoute = routes.find(
       (r) => r.pathPrefix === "/api/auth/reset-password/" && r.method === "GET",
     );
     expect(resetRoute).toBeDefined();
 
-    const callbackURL = "https://app.example.com/reset";
     const response = await exec(resetRoute!.handler).handler(
       createContext(),
       new Request(
@@ -299,13 +299,13 @@ describe("addNativeAuthHttpRoutes", () => {
       },
     } as unknown as HttpRouter;
 
-    addNativeAuthHttpRoutes(http, component);
+    const callbackURL = "https://app.example.com/reset";
+    addNativeAuthHttpRoutes(http, component, undefined, { trustedOrigins: [callbackURL] });
     const resetRoute = routes.find(
       (r) => r.pathPrefix === "/api/auth/reset-password/" && r.method === "GET",
     );
     expect(resetRoute).toBeDefined();
 
-    const callbackURL = "https://app.example.com/reset";
     const response = await exec(resetRoute!.handler).handler(
       createContext(),
       new Request(
@@ -316,5 +316,38 @@ describe("addNativeAuthHttpRoutes", () => {
     expect(response.status).toBe(302);
     const location = response.headers.get("Location");
     expect(location).toBe(callbackURL + "?error=INVALID_TOKEN");
+  });
+
+  it("rejects a reset callbackURL with an untrusted origin", async () => {
+    const component = createMockComponent();
+    const routes: {
+      path?: string;
+      pathPrefix?: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http: HttpRouter = {
+      route: (r) => {
+        routes.push(r as any);
+        return http;
+      },
+    } as unknown as HttpRouter;
+
+    addNativeAuthHttpRoutes(http, component, undefined, {
+      trustedOrigins: ["https://app.example.com"],
+    });
+    const resetRoute = routes.find(
+      (r) => r.pathPrefix === "/api/auth/reset-password/" && r.method === "GET",
+    );
+    expect(resetRoute).toBeDefined();
+
+    const response = await exec(resetRoute!.handler).handler(
+      createContext(),
+      new Request(
+        "https://api.example.com/api/auth/reset-password/the-token?callbackURL=" +
+          encodeURIComponent("https://evil.example.com/callback"),
+      ),
+    );
+    expect(response.status).toBe(400);
   });
 });
