@@ -29,6 +29,15 @@ Convex `HttpRouter` only supports exact `path` matches or trailing `pathPrefix` 
 
 This is enforced by the router implementation in `convex/src/server/router.ts`.
 
+## Consumer wiring
+
+The canonical consumer entrypoints are:
+
+- `convex/auth.ts` — call `convexAuth({ component, emailAndPassword, oauth })`, export the `auth` object and the action references.
+- `convex/http.ts` — import `auth` from `./auth` and call `auth.addHttpRoutes(http)`. Do not call the lower-level `addNativeAuthHttpRoutes` directly unless you only want email/password.
+
+See `packages/conformance-consumer/convex/auth.ts` and `packages/conformance-consumer/convex/http.ts` for a working example.
+
 ## Runtime portability
 
 - No `"use node"` directive in deployed source.
