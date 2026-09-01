@@ -35,6 +35,7 @@ function createContext() {
     runQuery: vi.fn((ref: unknown, args: Record<string, unknown>) => dispatch(ref, args)),
     runMutation: vi.fn((ref: unknown, args: Record<string, unknown>) => dispatch(ref, args)),
     runAction: vi.fn(),
+    auth: { getUserIdentity: vi.fn() },
   };
 }
 
@@ -61,6 +62,7 @@ function createMockComponent(): Mockify<NativeEmailAndPasswordComponentHandle> {
       getUserAndAccount: vi.fn(),
       verifyEmail: vi.fn(),
       resetPassword: vi.fn(),
+      changeEmail: vi.fn(),
     },
     native: {
       accounts: {
@@ -123,14 +125,14 @@ describe("nativeEmailOtp", () => {
     process.env.CONVEX_SITE_URL = "https://test.convex.site";
   });
 
-  it("signInEmailOtp creates a verifier and sends a 6-digit OTP", async () => {
+  it("sendVerificationOtp creates a verifier and sends a 6-digit OTP", async () => {
     const component = createMockComponent();
     const sendVerificationOTP = vi.fn().mockResolvedValue("email_1");
-    const { signInEmailOtp } = nativeEmailOtp(
+    const { sendVerificationOtp } = nativeEmailOtp(
       component as unknown as NativeEmailAndPasswordComponentHandle,
       { sendVerificationOTP },
     );
-    const { handler } = exec(signInEmailOtp);
+    const { handler } = exec(sendVerificationOtp);
 
     const ctx = createContext();
     const result = await handler(ctx, {
@@ -161,11 +163,11 @@ describe("nativeEmailOtp", () => {
 
   it("rejects an invalid email", async () => {
     const component = createMockComponent();
-    const { signInEmailOtp } = nativeEmailOtp(
+    const { sendVerificationOtp } = nativeEmailOtp(
       component as unknown as NativeEmailAndPasswordComponentHandle,
       createConfig(),
     );
-    const { handler } = exec(signInEmailOtp);
+    const { handler } = exec(sendVerificationOtp);
 
     const ctx = createContext();
     await expect(handler(ctx, { email: "not-an-email" })).rejects.toThrow("Invalid email");
@@ -174,11 +176,11 @@ describe("nativeEmailOtp", () => {
 
   it("rejects when disabled", async () => {
     const component = createMockComponent();
-    const { signInEmailOtp } = nativeEmailOtp(
+    const { sendVerificationOtp } = nativeEmailOtp(
       component as unknown as NativeEmailAndPasswordComponentHandle,
       { ...createConfig(), enabled: false },
     );
-    const { handler } = exec(signInEmailOtp);
+    const { handler } = exec(sendVerificationOtp);
 
     const ctx = createContext();
     await expect(handler(ctx, { email: "shlomo@example.com" })).rejects.toThrow(
@@ -189,13 +191,13 @@ describe("nativeEmailOtp", () => {
   it("verifyEmailOtp creates a user and returns a session", async () => {
     const component = createMockComponent();
     const sendVerificationOTP = vi.fn().mockResolvedValue("email_1");
-    const { signInEmailOtp, verifyEmailOtp } = nativeEmailOtp(
+    const { sendVerificationOtp, verifyEmailOtp } = nativeEmailOtp(
       component as unknown as NativeEmailAndPasswordComponentHandle,
       { sendVerificationOTP },
     );
 
     const ctx = createContext();
-    await exec(signInEmailOtp).handler(ctx, { email: "Shlomo@example.com ", type: "sign-in" });
+    await exec(sendVerificationOtp).handler(ctx, { email: "Shlomo@example.com ", type: "sign-in" });
 
     const otp = sendVerificationOTP.mock.calls[0][0].otp;
 
@@ -291,5 +293,292 @@ describe("nativeEmailOtp", () => {
       exec(verifyEmailOtp).handler(ctx, { email: "shlomo@example.com", otp: "000000" }),
     ).rejects.toThrow("SIGN_UP_DISABLED");
     expect((component as any).identity.provisionFromIdentity).not.toHaveBeenCalled();
+  });
+
+  it("sendVerificationOtp for email-verification creates a verification code for an existing user", async () => {
+    const component = createMockComponent();
+    const sendVerificationOTP = vi.fn().mockResolvedValue("email_1");
+    const { sendVerificationOtp } = nativeEmailOtp(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      { sendVerificationOTP },
+    );
+    const { handler } = exec(sendVerificationOtp);
+
+    component.native.users.getUserByEmail = vi.fn().mockResolvedValue({
+      _id: "user_1",
+      email: "shlomo@example.com",
+    });
+
+    const ctx = createContext();
+    const result = await handler(ctx, {
+      email: "Shlomo@example.com ",
+      type: "email-verification",
+    });
+
+    expect(result).toMatchObject({ status: "queued" });
+
+    const createCall = (component as any).native.codes.createVerificationCode.mock.calls[0]?.[0];
+    expect(createCall).toMatchObject({
+      userId: "user_1",
+      type: "email_verification",
+    });
+    expect(typeof createCall.tokenHash).toBe("string");
+    expect(typeof createCall.expiresAt).toBe("number");
+
+    expect(sendVerificationOTP).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "shlomo@example.com",
+        type: "email-verification",
+      }),
+    );
+    expect(sendVerificationOTP.mock.calls[0][0].otp).toMatch(/^\d{6}$/);
+  });
+
+  it("sendVerificationOtp for email-verification returns noop when user is not found", async () => {
+    const component = createMockComponent();
+    const sendVerificationOTP = vi.fn().mockResolvedValue("email_1");
+    const { sendVerificationOtp } = nativeEmailOtp(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      { sendVerificationOTP },
+    );
+    const { handler } = exec(sendVerificationOtp);
+
+    component.native.users.getUserByEmail = vi.fn().mockResolvedValue(null);
+
+    const ctx = createContext();
+    const result = await handler(ctx, {
+      email: "unknown@example.com",
+      type: "email-verification",
+    });
+
+    expect(result).toMatchObject({ status: "queued", emailId: "noop" });
+    expect((component as any).native.codes.createVerificationCode).not.toHaveBeenCalled();
+    expect(sendVerificationOTP).not.toHaveBeenCalled();
+  });
+
+  it("verifyEmailOtp for email-verification calls identity.verifyEmail", async () => {
+    const component = createMockComponent();
+    const sendVerificationOTP = vi.fn().mockResolvedValue("email_1");
+    const { sendVerificationOtp, verifyEmailOtp } = nativeEmailOtp(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      { sendVerificationOTP },
+    );
+
+    component.native.users.getUserByEmail = vi.fn().mockResolvedValue({
+      _id: "user_1",
+      email: "shlomo@example.com",
+    });
+    component.identity.verifyEmail = vi.fn().mockResolvedValue({ success: true });
+
+    const ctx = createContext();
+    await exec(sendVerificationOtp).handler(ctx, {
+      email: "Shlomo@example.com ",
+      type: "email-verification",
+    });
+
+    const otp = sendVerificationOTP.mock.calls[0][0].otp;
+
+    const result = await exec(verifyEmailOtp).handler(ctx, {
+      email: "Shlomo@example.com ",
+      otp,
+      type: "email-verification",
+    });
+
+    expect(result).toMatchObject({ success: true });
+
+    const verifyCall = (component as any).identity.verifyEmail.mock.calls[0][0];
+    expect(verifyCall.provider).toBe("emailOtp");
+    expect(verifyCall.issuer).toBe("native");
+    expect(typeof verifyCall.tokenHash).toBe("string");
+  });
+
+  it("verifyEmailOtp for forget-password with an existing password account resets the password", async () => {
+    const component = createMockComponent();
+    const sendVerificationOTP = vi.fn().mockResolvedValue("email_1");
+    const { sendVerificationOtp, verifyEmailOtp } = nativeEmailOtp(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      { sendVerificationOTP },
+    );
+
+    component.native.users.getUserByEmail = vi.fn().mockResolvedValue({
+      _id: "user_1",
+      email: "shlomo@example.com",
+    });
+    component.identity.resetPassword = vi.fn().mockResolvedValue({ status: true });
+
+    const ctx = createContext();
+    await exec(sendVerificationOtp).handler(ctx, {
+      email: "Shlomo@example.com ",
+      type: "forget-password",
+    });
+
+    const otp = sendVerificationOTP.mock.calls[0][0].otp;
+
+    const result = await exec(verifyEmailOtp).handler(ctx, {
+      email: "Shlomo@example.com ",
+      otp,
+      type: "forget-password",
+      newPassword: "new-password-123",
+    });
+
+    expect(result).toMatchObject({ status: true });
+
+    const resetCall = (component as any).identity.resetPassword.mock.calls[0][0];
+    expect(resetCall.provider).toBe("password");
+    expect(resetCall.issuer).toBe("native");
+    expect(resetCall.revokeSessions).toBe(true);
+    expect(typeof resetCall.tokenHash).toBe("string");
+    expect(typeof resetCall.credentialHash).toBe("string");
+  });
+
+  it("verifyEmailOtp for forget-password creates a password account when none exists", async () => {
+    const component = createMockComponent();
+    const sendVerificationOTP = vi.fn().mockResolvedValue("email_1");
+    const { sendVerificationOtp, verifyEmailOtp } = nativeEmailOtp(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      { sendVerificationOTP },
+    );
+
+    component.native.users.getUserByEmail = vi.fn().mockResolvedValue({
+      _id: "user_1",
+      email: "shlomo@example.com",
+    });
+    component.identity.resetPassword = vi
+      .fn()
+      .mockResolvedValue({ status: false, reason: "invalid" });
+
+    const ctx = createContext();
+    await exec(sendVerificationOtp).handler(ctx, {
+      email: "Shlomo@example.com ",
+      type: "forget-password",
+    });
+
+    const otp = sendVerificationOTP.mock.calls[0][0].otp;
+
+    const tokenHash = await new Promise<string>((resolve) => {
+      const createCall = (component as any).native.codes.createVerificationCode.mock.calls[0]?.[0];
+      resolve(createCall.tokenHash);
+    });
+
+    component.native.codes.getVerificationCodeByTokenHash = vi.fn().mockResolvedValue({
+      _id: "code_1",
+      userId: "user_1",
+      type: "password_reset",
+      tokenHash,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    component.native.users.getUserById = vi.fn().mockResolvedValue({
+      _id: "user_1",
+      email: "shlomo@example.com",
+      name: "Shlomo",
+      emailVerified: true,
+    });
+    component.native.identities.getNativeIdentityByUser = vi.fn().mockResolvedValue(null);
+    component.identity.provisionFromIdentity = vi.fn().mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      user: {
+        _id: "user_1",
+        email: "shlomo@example.com",
+        name: "Shlomo",
+        emailVerified: true,
+        isActive: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+    });
+    component.native.codes.consumeVerificationCode = vi.fn().mockResolvedValue({
+      _id: "code_1",
+      userId: "user_1",
+      type: "password_reset",
+      tokenHash,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    const result = await exec(verifyEmailOtp).handler(ctx, {
+      email: "Shlomo@example.com ",
+      otp,
+      type: "forget-password",
+      newPassword: "new-password-123",
+    });
+
+    expect(result).toMatchObject({ status: true });
+    expect((component as any).identity.provisionFromIdentity).toHaveBeenCalled();
+  });
+
+  it("sendVerificationOtp for change-email uses the authenticated user's id", async () => {
+    const component = createMockComponent();
+    const sendVerificationOTP = vi.fn().mockResolvedValue("email_1");
+    const { sendVerificationOtp } = nativeEmailOtp(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      { sendVerificationOTP },
+    );
+    const { handler } = exec(sendVerificationOtp);
+
+    const ctx = createContext();
+    ctx.auth.getUserIdentity = vi.fn().mockResolvedValue({ subject: "user_1" });
+    component.native.users.getUserById = vi.fn().mockResolvedValue({
+      _id: "user_1",
+      email: "old@example.com",
+    });
+
+    const result = await handler(ctx, {
+      email: "new@example.com",
+      type: "change-email",
+    });
+
+    expect(result).toMatchObject({ status: "queued" });
+
+    const createCall = (component as any).native.codes.createVerificationCode.mock.calls[0]?.[0];
+    expect(createCall).toMatchObject({
+      userId: "user_1",
+      type: "email_change",
+    });
+    expect(sendVerificationOTP).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "new@example.com",
+        type: "change-email",
+      }),
+    );
+  });
+
+  it("verifyEmailOtp for change-email calls identity.changeEmail", async () => {
+    const component = createMockComponent();
+    const sendVerificationOTP = vi.fn().mockResolvedValue("email_1");
+    const { sendVerificationOtp, verifyEmailOtp } = nativeEmailOtp(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      { sendVerificationOTP },
+    );
+
+    const ctx = createContext();
+    ctx.auth.getUserIdentity = vi.fn().mockResolvedValue({ subject: "user_1" });
+    component.native.users.getUserById = vi.fn().mockResolvedValue({
+      _id: "user_1",
+      email: "old@example.com",
+    });
+    component.identity.changeEmail = vi.fn().mockResolvedValue({ status: true });
+
+    await exec(sendVerificationOtp).handler(ctx, {
+      email: "new@example.com",
+      type: "change-email",
+    });
+
+    const otp = sendVerificationOTP.mock.calls[0][0].otp;
+
+    const result = await exec(verifyEmailOtp).handler(ctx, {
+      email: "new@example.com",
+      otp,
+      type: "change-email",
+    });
+
+    expect(result).toMatchObject({ status: true });
+
+    const changeCall = (component as any).identity.changeEmail.mock.calls[0][0];
+    expect(changeCall.newEmail).toBe("new@example.com");
+    expect(typeof changeCall.tokenHash).toBe("string");
   });
 });

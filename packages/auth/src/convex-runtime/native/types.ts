@@ -4,6 +4,7 @@ import type { FunctionReference } from "convex/server";
 export type VerificationCodeType =
   | "email_verification"
   | "password_reset"
+  | "email_change"
   | "two_factor_pending"
   | "two_factor_trusted_device";
 
@@ -310,6 +311,16 @@ export type NativeEmailAndPasswordComponentHandle = {
         provider: string;
         issuer: string;
         revokeSessions?: boolean;
+      },
+      { status: boolean; user?: NativeUserDoc; reason?: string },
+      string
+    >;
+    changeEmail: FunctionReference<
+      "mutation",
+      "public" | "internal",
+      {
+        tokenHash: string;
+        newEmail: string;
       },
       { status: boolean; user?: NativeUserDoc; reason?: string },
       string

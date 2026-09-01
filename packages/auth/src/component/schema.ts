@@ -121,6 +121,7 @@ export const authMdCredentialStatusValidator = v.union(v.literal("active"), v.li
 export const verificationCodeTypeValidator = v.union(
   v.literal("email_verification"),
   v.literal("password_reset"),
+  v.literal("email_change"),
   v.literal("two_factor_pending"),
   v.literal("two_factor_trusted_device"),
 );
