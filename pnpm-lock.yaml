@@ -34,9 +34,6 @@ importers:
 
   packages/auth:
     dependencies:
-      better-auth:
-        specifier: '>=1.7.1 <1.8.0'
-        version: 1.7.2(@tanstack/react-start@1.167.65(esbuild@0.28.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(rolldown@1.2.6)(rollup@4.63.0)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.0)(yaml@2.9.0)))(next@16.2.6(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vitest@4.1.10)
       convex-auth-core:
         specifier: workspace:*
         version: link:../core
@@ -46,9 +43,6 @@ importers:
       convex-auth-react-native:
         specifier: workspace:*
         version: link:../react-native
-      convex-better-auth-adapter:
-        specifier: workspace:*
-        version: link:../better-auth-adapter
       convex-helpers:
         specifier: ^0.1.80
         version: 0.1.123(@standard-schema/spec@1.1.0)(convex@1.45.0(react@19.2.8))(hono@4.13.5)(react@19.2.8)(typescript@5.9.3)(zod@4.4.3)
@@ -74,6 +68,9 @@ importers:
       convex:
         specifier: ^1.45.0
         version: 1.45.0(react@19.2.8)
+      convex-better-auth:
+        specifier: workspace:*
+        version: link:../better-auth
       convex-test:
         specifier: 0.0.51
         version: 0.0.51(convex@1.45.0(react@19.2.8))

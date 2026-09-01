@@ -1,5 +1,4 @@
 export * as convex from "./convex";
-export * as betterAuth from "./better-auth";
 export * as react from "./react";
 export * as reactNative from "./react-native";
 export * as component from "./component";
