@@ -3,6 +3,7 @@ import { v } from "convex/values";
 
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
+import { getOneFrom } from "convex-helpers/server/relationships";
 import { mutation, query } from "./_generated/server.js";
 import { mintToken } from "../convex-runtime/native/jwt.js";
 import { emailTwoFactorResetReasonValidator, emailTwoFactorStatusValidator } from "./schema.js";
@@ -165,10 +166,7 @@ export const provisionFromIdentity = mutation({
       ? await ctx.db.get("users", existingIdentity.userId)
       : null;
     const existingUserByEmail = normalizedEmail
-      ? await ctx.db
-          .query("users")
-          .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
-          .unique()
+      ? await getOneFrom(ctx.db, "users", "by_email", normalizedEmail, "email")
       : null;
     const user = existingUserByIdentity ?? existingUserByEmail;
 
@@ -322,10 +320,7 @@ export const getUserAndAccount = query({
     if (!normalizedEmail) {
       return null;
     }
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
-      .unique();
+    const user = await getOneFrom(ctx.db, "users", "by_email", normalizedEmail, "email");
     if (!user) {
       return null;
     }
@@ -513,19 +508,25 @@ export const getByTokenIdentifier = query({
   },
   returns: identityLookupResultValidator,
   handler: async (ctx, args) => {
-    const identity = await ctx.db
-      .query("auth_identities")
-      .withIndex("by_token_identifier", (q) => q.eq("tokenIdentifier", args.tokenIdentifier))
-      .unique();
+    const identity = await getOneFrom(
+      ctx.db,
+      "auth_identities",
+      "by_token_identifier",
+      args.tokenIdentifier,
+      "tokenIdentifier",
+    );
     return identity === null ? null : toIdentityLookupResult(identity);
   },
 });
 
 async function findIdentityByIdentityId(ctx: IdentityLookupCtx, identityId: string) {
-  return await ctx.db
-    .query("auth_identities")
-    .withIndex("by_identity_id", (q) => q.eq("identityId", identityId))
-    .unique();
+  return await getOneFrom(
+    ctx.db,
+    "auth_identities",
+    "by_identity_id",
+    identityId,
+    "identityId",
+  );
 }
 
 async function findIdentityByProviderIssuerSubject(

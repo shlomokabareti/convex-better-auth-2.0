@@ -1,5 +1,6 @@
 import { intersectPermissions } from "../compat/permissions";
 import { v } from "convex/values";
+import { getOneFrom } from "convex-helpers/server/relationships";
 
 import { base64urlToBytes, bytesToBase64url } from "../convex-runtime/native/password.js";
 import { internal } from "./_generated/api.js";
@@ -404,12 +405,13 @@ export const decideAgentDeviceAuthorization = mutation({
         retryAt: rateLimit.retryAt,
       } as const;
     }
-    const authorization = await ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_user_code_hash", (q) =>
-        q.eq("userCodeHash", requireHash(args.userCodeHash, "userCodeHash")),
-      )
-      .unique();
+    const authorization = await getOneFrom(
+      ctx.db,
+      "agent_device_authorizations",
+      "by_user_code_hash",
+      requireHash(args.userCodeHash, "userCodeHash"),
+      "userCodeHash",
+    );
     if (
       authorization === null ||
       authorization.organizationId !== args.organizationId ||
@@ -458,12 +460,13 @@ export const pollAgentDeviceAuthorization = mutation({
   args: { deviceCodeHash: v.string() },
   returns: deviceAuthorizationPollResultValidator,
   handler: async (ctx, args) => {
-    const authorization = await ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_device_code_hash", (q) =>
-        q.eq("deviceCodeHash", requireHash(args.deviceCodeHash, "deviceCodeHash")),
-      )
-      .unique();
+    const authorization = await getOneFrom(
+      ctx.db,
+      "agent_device_authorizations",
+      "by_device_code_hash",
+      requireHash(args.deviceCodeHash, "deviceCodeHash"),
+      "deviceCodeHash",
+    );
     if (authorization === null) {
       throw new Error("Device authorization grant is invalid");
     }
@@ -806,12 +809,13 @@ export const getAgentVerificationMaterial = query({
   args: { thumbprint: v.string() },
   returns: v.union(v.null(), verificationMaterialValidator),
   handler: async (ctx, args) => {
-    const key = await ctx.db
-      .query("agent_keys")
-      .withIndex("by_thumbprint", (q) =>
-        q.eq("thumbprint", requireText(args.thumbprint, "thumbprint")),
-      )
-      .unique();
+    const key = await getOneFrom(
+      ctx.db,
+      "agent_keys",
+      "by_thumbprint",
+      requireText(args.thumbprint, "thumbprint"),
+      "thumbprint",
+    );
     if (key === null) return null;
     const agent = await ctx.db.get("agents", key.agentId);
     if (agent === null) return null;
@@ -872,12 +876,13 @@ export const getAgentHostProtocolVerificationMaterial = query({
   args: { thumbprint: v.string() },
   returns: v.union(v.null(), hostProtocolVerificationMaterialValidator),
   handler: async (ctx, args) => {
-    const key = await ctx.db
-      .query("agent_host_keys")
-      .withIndex("by_thumbprint", (q) =>
-        q.eq("thumbprint", requireText(args.thumbprint, "thumbprint")),
-      )
-      .unique();
+    const key = await getOneFrom(
+      ctx.db,
+      "agent_host_keys",
+      "by_thumbprint",
+      requireText(args.thumbprint, "thumbprint"),
+      "thumbprint",
+    );
     if (key === null || key.status !== "active") return null;
     const host = await ctx.db.get("agent_hosts", key.hostId);
     if (host === null || host.status !== "active" || host.activeKeyGeneration !== key.generation) {
@@ -910,10 +915,13 @@ export const consumeAgentHostRequest = mutation({
     const now = Date.now();
     requireReplayLifetime(args.replayExpiresAt, now);
     const replayHash = requireText(args.replayIdHash, "replayIdHash");
-    const replay = await ctx.db
-      .query("agent_host_replay_records")
-      .withIndex("by_replay_hash", (q) => q.eq("replayIdHash", replayHash))
-      .unique();
+    const replay = await getOneFrom(
+      ctx.db,
+      "agent_host_replay_records",
+      "by_replay_hash",
+      replayHash,
+      "replayIdHash",
+    );
     if (replay !== null) throw new Error("Agent host request replayed");
     const host = await ctx.db.get("agent_hosts", args.hostId);
     if (host === null || host.status !== "active") {
@@ -1100,10 +1108,13 @@ export const consumeAgentCredential = mutation({
       throw new Error("Agent host key generation is invalid");
     }
     const replayHash = requireText(args.replayIdHash, "replayIdHash");
-    const replay = await ctx.db
-      .query("agent_replay_records")
-      .withIndex("by_replay_hash", (q) => q.eq("replayIdHash", replayHash))
-      .unique();
+    const replay = await getOneFrom(
+      ctx.db,
+      "agent_replay_records",
+      "by_replay_hash",
+      replayHash,
+      "replayIdHash",
+    );
     if (replay !== null) throw new Error("Agent credential replayed");
     const agent = await ctx.db.get("agents", args.agentId);
     if (agent === null || agent.status !== "active") {
@@ -1485,18 +1496,20 @@ async function requireUnusedDeviceAuthorizationCodes(
   deviceCodeHash: string,
 ): Promise<void> {
   const [byUserCode, byDeviceCode] = await Promise.all([
-    ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_user_code_hash", (q) =>
-        q.eq("userCodeHash", requireHash(userCodeHash, "userCodeHash")),
-      )
-      .unique(),
-    ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_device_code_hash", (q) =>
-        q.eq("deviceCodeHash", requireHash(deviceCodeHash, "deviceCodeHash")),
-      )
-      .unique(),
+    getOneFrom(
+      ctx.db,
+      "agent_device_authorizations",
+      "by_user_code_hash",
+      requireHash(userCodeHash, "userCodeHash"),
+      "userCodeHash",
+    ),
+    getOneFrom(
+      ctx.db,
+      "agent_device_authorizations",
+      "by_device_code_hash",
+      requireHash(deviceCodeHash, "deviceCodeHash"),
+      "deviceCodeHash",
+    ),
   ]);
   if (byUserCode !== null || byDeviceCode !== null) {
     throw new Error("Device authorization code is already registered");
@@ -1516,10 +1529,13 @@ async function readDeviceAuthorizationAttemptLimit(
   operatorUserId: Id<"users">,
   now: number,
 ): Promise<DeviceAuthorizationAttemptLimit> {
-  const record = await ctx.db
-    .query("agent_device_authorization_attempts")
-    .withIndex("by_operator", (q) => q.eq("operatorUserId", operatorUserId))
-    .unique();
+  const record = await getOneFrom(
+    ctx.db,
+    "agent_device_authorization_attempts",
+    "by_operator",
+    operatorUserId,
+    "operatorUserId",
+  );
   if (record === null) {
     return { allowed: true, attempts: 0, windowStartedAt: now };
   }
@@ -1582,10 +1598,13 @@ async function clearDeviceAuthorizationAttempts(
   ctx: MutationCtx,
   operatorUserId: Id<"users">,
 ): Promise<void> {
-  const record = await ctx.db
-    .query("agent_device_authorization_attempts")
-    .withIndex("by_operator", (q) => q.eq("operatorUserId", operatorUserId))
-    .unique();
+  const record = await getOneFrom(
+    ctx.db,
+    "agent_device_authorization_attempts",
+    "by_operator",
+    operatorUserId,
+    "operatorUserId",
+  );
   if (record !== null) {
     await ctx.db.delete("agent_device_authorization_attempts", record._id);
   }
@@ -1750,14 +1769,8 @@ async function requireHostKey(ctx: DbCtx, hostId: Id<"agent_hosts">, generation:
 
 async function requireUnusedThumbprint(ctx: DbCtx, thumbprint: string) {
   const [agentKey, hostKey] = await Promise.all([
-    ctx.db
-      .query("agent_keys")
-      .withIndex("by_thumbprint", (q) => q.eq("thumbprint", thumbprint))
-      .unique(),
-    ctx.db
-      .query("agent_host_keys")
-      .withIndex("by_thumbprint", (q) => q.eq("thumbprint", thumbprint))
-      .unique(),
+    getOneFrom(ctx.db, "agent_keys", "by_thumbprint", thumbprint, "thumbprint"),
+    getOneFrom(ctx.db, "agent_host_keys", "by_thumbprint", thumbprint, "thumbprint"),
   ]);
   if (agentKey !== null || hostKey !== null) {
     throw new Error("Agent Auth public key is already registered");

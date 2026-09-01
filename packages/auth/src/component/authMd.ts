@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { getOneFrom } from "convex-helpers/server/relationships";
 
 import { bytesToBase64url } from "../convex-runtime/native/password.js";
 import type { Doc, Id } from "./_generated/dataModel.js";
@@ -139,12 +140,13 @@ export const completeServiceAuthClaim = mutation({
   returns: claimCompletionResultValidator,
   handler: async (ctx, args) => {
     const now = Date.now();
-    const registration = await ctx.db
-      .query("auth_md_registrations")
-      .withIndex("by_claim_view_token_hash", (q) =>
-        q.eq("claimViewTokenHash", requireHash(args.claimViewTokenHash, "claimViewTokenHash")),
-      )
-      .unique();
+    const registration = await getOneFrom(
+      ctx.db,
+      "auth_md_registrations",
+      "by_claim_view_token_hash",
+      requireHash(args.claimViewTokenHash, "claimViewTokenHash"),
+      "claimViewTokenHash",
+    );
     if (registration === null || registration.status !== "pending") {
       return invalidClaim();
     }
@@ -195,12 +197,13 @@ export const pollServiceAuthClaim = mutation({
   args: { claimTokenHash: v.string() },
   returns: claimPollResultValidator,
   handler: async (ctx, args) => {
-    const registration = await ctx.db
-      .query("auth_md_registrations")
-      .withIndex("by_claim_token_hash", (q) =>
-        q.eq("claimTokenHash", requireHash(args.claimTokenHash, "claimTokenHash")),
-      )
-      .unique();
+    const registration = await getOneFrom(
+      ctx.db,
+      "auth_md_registrations",
+      "by_claim_token_hash",
+      requireHash(args.claimTokenHash, "claimTokenHash"),
+      "claimTokenHash",
+    );
     if (registration === null) return { status: "expired_token" } as const;
     const now = Date.now();
     if (
@@ -690,16 +693,20 @@ async function requireUnusedCeremonySecrets(
   input: { claimTokenHash: string; claimViewTokenHash: string },
 ): Promise<void> {
   const [claimToken, claimViewToken] = await Promise.all([
-    ctx.db
-      .query("auth_md_registrations")
-      .withIndex("by_claim_token_hash", (q) => q.eq("claimTokenHash", input.claimTokenHash))
-      .unique(),
-    ctx.db
-      .query("auth_md_registrations")
-      .withIndex("by_claim_view_token_hash", (q) =>
-        q.eq("claimViewTokenHash", input.claimViewTokenHash),
-      )
-      .unique(),
+    getOneFrom(
+      ctx.db,
+      "auth_md_registrations",
+      "by_claim_token_hash",
+      input.claimTokenHash,
+      "claimTokenHash",
+    ),
+    getOneFrom(
+      ctx.db,
+      "auth_md_registrations",
+      "by_claim_view_token_hash",
+      input.claimViewTokenHash,
+      "claimViewTokenHash",
+    ),
   ]);
   if (claimToken !== null || claimViewToken !== null) {
     throw new Error("auth.md ceremony secret is already registered");

@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { getOneFrom } from "convex-helpers/server/relationships";
 import { mutation, query } from "../_generated/server.js";
 
 export const createVerifier = mutation({
@@ -45,10 +46,13 @@ export const getVerifierByVerifierId = query({
     }),
   ),
   handler: async (ctx, args) => {
-    return await ctx.db
-      .query("authVerifiers")
-      .withIndex("by_verifier_id", (q) => q.eq("verifierId", args.verifierId))
-      .unique();
+    return await getOneFrom(
+      ctx.db,
+      "authVerifiers",
+      "by_verifier_id",
+      args.verifierId,
+      "verifierId",
+    );
   },
 });
 
@@ -74,10 +78,13 @@ export const consumeVerifier = mutation({
   ),
   handler: async (ctx, args) => {
     const now = Date.now();
-    const verifier = await ctx.db
-      .query("authVerifiers")
-      .withIndex("by_verifier_id", (q) => q.eq("verifierId", args.verifierId))
-      .unique();
+    const verifier = await getOneFrom(
+      ctx.db,
+      "authVerifiers",
+      "by_verifier_id",
+      args.verifierId,
+      "verifierId",
+    );
     if (!verifier || verifier.consumedAt || verifier.expiresAt <= now) {
       return null;
     }

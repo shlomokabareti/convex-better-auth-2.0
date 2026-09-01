@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { getOneFrom } from "convex-helpers/server/relationships";
 import { mutation, query } from "../_generated/server.js";
 
 const MAX_REFRESH_TOKENS_PER_SESSION = 10;
@@ -40,10 +41,13 @@ export const getRefreshTokenByTokenHash = query({
     }),
   ),
   handler: async (ctx, args) => {
-    return await ctx.db
-      .query("authRefreshTokens")
-      .withIndex("by_token_hash", (q) => q.eq("tokenHash", args.tokenHash))
-      .unique();
+    return await getOneFrom(
+      ctx.db,
+      "authRefreshTokens",
+      "by_token_hash",
+      args.tokenHash,
+      "tokenHash",
+    );
   },
 });
 
@@ -65,10 +69,13 @@ export const consumeRefreshToken = mutation({
   ),
   handler: async (ctx, args) => {
     const now = Date.now();
-    const token = await ctx.db
-      .query("authRefreshTokens")
-      .withIndex("by_token_hash", (q) => q.eq("tokenHash", args.tokenHash))
-      .unique();
+    const token = await getOneFrom(
+      ctx.db,
+      "authRefreshTokens",
+      "by_token_hash",
+      args.tokenHash,
+      "tokenHash",
+    );
     if (!token || token.revokedAt || token.expiresAt <= now) {
       return null;
     }

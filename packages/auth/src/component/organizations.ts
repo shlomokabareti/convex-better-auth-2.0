@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { getOneFrom } from "convex-helpers/server/relationships";
 
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
@@ -986,10 +987,13 @@ export const getInvitationByEmailId = query({
   },
   returns: v.union(v.null(), invitationDocValidator),
   handler: async (ctx, { emailId }) => {
-    return await ctx.db
-      .query("organization_invitations")
-      .withIndex("by_email_id", (q) => q.eq("emailId", emailId))
-      .unique();
+    return await getOneFrom(
+      ctx.db,
+      "organization_invitations",
+      "by_email_id",
+      emailId,
+      "emailId",
+    );
   },
 });
 
@@ -1255,10 +1259,7 @@ export const recordInvitationEmailDelivery = mutation({
 });
 
 async function findOrganizationBySlug(ctx: DbCtx, slug: string) {
-  return await ctx.db
-    .query("organizations")
-    .withIndex("by_slug", (q) => q.eq("slug", slug))
-    .unique();
+  return await getOneFrom(ctx.db, "organizations", "by_slug", slug, "slug");
 }
 
 async function findRoleByKey(
@@ -1613,10 +1614,13 @@ async function findInvitationByTokenHash(
   ctx: DbCtx,
   tokenHash: string,
 ): Promise<Doc<"organization_invitations"> | null> {
-  return await ctx.db
-    .query("organization_invitations")
-    .withIndex("by_token_hash", (q) => q.eq("tokenHash", tokenHash))
-    .unique();
+  return await getOneFrom(
+    ctx.db,
+    "organization_invitations",
+    "by_token_hash",
+    tokenHash,
+    "tokenHash",
+  );
 }
 
 async function requireOrganization(
