@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { getPage } from "convex-helpers/server/pagination";
 
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
@@ -8,7 +9,7 @@ import {
   hashApiKeySecret,
   timingSafeEqualString,
 } from "./convex/src/machine/apiKeySecret.js";
-import {
+import schema, {
   apiKeyEnvironmentValidator,
   apiKeyOwnerTypeValidator,
   apiKeyStatusValidator,
@@ -375,14 +376,15 @@ export const getApiKeyByRequestId = query({
   },
   returns: v.union(v.null(), apiKeyDocValidator),
   handler: async (ctx, { organizationId, requestId }) => {
-    return await ctx.db
-      .query("api_keys")
-      .withIndex("by_organization_and_request_id", (q) =>
-        q
-          .eq("organizationId", organizationId)
-          .eq("requestId", normalizeRequired(requestId, "requestId")),
-      )
-      .first();
+    const { page } = await getPage(ctx, {
+      table: "api_keys",
+      index: "by_organization_and_request_id",
+      startIndexKey: [organizationId, normalizeRequired(requestId, "requestId")],
+      endIndexKey: [organizationId, normalizeRequired(requestId, "requestId")],
+      absoluteMaxRows: 1,
+      schema,
+    });
+    return page[0] ?? null;
   },
 });
 
@@ -394,17 +396,18 @@ export const listApiKeysByOrganization = query({
   },
   returns: v.array(apiKeyDocValidator),
   handler: async (ctx, { organizationId, status, limit }) => {
-    const queryBuilder =
-      status === undefined
-        ? ctx.db
-            .query("api_keys")
-            .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
-        : ctx.db
-            .query("api_keys")
-            .withIndex("by_org_status", (q) =>
-              q.eq("organizationId", organizationId).eq("status", status),
-            );
-    return await queryBuilder.take(resolveListLimit(limit));
+    const resolvedLimit = resolveListLimit(limit);
+    const index = status === undefined ? "by_organization" : "by_org_status";
+    const startIndexKey = status === undefined ? [organizationId] : [organizationId, status];
+    const { page } = await getPage(ctx, {
+      table: "api_keys",
+      index,
+      startIndexKey,
+      endIndexKey: startIndexKey,
+      absoluteMaxRows: resolvedLimit,
+      schema,
+    });
+    return page;
   },
 });
 
@@ -417,17 +420,18 @@ export const listApiKeysByServicePrincipal = query({
   returns: v.array(apiKeyDocValidator),
   handler: async (ctx, { servicePrincipalId, status, limit }) => {
     const resolvedLimit = resolveListLimit(limit);
-    return status === undefined
-      ? await ctx.db
-          .query("api_keys")
-          .withIndex("by_owner_service", (q) => q.eq("ownerServicePrincipalId", servicePrincipalId))
-          .take(resolvedLimit)
-      : await ctx.db
-          .query("api_keys")
-          .withIndex("by_owner_service_status", (q) =>
-            q.eq("ownerServicePrincipalId", servicePrincipalId).eq("status", status),
-          )
-          .take(resolvedLimit);
+    const index = status === undefined ? "by_owner_service" : "by_owner_service_status";
+    const startIndexKey =
+      status === undefined ? [servicePrincipalId] : [servicePrincipalId, status];
+    const { page } = await getPage(ctx, {
+      table: "api_keys",
+      index,
+      startIndexKey,
+      endIndexKey: startIndexKey,
+      absoluteMaxRows: resolvedLimit,
+      schema,
+    });
+    return page;
   },
 });
 
@@ -500,10 +504,15 @@ export const touchApiKeyLastUsed = mutation({
 });
 
 async function findApiKeyByPrefix(ctx: DbCtx, keyPrefix: string): Promise<Doc<"api_keys"> | null> {
-  return await ctx.db
-    .query("api_keys")
-    .withIndex("by_key_prefix", (q) => q.eq("keyPrefix", keyPrefix))
-    .first();
+  const { page } = await getPage(ctx, {
+    table: "api_keys",
+    index: "by_key_prefix",
+    startIndexKey: [keyPrefix],
+    endIndexKey: [keyPrefix],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
 }
 
 async function assertApiKeyPrefixAvailable(

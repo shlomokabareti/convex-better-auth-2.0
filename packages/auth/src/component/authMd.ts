@@ -1,10 +1,12 @@
 import { v } from "convex/values";
+import { getPage } from "convex-helpers/server/pagination";
 import { getOneFrom } from "convex-helpers/server/relationships";
 
 import { bytesToBase64url } from "../convex-runtime/native/password.js";
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { mutation, query } from "./_generated/server.js";
+import schema from "./schema.js";
 
 const MAX_SCOPES = 64;
 const MAX_SCOPE_LENGTH = 128;
@@ -598,12 +600,15 @@ async function inspectUserOrganizationAuthority(
   ) {
     return { active: false, permissions: [] };
   }
-  const membership = await ctx.db
-    .query("organization_members")
-    .withIndex("by_user_organization", (q) =>
-      q.eq("userId", userId).eq("organizationId", organizationId),
-    )
-    .unique();
+  const { page } = await getPage(ctx, {
+    table: "organization_members",
+    index: "by_user_organization",
+    startIndexKey: [userId, organizationId],
+    endIndexKey: [userId, organizationId],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  const membership = page[0] ?? null;
   if (membership === null || membership.status !== "active") {
     return { active: false, permissions: [] };
   }

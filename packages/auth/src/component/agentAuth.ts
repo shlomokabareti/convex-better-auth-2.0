@@ -1,5 +1,6 @@
 import { intersectPermissions } from "../compat/permissions";
 import { v } from "convex/values";
+import { getPage } from "convex-helpers/server/pagination";
 import { getOneFrom } from "convex-helpers/server/relationships";
 
 import { base64urlToBytes, bytesToBase64url } from "../convex-runtime/native/password.js";
@@ -7,7 +8,7 @@ import { internal } from "./_generated/api.js";
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { internalMutation, mutation, query } from "./_generated/server.js";
-import {
+import schema, {
   agentCapabilityGrantStatusValidator,
   agentDeviceAuthorizationStatusValidator,
   agentHostStatusValidator,
@@ -775,12 +776,7 @@ export const setAgentCapabilityGrantStatus = mutation({
     const agent = await requireAgentInOrganization(ctx, args.agentId, args.organizationId);
     await requireActiveOperator(ctx, args.organizationId, args.operatorUserId);
     const capability = requireText(args.capability, "capability");
-    const grant = await ctx.db
-      .query("agent_capability_grants")
-      .withIndex("by_agent_capability", (q) =>
-        q.eq("agentId", agent._id).eq("capability", capability),
-      )
-      .unique();
+    const grant = await findAgentCapabilityGrant(ctx, agent._id, capability);
     if (grant === null) throw new Error("Agent capability grant not found");
     if (args.status === "pending") {
       throw new Error("Agent capability grant cannot transition back to pending");
@@ -1215,10 +1211,14 @@ export const cleanupExpiredAgentReplayRecords = mutation({
     const now = Date.now();
     const limit = args.limit ?? MAX_REPLAY_CLEANUP_BATCH;
     requireReplayCleanupLimit(limit);
-    const expired = await ctx.db
-      .query("agent_replay_records")
-      .withIndex("by_expiry", (q) => q.lte("expiresAt", now))
-      .take(limit);
+    const { page: expired } = await getPage(ctx, {
+      table: "agent_replay_records",
+      index: "by_expiry",
+      endIndexKey: [now],
+      endInclusive: true,
+      absoluteMaxRows: limit,
+      schema,
+    });
     await Promise.all(
       expired.map(async (record) => {
         await ctx.db.delete("agent_replay_records", record._id);
@@ -1237,10 +1237,14 @@ export const cleanupExpiredAgentHostReplayRecords = mutation({
     const now = Date.now();
     const limit = args.limit ?? MAX_REPLAY_CLEANUP_BATCH;
     requireReplayCleanupLimit(limit);
-    const expired = await ctx.db
-      .query("agent_host_replay_records")
-      .withIndex("by_expiry", (q) => q.lte("expiresAt", now))
-      .take(limit);
+    const { page: expired } = await getPage(ctx, {
+      table: "agent_host_replay_records",
+      index: "by_expiry",
+      endIndexKey: [now],
+      endInclusive: true,
+      absoluteMaxRows: limit,
+      schema,
+    });
     await Promise.all(
       expired.map(async (record) => await ctx.db.delete("agent_host_replay_records", record._id)),
     );
@@ -1256,10 +1260,14 @@ export const cascadeRevokedAgentHost = internalMutation({
   handler: async (ctx, args) => {
     const host = await ctx.db.get("agent_hosts", args.hostId);
     if (host === null || host.status !== "revoked") return null;
-    const agents = await ctx.db
-      .query("agents")
-      .withIndex("by_host_status", (q) => q.eq("hostId", host._id).eq("status", args.phase))
-      .take(HOST_REVOCATION_BATCH_SIZE);
+    const { page: agents } = await getPage(ctx, {
+      table: "agents",
+      index: "by_host_status",
+      startIndexKey: [host._id, args.phase],
+      endIndexKey: [host._id, args.phase],
+      absoluteMaxRows: HOST_REVOCATION_BATCH_SIZE,
+      schema,
+    });
     const now = Date.now();
     await Promise.all(
       agents.map(async (agent) => {
@@ -1365,10 +1373,14 @@ async function readActiveAgentGrants(
   ctx: DbCtx,
   agentId: Id<"agents">,
 ): Promise<Array<Doc<"agent_capability_grants">>> {
-  const grants = await ctx.db
-    .query("agent_capability_grants")
-    .withIndex("by_agent_status", (q) => q.eq("agentId", agentId).eq("status", "active"))
-    .take(MAX_AGENT_GRANTS + 1);
+  const { page: grants } = await getPage(ctx, {
+    table: "agent_capability_grants",
+    index: "by_agent_status",
+    startIndexKey: [agentId, "active"],
+    endIndexKey: [agentId, "active"],
+    absoluteMaxRows: MAX_AGENT_GRANTS + 1,
+    schema,
+  });
   if (grants.length > MAX_AGENT_GRANTS) {
     throw new Error("Agent capability grant limit exceeded");
   }
@@ -1388,10 +1400,14 @@ async function revokeAgentGrants(
   agentId: Id<"agents">,
   input: { now: number; reason: string },
 ): Promise<void> {
-  const grants = await ctx.db
-    .query("agent_capability_grants")
-    .withIndex("by_agent", (q) => q.eq("agentId", agentId))
-    .take(MAX_AGENT_GRANTS + 1);
+  const { page: grants } = await getPage(ctx, {
+    table: "agent_capability_grants",
+    index: "by_agent",
+    startIndexKey: [agentId],
+    endIndexKey: [agentId],
+    absoluteMaxRows: MAX_AGENT_GRANTS + 1,
+    schema,
+  });
   if (grants.length > MAX_AGENT_GRANTS) {
     throw new Error("Agent capability grant limit exceeded");
   }
@@ -1416,14 +1432,22 @@ async function revokeAgentDependents(
 ): Promise<void> {
   const [key, pendingAuthorizations, approvedAuthorizations] = await Promise.all([
     requireAgentKey(ctx, agent._id, agent.activeKeyGeneration),
-    ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_agent_status", (q) => q.eq("agentId", agent._id).eq("status", "pending"))
-      .take(2),
-    ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_agent_status", (q) => q.eq("agentId", agent._id).eq("status", "approved"))
-      .take(2),
+    getPage(ctx, {
+      table: "agent_device_authorizations",
+      index: "by_agent_status",
+      startIndexKey: [agent._id, "pending"],
+      endIndexKey: [agent._id, "pending"],
+      absoluteMaxRows: 2,
+      schema,
+    }).then((r) => r.page),
+    getPage(ctx, {
+      table: "agent_device_authorizations",
+      index: "by_agent_status",
+      startIndexKey: [agent._id, "approved"],
+      endIndexKey: [agent._id, "approved"],
+      absoluteMaxRows: 2,
+      schema,
+    }).then((r) => r.page),
   ]);
   if (pendingAuthorizations.length > 1 || approvedAuthorizations.length > 1) {
     throw new Error("Agent has multiple pending device authorizations");
@@ -1645,12 +1669,7 @@ async function requireActiveOperator(
   await requireActiveOrganization(ctx, organizationId);
   const user = await ctx.db.get("users", userId);
   if (user === null || !user.isActive) throw new Error("User is not active");
-  const membership = await ctx.db
-    .query("organization_members")
-    .withIndex("by_user_organization", (q) =>
-      q.eq("userId", userId).eq("organizationId", organizationId),
-    )
-    .unique();
+  const membership = await findOrganizationMemberByUser(ctx, userId, organizationId);
   if (membership === null || membership.status !== "active") {
     throw new Error("User is not an active organization member");
   }
@@ -1702,12 +1721,7 @@ async function inspectStoredModeOwner(
   if (user === null || !user.isActive) {
     return { active: false, permissions: null };
   }
-  const membership = await ctx.db
-    .query("organization_members")
-    .withIndex("by_user_organization", (q) =>
-      q.eq("userId", delegatedUserId).eq("organizationId", agent.organizationId),
-    )
-    .unique();
+  const membership = await findOrganizationMemberByUser(ctx, delegatedUserId, agent.organizationId);
   if (membership === null || membership.status !== "active") {
     return { active: false, permissions: null };
   }
@@ -1749,20 +1763,74 @@ async function requireAgentInOrganization(
   return agent;
 }
 
+async function findAgentCapabilityGrant(ctx: DbCtx, agentId: Id<"agents">, capability: string) {
+  const { page } = await getPage(ctx, {
+    table: "agent_capability_grants",
+    index: "by_agent_capability",
+    startIndexKey: [agentId, capability],
+    endIndexKey: [agentId, capability],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
+async function findOrganizationMemberByUser(
+  ctx: DbCtx,
+  userId: Id<"users">,
+  organizationId: Id<"organizations">,
+) {
+  const { page } = await getPage(ctx, {
+    table: "organization_members",
+    index: "by_user_organization",
+    startIndexKey: [userId, organizationId],
+    endIndexKey: [userId, organizationId],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
+async function findAgentKeyByAgentAndGeneration(
+  ctx: DbCtx,
+  agentId: Id<"agents">,
+  generation: number,
+) {
+  const { page } = await getPage(ctx, {
+    table: "agent_keys",
+    index: "by_agent_generation",
+    startIndexKey: [agentId, generation],
+    endIndexKey: [agentId, generation],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
 async function requireAgentKey(ctx: DbCtx, agentId: Id<"agents">, generation: number) {
-  const key = await ctx.db
-    .query("agent_keys")
-    .withIndex("by_agent_generation", (q) => q.eq("agentId", agentId).eq("generation", generation))
-    .unique();
+  const key = await findAgentKeyByAgentAndGeneration(ctx, agentId, generation);
   if (key === null) throw new Error("Agent key not found");
   return key;
 }
 
+async function findHostKeyByHostAndGeneration(
+  ctx: DbCtx,
+  hostId: Id<"agent_hosts">,
+  generation: number,
+) {
+  const { page } = await getPage(ctx, {
+    table: "agent_host_keys",
+    index: "by_host_generation",
+    startIndexKey: [hostId, generation],
+    endIndexKey: [hostId, generation],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
 async function requireHostKey(ctx: DbCtx, hostId: Id<"agent_hosts">, generation: number) {
-  const key = await ctx.db
-    .query("agent_host_keys")
-    .withIndex("by_host_generation", (q) => q.eq("hostId", hostId).eq("generation", generation))
-    .unique();
+  const key = await findHostKeyByHostAndGeneration(ctx, hostId, generation);
   if (key === null) throw new Error("Agent host key not found");
   return key;
 }

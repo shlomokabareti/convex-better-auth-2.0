@@ -1,9 +1,35 @@
 import { v } from "convex/values";
+import { getPage } from "convex-helpers/server/pagination";
 import { getOneFrom } from "convex-helpers/server/relationships";
-import { mutation, query } from "../_generated/server.js";
+import { mutation, query, type QueryCtx } from "../_generated/server.js";
+import schema from "../schema.js";
 
 const MAX_REFRESH_TOKENS_PER_SESSION = 10;
 const MAX_REFRESH_TOKENS_PER_USER = 1000;
+
+async function getRefreshTokensBySession(ctx: { db: QueryCtx["db"] }, sessionId: string) {
+  const { page } = await getPage(ctx, {
+    table: "authRefreshTokens",
+    index: "by_session",
+    startIndexKey: [sessionId],
+    endIndexKey: [sessionId],
+    absoluteMaxRows: MAX_REFRESH_TOKENS_PER_SESSION,
+    schema,
+  });
+  return page;
+}
+
+async function getRefreshTokensByUser(ctx: { db: QueryCtx["db"] }, userId: string) {
+  const { page } = await getPage(ctx, {
+    table: "authRefreshTokens",
+    index: "by_user",
+    startIndexKey: [userId],
+    endIndexKey: [userId],
+    absoluteMaxRows: MAX_REFRESH_TOKENS_PER_USER,
+    schema,
+  });
+  return page;
+}
 
 export const createRefreshToken = mutation({
   args: {
@@ -89,10 +115,7 @@ export const revokeRefreshTokensForSession = mutation({
   returns: v.number(),
   handler: async (ctx, args) => {
     const now = Date.now();
-    const tokens = await ctx.db
-      .query("authRefreshTokens")
-      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
-      .take(MAX_REFRESH_TOKENS_PER_SESSION);
+    const tokens = await getRefreshTokensBySession(ctx, args.sessionId);
     let revoked = 0;
     for (const token of tokens) {
       if (!token.revokedAt && token.expiresAt > now) {
@@ -109,10 +132,7 @@ export const revokeRefreshTokensForUser = mutation({
   returns: v.number(),
   handler: async (ctx, args) => {
     const now = Date.now();
-    const tokens = await ctx.db
-      .query("authRefreshTokens")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .take(MAX_REFRESH_TOKENS_PER_USER);
+    const tokens = await getRefreshTokensByUser(ctx, args.userId);
     let revoked = 0;
     for (const token of tokens) {
       if (!token.revokedAt && token.expiresAt > now) {

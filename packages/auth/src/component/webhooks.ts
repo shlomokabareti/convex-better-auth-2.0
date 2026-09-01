@@ -1,9 +1,10 @@
 import { v } from "convex/values";
+import { getPage } from "convex-helpers/server/pagination";
 
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { mutation, query } from "./_generated/server.js";
-import {
+import schema, {
   webhookEndpointStatusValidator,
   webhookDeliveryStatusValidator,
   webhookFailureKindValidator,
@@ -193,17 +194,16 @@ export const listWebhookEndpointsByOrganization = query({
   returns: v.array(webhookEndpointDocValidator),
   handler: async (ctx, { organizationId, status, limit }) => {
     const resolvedLimit = resolveListLimit(limit);
-    const queryBuilder =
-      status === undefined
-        ? ctx.db
-            .query("webhook_endpoints")
-            .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
-        : ctx.db
-            .query("webhook_endpoints")
-            .withIndex("by_org_status", (q) =>
-              q.eq("organizationId", organizationId).eq("status", status),
-            );
-    const endpoints = await queryBuilder.take(resolvedLimit);
+    const index = status === undefined ? "by_organization" : "by_org_status";
+    const startIndexKey = status === undefined ? [organizationId] : [organizationId, status];
+    const { page: endpoints } = await getPage(ctx, {
+      table: "webhook_endpoints",
+      index,
+      startIndexKey,
+      endIndexKey: startIndexKey,
+      absoluteMaxRows: resolvedLimit,
+      schema,
+    });
     return endpoints.map((endpoint) => ({
       _id: endpoint._id,
       _creationTime: endpoint._creationTime,
@@ -496,17 +496,17 @@ export const listWebhookDeliveriesByEndpoint = query({
   returns: v.array(webhookDeliveryDocValidator),
   handler: async (ctx, { endpointId, status, limit }) => {
     const resolvedLimit = resolveListLimit(limit);
-    const queryBuilder =
-      status === undefined
-        ? ctx.db
-            .query("webhook_deliveries")
-            .withIndex("by_endpoint", (q) => q.eq("endpointId", endpointId))
-        : ctx.db
-            .query("webhook_deliveries")
-            .withIndex("by_endpoint_status", (q) =>
-              q.eq("endpointId", endpointId).eq("status", status),
-            );
-    return await queryBuilder.take(resolvedLimit);
+    const index = status === undefined ? "by_endpoint" : "by_endpoint_status";
+    const startIndexKey = status === undefined ? [endpointId] : [endpointId, status];
+    const { page } = await getPage(ctx, {
+      table: "webhook_deliveries",
+      index,
+      startIndexKey,
+      endIndexKey: startIndexKey,
+      absoluteMaxRows: resolvedLimit,
+      schema,
+    });
+    return page;
   },
 });
 
@@ -522,14 +522,19 @@ export const listPendingWebhookDeliveries = query({
     // collecting the entire due-set and filtering status in JS — that scan grew with the
     // webhook_deliveries table (every delivery ever) and, fired by the retry cron on every
     // deployment, was a top Convex DB-I/O burner.
-    return await ctx.db
-      .query("webhook_deliveries")
-      .withIndex("by_status_next_attempt", (q) =>
-        beforeNextAttemptAt !== undefined
-          ? q.eq("status", "pending").lte("nextAttemptAt", beforeNextAttemptAt)
-          : q.eq("status", "pending"),
-      )
-      .take(resolvedLimit);
+    const startIndexKey: (string | number)[] = ["pending"];
+    const endIndexKey: (string | number)[] =
+      beforeNextAttemptAt !== undefined ? ["pending", beforeNextAttemptAt] : ["pending"];
+    const { page } = await getPage(ctx, {
+      table: "webhook_deliveries",
+      index: "by_status_next_attempt",
+      startIndexKey,
+      endIndexKey,
+      endInclusive: beforeNextAttemptAt !== undefined,
+      absoluteMaxRows: resolvedLimit,
+      schema,
+    });
+    return page;
   },
 });
 
@@ -541,20 +546,27 @@ function endpointSubscribesTo(subscribedEventTypes: readonly string[], eventType
   );
 }
 
+async function getActiveEndpointsByOrg(
+  ctx: DbCtx,
+  organizationId: Id<"organizations"> | undefined,
+): Promise<Doc<"webhook_endpoints">[]> {
+  const { page } = await getPage(ctx, {
+    table: "webhook_endpoints",
+    index: "by_org_status",
+    startIndexKey: [organizationId, "active"],
+    endIndexKey: [organizationId, "active"],
+    absoluteMaxRows: MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE + 1,
+    schema,
+  });
+  return assertEndpointSetWithinLimit(page);
+}
+
 async function listActiveEndpointsForEvent(
   ctx: DbCtx,
   organizationId: Id<"organizations"> | undefined,
 ): Promise<Doc<"webhook_endpoints">[]> {
   if (organizationId === undefined) {
-    // Global events reach only global endpoints (no organizationId). Previously
-    // this used by_status and returned every active endpoint across all tenants —
-    // a cross-tenant leak and Convex cost violation. Scoped to undefined so only
-    // platform/cache subscribers receive global events.
-    const global = await ctx.db
-      .query("webhook_endpoints")
-      .withIndex("by_org_status", (q) => q.eq("organizationId", undefined).eq("status", "active"))
-      .take(MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE + 1);
-    return assertEndpointSetWithinLimit(global);
+    return await getActiveEndpointsByOrg(ctx, organizationId);
   }
   // An org-scoped event reaches that org's endpoints AND any global (no-org)
   // endpoints. Global endpoints are platform/cache subscribers — e.g. a consumer
@@ -562,19 +574,11 @@ async function listActiveEndpointsForEvent(
   // listener that must catch `organization.created` (whose org id can't have been
   // subscribed to in advance). Both queries stay indexed (by_org_status); the two
   // result sets are disjoint by organizationId, so no dedup is needed.
-  const scoped = await ctx.db
-    .query("webhook_endpoints")
-    .withIndex("by_org_status", (q) =>
-      q.eq("organizationId", organizationId).eq("status", "active"),
-    )
-    .take(MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE + 1);
-  // endpoints are platform-level subscribers; their count is bounded by the
-  // number of platform integrations, not by tenant growth.
-  const global = await ctx.db
-    .query("webhook_endpoints")
-    .withIndex("by_org_status", (q) => q.eq("organizationId", undefined).eq("status", "active"))
-    .take(MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE + 1);
-  return [...assertEndpointSetWithinLimit(scoped), ...assertEndpointSetWithinLimit(global)];
+  const [scoped, global] = await Promise.all([
+    getActiveEndpointsByOrg(ctx, organizationId),
+    getActiveEndpointsByOrg(ctx, undefined),
+  ]);
+  return [...scoped, ...global];
 }
 
 function assertEndpointSetWithinLimit(
@@ -592,12 +596,14 @@ async function assertCanActivateWebhookEndpoint(
   ctx: DbCtx,
   organizationId: Id<"organizations"> | undefined,
 ): Promise<void> {
-  const existingActiveEndpoints = await ctx.db
-    .query("webhook_endpoints")
-    .withIndex("by_org_status", (q) =>
-      q.eq("organizationId", organizationId).eq("status", "active"),
-    )
-    .take(MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE);
+  const { page: existingActiveEndpoints } = await getPage(ctx, {
+    table: "webhook_endpoints",
+    index: "by_org_status",
+    startIndexKey: [organizationId, "active"],
+    endIndexKey: [organizationId, "active"],
+    absoluteMaxRows: MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE,
+    schema,
+  });
   if (existingActiveEndpoints.length >= MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE) {
     throw new Error(
       `A webhook scope supports at most ${MAX_ACTIVE_WEBHOOK_ENDPOINTS_PER_SCOPE} active endpoints`,

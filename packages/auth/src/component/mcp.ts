@@ -11,6 +11,7 @@ import {
   type McpOAuthRefreshTokenRecord,
   type McpOAuthStoredClientRecord,
 } from "../mcp";
+import { getPage } from "convex-helpers/server/pagination";
 import { getOneFrom } from "convex-helpers/server/relationships";
 import { mergedStream, stream } from "convex-helpers/server/stream";
 import { ConvexError, v } from "convex/values";
@@ -256,7 +257,13 @@ export const consumeAuthorizationCode = mutation({
   returns: authorizationCodeResultValidator,
   handler: async (ctx, args) => {
     const now = Date.now();
-    const doc = await getOneFrom(ctx.db, "mcp_oauth_authorization_codes", "by_code", args.code, "code");
+    const doc = await getOneFrom(
+      ctx.db,
+      "mcp_oauth_authorization_codes",
+      "by_code",
+      args.code,
+      "code",
+    );
 
     if (doc === null) {
       return null;
@@ -629,12 +636,16 @@ export const getSigningKey = query({
   handler: async (ctx) => {
     // Signing keys are global rather than per-tenant. Each distinct keyId has one row;
     // rotations retain old rows so in-flight tokens can verify during the retirement window.
-    const active = await ctx.db
-      .query("mcp_oauth_signing_keys")
-      .withIndex("by_status_updated_at", (q) => q.eq("status", "active"))
-      .order("desc")
-      .first();
-    const latestActive = active ?? null;
+    const { page } = await getPage(ctx, {
+      table: "mcp_oauth_signing_keys",
+      index: "by_status_updated_at",
+      startIndexKey: ["active"],
+      endIndexKey: ["active"],
+      order: "desc",
+      absoluteMaxRows: 1,
+      schema,
+    });
+    const latestActive = page[0] ?? null;
     if (latestActive === null) {
       return null;
     }

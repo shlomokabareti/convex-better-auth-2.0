@@ -1,5 +1,7 @@
 import { v } from "convex/values";
+import { getPage } from "convex-helpers/server/pagination";
 import { mutation, query } from "../_generated/server.js";
+import schema from "../schema.js";
 
 export const getNativeIdentityByUser = query({
   args: {
@@ -8,12 +10,15 @@ export const getNativeIdentityByUser = query({
     issuer: v.string(),
   },
   handler: async (ctx, args) => {
-    return await ctx.db
-      .query("auth_identities")
-      .withIndex("by_user_provider_issuer", (q) =>
-        q.eq("userId", args.userId).eq("provider", args.provider).eq("issuer", args.issuer),
-      )
-      .first();
+    const { page } = await getPage(ctx, {
+      table: "auth_identities",
+      index: "by_user_provider_issuer",
+      startIndexKey: [args.userId, args.provider, args.issuer],
+      endIndexKey: [args.userId, args.provider, args.issuer],
+      absoluteMaxRows: 1,
+      schema,
+    });
+    return page[0] ?? null;
   },
 });
 
