@@ -394,6 +394,17 @@ export function addNativeAuthHttpRoutes(
           parsed = {};
         }
 
+        if (
+          parsed.callbackURL &&
+          !isAllowedRedirectUrl(
+            parsed.callbackURL,
+            new URL(request.url).origin,
+            options?.trustedOrigins ?? [],
+          )
+        ) {
+          return buildErrorResponse(400, "invalid_callback_url");
+        }
+
         const token = parsed.token ?? readCookie(request, ACCESS_TOKEN_COOKIE);
         let result;
         try {
