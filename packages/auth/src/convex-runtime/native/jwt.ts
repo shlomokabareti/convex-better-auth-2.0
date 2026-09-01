@@ -31,17 +31,31 @@ export function getJwks(): JSONWebKeySet {
 
 const DEFAULT_TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
 
+const DEFAULT_AUDIENCE = "convex";
+
+function resolveIssuer(): string {
+  const issuer = process.env.CONVEX_SITE_URL;
+  if (issuer === undefined) {
+    throw new Error("CONVEX_SITE_URL environment variable is not set");
+  }
+  return issuer.endsWith("/") ? issuer.slice(0, -1) : issuer;
+}
+
 export async function mintToken(
   sub: string,
   sessionId: string,
   extra: Record<string, unknown> = {},
-  options: { expiresInSeconds?: number } = {},
+  options: { expiresInSeconds?: number; audience?: string; issuer?: string } = {},
 ): Promise<string> {
   const key = await getJwtPrivateKey();
   const expiresInSeconds = options.expiresInSeconds ?? DEFAULT_TOKEN_TTL_SECONDS;
   const exp = new Date(Date.now() + expiresInSeconds * 1000);
+  const issuer = options.issuer ?? resolveIssuer();
+  const audience = options.audience ?? DEFAULT_AUDIENCE;
   return await new SignJWT({ sessionId, ...extra })
     .setProtectedHeader({ alg: "RS256", typ: "JWT" })
+    .setIssuer(issuer)
+    .setAudience(audience)
     .setSubject(sub)
     .setIssuedAt()
     .setExpirationTime(exp)

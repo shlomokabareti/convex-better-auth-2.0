@@ -8,6 +8,7 @@ async function setupTestKeys() {
   const publicJwk = await exportJWK(publicKey);
   process.env.JWT_PRIVATE_KEY = JSON.stringify(privateJwk);
   process.env.JWKS = JSON.stringify({ keys: [publicJwk] });
+  process.env.CONVEX_SITE_URL = "https://test.convex.site";
 }
 
 describe("jwt", () => {
@@ -22,6 +23,8 @@ describe("jwt", () => {
     expect(payload.sub).toBe("user-123");
     expect(payload.sessionId).toBe("session-abc");
     expect(payload.exp).toBeTypeOf("number");
+    expect(payload.iss).toBe("https://test.convex.site");
+    expect(payload.aud).toBe("convex");
   });
 
   it("rejects an invalid token", async () => {

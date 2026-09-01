@@ -52,6 +52,7 @@ async function setupTestKeysAndHashes() {
   const publicJwk = await exportJWK(publicKey);
   process.env.JWT_PRIVATE_KEY = JSON.stringify(privateJwk);
   process.env.JWKS = JSON.stringify({ keys: [publicJwk] });
+  process.env.CONVEX_SITE_URL = "https://test.convex.site";
   defaultPasswordHash = await hashPassword(DEFAULT_PASSWORD);
   defaultToken = await mintToken("user_1", "session_1", { identityId: "identity_1" });
   oneDayToken = await mintToken(

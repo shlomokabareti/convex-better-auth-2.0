@@ -65,4 +65,6 @@ export const {
   twoFactorVerifyBackupCode,
   twoFactorDisable,
   twoFactorGenerateBackupCodes,
+  isAuthenticated,
+  verifySession,
 } = auth;
