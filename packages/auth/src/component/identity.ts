@@ -469,6 +469,108 @@ export const resetPassword = mutation({
   },
 });
 
+const changeEmailResultValidator = v.object({
+  status: v.boolean(),
+  user: v.optional(userReturnValidator),
+  reason: v.optional(v.string()),
+});
+
+export const changeEmail = mutation({
+  args: {
+    tokenHash: v.string(),
+    newEmail: v.string(),
+  },
+  returns: changeEmailResultValidator,
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const normalizedEmail = normalizeEmail(args.newEmail);
+    if (!normalizedEmail) {
+      return { status: false, reason: "invalid_email" };
+    }
+
+    const code = await ctx.db
+      .query("authVerificationCodes")
+      .withIndex("by_token_hash", (q) =>
+        q.eq("tokenHash", args.tokenHash).eq("type", "email_change"),
+      )
+      .unique();
+
+    if (!code) {
+      return { status: false, reason: "invalid" };
+    }
+
+    if (code.consumedAt || code.expiresAt <= now) {
+      return { status: false, reason: "expired" };
+    }
+
+    const user = await ctx.db.get("users", code.userId);
+    if (!user) {
+      return { status: false, reason: "invalid" };
+    }
+
+    if (user.email && user.email.toLowerCase().trim() === normalizedEmail) {
+      return { status: false, reason: "same_email" };
+    }
+
+    const existingUserByEmail = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+      .unique();
+
+    if (existingUserByEmail && existingUserByEmail._id !== user._id) {
+      return { status: false, reason: "email_in_use" };
+    }
+
+    const emailOtpIdentity = await findIdentityByUserAndProvider(ctx, {
+      userId: user._id,
+      provider: "emailOtp",
+      issuer: "native",
+    });
+
+    const passwordIdentity = await findIdentityByUserAndProvider(ctx, {
+      userId: user._id,
+      provider: "password",
+      issuer: "native",
+    });
+
+    const writes: Promise<unknown>[] = [
+      ctx.db.patch(code._id, { consumedAt: now, updatedAt: now }),
+      ctx.db.patch("users", user._id, {
+        email: normalizedEmail,
+        emailVerified: true,
+        updatedAt: now,
+      }),
+    ];
+
+    if (emailOtpIdentity) {
+      writes.push(
+        ctx.db.patch(emailOtpIdentity._id, {
+          subject: normalizedEmail,
+          tokenIdentifier: normalizedEmail,
+          email: normalizedEmail,
+          emailVerified: true,
+          updatedAt: now,
+        }),
+      );
+    }
+
+    if (passwordIdentity) {
+      writes.push(
+        ctx.db.patch(passwordIdentity._id, {
+          email: normalizedEmail,
+          emailVerified: true,
+          updatedAt: now,
+        }),
+      );
+    }
+
+    await Promise.all(writes);
+
+    const userRecord = await ctx.db.get("users", user._id);
+    return { status: true, user: userRecord ? toUserReturn(userRecord) : undefined };
+  },
+});
+
 export const getByIdentity = query({
   args: {
     provider: v.string(),

@@ -119,7 +119,7 @@ export type NativeAuthSignInMagicLinkArgs = {
   metadata?: Record<string, string>;
 };
 
-export type NativeAuthSignInEmailOtpArgs = {
+export type NativeAuthSendVerificationOtpArgs = {
   email: string;
   type?: string;
   name?: string;
@@ -129,7 +129,16 @@ export type NativeAuthVerifyEmailOtpArgs = {
   email: string;
   otp: string;
   type?: string;
+  newPassword?: string;
 };
+
+export type NativeAuthVerifyEmailOtpResult =
+  | NativeAuthSession
+  | NativeAuthVerifyResult
+  | NativeAuthResetResult
+  | NativeAuthChangeEmailResult;
+
+export type NativeAuthChangeEmailResult = { status: boolean; reason?: string };
 export type NativeAuthSignOutArgs = {
   token: string;
   callbackURL?: string;
@@ -217,17 +226,17 @@ export type NativeAuthActions = {
     NativeAuthSignInMagicLinkArgs,
     NativeAuthSendResult
   >;
-  signInEmailOtp: FunctionReference<
+  sendVerificationOtp: FunctionReference<
     "action",
     "public",
-    NativeAuthSignInEmailOtpArgs,
+    NativeAuthSendVerificationOtpArgs,
     NativeAuthSendResult
   >;
   verifyEmailOtp: FunctionReference<
     "action",
     "public",
     NativeAuthVerifyEmailOtpArgs,
-    NativeAuthSession
+    NativeAuthVerifyEmailOtpResult
   >;
 };
 
@@ -394,7 +403,7 @@ export function useAuthActions() {
   const signUpAction = useAction(ctx.signUp);
   const signInAction = useAction(ctx.signIn);
   const signInMagicLinkAction = useAction(ctx.signInMagicLink);
-  const signInEmailOtpAction = useAction(ctx.signInEmailOtp);
+  const sendVerificationOtpAction = useAction(ctx.sendVerificationOtp);
   const verifyEmailOtpAction = useAction(ctx.verifyEmailOtp);
   const signOutAction = useAction(ctx.signOut);
   const updateSessionAction = useAction(ctx.updateSession);
@@ -455,28 +464,42 @@ export function useAuthActions() {
   );
 
   const signInWithEmailOtp = useCallback(
-    async (args: NativeAuthSignInEmailOtpArgs) => {
+    async (args: NativeAuthSendVerificationOtpArgs) => {
       setIsLoading(true);
       try {
-        return await signInEmailOtpAction(args);
+        return await sendVerificationOtpAction({ ...args, type: args.type ?? "sign-in" });
       } finally {
         setIsLoading(false);
       }
     },
-    [signInEmailOtpAction],
+    [sendVerificationOtpAction],
+  );
+
+  const sendVerificationOtp = useCallback(
+    async (args: NativeAuthSendVerificationOtpArgs) => {
+      setIsLoading(true);
+      try {
+        return await sendVerificationOtpAction(args);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [sendVerificationOtpAction],
   );
 
   const verifyEmailOtp = useCallback(
     async (args: NativeAuthVerifyEmailOtpArgs) => {
       setIsLoading(true);
       try {
-        const session = await verifyEmailOtpAction(args);
-        ctx.setToken(session.token ?? null);
-        ctx.setSessionId(session.sessionId ?? null);
-        if (session.refreshToken) {
-          ctx.setRefreshToken(session.refreshToken);
+        const result = await verifyEmailOtpAction(args);
+        if ("token" in result && "refreshToken" in result) {
+          ctx.setToken(result.token ?? null);
+          ctx.setSessionId(result.sessionId ?? null);
+          if (result.refreshToken) {
+            ctx.setRefreshToken(result.refreshToken);
+          }
         }
-        return session;
+        return result;
       } finally {
         setIsLoading(false);
       }
@@ -594,6 +617,7 @@ export function useAuthActions() {
     signIn,
     signInWithMagicLink,
     signInWithEmailOtp,
+    sendVerificationOtp,
     verifyEmailOtp,
     signOut,
     updateSession,
