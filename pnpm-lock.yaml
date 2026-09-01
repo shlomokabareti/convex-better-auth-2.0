@@ -37,12 +37,6 @@ importers:
       convex-auth-core:
         specifier: workspace:*
         version: link:../core
-      convex-auth-react:
-        specifier: workspace:*
-        version: link:../react
-      convex-auth-react-native:
-        specifier: workspace:*
-        version: link:../react-native
       convex-helpers:
         specifier: ^0.1.80
         version: 0.1.123(@standard-schema/spec@1.1.0)(convex@1.45.0(react@19.2.8))(hono@4.13.5)(react@19.2.8)(typescript@5.9.3)(zod@4.4.3)
@@ -71,6 +65,12 @@ importers:
       convex:
         specifier: ^1.45.0
         version: 1.45.0(react@19.2.8)
+      convex-auth-react:
+        specifier: workspace:*
+        version: link:../react
+      convex-auth-react-native:
+        specifier: workspace:*
+        version: link:../react-native
       convex-better-auth:
         specifier: workspace:*
         version: link:../better-auth

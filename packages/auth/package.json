@@ -145,8 +145,6 @@
   },
   "dependencies": {
     "convex-auth-core": "workspace:*",
-    "convex-auth-react": "workspace:*",
-    "convex-auth-react-native": "workspace:*",
     "convex-helpers": "^0.1.80",
     "jose": "^6.2.2",
     "set-cookie-parser": "^3.1.2"
@@ -156,6 +154,8 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "convex": "^1.45.0",
+    "convex-auth-react": "workspace:*",
+    "convex-auth-react-native": "workspace:*",
     "convex-better-auth": "workspace:*",
     "convex-test": "0.0.51",
     "typescript": "^5.7.0",
@@ -164,6 +164,8 @@
   },
   "peerDependencies": {
     "convex": ">=1.39.0",
+    "convex-auth-react": "workspace:*",
+    "convex-auth-react-native": "workspace:*",
     "convex-better-auth": ">=2.0.0",
     "react": ">=19.0.0",
     "react-dom": ">=19.0.0"
@@ -171,6 +173,12 @@
   "peerDependenciesMeta": {
     "convex": {
       "optional": false
+    },
+    "convex-auth-react": {
+      "optional": true
+    },
+    "convex-auth-react-native": {
+      "optional": true
     },
     "convex-better-auth": {
       "optional": true
