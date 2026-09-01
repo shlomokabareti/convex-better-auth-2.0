@@ -6,6 +6,7 @@ import { parse } from "../helpers/index.js";
 import { hashToken, isTokenExpired } from "./tokens.js";
 import { handleUpdateSession } from "./updateSession.js";
 import type { NativeEmailAndPasswordFunctionReferences } from "./provider.js";
+import type { NativeMagicLinkFunctionReferences } from "./magicLink.js";
 import { toNativeAuthUser } from "./types.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 import { isAllowedRedirectUrl } from "./callback.js";
@@ -13,6 +14,7 @@ import { validateCsrfHeaders } from "./csrf.js";
 
 const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
+const SESSION_ID_COOKIE = "convex-auth-session-id";
 const TWO_FACTOR_PENDING_COOKIE = "convex-auth-two-factor";
 const TWO_FACTOR_TRUSTED_DEVICE_COOKIE = "convex-auth-trusted-device";
 const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
@@ -201,7 +203,7 @@ function checkCsrf(request: Request, options?: NativeAuthHttpOptions): Response 
 export function addNativeAuthHttpRoutes(
   http: HttpRouter,
   component?: NativeEmailAndPasswordComponentHandle,
-  actions?: NativeEmailAndPasswordFunctionReferences,
+  actions?: NativeEmailAndPasswordFunctionReferences & Partial<NativeMagicLinkFunctionReferences>,
   options?: NativeAuthHttpOptions,
 ): void {
   http.route({
@@ -723,6 +725,92 @@ export function addNativeAuthHttpRoutes(
         });
       }),
     });
+
+    const verifyMagicLinkAction = actions.verifyMagicLink;
+    if (verifyMagicLinkAction) {
+      http.route({
+        path: "/api/auth/magic-link/verify",
+        method: "GET",
+        handler: httpActionGeneric(async (ctx, request) => {
+          const url = new URL(request.url);
+          const requestOrigin = url.origin;
+          const token = url.searchParams.get("token") ?? "";
+          const callbackURL = url.searchParams.get("callbackURL") ?? "/";
+          const newUserCallbackURL = url.searchParams.get("newUserCallbackURL");
+          const errorCallbackURL = url.searchParams.get("errorCallbackURL");
+
+          if (!token) {
+            return buildErrorRedirect(callbackURL, "INVALID_TOKEN");
+          }
+
+          if (!isAllowedRedirectUrl(callbackURL, requestOrigin, options?.trustedOrigins ?? [])) {
+            return buildErrorResponse(400, "invalid_callback_url");
+          }
+
+          const redirectTarget = errorCallbackURL ?? callbackURL;
+
+          let result;
+          try {
+            result = await ctx.runAction(verifyMagicLinkAction, {
+              token,
+              callbackURL,
+              newUserCallbackURL: newUserCallbackURL ?? undefined,
+              errorCallbackURL: errorCallbackURL ?? undefined,
+            });
+          } catch (error) {
+            const reason = error instanceof Error ? error.message : "INVALID_TOKEN";
+            return buildErrorRedirect(redirectTarget, reason);
+          }
+
+          if (!result.token) {
+            return buildErrorRedirect(redirectTarget, "INVALID_TOKEN");
+          }
+
+          const expiry = getTokenExpiry(result.token);
+          const tokenMaxAgeSeconds =
+            expiry !== null ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
+
+          const headers = new Headers();
+          headers.append(
+            "Set-Cookie",
+            setCookieHeader(ACCESS_TOKEN_COOKIE, result.token, tokenMaxAgeSeconds),
+          );
+          headers.append(
+            "Set-Cookie",
+            setCookieHeader(
+              REFRESH_TOKEN_COOKIE,
+              result.refreshToken ?? "",
+              REFRESH_TOKEN_MAX_AGE_SECONDS,
+            ),
+          );
+          if (result.sessionId) {
+            headers.append(
+              "Set-Cookie",
+              setCookieHeader(SESSION_ID_COOKIE, result.sessionId, REFRESH_TOKEN_MAX_AGE_SECONDS),
+            );
+          }
+
+          const redirect = new URL(
+            callbackURL,
+            callbackURL.startsWith("http") ? undefined : "http://localhost",
+          );
+          redirect.searchParams.set("token", result.token);
+          if (result.refreshToken) {
+            redirect.searchParams.set("refreshToken", result.refreshToken);
+          }
+          if (result.sessionId) {
+            redirect.searchParams.set("sessionId", result.sessionId);
+          }
+          return new Response(null, {
+            status: 302,
+            headers: {
+              ...Object.fromEntries(headers),
+              Location: redirect.toString(),
+            },
+          });
+        }),
+      });
+    }
   }
 
   if (!component) {

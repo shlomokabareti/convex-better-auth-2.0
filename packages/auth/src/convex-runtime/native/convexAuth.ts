@@ -53,12 +53,16 @@ export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
         ...(process.env.SITE_URL ? [process.env.SITE_URL] : []),
         ...(process.env.CONVEX_SITE_URL ? [process.env.CONVEX_SITE_URL] : []),
       ];
-      addNativeAuthHttpRoutes(
-        http,
-        config.component,
-        emailAndPasswordActions as unknown as NativeEmailAndPasswordFunctionReferences,
-        { trustedOrigins },
-      );
+      const httpActions = magicLinkActions
+        ? ({
+            ...emailAndPasswordActions,
+            ...magicLinkActions,
+          } as unknown as NativeEmailAndPasswordFunctionReferences &
+            Partial<NativeMagicLinkFunctionReferences>)
+        : (emailAndPasswordActions as unknown as NativeEmailAndPasswordFunctionReferences &
+            Partial<NativeMagicLinkFunctionReferences>);
+
+      addNativeAuthHttpRoutes(http, config.component, httpActions, { trustedOrigins });
       if (oauthActions && config.oauth) {
         addNativeOAuthHttpRoutes(http, {
           component: config.component,
