@@ -93,10 +93,7 @@ export function nativeMagicLink(
       metadata: v.optional(v.record(v.string(), v.string())),
     },
     returns: v.object({ status: v.boolean() }),
-    handler: async (
-      ctx: GenericActionCtx<DataModel>,
-      args: SignInMagicLinkBody,
-    ) => {
+    handler: async (ctx: GenericActionCtx<DataModel>, args: SignInMagicLinkBody) => {
       if (!enabled) {
         throw new Error("Magic link authentication is disabled");
       }

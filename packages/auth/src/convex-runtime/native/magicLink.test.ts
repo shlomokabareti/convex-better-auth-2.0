@@ -39,7 +39,13 @@ function createContext() {
 }
 
 type Mockify<T> = {
-  [K in keyof T]: T[K] extends FunctionReference<infer _Type, infer _Visibility, infer Args, infer Return, infer _ComponentPath>
+  [K in keyof T]: T[K] extends FunctionReference<
+    infer _Type,
+    infer _Visibility,
+    infer Args,
+    infer Return,
+    infer _ComponentPath
+  >
     ? ReturnType<typeof vi.fn> extends (args: Args) => Promise<Awaited<Return>>
       ? ReturnType<typeof vi.fn>
       : ReturnType<typeof vi.fn>
@@ -120,9 +126,12 @@ describe("nativeMagicLink", () => {
   it("signInMagicLink creates a verifier and sends a magic link", async () => {
     const component = createMockComponent();
     const sendMagicLink = vi.fn().mockResolvedValue("email_1");
-    const { signInMagicLink } = nativeMagicLink(component as unknown as NativeEmailAndPasswordComponentHandle, {
-      sendMagicLink,
-    });
+    const { signInMagicLink } = nativeMagicLink(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      {
+        sendMagicLink,
+      },
+    );
     const { handler } = exec(signInMagicLink);
 
     const ctx = createContext();
@@ -155,7 +164,10 @@ describe("nativeMagicLink", () => {
 
   it("rejects an invalid email", async () => {
     const component = createMockComponent();
-    const { signInMagicLink } = nativeMagicLink(component as unknown as NativeEmailAndPasswordComponentHandle, createConfig());
+    const { signInMagicLink } = nativeMagicLink(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      createConfig(),
+    );
     const { handler } = exec(signInMagicLink);
 
     const ctx = createContext();
@@ -165,10 +177,13 @@ describe("nativeMagicLink", () => {
 
   it("rejects when disabled", async () => {
     const component = createMockComponent();
-    const { signInMagicLink } = nativeMagicLink(component as unknown as NativeEmailAndPasswordComponentHandle, {
-      ...createConfig(),
-      enabled: false,
-    });
+    const { signInMagicLink } = nativeMagicLink(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      {
+        ...createConfig(),
+        enabled: false,
+      },
+    );
     const { handler } = exec(signInMagicLink);
 
     const ctx = createContext();

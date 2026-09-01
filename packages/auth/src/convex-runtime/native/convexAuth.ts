@@ -10,10 +10,7 @@ import type {
 } from "./provider.js";
 import { nativeAuthQueries, type NativeAuthQueries } from "./queries.js";
 import { nativeMagicLink } from "./magicLink.js";
-import type {
-  NativeMagicLinkConfig,
-  NativeMagicLinkFunctionReferences,
-} from "./magicLink.js";
+import type { NativeMagicLinkConfig, NativeMagicLinkFunctionReferences } from "./magicLink.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 
 export type ConvexAuthConfig = {
@@ -42,7 +39,7 @@ export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
 
   const auth = {
     ...emailAndPasswordActions,
-    ...(magicLinkActions ?? {}),
+    ...magicLinkActions,
     ...authQueries,
     ...(oauthActions
       ? { signInWithRedirect: oauthActions.signIn, callback: oauthActions.callback }
