@@ -14,14 +14,6 @@ export type EncryptedOAuthToken = {
   scopes?: string[];
 };
 
-function bytesToBase64(bytes: Uint8Array): string {
-  return bytesToBase64url(bytes);
-}
-
-function base64ToBytes(base64: string): Uint8Array {
-  return base64urlToBytes(base64);
-}
-
 let cachedKey: ArrayBuffer | undefined;
 
 export async function getOAuthTokenEncryptionKey(): Promise<ArrayBuffer> {
@@ -75,7 +67,7 @@ export async function encryptAccountToken(plaintext: string): Promise<string> {
   const combined = new Uint8Array(iv.length + ciphertext.byteLength);
   combined.set(iv);
   combined.set(new Uint8Array(ciphertext), iv.length);
-  return bytesToBase64(combined);
+  return bytesToBase64url(combined);
 }
 
 export async function decryptAccountToken(ciphertext: string): Promise<string> {
@@ -83,7 +75,7 @@ export async function decryptAccountToken(ciphertext: string): Promise<string> {
   const cryptoKey = await globalThis.crypto.subtle.importKey("raw", keyData, "AES-GCM", false, [
     "decrypt",
   ]);
-  const combined = base64ToBytes(ciphertext);
+  const combined = base64urlToBytes(ciphertext);
   const iv = combined.slice(0, AES_GCM_IV_BYTES);
   const encrypted = combined.slice(AES_GCM_IV_BYTES);
   const plaintext = await globalThis.crypto.subtle.decrypt(
