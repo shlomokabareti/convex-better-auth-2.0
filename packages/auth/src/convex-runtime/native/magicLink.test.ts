@@ -156,7 +156,7 @@ describe("nativeMagicLink", () => {
       expect.objectContaining({
         email: "shlomo@example.com",
         url: expect.stringMatching(
-          /https:\/\/test\.convex\.site\/magic-link\/verify\?token=[a-f0-9]+&callbackURL=%2Fdashboard$/,
+          /https:\/\/test\.convex\.site\/api\/auth\/magic-link\/verify\?token=[a-f0-9]+&callbackURL=%2Fdashboard$/,
         ),
       }),
     );
@@ -190,5 +190,118 @@ describe("nativeMagicLink", () => {
     await expect(handler(ctx, { email: "shlomo@example.com" })).rejects.toThrow(
       "Magic link authentication is disabled",
     );
+  });
+
+  it("verifyMagicLink creates a user and returns a session", async () => {
+    const component = createMockComponent();
+    const sendMagicLink = vi.fn().mockResolvedValue("email_1");
+    const { signInMagicLink, verifyMagicLink } = nativeMagicLink(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      { sendMagicLink },
+    );
+
+    const ctx = createContext();
+    await exec(signInMagicLink).handler(ctx, {
+      email: "Shlomo@example.com ",
+      callbackURL: "/dashboard",
+    });
+
+    const token = sendMagicLink.mock.calls[0][0].token;
+
+    component.native.verifiers.consumeVerifier = vi.fn().mockResolvedValue({
+      _id: "verifier_1",
+      verifierId: token,
+      type: "magic-link",
+      metadata: JSON.stringify({ email: "shlomo@example.com", name: "Shlomo" }),
+      expiresAt: Date.now() + 5 * 60 * 1000,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    component.native.users.getUserByEmail = vi.fn().mockResolvedValue(null);
+    component.identity.provisionFromIdentity = vi.fn().mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      createdUser: true,
+      linkedExistingIdentity: false,
+      token: "jwt_1",
+      sessionId: "session_1",
+      user: {
+        _id: "user_1",
+        email: "shlomo@example.com",
+        name: "Shlomo",
+        emailVerified: true,
+        twoFactorEnabled: false,
+        isActive: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+    });
+
+    const result = await exec(verifyMagicLink).handler(ctx, { token });
+
+    expect(result).toMatchObject({
+      token: "jwt_1",
+      refreshToken: expect.any(String),
+      sessionId: "session_1",
+      userId: "user_1",
+      identityId: "identity_1",
+      user: { email: "shlomo@example.com" },
+    });
+
+    const consumeCall = (component as any).native.verifiers.consumeVerifier.mock.calls[0][0];
+    expect(typeof consumeCall.verifierId).toBe("string");
+
+    const provisionCall = (component as any).identity.provisionFromIdentity.mock.calls[0][0];
+    expect(provisionCall.identity).toMatchObject({
+      provider: "magicLink",
+      issuer: "native",
+      subject: "shlomo@example.com",
+      email: "shlomo@example.com",
+      emailVerified: true,
+    });
+    expect(provisionCall.user).toMatchObject({
+      email: "shlomo@example.com",
+      name: "Shlomo",
+      emailVerified: true,
+    });
+    expect(provisionCall.allowLink).toBe(true);
+  });
+
+  it("verifyMagicLink rejects an invalid token", async () => {
+    const component = createMockComponent();
+    const { verifyMagicLink } = nativeMagicLink(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      createConfig(),
+    );
+    component.native.verifiers.consumeVerifier = vi.fn().mockResolvedValue(null);
+
+    const ctx = createContext();
+    await expect(exec(verifyMagicLink).handler(ctx, { token: "nope" })).rejects.toThrow(
+      "INVALID_TOKEN",
+    );
+  });
+
+  it("verifyMagicLink respects disableSignUp", async () => {
+    const component = createMockComponent();
+    const { verifyMagicLink } = nativeMagicLink(
+      component as unknown as NativeEmailAndPasswordComponentHandle,
+      { ...createConfig(), disableSignUp: true },
+    );
+    component.native.verifiers.consumeVerifier = vi.fn().mockResolvedValue({
+      _id: "verifier_1",
+      verifierId: "verifier_1",
+      type: "magic-link",
+      metadata: JSON.stringify({ email: "shlomo@example.com" }),
+      expiresAt: Date.now() + 5 * 60 * 1000,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+    component.native.users.getUserByEmail = vi.fn().mockResolvedValue(null);
+
+    const ctx = createContext();
+    await expect(exec(verifyMagicLink).handler(ctx, { token: "nope" })).rejects.toThrow(
+      "SIGN_UP_DISABLED",
+    );
+    expect((component as any).identity.provisionFromIdentity).not.toHaveBeenCalled();
   });
 });

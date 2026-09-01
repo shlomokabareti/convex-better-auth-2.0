@@ -164,7 +164,7 @@ function validatePassword(
   return { valid: true };
 }
 
-const nativeAuthSessionValidator = v.object({
+export const nativeAuthSessionValidator = v.object({
   token: v.union(v.string(), v.null()),
   refreshToken: v.optional(v.string()),
   user: nativeAuthUserValidator,
