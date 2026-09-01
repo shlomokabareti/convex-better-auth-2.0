@@ -13,6 +13,7 @@ export default defineConfig({
         "better-auth-client": "src/better-auth-client.ts",
         "better-auth-server": "src/better-auth-server.ts",
         "better-auth-convex": "src/better-auth-convex.ts",
+        "better-auth/testing": "src/better-auth/testing.ts",
         preflight: "src/preflight.ts",
         testing: "src/testing.ts",
         component: "src/component.ts",

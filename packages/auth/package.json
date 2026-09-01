@@ -56,6 +56,11 @@
       "import": "./dist/better-auth-convex.js",
       "default": "./dist/better-auth-convex.js"
     },
+    "./better-auth/testing": {
+      "types": "./dist/better-auth/testing.d.ts",
+      "import": "./dist/better-auth/testing.js",
+      "default": "./dist/better-auth/testing.js"
+    },
     "./react": {
       "types": "./dist/react.d.ts",
       "import": "./dist/react.js",
