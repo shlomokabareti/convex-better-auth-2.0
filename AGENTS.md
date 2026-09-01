@@ -45,3 +45,15 @@ See `packages/conformance-consumer/convex/auth.ts` and `packages/conformance-con
 - No `react-dom/server` in deployed source.
 - Use Web Crypto (`globalThis.crypto.subtle`, `crypto.getRandomValues`) for hashing and randomness.
 - Avoid `atob`/`btoa` in runtime code; use the `bytesToBase64url`/`base64urlToBytes` helpers in `packages/auth/src/convex-runtime/native/password.ts`.
+
+## Branch and PR workflow
+
+This repo does not use Graphite. Use `gh` and `git` directly:
+
+- Create branches with `git checkout -b <branch>`.
+- Open PRs with `gh pr create`.
+- Rebase and force push with `git rebase` and `git push --force-with-lease` when needed.
+- Merge with `gh pr merge`.
+- For stacked PRs, use GitHub stacked PRs (branches targeting the parent branch, e.g. `feature-b` based on `feature-a` with PR target `feature-a`).
+
+After push, use `gh pr checks` and `gh run list` to verify. Do not run `gh run watch`, `sleep`, or any wait/poll loop on CI. If a check has already failed, fetch the failure once and fix; otherwise move on.
