@@ -10,7 +10,10 @@ import type {
 } from "./provider.js";
 import { nativeAuthQueries, type NativeAuthQueries } from "./queries.js";
 import { nativeMagicLink } from "./magicLink.js";
-import type { NativeMagicLinkConfig, NativeMagicLinkFunctionReferences } from "./magicLink.js";
+import type {
+  NativeMagicLinkConfig,
+  NativeMagicLinkFunctionReferences,
+} from "./magicLink.js";
 import { nativeEmailOtp } from "./emailOtp.js";
 import type { NativeEmailOtpConfig, NativeEmailOtpFunctionReferences } from "./emailOtp.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
