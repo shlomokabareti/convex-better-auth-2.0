@@ -311,6 +311,9 @@ export type ConvexAuthProviderProps = {
   actions: NativeAuthActions;
   children: ReactNode;
   storage?: "local" | "session" | TokenStorage;
+  initialToken?: string | null;
+  initialRefreshToken?: string | null;
+  initialSessionId?: string | null;
 };
 
 export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
@@ -326,11 +329,11 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
     const resolved = resolveStorage(props.storage);
     setStorage(resolved);
 
-    let initialToken: string | null = null;
-    let initialRefresh: string | null = null;
-    let initialSessionId: string | null = null;
+    let initialToken = props.initialToken ?? null;
+    let initialRefresh = props.initialRefreshToken ?? null;
+    let initialSessionId = props.initialSessionId ?? null;
 
-    if (typeof window !== "undefined") {
+    if (!initialToken && typeof window !== "undefined") {
       const searchParams = new URLSearchParams(window.location.search);
       initialToken = searchParams.get("token");
       initialRefresh = searchParams.get("refreshToken");
@@ -377,7 +380,13 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
       }
     }
     isHydrating.current = false;
-  }, [props.storage, updateSessionAction]);
+  }, [
+    props.storage,
+    props.initialToken,
+    props.initialRefreshToken,
+    props.initialSessionId,
+    updateSessionAction,
+  ]);
 
   useEffect(() => {
     client.setAuth(() => Promise.resolve(token));
