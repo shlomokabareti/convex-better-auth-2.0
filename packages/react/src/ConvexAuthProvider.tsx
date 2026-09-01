@@ -119,6 +119,18 @@ export type NativeAuthSignInMagicLinkArgs = {
   metadata?: Record<string, string>;
 };
 
+export type NativeAuthSignInEmailOtpArgs = {
+  email: string;
+  type?: string;
+  name?: string;
+};
+
+export type NativeAuthVerifyEmailOtpArgs = {
+  email: string;
+  otp: string;
+  type?: string;
+};
+
 export type NativeAuthSignOutArgs = {
   token: string;
   callbackURL?: string;
@@ -205,6 +217,18 @@ export type NativeAuthActions = {
     "public",
     NativeAuthSignInMagicLinkArgs,
     NativeAuthSendResult
+  >;
+  signInEmailOtp: FunctionReference<
+    "action",
+    "public",
+    NativeAuthSignInEmailOtpArgs,
+    NativeAuthSendResult
+  >;
+  verifyEmailOtp: FunctionReference<
+    "action",
+    "public",
+    NativeAuthVerifyEmailOtpArgs,
+    NativeAuthSession
   >;
 };
 
@@ -371,6 +395,8 @@ export function useAuthActions() {
   const signUpAction = useAction(ctx.signUp);
   const signInAction = useAction(ctx.signIn);
   const signInMagicLinkAction = useAction(ctx.signInMagicLink);
+  const signInEmailOtpAction = useAction(ctx.signInEmailOtp);
+  const verifyEmailOtpAction = useAction(ctx.verifyEmailOtp);
   const signOutAction = useAction(ctx.signOut);
   const updateSessionAction = useAction(ctx.updateSession);
   const sendEmailVerificationAction = useAction(ctx.sendEmailVerification);
@@ -427,6 +453,36 @@ export function useAuthActions() {
       }
     },
     [signInMagicLinkAction],
+  );
+
+  const signInWithEmailOtp = useCallback(
+    async (args: NativeAuthSignInEmailOtpArgs) => {
+      setIsLoading(true);
+      try {
+        return await signInEmailOtpAction(args);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [signInEmailOtpAction],
+  );
+
+  const verifyEmailOtp = useCallback(
+    async (args: NativeAuthVerifyEmailOtpArgs) => {
+      setIsLoading(true);
+      try {
+        const session = await verifyEmailOtpAction(args);
+        ctx.setToken(session.token ?? null);
+        ctx.setSessionId(session.sessionId ?? null);
+        if (session.refreshToken) {
+          ctx.setRefreshToken(session.refreshToken);
+        }
+        return session;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [verifyEmailOtpAction, ctx],
   );
 
   const signOut = useCallback(
@@ -539,6 +595,8 @@ export function useAuthActions() {
     signUp,
     signIn,
     signInWithMagicLink,
+    signInWithEmailOtp,
+    verifyEmailOtp,
     signOut,
     updateSession,
     sendEmailVerification,
