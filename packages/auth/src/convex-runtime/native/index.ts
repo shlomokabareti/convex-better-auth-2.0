@@ -32,4 +32,19 @@ export {
 } from "./oauthState.js";
 export { addNativeOAuthHttpRoutes, type NativeOAuthHttpConfig } from "./oauthHttp.js";
 export { addNativeAuthHttpRoutes } from "./http.js";
+export {
+  createResendEmailOtpSender,
+  createResendEmailSender,
+  type ResendEmailOtpSenderOptions,
+  type ResendEmailSenderOptions,
+} from "../providers/resend.js";
+export {
+  createTwilioSmsOtpSender,
+  createTwilioSmsSender,
+  type PhoneOtpSender,
+  type SmsSender,
+  type TwilioSmsDraft,
+  type TwilioSmsOtpSenderOptions,
+  type TwilioSmsSenderOptions,
+} from "../providers/twilio.js";
 export type { NativeEmailAndPasswordComponentHandle, NativeOAuthComponentHandle } from "./types.js";
