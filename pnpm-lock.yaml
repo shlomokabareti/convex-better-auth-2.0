@@ -55,6 +55,9 @@ importers:
       react-dom:
         specifier: '>=19.0.0'
         version: 19.2.8(react@19.2.8)
+      set-cookie-parser:
+        specifier: ^3.1.2
+        version: 3.1.2
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
