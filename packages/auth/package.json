@@ -152,6 +152,7 @@
     "@noble/hashes": "^2.4.0",
     "convex-auth-core": "workspace:*",
     "convex-helpers": "^0.1.80",
+    "cookie": "^2.0.1",
     "jose": "^6.2.2",
     "oauth4webapi": "^3.8.7",
     "otpauth": "^9.5.1",

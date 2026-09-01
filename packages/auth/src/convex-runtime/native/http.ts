@@ -11,6 +11,7 @@ import { toNativeAuthUser } from "./types.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 import { isAllowedRedirectUrl } from "./callback.js";
 import { validateCsrfHeaders } from "./csrf.js";
+import { setCookieHeader, clearCookieHeader, readCookie } from "./cookies.js";
 
 const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
@@ -72,22 +73,6 @@ function getTokenExpiry(token: string): number | null {
   }
 }
 
-function setCookieHeader(
-  name: string,
-  value: string,
-  maxAgeSeconds?: number,
-  secure?: boolean,
-): string {
-  let cookie = `${name}=${value}; Path=/; HttpOnly; SameSite=Lax`;
-  if (maxAgeSeconds !== undefined) {
-    cookie += `; Max-Age=${maxAgeSeconds}`;
-  }
-  if (secure) {
-    cookie += "; Secure";
-  }
-  return cookie;
-}
-
 function buildTwoFactorVerifyResponse(
   request: Request,
   session: {
@@ -140,23 +125,6 @@ function buildTwoFactorVerifyResponse(
     status: 200,
     headers,
   });
-}
-
-function clearCookieHeader(name: string, secure?: boolean): string {
-  let cookie = `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
-  if (secure) {
-    cookie += "; Secure";
-  }
-  return cookie;
-}
-
-function readCookie(request: Request, name: string): string | undefined {
-  const cookieHeader = request.headers.get("cookie");
-  if (!cookieHeader) {
-    return undefined;
-  }
-  const match = cookieHeader.match(new RegExp(`(?:^|;)\\s*${name}=([^;]+)`));
-  return match?.[1];
 }
 
 function errorStatusAndReason(error: unknown): { status: number; reason: string } {

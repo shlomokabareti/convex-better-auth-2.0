@@ -11,6 +11,7 @@ import {
   type WaitForExposedConvexRuntimeOptions,
 } from "../testing.js";
 import { type AuthPreflightCheck } from "../preflight.js";
+import { extractSessionCookieHeader } from "../convex-runtime/native/cookies.js";
 
 export { proveConvexJwtTrust, type ConvexJwtTrustProofResult } from "convex-better-auth/server";
 import { resolveBetterAuthTrustedOrigins } from "convex-better-auth/convex";
@@ -225,22 +226,6 @@ export async function createTestSessionConvexHttpClient(
   const client = new ConvexHttpClient(convexUrl);
   client.setAuth(session.convexToken);
   return client;
-}
-
-/** Build a single `Cookie` request header from a response's `Set-Cookie`(s). */
-function extractSessionCookieHeader(response: Response): string | undefined {
-  const headers = response.headers;
-  const setCookieHeader = headers.get("set-cookie");
-  const rawCookies =
-    typeof headers.getSetCookie === "function"
-      ? headers.getSetCookie()
-      : setCookieHeader
-        ? [setCookieHeader]
-        : [];
-  const pairs = rawCookies
-    .map((cookie) => cookie.split(";")[0]?.trim())
-    .filter((pair): pair is string => Boolean(pair && pair.includes("=")));
-  return pairs.length > 0 ? pairs.join("; ") : undefined;
 }
 
 export function createTrustedOriginsCheck(args: {
