@@ -390,4 +390,88 @@ describe("addNativeAuthHttpRoutes", () => {
     );
     expect(response.status).toBe(400);
   });
+
+  it("allows same-origin POST sign-in requests", async () => {
+    const component = createMockComponent();
+    const routes: {
+      path?: string;
+      pathPrefix?: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http: HttpRouter = {
+      route: (r) => {
+        routes.push(r as any);
+        return http;
+      },
+    } as unknown as HttpRouter;
+
+    addNativeAuthHttpRoutes(
+      http,
+      component,
+      {
+        signIn: vi.fn(() => ({
+          token: "token",
+          user: { id: "user_1", email: "shlomo@example.com", emailVerified: true },
+        })),
+      } as unknown as NativeEmailAndPasswordFunctionReferences,
+      { trustedOrigins: ["https://app.example.com"] },
+    );
+    const signInRoute = routes.find((r) => r.path === "/api/auth/sign-in" && r.method === "POST");
+    expect(signInRoute).toBeDefined();
+
+    const response = await exec(signInRoute!.handler).handler(
+      createContext(),
+      new Request("https://api.example.com/api/auth/sign-in", {
+        method: "POST",
+        headers: { origin: "https://api.example.com" },
+        body: JSON.stringify({ email: "shlomo@example.com", password: "password" }),
+      }),
+    );
+    expect(response.status).toBe(200);
+  });
+
+  it("blocks cross-site navigate POST sign-in attempts", async () => {
+    const component = createMockComponent();
+    const routes: {
+      path?: string;
+      pathPrefix?: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http: HttpRouter = {
+      route: (r) => {
+        routes.push(r as any);
+        return http;
+      },
+    } as unknown as HttpRouter;
+
+    addNativeAuthHttpRoutes(
+      http,
+      component,
+      {
+        signIn: vi.fn(() => ({
+          token: "token",
+          user: { id: "user_1", email: "shlomo@example.com", emailVerified: true },
+        })),
+      } as unknown as NativeEmailAndPasswordFunctionReferences,
+      { trustedOrigins: ["https://app.example.com"] },
+    );
+    const signInRoute = routes.find((r) => r.path === "/api/auth/sign-in" && r.method === "POST");
+    expect(signInRoute).toBeDefined();
+
+    const response = await exec(signInRoute!.handler).handler(
+      createContext(),
+      new Request("https://api.example.com/api/auth/sign-in", {
+        method: "POST",
+        headers: {
+          "sec-fetch-site": "cross-site",
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "document",
+        },
+        body: JSON.stringify({ email: "shlomo@example.com", password: "password" }),
+      }),
+    );
+    expect(response.status).toBe(403);
+  });
 });
