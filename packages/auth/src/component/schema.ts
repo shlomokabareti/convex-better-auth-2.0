@@ -787,4 +787,16 @@ export default defineSchema({
   })
     .index("by_identifier_window", ["identifier", "windowStart"])
     .index("by_window", ["windowStart"]),
+
+  authMagicLinkTokens: defineTable({
+    email: v.string(),
+    name: v.optional(v.string()),
+    tokenHash: v.string(),
+    expiresAt: v.number(),
+    consumedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_token_hash", ["tokenHash"])
+    .index("by_email", ["email"]),
 });
