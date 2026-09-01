@@ -200,4 +200,57 @@ describe("native verification codes", () => {
     expect(code).not.toBeNull();
     expect(code?.expiresAt).toBe(1);
   });
+
+  it("cleanupVerificationCodes deletes expired and consumed codes", async () => {
+    const t = convexTest(schema, modules);
+
+    const userId = await t.run(async (ctx) =>
+      ctx.db.insert("users", {
+        email: "shlomo@example.com",
+        name: "Shlomo",
+        emailVerified: false,
+        isActive: true,
+        createdAt: 0,
+        updatedAt: 0,
+      }),
+    );
+
+    const now = Date.now();
+    await t.run(async (ctx) => {
+      await ctx.db.insert("authVerificationCodes", {
+        userId,
+        type: "email_verification",
+        tokenHash: "expired",
+        expiresAt: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await ctx.db.insert("authVerificationCodes", {
+        userId,
+        type: "email_verification",
+        tokenHash: "consumed",
+        expiresAt: now + 60_000,
+        consumedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+
+    const deleted = await t.mutation(api.native.codes.cleanupVerificationCodes, {
+      userId,
+      type: "email_verification",
+    });
+    expect(deleted).toBe(2);
+
+    const expired = await t.query(api.native.codes.getVerificationCodeByTokenHash, {
+      tokenHash: "expired",
+      type: "email_verification",
+    });
+    const consumed = await t.query(api.native.codes.getVerificationCodeByTokenHash, {
+      tokenHash: "consumed",
+      type: "email_verification",
+    });
+    expect(expired).toBeNull();
+    expect(consumed).toBeNull();
+  });
 });

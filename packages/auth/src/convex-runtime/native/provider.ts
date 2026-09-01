@@ -54,6 +54,10 @@ export type NativeEmailAndPasswordConfig = {
   sendVerificationEmailOnSignUp?: boolean;
   /** @deprecated use `email.sendOnSignIn` instead. */
   sendVerificationEmailOnSignIn?: boolean;
+  /**
+   * When `true`, `signIn` rejects users whose email is not yet verified.
+   * Default is `false` — apps must opt in to this gating.
+   */
   requireVerifiedEmail?: boolean;
   verificationCodeTtlMs?: number;
   passwordResetCodeTtlMs?: number;
@@ -61,6 +65,10 @@ export type NativeEmailAndPasswordConfig = {
   refreshTokenTtlMs?: number;
   minPasswordLength?: number;
   maxPasswordLength?: number;
+  /**
+   * When `true` (default), `resetPassword` revokes all active sessions for the user.
+   * Set to `false` to keep other sessions active after a successful reset.
+   */
   revokeSessionsOnPasswordReset?: boolean;
   onExistingUserSignUp?: (data: { user: NativeAuthUser }) => Promise<void>;
   onPasswordReset?: (data: { user: NativeAuthUser }) => Promise<void>;
@@ -213,7 +221,7 @@ export function nativeEmailAndPassword(
   const shouldSkipAutoSignIn = shouldReturnGenericDuplicateResponse;
   const shouldSendVerificationEmail = sendOnSignUp ?? requireVerifiedEmail;
   const shouldSendVerificationEmailOnSignIn = sendOnSignIn;
-  const revokeSessionsOnPasswordReset = config.revokeSessionsOnPasswordReset ?? false;
+  const revokeSessionsOnPasswordReset = config.revokeSessionsOnPasswordReset ?? true;
 
   async function createSessionAndRefreshToken(
     ctx: GenericActionCtx<DataModel>,
