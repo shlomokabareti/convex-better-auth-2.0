@@ -1,1 +1,1 @@
-export * from "../../better-auth/src/client";
+export * from "convex-better-auth/client";
