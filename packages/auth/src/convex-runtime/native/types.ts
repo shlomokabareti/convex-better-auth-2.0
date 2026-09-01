@@ -1,7 +1,11 @@
 import { v } from "convex/values";
 import type { FunctionReference } from "convex/server";
 
-export type VerificationCodeType = "email_verification" | "password_reset";
+export type VerificationCodeType =
+  | "email_verification"
+  | "password_reset"
+  | "two_factor_pending"
+  | "two_factor_trusted_device";
 
 export type NativeAuthUser = {
   id: string;
@@ -9,6 +13,18 @@ export type NativeAuthUser = {
   name?: string;
   image?: string;
   emailVerified: boolean;
+  emailTwoFactorStatus?: "disabled" | "enabled" | "reset_required";
+  emailTwoFactorEmail?: string;
+  emailTwoFactorEnabledAt?: number;
+  emailTwoFactorDisabledAt?: number;
+  emailTwoFactorLastVerifiedAt?: number;
+  emailTwoFactorResetAt?: number;
+  emailTwoFactorResetReason?: "missing_email" | "email_not_verified" | "email_changed";
+  twoFactorEnabled: boolean;
+  activeOrganizationId?: string;
+  isActive: boolean;
+  isSuperAdmin?: boolean;
+  metadataJson?: string;
   createdAt: number;
   updatedAt: number;
 };
@@ -19,18 +35,51 @@ export function toNativeAuthUser(user: {
   name?: string;
   image?: string;
   emailVerified: boolean;
+  emailTwoFactorStatus?: "disabled" | "enabled" | "reset_required";
+  emailTwoFactorEmail?: string;
+  emailTwoFactorEnabledAt?: number;
+  emailTwoFactorDisabledAt?: number;
+  emailTwoFactorLastVerifiedAt?: number;
+  emailTwoFactorResetAt?: number;
+  emailTwoFactorResetReason?: "missing_email" | "email_not_verified" | "email_changed";
+  twoFactorEnabled?: boolean;
+  activeOrganizationId?: string;
+  isActive?: boolean;
+  isSuperAdmin?: boolean;
+  metadataJson?: string;
   createdAt: number;
   updatedAt: number;
 }): NativeAuthUser {
-  return {
+  const nativeUser: NativeAuthUser = {
     id: user._id,
     email: user.email,
     name: user.name,
     image: user.image,
     emailVerified: user.emailVerified,
+    twoFactorEnabled: user.twoFactorEnabled ?? false,
+    isActive: user.isActive ?? true,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
+  if (user.emailTwoFactorStatus !== undefined)
+    nativeUser.emailTwoFactorStatus = user.emailTwoFactorStatus;
+  if (user.emailTwoFactorEmail !== undefined)
+    nativeUser.emailTwoFactorEmail = user.emailTwoFactorEmail;
+  if (user.emailTwoFactorEnabledAt !== undefined)
+    nativeUser.emailTwoFactorEnabledAt = user.emailTwoFactorEnabledAt;
+  if (user.emailTwoFactorDisabledAt !== undefined)
+    nativeUser.emailTwoFactorDisabledAt = user.emailTwoFactorDisabledAt;
+  if (user.emailTwoFactorLastVerifiedAt !== undefined)
+    nativeUser.emailTwoFactorLastVerifiedAt = user.emailTwoFactorLastVerifiedAt;
+  if (user.emailTwoFactorResetAt !== undefined)
+    nativeUser.emailTwoFactorResetAt = user.emailTwoFactorResetAt;
+  if (user.emailTwoFactorResetReason !== undefined)
+    nativeUser.emailTwoFactorResetReason = user.emailTwoFactorResetReason;
+  if (user.activeOrganizationId !== undefined)
+    nativeUser.activeOrganizationId = user.activeOrganizationId;
+  if (user.isSuperAdmin !== undefined) nativeUser.isSuperAdmin = user.isSuperAdmin;
+  if (user.metadataJson !== undefined) nativeUser.metadataJson = user.metadataJson;
+  return nativeUser;
 }
 
 export const nativeAuthUserValidator = v.object({
@@ -39,9 +88,46 @@ export const nativeAuthUserValidator = v.object({
   name: v.optional(v.string()),
   image: v.optional(v.string()),
   emailVerified: v.boolean(),
+  emailTwoFactorStatus: v.optional(
+    v.union(v.literal("disabled"), v.literal("enabled"), v.literal("reset_required")),
+  ),
+  emailTwoFactorEmail: v.optional(v.string()),
+  emailTwoFactorEnabledAt: v.optional(v.number()),
+  emailTwoFactorDisabledAt: v.optional(v.number()),
+  emailTwoFactorLastVerifiedAt: v.optional(v.number()),
+  emailTwoFactorResetAt: v.optional(v.number()),
+  emailTwoFactorResetReason: v.optional(
+    v.union(
+      v.literal("missing_email"),
+      v.literal("email_not_verified"),
+      v.literal("email_changed"),
+    ),
+  ),
+  twoFactorEnabled: v.boolean(),
+  activeOrganizationId: v.optional(v.string()),
+  isActive: v.boolean(),
+  isSuperAdmin: v.optional(v.boolean()),
+  metadataJson: v.optional(v.string()),
   createdAt: v.number(),
   updatedAt: v.number(),
 });
+
+export type NativeAuthSession = {
+  token: string | null;
+  refreshToken?: string;
+  user: NativeAuthUser;
+  userId?: string;
+  identityId?: string;
+  sessionId?: string;
+  redirect?: boolean;
+  url?: string;
+  twoFactorRedirect?: boolean;
+  twoFactorMethods?: string[];
+  twoFactorChallengeToken?: string;
+  twoFactorCookieMaxAgeMs?: number;
+  trustDeviceToken?: string;
+  trustDeviceMaxAgeMs?: number;
+};
 
 export type NativeVerificationCodeDoc = {
   _id: string;
@@ -69,6 +155,9 @@ export type NativeUserDoc = {
   emailTwoFactorLastVerifiedAt?: number;
   emailTwoFactorResetAt?: number;
   emailTwoFactorResetReason?: "missing_email" | "email_not_verified" | "email_changed";
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string;
+  twoFactorBackupCodes?: string[];
   activeOrganizationId?: string;
   isActive: boolean;
   isSuperAdmin?: boolean;
@@ -85,6 +174,13 @@ export type NativeAccountDoc = {
   issuer: string;
   subject: string;
   credentialHash: string;
+  accessToken?: string;
+  refreshToken?: string;
+  idToken?: string;
+  tokenType?: string;
+  scopes?: string[];
+  accessTokenExpiresAt?: number;
+  refreshTokenExpiresAt?: number;
   createdAt: number;
   updatedAt: number;
 };
@@ -98,6 +194,18 @@ export type NativeSessionDoc = {
   expiresAt: number;
   ipAddress?: string;
   userAgent?: string;
+  revokedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type NativeRefreshTokenDoc = {
+  _id: string;
+  _creationTime: number;
+  tokenHash: string;
+  sessionId: string;
+  userId: string;
+  expiresAt: number;
   revokedAt?: number;
   createdAt: number;
   updatedAt: number;
@@ -141,13 +249,53 @@ export type NativeEmailAndPasswordComponentHandle = {
           image?: string;
           emailVerified: boolean;
         };
+        account?: { credentialHash: string };
+        verificationCode?: { tokenHash: string; expiresAt: number };
+        initialSession?: {
+          sessionId: string;
+          sessionExpiresAt: number;
+          refreshTokenHash: string;
+          refreshTokenExpiresAt: number;
+        };
+        allowLink?: boolean;
       },
       {
         createdUser: boolean;
-        identityId: string;
+        identityId?: string;
         linkedExistingIdentity: boolean;
         userId: string;
+        duplicate?: boolean;
+        user?: NativeUserDoc;
+        sessionId?: string;
+        token?: string;
       },
+      string
+    >;
+    getUserAndAccount: FunctionReference<
+      "query",
+      "public" | "internal",
+      { email: string },
+      { user: NativeUserDoc; identity: NativeIdentityDoc; account: NativeAccountDoc } | null,
+      string
+    >;
+    verifyEmail: FunctionReference<
+      "mutation",
+      "public" | "internal",
+      { tokenHash: string; provider: string; issuer: string },
+      { success: boolean; user?: NativeUserDoc; reason?: string },
+      string
+    >;
+    resetPassword: FunctionReference<
+      "mutation",
+      "public" | "internal",
+      {
+        tokenHash: string;
+        credentialHash: string;
+        provider: string;
+        issuer: string;
+        revokeSessions?: boolean;
+      },
+      { status: boolean; user?: NativeUserDoc; reason?: string },
       string
     >;
   };
@@ -162,6 +310,13 @@ export type NativeEmailAndPasswordComponentHandle = {
           issuer: string;
           subject: string;
           credentialHash: string;
+          accessToken?: string;
+          refreshToken?: string;
+          idToken?: string;
+          tokenType?: string;
+          scopes?: string[];
+          accessTokenExpiresAt?: number;
+          refreshTokenExpiresAt?: number;
         },
         string,
         string
@@ -170,6 +325,22 @@ export type NativeEmailAndPasswordComponentHandle = {
         "mutation",
         "public" | "internal",
         { accountId: string; credentialHash: string },
+        void,
+        string
+      >;
+      updateAccountTokens: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          accountId: string;
+          accessToken?: string;
+          refreshToken?: string;
+          idToken?: string;
+          tokenType?: string;
+          scopes?: string[];
+          accessTokenExpiresAt?: number;
+          refreshTokenExpiresAt?: number;
+        },
         void,
         string
       >;
@@ -190,6 +361,20 @@ export type NativeEmailAndPasswordComponentHandle = {
           userId: string;
           token: string;
           expiresAt: number;
+        },
+        string,
+        string
+      >;
+      createSessionAndRefreshToken: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          sessionId: string;
+          userId: string;
+          token: string;
+          sessionExpiresAt: number;
+          refreshTokenHash: string;
+          refreshTokenExpiresAt: number;
         },
         string,
         string
@@ -215,10 +400,72 @@ export type NativeEmailAndPasswordComponentHandle = {
         NativeSessionDoc | null,
         string
       >;
+      getSessionBySessionId: FunctionReference<
+        "query",
+        "public" | "internal",
+        { sessionId: string },
+        NativeSessionDoc | null,
+        string
+      >;
       revokeSessionsForUser: FunctionReference<
         "mutation",
         "public" | "internal",
         { userId: string; excludeSessionId?: string },
+        number,
+        string
+      >;
+      rotateSession: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          oldRefreshTokenHash: string;
+          newSessionId: string;
+          newSessionToken: string;
+          newSessionExpiresAt: number;
+          newSessionIpAddress?: string;
+          newSessionUserAgent?: string;
+          newRefreshTokenHash: string;
+          newRefreshTokenExpiresAt: number;
+          provider: string;
+          issuer: string;
+        },
+        { user: NativeUserDoc; identityId: string } | null,
+        string
+      >;
+    };
+    refreshTokens: {
+      createRefreshToken: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { tokenHash: string; sessionId: string; userId: string; expiresAt: number },
+        string,
+        string
+      >;
+      getRefreshTokenByTokenHash: FunctionReference<
+        "query",
+        "public" | "internal",
+        { tokenHash: string },
+        NativeRefreshTokenDoc | null,
+        string
+      >;
+      consumeRefreshToken: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { tokenHash: string },
+        NativeRefreshTokenDoc | null,
+        string
+      >;
+      revokeRefreshTokensForSession: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { sessionId: string },
+        number,
+        string
+      >;
+      revokeRefreshTokensForUser: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { userId: string },
         number,
         string
       >;
@@ -259,6 +506,25 @@ export type NativeEmailAndPasswordComponentHandle = {
         "public" | "internal",
         { userId: string; emailVerified: boolean },
         void,
+        string
+      >;
+      setTwoFactor: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          userId: string;
+          twoFactorEnabled: boolean;
+          twoFactorSecret?: string;
+          twoFactorBackupCodes?: string[];
+        },
+        void,
+        string
+      >;
+      consumeBackupCode: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { userId: string; backupCodeHash: string },
+        { success: boolean },
         string
       >;
     };

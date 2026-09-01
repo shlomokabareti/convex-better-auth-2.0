@@ -1,9 +1,11 @@
-import { exportJWK, generateKeyPair } from "jose";
+import { exportJWK, generateKeyPair, importJWK, SignJWT } from "jose";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { addNativeOAuthHttpRoutes } from "./oauthHttp.js";
 import {
+  createDiscordProvider,
   createGitHubProvider,
   createGoogleProvider,
+  type DiscordProviderConfig,
   type GitHubProviderConfig,
   type GoogleProviderConfig,
   type NativeOAuthProvider,
@@ -17,9 +19,29 @@ import {
   verifyOAuthState,
 } from "./oauthState.js";
 import { verifyToken } from "./jwt.js";
+import { decryptAccountToken } from "./oauthCrypto.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
 import type { GenericActionCtx } from "convex/server";
 import type { DataModel } from "../../component/_generated/dataModel.js";
+
+async function mintGoogleIdToken(payload: Record<string, unknown> = {}) {
+  const privateJwk = JSON.parse(process.env.JWT_PRIVATE_KEY!);
+  const privateKey = await importJWK(privateJwk, "RS256");
+  return await new SignJWT({
+    sub: "google-12345",
+    name: "Google User",
+    email: "google@example.com",
+    email_verified: true,
+    picture: "https://google-avatar",
+    iss: "https://accounts.google.com",
+    aud: "google-client-id",
+    ...payload,
+  })
+    .setProtectedHeader({ alg: "RS256" })
+    .setIssuedAt()
+    .setExpirationTime("5m")
+    .sign(privateKey);
+}
 
 async function setupTestKeys() {
   const { publicKey, privateKey } = await generateKeyPair("RS256", { extractable: true });
@@ -27,6 +49,13 @@ async function setupTestKeys() {
   const publicJwk = await exportJWK(publicKey);
   process.env.JWT_PRIVATE_KEY = JSON.stringify(privateJwk);
   process.env.JWKS = JSON.stringify({ keys: [publicJwk] });
+
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(32));
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  process.env.OAUTH_TOKEN_ENCRYPTION_KEY = btoa(binary);
 }
 
 type MockComponent = {
@@ -34,9 +63,14 @@ type MockComponent = {
   native: {
     accounts: {
       createAccount: ReturnType<typeof vi.fn>;
+      updateAccountTokens: ReturnType<typeof vi.fn>;
       getAccountBySubject: ReturnType<typeof vi.fn>;
     };
-    sessions: { createSession: ReturnType<typeof vi.fn> };
+    sessions: { createSessionAndRefreshToken: ReturnType<typeof vi.fn> };
+    users: {
+      getUserByEmail: ReturnType<typeof vi.fn>;
+      getUserById: ReturnType<typeof vi.fn>;
+    };
   };
 };
 
@@ -48,10 +82,15 @@ function createMockComponent(): MockComponent {
     native: {
       accounts: {
         createAccount: vi.fn(),
-        getAccountBySubject: vi.fn(),
+        updateAccountTokens: vi.fn(),
+        getAccountBySubject: vi.fn().mockResolvedValue(null),
       },
       sessions: {
-        createSession: vi.fn(),
+        createSessionAndRefreshToken: vi.fn(),
+      },
+      users: {
+        getUserByEmail: vi.fn().mockResolvedValue(null),
+        getUserById: vi.fn(),
       },
     },
   } as MockComponent;
@@ -62,6 +101,20 @@ function dispatch(ref: unknown, args: Record<string, unknown>) {
     return (ref as (args: Record<string, unknown>) => unknown)(args);
   }
   return undefined;
+}
+
+function exec(registered: unknown) {
+  if ((typeof registered !== "object" && typeof registered !== "function") || registered === null) {
+    throw new TypeError("expected an executable spec");
+  }
+  const handler = Reflect.get(registered, "_handler");
+  if (typeof handler !== "function") {
+    throw new TypeError("expected an executable handler");
+  }
+  return {
+    handler: async (ctx: unknown, args: unknown): Promise<unknown> =>
+      await Reflect.apply(handler, registered, [ctx, args]),
+  };
 }
 
 function createContext() {
@@ -114,6 +167,18 @@ function createGoogleConfig(overrides: Partial<GoogleProviderConfig> = {}): Goog
   };
 }
 
+function createDiscordConfig(
+  overrides: Partial<DiscordProviderConfig> = {},
+): DiscordProviderConfig {
+  const { fetch } = createMockFetch();
+  return {
+    clientId: "discord-client-id",
+    clientSecret: "discord-client-secret",
+    fetchImpl: fetch as unknown as typeof globalThis.fetch,
+    ...overrides,
+  };
+}
+
 function createOAuthConfig(overrides: Partial<NativeOAuthConfig> = {}): NativeOAuthConfig {
   return {
     github: createGitHubConfig(),
@@ -148,9 +213,19 @@ function setupGitHubResponses(
   });
 }
 
-function setupGoogleResponses(responses: ReturnType<typeof createMockFetch>["responses"]) {
+async function setupGoogleResponses(
+  responses: ReturnType<typeof createMockFetch>["responses"],
+  { idToken }: { idToken?: string } = {},
+) {
+  responses.set("https://www.googleapis.com/oauth2/v3/certs", {
+    body: JSON.parse(process.env.JWKS!),
+  });
   responses.set("https://oauth2.googleapis.com/token", {
-    body: { access_token: "google-access-token", token_type: "Bearer" },
+    body: {
+      access_token: "google-access-token",
+      token_type: "Bearer",
+      id_token: idToken,
+    },
   });
   responses.set("https://openidconnect.googleapis.com/v1/userinfo", {
     body: {
@@ -307,7 +382,7 @@ describe("Google provider", () => {
     const { fetch, responses } = createMockFetch();
     config.fetchImpl = fetch as unknown as typeof globalThis.fetch;
     const provider = createGoogleProvider(config);
-    setupGoogleResponses(responses);
+    await setupGoogleResponses(responses);
 
     const { user } = await provider.getUserInfo({ accessToken: "google-access-token" });
 
@@ -315,6 +390,96 @@ describe("Google provider", () => {
     expect(user.name).toBe("Google User");
     expect(user.email).toBe("google@example.com");
     expect(user.image).toBe("https://google-avatar");
+    expect(user.emailVerified).toBe(true);
+  });
+
+  it("verifies id_token and uses its claims when present", async () => {
+    const config = createGoogleConfig();
+    const { fetch, responses } = createMockFetch();
+    config.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    const provider = createGoogleProvider(config);
+    const idToken = await mintGoogleIdToken();
+    await setupGoogleResponses(responses, { idToken });
+
+    const { user } = await provider.getUserInfo({
+      accessToken: "google-access-token",
+      idToken,
+    });
+
+    expect(user.id).toBe("google-12345");
+    expect(user.name).toBe("Google User");
+    expect(user.email).toBe("google@example.com");
+    expect(user.image).toBe("https://google-avatar");
+    expect(user.emailVerified).toBe(true);
+  });
+});
+
+describe("Discord provider", () => {
+  it("creates an authorization URL with client_id, PKCE, state, and scopes", () => {
+    const config = createDiscordConfig();
+    const provider = createDiscordProvider(config);
+    const url = provider.createAuthorizationURL({
+      state: "state-token",
+      codeChallenge: "challenge",
+      redirectURI: "https://app.example.com/api/auth/callback/discord",
+    });
+    expect(url.origin).toBe("https://discord.com");
+    expect(url.pathname).toBe("/oauth2/authorize");
+    expect(url.searchParams.get("client_id")).toBe("discord-client-id");
+    expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("state")).toBe("state-token");
+    expect(url.searchParams.get("code_challenge")).toBe("challenge");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(url.searchParams.get("scope")).toContain("identify");
+    expect(url.searchParams.get("scope")).toContain("email");
+  });
+
+  it("exchanges a code for an access token", async () => {
+    const config = createDiscordConfig();
+    const { fetch, responses } = createMockFetch();
+    config.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    const provider = createDiscordProvider(config);
+    responses.set("https://discord.com/api/oauth2/token", {
+      body: { access_token: "discord-token", token_type: "Bearer" },
+    });
+
+    const token = await provider.exchangeAuthorizationCode({
+      code: "code-123",
+      codeVerifier: "verifier",
+      redirectURI: "https://app.example.com/api/auth/callback/discord",
+    });
+
+    expect(token.accessToken).toBe("discord-token");
+    expect(fetch).toHaveBeenCalledWith(
+      "https://discord.com/api/oauth2/token",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.any(URLSearchParams),
+      }),
+    );
+  });
+
+  it("fetches user info from the Discord user endpoint", async () => {
+    const config = createDiscordConfig();
+    const { fetch, responses } = createMockFetch();
+    config.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    const provider = createDiscordProvider(config);
+    responses.set("https://discord.com/api/users/@me", {
+      body: {
+        id: "discord-12345",
+        username: "Discord User",
+        email: "discord@example.com",
+        verified: true,
+        avatar: "avatar-hash",
+      },
+    });
+
+    const { user } = await provider.getUserInfo({ accessToken: "discord-token" });
+
+    expect(user.id).toBe("discord-12345");
+    expect(user.name).toBe("Discord User");
+    expect(user.email).toBe("discord@example.com");
+    expect(user.image).toBe("https://cdn.discordapp.com/avatars/discord-12345/avatar-hash.png");
     expect(user.emailVerified).toBe(true);
   });
 });
@@ -351,7 +516,7 @@ describe("OAuth handlers", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const { url } = await handleSignIn(config, { provider: "github" });
     const state = new URL(url).searchParams.get("state")!;
@@ -388,12 +553,14 @@ describe("OAuth handlers", () => {
         emailVerified: true,
       }),
     });
-    expect(component.native.sessions.createSession).toHaveBeenCalledWith(
+    expect(component.native.sessions.createSessionAndRefreshToken).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user_1",
         token: result.token,
       }),
     );
+    expect(result.refreshToken).toBeDefined();
+    expect(result.refreshToken).not.toBe(result.token);
   });
 
   it("handleCallback redirects to newUserURL for new users", async () => {
@@ -410,7 +577,7 @@ describe("OAuth handlers", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const { url } = await handleSignIn(config, {
       provider: "github",
@@ -453,7 +620,8 @@ describe("OAuth handlers", () => {
     const component = createMockComponent();
     const { fetch, responses } = createMockFetch();
     config.google!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
-    setupGoogleResponses(responses);
+    const idToken = await mintGoogleIdToken();
+    await setupGoogleResponses(responses, { idToken });
 
     component.identity.provisionFromIdentity.mockResolvedValue({
       userId: "user_2",
@@ -462,7 +630,7 @@ describe("OAuth handlers", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_2");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_2");
 
     const { url } = await handleSignIn(config, { provider: "google" });
     const state = new URL(url).searchParams.get("state")!;
@@ -492,6 +660,525 @@ describe("OAuth handlers", () => {
         emailVerified: true,
       }),
     });
+  });
+
+  it("handleCallback returns signup_disabled when disableSignUp is set", async () => {
+    const config = createOAuthConfig({
+      github: createGitHubConfig({ disableSignUp: true }),
+    });
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    const { url } = await handleSignIn(config, {
+      provider: "github",
+      errorURL: "https://app.example.com/error",
+    });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toBe("signup_disabled");
+      expect(result.redirectUrl).toBe("https://app.example.com/error");
+    }
+    expect(component.identity.provisionFromIdentity).not.toHaveBeenCalled();
+  });
+
+  it("handleCallback links to an existing user by email when verified", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    component.native.users.getUserByEmail.mockResolvedValue({
+      _id: "existing_user_1",
+    });
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "existing_user_1",
+      identityId: "identity_1",
+      createdUser: false,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.getAccountBySubject.mockResolvedValue(null);
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
+
+    const { url } = await handleSignIn(config, { provider: "github" });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect(result.createdUser).toBe(false);
+    expect(result.userId).toBe("existing_user_1");
+    expect(component.native.accounts.createAccount).toHaveBeenCalled();
+  });
+
+  it("handleCallback blocks linking when email is unverified and provider is not trusted", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    responses.set("https://github.com/login/oauth/access_token", {
+      body: { access_token: "github-access-token", token_type: "bearer" },
+    });
+    responses.set("https://api.github.com/user", {
+      body: {
+        id: 12345,
+        login: "octocat",
+        name: "The Octocat",
+        email: null,
+        avatar_url: "https://avatar",
+      },
+    });
+    responses.set("https://api.github.com/user/emails", {
+      body: [
+        { email: "octocat@example.com", primary: true, verified: false, visibility: "public" },
+      ],
+    });
+
+    component.native.users.getUserByEmail.mockResolvedValue({
+      _id: "existing_user_1",
+    });
+
+    const { url } = await handleSignIn(config, {
+      provider: "github",
+      errorURL: "https://app.example.com/error",
+    });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toBe("account_not_linked");
+      expect(result.redirectUrl).toBe("https://app.example.com/error");
+    }
+    expect(component.identity.provisionFromIdentity).not.toHaveBeenCalled();
+  });
+
+  it("handleCallback returns email_not_verified when requireEmailVerification is set", async () => {
+    const config = createOAuthConfig({
+      github: createGitHubConfig({ requireEmailVerification: true }),
+    });
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    responses.set("https://github.com/login/oauth/access_token", {
+      body: { access_token: "github-access-token", token_type: "bearer" },
+    });
+    responses.set("https://api.github.com/user", {
+      body: {
+        id: 12345,
+        login: "octocat",
+        name: "The Octocat",
+        email: null,
+        avatar_url: "https://avatar",
+      },
+    });
+    responses.set("https://api.github.com/user/emails", {
+      body: [
+        { email: "octocat@example.com", primary: true, verified: false, visibility: "public" },
+      ],
+    });
+
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      createdUser: true,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.getAccountBySubject.mockResolvedValue(null);
+
+    const { url } = await handleSignIn(config, {
+      provider: "github",
+      errorURL: "https://app.example.com/error",
+    });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toBe("email_not_verified");
+      expect(result.redirectUrl).toBe("https://app.example.com/error");
+    }
+    expect(component.identity.provisionFromIdentity).toHaveBeenCalled();
+    expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
+  });
+
+  it("persists OAuth token material on new account creation", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      createdUser: true,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.getAccountBySubject.mockResolvedValue(null);
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
+
+    const { url } = await handleSignIn(config, { provider: "github" });
+    const state = new URL(url).searchParams.get("state")!;
+
+    await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    const createAccountCall = component.native.accounts.createAccount.mock.calls[0]?.[0];
+    expect(createAccountCall).toMatchObject({
+      userId: "user_1",
+      provider: "github",
+      issuer: "https://github.com/login/oauth",
+      subject: "12345",
+      tokenType: "bearer",
+    });
+    expect(await decryptAccountToken(createAccountCall.accessToken)).toBe("github-access-token");
+  });
+
+  it("blocks sign up when disableImplicitSignUp is set and requestSignUp is not", async () => {
+    const config = createOAuthConfig({
+      github: createGitHubConfig({ disableImplicitSignUp: true }),
+    });
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      createdUser: true,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.getAccountBySubject.mockResolvedValue(null);
+
+    const { url } = await handleSignIn(config, { provider: "github" });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toBe("signup_disabled");
+    }
+    expect(component.identity.provisionFromIdentity).not.toHaveBeenCalled();
+  });
+
+  it("allows sign up when disableImplicitSignUp is set and requestSignUp is true", async () => {
+    const config = createOAuthConfig({
+      github: createGitHubConfig({ disableImplicitSignUp: true }),
+    });
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      createdUser: true,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.getAccountBySubject.mockResolvedValue(null);
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
+
+    const { url } = await handleSignIn(config, { provider: "github", requestSignUp: true });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(false);
+    if (!("error" in result)) {
+      expect(result.userId).toBe("user_1");
+    }
+  });
+
+  it("blocks link when linkingUserId is missing", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    const { url } = await handleSignIn(config, { provider: "github", link: true });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toBe("account_not_linked");
+    }
+  });
+
+  it("links an OAuth account to the current user when link is set and linkingUserId is provided", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    component.native.users.getUserById.mockResolvedValue({
+      _id: "existing_user_1",
+      _creationTime: Date.now(),
+      email: "existing@example.com",
+      emailVerified: true,
+      isActive: true,
+    });
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "existing_user_1",
+      identityId: "identity_1",
+      createdUser: false,
+      linkedExistingIdentity: false,
+    });
+    component.native.accounts.getAccountBySubject.mockResolvedValue(null);
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
+
+    const { url } = await handleSignIn(config, { provider: "github", link: true });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state, linkingUserId: "existing_user_1" },
+    );
+
+    expect("error" in result).toBe(false);
+    expect(component.native.users.getUserById).toHaveBeenCalledWith({
+      userId: "existing_user_1",
+    });
+    expect(component.identity.provisionFromIdentity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: expect.objectContaining({
+          email: "existing@example.com",
+          emailVerified: true,
+        }),
+      }),
+    );
+    if (!("error" in result)) {
+      expect(result.userId).toBe("existing_user_1");
+    }
+  });
+
+  it("blocks link when the OAuth account is already linked to a different user", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    component.native.accounts.getAccountBySubject.mockResolvedValue({
+      _id: "account_1",
+      userId: "other_user",
+      provider: "github",
+      issuer: "https://github.com/login/oauth",
+      subject: "12345",
+      credentialHash: "",
+    });
+
+    const { url } = await handleSignIn(config, { provider: "github", link: true });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state, linkingUserId: "existing_user_1" },
+    );
+
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toBe("account_not_linked");
+    }
+  });
+
+  it("blocks linking when accountLinking.requiresEmailVerification is true and email is unverified", async () => {
+    const config = createOAuthConfig({
+      github: createGitHubConfig({ requireEmailVerification: false }),
+      trustedProviders: ["github"],
+      accountLinking: { requiresEmailVerification: true },
+    });
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    responses.set("https://github.com/login/oauth/access_token", {
+      body: { access_token: "github-access-token", token_type: "bearer" },
+    });
+    responses.set("https://api.github.com/user", {
+      body: {
+        id: 12345,
+        login: "octocat",
+        name: "The Octocat",
+        email: "octocat@example.com",
+        avatar_url: "https://avatar",
+        verified: false,
+      },
+    });
+
+    component.native.users.getUserByEmail.mockResolvedValue({
+      _id: "existing_user_1",
+      _creationTime: Date.now(),
+      email: "octocat@example.com",
+      emailVerified: true,
+      isActive: true,
+    });
+
+    const { url } = await handleSignIn(config, { provider: "github" });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(true);
+    if ("error" in result) {
+      expect(result.error).toBe("account_not_linked");
+    }
+  });
+
+  it("allows linking for a trusted provider with an unverified email when requiresEmailVerification is not set", async () => {
+    const config = createOAuthConfig({
+      github: createGitHubConfig({ requireEmailVerification: false }),
+      trustedProviders: ["github"],
+    });
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    responses.set("https://github.com/login/oauth/access_token", {
+      body: { access_token: "github-access-token", token_type: "bearer" },
+    });
+    responses.set("https://api.github.com/user", {
+      body: {
+        id: 12345,
+        login: "octocat",
+        name: "The Octocat",
+        email: "octocat@example.com",
+        avatar_url: "https://avatar",
+        verified: false,
+      },
+    });
+
+    component.native.users.getUserByEmail.mockResolvedValue({
+      _id: "existing_user_1",
+      _creationTime: Date.now(),
+      email: "octocat@example.com",
+      emailVerified: true,
+      isActive: true,
+    });
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "existing_user_1",
+      identityId: "identity_1",
+      createdUser: false,
+      linkedExistingIdentity: false,
+    });
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
+
+    const { url } = await handleSignIn(config, { provider: "github" });
+    const state = new URL(url).searchParams.get("state")!;
+
+    const result = await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect("error" in result).toBe(false);
+    if (!("error" in result)) {
+      expect(result.userId).toBe("existing_user_1");
+    }
+  });
+
+  it("updates OAuth token material on an existing linked account", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const { fetch, responses } = createMockFetch();
+    config.github!.fetchImpl = fetch as unknown as typeof globalThis.fetch;
+    setupGitHubResponses(createGitHubProvider(config.github!), responses);
+
+    component.native.accounts.getAccountBySubject.mockResolvedValue({
+      _id: "account_1",
+      userId: "user_1",
+      provider: "github",
+      issuer: "https://github.com/login/oauth",
+      subject: "12345",
+      credentialHash: "",
+    });
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      identityId: "identity_1",
+      createdUser: false,
+      linkedExistingIdentity: false,
+    });
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
+
+    const { url } = await handleSignIn(config, { provider: "github" });
+    const state = new URL(url).searchParams.get("state")!;
+
+    await handleCallback(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      component as unknown as NativeOAuthComponentHandle,
+      config,
+      { provider: "github", code: "code-123", state },
+    );
+
+    expect(component.native.accounts.createAccount).not.toHaveBeenCalled();
+    const updateCall = component.native.accounts.updateAccountTokens.mock.calls[0]?.[0];
+    expect(updateCall).toMatchObject({
+      accountId: "account_1",
+      tokenType: "bearer",
+    });
+    expect(await decryptAccountToken(updateCall.accessToken)).toBe("github-access-token");
   });
 });
 
@@ -536,16 +1223,18 @@ describe("addNativeOAuthHttpRoutes", () => {
       linkedExistingIdentity: false,
     });
     component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-    component.native.sessions.createSession.mockResolvedValue("session_doc_1");
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const routes: {
-      path: string;
+      path?: string;
+      pathPrefix?: string;
       method: string;
       handler: (ctx: unknown, request: Request) => Promise<Response>;
     }[] = [];
     const http = {
       route: (r: {
-        path: string;
+        path?: string;
+        pathPrefix?: string;
         method: string;
         handler: (ctx: unknown, request: Request) => Promise<Response>;
       }) => routes.push(r),
@@ -557,28 +1246,30 @@ describe("addNativeOAuthHttpRoutes", () => {
     });
 
     expect(routes).toHaveLength(2);
-    const signinRoute = routes.find((r) => r.path === "/api/auth/signin/:provider")!;
-    const callbackRoute = routes.find((r) => r.path === "/api/auth/callback/:provider")!;
+    const signinRoute = routes.find((r) => r.pathPrefix === "/api/auth/signin/")!;
+    const callbackRoute = routes.find((r) => r.pathPrefix === "/api/auth/callback/")!;
 
-    const signinResponse = await signinRoute.handler(
+    const signinResponse = (await exec(signinRoute.handler).handler(
       createContext(),
       new Request(
         "https://app.example.com/api/auth/signin/github?redirectTo=https://app.example.com/home",
       ),
-    );
+    )) as Response;
     expect(signinResponse.status).toBe(302);
     const location = signinResponse.headers.get("Location")!;
     const authUrl = new URL(location);
     const state = authUrl.searchParams.get("state")!;
     const code = "code-123";
 
-    const callbackResponse = await callbackRoute.handler(
+    const callbackResponse = (await exec(callbackRoute.handler).handler(
       createContext() as unknown as GenericActionCtx<DataModel>,
       new Request(`https://app.example.com/api/auth/callback/github?code=${code}&state=${state}`),
-    );
+    )) as Response;
 
     expect(callbackResponse.status).toBe(302);
     expect(callbackResponse.headers.get("Location")).toBe("https://app.example.com/home");
-    expect(callbackResponse.headers.get("Set-Cookie")).toMatch(/convex-auth-token=/);
+    const setCookie = callbackResponse.headers.get("Set-Cookie");
+    expect(setCookie).toMatch(/convex-auth-token=/);
+    expect(setCookie).toMatch(/convex-auth-refresh-token=/);
   });
 });

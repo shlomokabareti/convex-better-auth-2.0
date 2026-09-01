@@ -1,6 +1,7 @@
 import { intersectPermissions } from "../compat/permissions";
 import { v } from "convex/values";
 
+import { base64urlToBytes, bytesToBase64url } from "../convex-runtime/native/password.js";
 import { internal } from "./_generated/api.js";
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
@@ -1794,24 +1795,18 @@ async function normalizePublicEd25519Jwk(publicJwkJson: string) {
 }
 
 function bytesToBase64Url(bytes: Uint8Array) {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
+  return bytesToBase64url(bytes);
 }
 
 function base64UrlToBytes(value: string) {
   if (!/^[A-Za-z0-9_-]+$/u.test(value)) {
     throw new TypeError("Public JWK x must be base64url");
   }
-  const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-  let binary: string;
   try {
-    binary = atob(padded);
+    return base64urlToBytes(value);
   } catch {
     throw new TypeError("Public JWK x must be base64url");
   }
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
 function normalizeGrantInputs(

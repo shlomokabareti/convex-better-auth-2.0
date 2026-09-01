@@ -8,11 +8,12 @@ export const getNativeIdentityByUser = query({
     issuer: v.string(),
   },
   handler: async (ctx, args) => {
-    const identities = await ctx.db
+    return await ctx.db
       .query("auth_identities")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
-      .collect();
-    return identities.find((i) => i.provider === args.provider && i.issuer === args.issuer) ?? null;
+      .withIndex("by_user_provider_issuer", (q) =>
+        q.eq("userId", args.userId).eq("provider", args.provider).eq("issuer", args.issuer),
+      )
+      .first();
   },
 });
 

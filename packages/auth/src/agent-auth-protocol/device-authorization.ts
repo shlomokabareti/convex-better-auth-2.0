@@ -1,3 +1,5 @@
+import { base64urlToBytes, bytesToBase64url } from "../convex-runtime/native/password.js";
+
 export const AGENT_AUTH_DEVICE_AUTHORIZATION_GRANT_TYPE =
   "urn:ietf:params:oauth:grant-type:device_code" as const;
 export const AGENT_AUTH_DEVICE_AUTHORIZATION_DEFAULT_EXPIRES_IN_SECONDS = 600 as const;
@@ -95,15 +97,11 @@ function secureRandomBytes(length: number): Uint8Array {
 }
 
 function bytesToBase64Url(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
+  return bytesToBase64url(bytes);
 }
 
 function decodeBase64Url(value: string): Uint8Array {
-  const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
-  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+  return base64urlToBytes(value);
 }
 
 function requireNonnegativeSafeInteger(value: number, name: string): void {

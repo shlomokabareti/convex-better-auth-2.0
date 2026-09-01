@@ -1,4 +1,5 @@
 import { SignJWT, createLocalJWKSet, jwtVerify } from "jose";
+import { bytesToBase64url } from "./password.js";
 import { getJwtPrivateKey, getJwks } from "./jwt.js";
 
 export type OAuthStatePayload = {
@@ -7,15 +8,13 @@ export type OAuthStatePayload = {
   callbackURL?: string;
   errorURL?: string;
   newUserURL?: string;
+  requestSignUp?: boolean;
+  link?: boolean;
+  additionalData?: Record<string, unknown>;
 };
 
 function base64url(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const base64 = btoa(binary);
-  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  return bytesToBase64url(bytes);
 }
 
 export async function generateCodeVerifier(): Promise<string> {
@@ -60,5 +59,11 @@ export async function verifyOAuthState(token: string): Promise<OAuthStatePayload
     callbackURL: typeof payload.callbackURL === "string" ? payload.callbackURL : undefined,
     errorURL: typeof payload.errorURL === "string" ? payload.errorURL : undefined,
     newUserURL: typeof payload.newUserURL === "string" ? payload.newUserURL : undefined,
+    requestSignUp: payload.requestSignUp === true,
+    link: payload.link === true,
+    additionalData:
+      typeof payload.additionalData === "object" && payload.additionalData !== null
+        ? (payload.additionalData as Record<string, unknown>)
+        : undefined,
   };
 }

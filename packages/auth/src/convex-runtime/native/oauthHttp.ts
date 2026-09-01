@@ -2,9 +2,35 @@ import { httpActionGeneric, type HttpRouter } from "convex/server";
 import { handleCallback, handleSignIn, type NativeOAuthConfig } from "./oauthHandlers.js";
 import { verifyOAuthState } from "./oauthState.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
+import { verifyToken } from "./jwt.js";
 
-function setCookieHeader(token: string): string {
-  return `convex-auth-token=${token}; Path=/; HttpOnly; SameSite=Lax`;
+const ACCESS_TOKEN_COOKIE = "convex-auth-token";
+const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
+const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+
+function readCookie(request: Request, name: string): string | undefined {
+  const cookieHeader = request.headers.get("cookie");
+  if (!cookieHeader) {
+    return undefined;
+  }
+  const match = cookieHeader.match(new RegExp(`(?:^|;)\\s*${name}=([^;]+)`));
+  return match?.[1];
+}
+
+function setCookieHeader(
+  name: string,
+  value: string,
+  maxAgeSeconds?: number,
+  secure?: boolean,
+): string {
+  let header = `${name}=${value}; Path=/; HttpOnly; SameSite=Lax`;
+  if (maxAgeSeconds !== undefined) {
+    header += `; Max-Age=${maxAgeSeconds}`;
+  }
+  if (secure) {
+    header += "; Secure";
+  }
+  return header;
 }
 
 function parseProvider(url: URL): string {
@@ -29,7 +55,7 @@ export type NativeOAuthHttpConfig = {
 
 export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHttpConfig): void {
   http.route({
-    path: "/api/auth/signin/:provider",
+    pathPrefix: "/api/auth/signin/",
     method: "GET",
     handler: httpActionGeneric(async (_ctx, request) => {
       const url = new URL(request.url);
@@ -38,12 +64,16 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
         url.searchParams.get("redirectTo") ?? url.searchParams.get("callbackURL") ?? undefined;
       const errorURL = url.searchParams.get("errorURL") ?? undefined;
       const newUserURL = url.searchParams.get("newUserURL") ?? undefined;
+      const requestSignUp = url.searchParams.get("requestSignUp") === "true";
+      const link = url.searchParams.get("link") === "true";
 
       const result = await handleSignIn(config.oauth, {
         provider,
         callbackURL,
         errorURL,
         newUserURL,
+        requestSignUp,
+        link,
       });
 
       return new Response(null, {
@@ -54,7 +84,7 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
   });
 
   http.route({
-    path: "/api/auth/callback/:provider",
+    pathPrefix: "/api/auth/callback/",
     method: "GET",
     handler: httpActionGeneric(async (ctx, request) => {
       const url = new URL(request.url);
@@ -78,32 +108,55 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
       }
 
       if (!code || !state) {
-        return new Response("Missing code or state", { status: 400 });
+        const base = process.env.SITE_URL ?? "/";
+        return buildErrorRedirect(base, "no_code", "Missing code or state");
       }
 
-      try {
-        const result = await handleCallback(ctx, config.component, config.oauth, {
-          provider,
-          code,
-          state,
-        });
-        const headers = new Headers();
-        headers.set("Location", result.redirectUrl);
-        headers.set("Set-Cookie", setCookieHeader(result.token));
-        return new Response(null, { status: 302, headers });
-      } catch (e) {
-        const errorURL = await (async () => {
-          try {
-            const statePayload = await verifyOAuthState(state);
-            return statePayload.errorURL;
-          } catch {
-            return undefined;
+      let linkingUserId: string | undefined;
+      const accessToken = readCookie(request, ACCESS_TOKEN_COOKIE);
+      if (accessToken) {
+        try {
+          const payload = await verifyToken(accessToken);
+          if (typeof payload.sub === "string") {
+            linkingUserId = payload.sub;
           }
-        })();
-        const base = errorURL ?? process.env.SITE_URL ?? "/";
-        const description = e instanceof Error ? e.message : "callback_failed";
-        return buildErrorRedirect(base, "callback_failed", description);
+        } catch {
+          // Invalid access token; treat as unauthenticated.
+        }
       }
+
+      const result = await handleCallback(ctx, config.component, config.oauth, {
+        provider,
+        code,
+        state,
+        linkingUserId,
+      });
+      if ("error" in result) {
+        return buildErrorRedirect(result.redirectUrl, result.error, result.errorDescription);
+      }
+
+      const secure = new URL(request.url).protocol === "https:";
+      const accessTokenMaxAge =
+        config.oauth.sessionTtlMs !== undefined
+          ? Math.floor(config.oauth.sessionTtlMs / 1000)
+          : undefined;
+
+      const headers = new Headers();
+      headers.set("Location", result.redirectUrl);
+      headers.append(
+        "Set-Cookie",
+        setCookieHeader(ACCESS_TOKEN_COOKIE, result.token, accessTokenMaxAge, secure),
+      );
+      headers.append(
+        "Set-Cookie",
+        setCookieHeader(
+          REFRESH_TOKEN_COOKIE,
+          result.refreshToken,
+          REFRESH_TOKEN_MAX_AGE_SECONDS,
+          secure,
+        ),
+      );
+      return new Response(null, { status: 302, headers });
     }),
   });
 }

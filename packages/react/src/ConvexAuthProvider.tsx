@@ -1,4 +1,4 @@
-import { useAction, useConvex } from "convex/react";
+import { useAction, useConvex, useQuery } from "convex/react";
 import type { FunctionReference } from "convex/server";
 import {
   createContext,
@@ -6,25 +6,113 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+
+const TOKEN_KEY = "convex-auth-token";
+const REFRESH_TOKEN_KEY = "convex-auth-refresh-token";
+const SESSION_ID_KEY = "convex-auth-session-id";
+const REFRESH_BUFFER_MS = 60_000;
+
+export type TokenStorage = {
+  get(key: string): string | null;
+  set(key: string, value: string): void;
+  remove(key: string): void;
+};
+
+function createBrowserStorage(store: Storage): TokenStorage {
+  return {
+    get: (key) => {
+      try {
+        return store.getItem(key);
+      } catch {
+        return null;
+      }
+    },
+    set: (key, value) => {
+      try {
+        store.setItem(key, value);
+      } catch {
+        // ignore storage quota / private mode errors
+      }
+    },
+    remove: (key) => {
+      try {
+        store.removeItem(key);
+      } catch {
+        // ignore
+      }
+    },
+  };
+}
+
+function createMemoryStorage(): TokenStorage {
+  const store = new Map<string, string>();
+  return {
+    get: (key) => store.get(key) ?? null,
+    set: (key, value) => store.set(key, value),
+    remove: (key) => store.delete(key),
+  };
+}
+
+function resolveStorage(storage?: ConvexAuthProviderProps["storage"]): TokenStorage {
+  if (typeof storage === "object" && storage !== null) {
+    return storage;
+  }
+  if (typeof window !== "undefined") {
+    if (storage === "session") {
+      return createBrowserStorage(window.sessionStorage);
+    }
+    return createBrowserStorage(window.localStorage);
+  }
+  return createMemoryStorage();
+}
+
+function getTokenExpiry(token: string): number | null {
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return null;
+  }
+  const payload = parts[1];
+  if (!payload) {
+    return null;
+  }
+  const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = (4 - (normalized.length % 4)) % 4;
+  const base64 = normalized + "=".repeat(padding);
+  try {
+    const json = atob(base64);
+    const parsed = JSON.parse(json) as { exp?: number };
+    if (typeof parsed.exp !== "number") {
+      return null;
+    }
+    return parsed.exp * 1000;
+  } catch {
+    return null;
+  }
+}
 
 export type NativeAuthSignUpArgs = {
   email: string;
   password: string;
   name: string;
+  image?: string;
+  callbackURL?: string;
   rememberMe?: boolean;
 };
 
 export type NativeAuthSignInArgs = {
   email: string;
   password: string;
+  callbackURL?: string;
   rememberMe?: boolean;
 };
 
 export type NativeAuthSignOutArgs = {
   token: string;
+  callbackURL?: string;
 };
 
 export type NativeAuthUser = {
@@ -38,11 +126,20 @@ export type NativeAuthUser = {
 };
 
 export type NativeAuthSession = {
-  token?: string;
+  token: string | null;
+  refreshToken?: string;
   user: NativeAuthUser;
   userId?: string;
   identityId?: string;
   sessionId?: string;
+  redirect?: boolean;
+  url?: string;
+};
+
+export type NativeAuthSignOutResult = {
+  success: boolean;
+  redirect?: boolean;
+  url?: string;
 };
 
 export type NativeAuthSendResult = {
@@ -56,12 +153,12 @@ export type NativeAuthVerifyResult = {
   reason?: string;
 };
 
-export type NativeAuthResetResult = { success: boolean; reason?: string };
+export type NativeAuthResetResult = { status: boolean; reason?: string };
 
 export type NativeAuthActions = {
   signUp: FunctionReference<"action", "public", NativeAuthSignUpArgs, NativeAuthSession>;
   signIn: FunctionReference<"action", "public", NativeAuthSignInArgs, NativeAuthSession>;
-  signOut: FunctionReference<"action", "public", NativeAuthSignOutArgs, { success: boolean }>;
+  signOut: FunctionReference<"action", "public", NativeAuthSignOutArgs, NativeAuthSignOutResult>;
   sendEmailVerification: FunctionReference<
     "action",
     "public",
@@ -87,11 +184,22 @@ export type NativeAuthActions = {
     { token: string; password: string },
     { success: boolean }
   >;
+  updateSession: FunctionReference<"action", "public", { refreshToken: string }, NativeAuthSession>;
+  verifySession: FunctionReference<
+    "query",
+    "public",
+    { token?: string; sessionId?: string },
+    { user?: NativeAuthUser; sessionId?: string }
+  >;
 };
 
 type ConvexAuthContextValue = NativeAuthActions & {
   token: string | null;
   setToken: (token: string | null) => void;
+  refreshToken: string | null;
+  setRefreshToken: (refreshToken: string | null) => void;
+  sessionId: string | null;
+  setSessionId: (sessionId: string | null) => void;
 };
 
 const ConvexAuthContext = createContext<ConvexAuthContextValue | null>(null);
@@ -99,11 +207,49 @@ const ConvexAuthContext = createContext<ConvexAuthContextValue | null>(null);
 export type ConvexAuthProviderProps = {
   actions: NativeAuthActions;
   children: ReactNode;
+  storage?: "local" | "session" | TokenStorage;
 };
 
 export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
   const client = useConvex();
+  const updateSessionAction = useAction(props.actions.updateSession);
   const [token, setToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [storage, setStorage] = useState<TokenStorage | null>(null);
+  const isHydrating = useRef(true);
+
+  useEffect(() => {
+    const resolved = resolveStorage(props.storage);
+    setStorage(resolved);
+    const storedToken = resolved.get(TOKEN_KEY);
+    const storedRefresh = resolved.get(REFRESH_TOKEN_KEY);
+    const storedSessionId = resolved.get(SESSION_ID_KEY);
+    if (storedToken) {
+      setToken(storedToken);
+      if (storedRefresh) {
+        setRefreshToken(storedRefresh);
+      }
+      if (storedSessionId) {
+        setSessionId(storedSessionId);
+      }
+      const expiry = getTokenExpiry(storedToken);
+      if (expiry !== null && expiry <= Date.now() + REFRESH_BUFFER_MS && storedRefresh) {
+        updateSessionAction({ refreshToken: storedRefresh })
+          .then((session) => {
+            setToken(session.token ?? null);
+            setRefreshToken(session.refreshToken ?? null);
+            setSessionId(session.sessionId ?? null);
+          })
+          .catch(() => {
+            setToken(null);
+            setRefreshToken(null);
+            setSessionId(null);
+          });
+      }
+    }
+    isHydrating.current = false;
+  }, [props.storage, updateSessionAction]);
 
   useEffect(() => {
     client.setAuth(() => Promise.resolve(token));
@@ -115,7 +261,64 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
     };
   }, [client]);
 
-  const value = useMemo(() => ({ ...props.actions, token, setToken }), [props.actions, token]);
+  useEffect(() => {
+    if (storage === null || isHydrating.current) {
+      return;
+    }
+    if (token) {
+      storage.set(TOKEN_KEY, token);
+    } else {
+      storage.remove(TOKEN_KEY);
+    }
+    if (refreshToken) {
+      storage.set(REFRESH_TOKEN_KEY, refreshToken);
+    } else {
+      storage.remove(REFRESH_TOKEN_KEY);
+    }
+    if (sessionId) {
+      storage.set(SESSION_ID_KEY, sessionId);
+    } else {
+      storage.remove(SESSION_ID_KEY);
+    }
+  }, [storage, token, refreshToken, sessionId]);
+
+  useEffect(() => {
+    if (!token || !refreshToken) {
+      return;
+    }
+    const expiry = getTokenExpiry(token);
+    if (expiry === null) {
+      return;
+    }
+    const delay = Math.max(0, expiry - Date.now() - REFRESH_BUFFER_MS);
+    const timeout = setTimeout(() => {
+      updateSessionAction({ refreshToken })
+        .then((session) => {
+          setToken(session.token ?? null);
+          setRefreshToken(session.refreshToken ?? null);
+          setSessionId(session.sessionId ?? null);
+        })
+        .catch(() => {
+          setToken(null);
+          setRefreshToken(null);
+          setSessionId(null);
+        });
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [token, refreshToken, updateSessionAction]);
+
+  const value = useMemo(
+    () => ({
+      ...props.actions,
+      token,
+      setToken,
+      refreshToken,
+      setRefreshToken,
+      sessionId,
+      setSessionId,
+    }),
+    [props.actions, token, refreshToken, sessionId],
+  );
   return <ConvexAuthContext.Provider value={value}>{props.children}</ConvexAuthContext.Provider>;
 }
 
@@ -128,6 +331,7 @@ export function useAuthActions() {
   const signUpAction = useAction(ctx.signUp);
   const signInAction = useAction(ctx.signIn);
   const signOutAction = useAction(ctx.signOut);
+  const updateSessionAction = useAction(ctx.updateSession);
   const sendEmailVerificationAction = useAction(ctx.sendEmailVerification);
   const verifyEmailAction = useAction(ctx.verifyEmail);
   const sendPasswordResetAction = useAction(ctx.sendPasswordReset);
@@ -142,6 +346,10 @@ export function useAuthActions() {
       try {
         const session = await signUpAction(args);
         ctx.setToken(session.token ?? null);
+        ctx.setSessionId(session.sessionId ?? null);
+        if (session.refreshToken) {
+          ctx.setRefreshToken(session.refreshToken);
+        }
         return session;
       } finally {
         setIsLoading(false);
@@ -156,6 +364,10 @@ export function useAuthActions() {
       try {
         const session = await signInAction(args);
         ctx.setToken(session.token ?? null);
+        ctx.setSessionId(session.sessionId ?? null);
+        if (session.refreshToken) {
+          ctx.setRefreshToken(session.refreshToken);
+        }
         return session;
       } finally {
         setIsLoading(false);
@@ -164,19 +376,43 @@ export function useAuthActions() {
     [signInAction, ctx],
   );
 
-  const signOut = useCallback(async () => {
-    if (ctx.token === null) {
-      return { success: true as const };
+  const signOut = useCallback(
+    async (args?: { callbackURL?: string }): Promise<NativeAuthSignOutResult> => {
+      if (ctx.token === null) {
+        ctx.setRefreshToken(null);
+        return { success: true };
+      }
+      setIsLoading(true);
+      try {
+        const result = await signOutAction({ token: ctx.token, callbackURL: args?.callbackURL });
+        ctx.setToken(null);
+        ctx.setRefreshToken(null);
+        ctx.setSessionId(null);
+        return result;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [signOutAction, ctx],
+  );
+
+  const updateSession = useCallback(async () => {
+    if (ctx.refreshToken === null) {
+      throw new Error("No refresh token available");
     }
     setIsLoading(true);
     try {
-      const result = await signOutAction({ token: ctx.token });
-      ctx.setToken(null);
-      return result;
+      const session = await updateSessionAction({ refreshToken: ctx.refreshToken });
+      ctx.setToken(session.token ?? null);
+      ctx.setSessionId(session.sessionId ?? null);
+      if (session.refreshToken) {
+        ctx.setRefreshToken(session.refreshToken);
+      }
+      return session;
     } finally {
       setIsLoading(false);
     }
-  }, [signOutAction, ctx]);
+  }, [updateSessionAction, ctx]);
 
   const sendEmailVerification = useCallback(
     async (args: { email: string; callbackURL?: string }) => {
@@ -238,17 +474,58 @@ export function useAuthActions() {
     [verifyPasswordAction],
   );
 
+  const session = useQuery(
+    ctx.verifySession,
+    ctx.token ? { token: ctx.token, sessionId: ctx.sessionId ?? undefined } : "skip",
+  );
+  const isSessionLoading = ctx.token !== null && session === undefined;
+  const user = session?.user ?? null;
+  const sessionId = session?.sessionId ?? null;
+
   return {
     signUp,
     signIn,
     signOut,
+    updateSession,
     sendEmailVerification,
     verifyEmail,
     sendPasswordReset,
     resetPassword,
     verifyPassword,
     token: ctx.token,
-    isLoading,
-    isAuthenticated: ctx.token !== null,
+    refreshToken: ctx.refreshToken,
+    user,
+    sessionId,
+    isLoading: isLoading || isSessionLoading,
+    isAuthenticated: user !== null,
   };
+}
+
+export function useSession(): {
+  user: NativeAuthUser | null;
+  sessionId: string | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+} {
+  const ctx = useContext(ConvexAuthContext);
+  if (ctx === null) {
+    throw new Error("useSession must be used within a ConvexAuthProvider");
+  }
+  const session = useQuery(
+    ctx.verifySession,
+    ctx.token ? { token: ctx.token, sessionId: ctx.sessionId ?? undefined } : "skip",
+  );
+  const isLoading = ctx.token !== null && session === undefined;
+  const user = session?.user ?? null;
+  return {
+    user,
+    sessionId: session?.sessionId ?? null,
+    isLoading,
+    isAuthenticated: user !== null,
+  };
+}
+
+export function useUser(): NativeAuthUser | null {
+  const { user } = useSession();
+  return user;
 }

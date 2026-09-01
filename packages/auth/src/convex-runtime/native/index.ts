@@ -1,5 +1,8 @@
+export { convexAuth } from "./convexAuth.js";
+export type { ConvexAuth, ConvexAuthConfig } from "./convexAuth.js";
 export { nativeEmailAndPassword } from "./provider.js";
 export { type NativeEmailAndPasswordActions } from "./provider.js";
+export { type EmailDraft, type EmailSender } from "./provider.js";
 export { nativeOAuth } from "./oauthActions.js";
 export { type NativeOAuthActions } from "./oauthActions.js";
 export {
@@ -26,4 +29,5 @@ export {
   verifyOAuthState,
 } from "./oauthState.js";
 export { addNativeOAuthHttpRoutes, type NativeOAuthHttpConfig } from "./oauthHttp.js";
+export { addNativeAuthHttpRoutes } from "./http.js";
 export type { NativeEmailAndPasswordComponentHandle, NativeOAuthComponentHandle } from "./types.js";

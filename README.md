@@ -2,7 +2,7 @@
 
 # convex-better-auth-2.0
 
-A public, full-stack auth solution that bridges [Convex](https://convex.dev) and [Better Auth](https://www.better-auth.com).
+A public, Convex-native auth platform for [Convex](https://convex.dev), with a [Better Auth](https://www.better-auth.com) compatibility bridge.
 
 [![CI][ci-badge]][ci]
 [![Docs][docs-badge]][docs]
@@ -11,7 +11,7 @@ A public, full-stack auth solution that bridges [Convex](https://convex.dev) and
 [![Node][node-badge]][node]
 [![pnpm][pnpm-badge]][pnpm]
 
-**[Docs](https://gregarious-perch-710.convex.site)** · **[Why this exists](#why-this-exists)** · **[Packages](#packages)** · **[Quick start](#quick-start)**
+**[Docs](https://gregarious-perch-710.convex.site)** · **[Why this exists](#why-this-exists)** · **[Packages](#packages)** · **[Convex-native auth](#convex-native-auth-recommended)**
 
 </div>
 
@@ -19,7 +19,7 @@ A public, full-stack auth solution that bridges [Convex](https://convex.dev) and
 
 ## Status
 
-Public — the core packages are now at `1.0.0` / `2.0.0` and the Better Auth 1.7 adapter is at `0.13.0`. The adapter is still pre-1.0 while the community validates it against Better Auth releases, but the rest of the workspace is stable for production use. Read the [docs](https://gregarious-perch-710.convex.site) for the current design and roadmap.
+Public — `convex-auth` is at `1.2.0` and the Better Auth 1.7 adapter is at `0.13.0`. The Convex-native runtime (email/password, Google/GitHub/Discord OAuth, TOTP 2FA, backup codes, trusted devices, sessions, and refresh tokens) is passing full conformance and is ready for alpha use. The Better Auth compatibility bridge remains pre-1.0 while the community validates it against Better Auth releases.
 
 ## Why this exists
 
@@ -27,87 +27,52 @@ Convex is building the future of auth, but it is not there yet. Better Auth has 
 
 This repo is the pragmatic middle path:
 
-1. **Convex Auth 2.0 is still coming.** Until Convex ships a first-class, native auth system, teams need a production-grade option that does not block them.
-2. **Better Auth's plugin model and Convex's component system fight each other.** Better Auth assumes it owns the runtime and tables; Convex wants auth inside a versioned component with generated queries and mutations. Without a bridge, the two leak into each other.
-3. **Convex should eventually own auth, but not by throwing Better Auth away.** Better Auth already covers password/email flows, OAuth, 2FA, organizations, API keys, webhooks, and more. The right move is to rebuild those plugin features as Convex-style components, queries, mutations, and actions, then replace pieces with native Convex auth as the platform catches up.
+1. **Convex-native auth is the end state.** Authentication state (users, sessions, identities, organizations, permissions, API keys, and more) lives in your Convex database and is accessed through components, queries, mutations, and actions.
+2. **Better Auth is a compatibility and migration bridge, not the final runtime.** The `convex-better-auth-adapter` and `convex-better-auth` packages let existing Better Auth users move to Convex tables and the native runtime without a big bang.
+3. **We are not copying Convex Auth 2.0.** We are learning from its design constraints and shipping our own implementation that preserves the B2B surface we have already built.
 
 Read the full rationale in [`docs/motivation.md`](docs/motivation.md) and the design details in [`docs/better-auth-to-convex.md`](docs/better-auth-to-convex.md).
 
 ## Packages
 
-| Package                      | npm                          | Path                           | Description                                                                                   |
-| ---------------------------- | ---------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
-| `convex-auth`                | `convex-auth`                | `packages/auth`                | Convex auth component, control plane, and server integration. This is what most apps install. |
-| `convex-better-auth`         | `convex-better-auth`         | `packages/better-auth`         | Better Auth ↔ Convex bridge (runtime + client).                                               |
-| `convex-better-auth-adapter` | `convex-better-auth-adapter` | `packages/better-auth-adapter` | Low-level Better Auth ↔ Convex adapter, vendored and maintained here.                         |
-| `convex-auth-react`          | `convex-auth-react`          | `packages/react`               | React UI and hooks.                                                                           |
-| `convex-auth-react-native`   | `convex-auth-react-native`   | `packages/react-native`        | Expo / React Native client.                                                                   |
-| `convex-auth-core`           | `convex-auth-core`           | `packages/core`                | Auth domain core (permissions, roles, scopes).                                                |
-| `convex-auth-ui`             | `convex-auth-ui`             | `packages/ui`                  | Base shadcn-style UI primitives.                                                              |
+| Package                      | npm                          | Path                           | Description                                                                                          |
+| ---------------------------- | ---------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `convex-auth`                | `convex-auth`                | `packages/auth`                | Convex auth component, control plane, and native server integration. This is what most apps install. |
+| `convex-auth-react`          | `convex-auth-react`          | `packages/react`               | React UI and hooks.                                                                                  |
+| `convex-auth-react-native`   | `convex-auth-react-native`   | `packages/react-native`        | Expo / React Native client.                                                                          |
+| `convex-auth-core`           | `convex-auth-core`           | `packages/core`                | Auth domain core (permissions, roles, scopes).                                                       |
+| `convex-auth-ui`             | `convex-auth-ui`             | `packages/ui`                  | Base shadcn-style UI primitives.                                                                     |
+| `convex-better-auth`         | `convex-better-auth`         | `packages/better-auth`         | Better Auth compatibility bridge (runtime + client).                                                 |
+| `convex-better-auth-adapter` | `convex-better-auth-adapter` | `packages/better-auth-adapter` | Low-level Better Auth ↔ Convex adapter, vendored and maintained here.                                |
 
 All packages are independently buildable and published under the Apache-2.0 license.
 
-## Quick start
+## Convex-native auth (recommended)
 
-### Convex component
+`convex-auth` ships a Convex-native auth runtime that stores users, sessions, and identities in your Convex database and runs in the default Convex isolate. It supports email/password, Google/GitHub/Discord OAuth, 2FA, email verification, password reset, sessions, and refresh tokens. No Better Auth server is required.
 
-Use the `convex-auth` component in your `convex/convex.config.ts`:
-
-```ts
-import { defineComponents } from "convex/server";
-import auth from "convex-auth/component";
-
-export default defineComponents({
-  auth,
-});
-```
-
-Then wire up the auth HTTP and session helpers in `convex/auth.ts` and `convex/http.ts` following the Better Auth + Convex patterns. See [`docs/better-auth-to-convex.md`](docs/better-auth-to-convex.md) for the full mapping.
-
-### React client
-
-Create an auth client with the Convex plugin:
-
-```ts
-import { createAuthClient } from "convex-auth-react";
-import { convexClient } from "convex-better-auth-adapter/client/plugins";
-
-export const authClient = createAuthClient({
-  plugins: [convexClient()],
-});
-```
-
-Wrap your app in the provider:
-
-```tsx
-import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { BetterAuthConvexProvider } from "convex-auth-react";
-
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
-
-export function App() {
-  return (
-    <ConvexProvider client={convex}>
-      <BetterAuthConvexProvider client={convex} authClient={authClient}>
-        {/** your app */}
-      </BetterAuthConvexProvider>
-    </ConvexProvider>
-  );
-}
-```
-
-## Native email/password (experimental)
-
-`convex-auth` also ships a Convex-native email/password flow that does not require Better Auth. This is a prototype behind the existing component surface.
+The native flow is the intended end state of this repository. The Better Auth bridge below is still available for teams that need it while migrating.
 
 ### 1. Set environment variables
 
-Generate an RS256 keypair and set in your Convex deployment:
+Generate an RS256 keypair and set it in your Convex deployment:
 
 ```bash
-# convex dev --once and `convex env set ...` after first deploy
 convex env set JWT_PRIVATE_KEY '...' # JSON-encoded RSA private key JWK
 convex env set JWKS '...'            # JSON Web Key Set containing the public key
+```
+
+For email and OAuth, also set:
+
+```bash
+convex env set CONVEX_SITE_URL 'https://your-site.convex.site'
+convex env set EMAIL_FROM_ADDRESS 'auth@yourdomain.com'
+convex env set GITHUB_CLIENT_ID '...'
+convex env set GITHUB_CLIENT_SECRET '...'
+convex env set GOOGLE_CLIENT_ID '...'
+convex env set GOOGLE_CLIENT_SECRET '...'
+convex env set DISCORD_CLIENT_ID '...'
+convex env set DISCORD_CLIENT_SECRET '...'
 ```
 
 ### 2. Mount the component
@@ -122,21 +87,80 @@ export default defineComponents({
 });
 ```
 
-### 3. Export the native actions from your consumer `auth.ts`
+### 3. Configure auth in `convex/auth.ts`
 
 ```ts
 // convex/auth.ts
 import { components } from "./_generated/api";
-import { nativeEmailAndPassword } from "convex-auth/convex";
+import { convexAuth, type EmailDraft } from "convex-auth/convex";
 
-const auth = nativeEmailAndPassword(components.convexAuth);
+const siteUrl = process.env.CONVEX_SITE_URL?.replace(/\/$/, "");
 
-export const signUp = auth.signUp;
-export const signIn = auth.signIn;
-export const signOut = auth.signOut;
+export const auth = convexAuth({
+  component: components.convexAuth,
+  emailAndPassword: {
+    enabled: true,
+    email: {
+      from: process.env.EMAIL_FROM_ADDRESS ?? "auth@example.com",
+      appOrigin: siteUrl,
+      sendEmail: async (draft: EmailDraft) => {
+        // Send via Resend/Postmark/SES in production.
+        // For local dev you can log and return a dummy id.
+        console.log("Email draft", draft);
+        return "email-id";
+      },
+      sendOnSignUp: true,
+      sendOnSignIn: false,
+    },
+  },
+  oauth: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID ?? "",
+      clientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
+    },
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+    },
+    discord: {
+      clientId: process.env.DISCORD_CLIENT_ID ?? "",
+      clientSecret: process.env.DISCORD_CLIENT_SECRET ?? "",
+    },
+  },
+});
+
+export const {
+  signUp,
+  signIn,
+  signOut,
+  updateSession,
+  sendEmailVerification,
+  verifyEmail,
+  sendPasswordReset,
+  resetPassword,
+  verifyPassword,
+  twoFactorEnable,
+  twoFactorVerifyTOTP,
+  twoFactorVerifyBackupCode,
+  twoFactorDisable,
+  twoFactorGenerateBackupCodes,
+} = auth;
 ```
 
-### 4. Wrap the React app
+### 4. Wire HTTP routes in `convex/http.ts`
+
+```ts
+// convex/http.ts
+import { httpRouter } from "convex/server";
+import { auth } from "./auth";
+
+const http = httpRouter();
+auth.addHttpRoutes(http);
+
+export default http;
+```
+
+### 5. Wrap the React app
 
 ```tsx
 // src/main.tsx
@@ -164,7 +188,7 @@ function Root() {
 }
 ```
 
-### 5. Use the actions in components
+### 6. Use the actions in components
 
 ```tsx
 // src/SignIn.tsx
@@ -198,7 +222,60 @@ export function SignIn() {
 }
 ```
 
-See [`docs/convex-native-auth-strategy.md`](docs/convex-native-auth-strategy.md) for the long-term roadmap and how this relates to Convex Auth 2.0.
+Email verification and password reset are one-click via the `/api/auth/verify-email` and `/api/auth/reset-password/:token` HTTP routes. The user clicks the link, the route validates the token, and the browser is redirected to `callbackURL` with the token (reset only) or success state (verification). In production `sendEmail` should call Resend/Postmark/SES/etc.
+
+See `packages/conformance-consumer` for a working deployment with email capture and OAuth stubs, and [`docs/convex-native-auth-strategy.md`](docs/convex-native-auth-strategy.md) for the long-term roadmap.
+
+## Better Auth bridge (for migration)
+
+If you are already using Better Auth and want to migrate to Convex tables and the native runtime without a big bang, the Better Auth compatibility bridge is still available.
+
+### Convex component
+
+Use the `convex-auth` component in your `convex/convex.config.ts`:
+
+```ts
+import { defineComponents } from "convex/server";
+import auth from "convex-auth/component";
+
+export default defineComponents({
+  auth,
+});
+```
+
+For the full mapping, see [`docs/better-auth-to-convex.md`](docs/better-auth-to-convex.md).
+
+### React client
+
+Create an auth client with the Convex plugin:
+
+```ts
+import { createAuthClient } from "convex-auth-react";
+import { convexClient } from "convex-better-auth-adapter/client/plugins";
+
+export const authClient = createAuthClient({
+  plugins: [convexClient()],
+});
+```
+
+Wrap your app in the provider:
+
+```tsx
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { BetterAuthConvexProvider } from "convex-auth-react";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
+
+export function App() {
+  return (
+    <ConvexProvider client={convex}>
+      <BetterAuthConvexProvider client={convex} authClient={authClient}>
+        {/** your app */}
+      </BetterAuthConvexProvider>
+    </ConvexProvider>
+  );
+}
+```
 
 ## Compatibility and migration
 

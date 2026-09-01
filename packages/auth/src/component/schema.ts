@@ -121,6 +121,8 @@ export const authMdCredentialStatusValidator = v.union(v.literal("active"), v.li
 export const verificationCodeTypeValidator = v.union(
   v.literal("email_verification"),
   v.literal("password_reset"),
+  v.literal("two_factor_pending"),
+  v.literal("two_factor_trusted_device"),
 );
 
 export const authMdAuditActorTypeValidator = v.union(
@@ -173,6 +175,9 @@ export default defineSchema({
     emailTwoFactorLastVerifiedAt: v.optional(v.number()),
     emailTwoFactorResetAt: v.optional(v.number()),
     emailTwoFactorResetReason: v.optional(emailTwoFactorResetReasonValidator),
+    twoFactorEnabled: v.optional(v.boolean()),
+    twoFactorSecret: v.optional(v.string()),
+    twoFactorBackupCodes: v.optional(v.array(v.string())),
     activeOrganizationId: v.optional(v.id("organizations")),
     isActive: v.boolean(),
     isSuperAdmin: v.optional(v.boolean()),
@@ -200,7 +205,8 @@ export default defineSchema({
     .index("by_provider_issuer_subject", ["provider", "issuer", "subject"])
     .index("by_issuer_subject", ["issuer", "subject"])
     .index("by_token_identifier", ["tokenIdentifier"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_user_provider_issuer", ["userId", "provider", "issuer"]),
 
   organizations: defineTable({
     name: v.string(),
@@ -674,6 +680,13 @@ export default defineSchema({
     issuer: v.string(),
     subject: v.string(),
     credentialHash: v.string(),
+    accessToken: v.optional(v.string()),
+    refreshToken: v.optional(v.string()),
+    idToken: v.optional(v.string()),
+    tokenType: v.optional(v.string()),
+    scopes: v.optional(v.array(v.string())),
+    accessTokenExpiresAt: v.optional(v.number()),
+    refreshTokenExpiresAt: v.optional(v.number()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -693,6 +706,19 @@ export default defineSchema({
   })
     .index("by_session_id", ["sessionId"])
     .index("by_token", ["token"])
+    .index("by_user", ["userId"]),
+
+  authRefreshTokens: defineTable({
+    tokenHash: v.string(),
+    sessionId: v.string(),
+    userId: v.id("users"),
+    expiresAt: v.number(),
+    revokedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_token_hash", ["tokenHash"])
+    .index("by_session", ["sessionId"])
     .index("by_user", ["userId"]),
 
   mcp_oauth_refresh_tokens: defineTable({
@@ -733,6 +759,32 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_token_hash", ["tokenHash"])
+    .index("by_token_hash", ["tokenHash", "type"])
     .index("by_user_type", ["userId", "type"]),
+
+  authVerifiers: defineTable({
+    verifierId: v.string(),
+    type: v.string(),
+    provider: v.optional(v.string()),
+    codeChallenge: v.optional(v.string()),
+    codeChallengeMethod: v.optional(v.string()),
+    redirectUri: v.optional(v.string()),
+    metadata: v.optional(v.string()),
+    expiresAt: v.number(),
+    consumedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_verifier_id", ["verifierId"])
+    .index("by_expires_at", ["expiresAt"]),
+
+  authRateLimits: defineTable({
+    identifier: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_identifier_window", ["identifier", "windowStart"])
+    .index("by_window", ["windowStart"]),
 });

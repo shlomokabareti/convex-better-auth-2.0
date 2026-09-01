@@ -1,22 +1,49 @@
 import type { GenericActionCtx, GenericDataModel } from "convex/server";
-import { createGitHubProvider, createGoogleProvider, type NativeOAuthProvider } from "./oauth.js";
-import type { GitHubProviderConfig, GoogleProviderConfig } from "./oauth.js";
+import {
+  createDiscordProvider,
+  createGitHubProvider,
+  createGoogleProvider,
+  type NativeOAuthProvider,
+  type OAuthToken,
+  type OAuthUserInfo,
+} from "./oauth.js";
+import type { DiscordProviderConfig, GitHubProviderConfig, GoogleProviderConfig } from "./oauth.js";
+import type { NativeUserDoc } from "./types.js";
 import {
   generateCodeChallenge,
   generateCodeVerifier,
   mintOAuthState,
   verifyOAuthState,
+  type OAuthStatePayload,
 } from "./oauthState.js";
 import { mintToken } from "./jwt.js";
+import { generateVerificationToken, hashToken } from "./tokens.js";
+import { encryptOAuthTokens } from "./oauthCrypto.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
+
+const REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+export type AccountLinkingConfig = {
+  /** @default true */
+  enabled?: boolean;
+  /** When true, users must explicitly use `linkSocial` to attach an OAuth account. */
+  disableImplicitLinking?: boolean;
+  /** When true, linking an OAuth account to an existing user requires the provider to report the email as verified. */
+  requiresEmailVerification?: boolean;
+};
 
 export type NativeOAuthConfig = {
   github?: GitHubProviderConfig;
   google?: GoogleProviderConfig;
+  discord?: DiscordProviderConfig;
   /** Full callback URL registered with the OAuth provider. */
   redirectURI?: string;
   /** @default 7 days */
   sessionTtlMs?: number;
+  /** Providers whose `emailVerified` claim is trusted enough to link accounts by email. */
+  trustedProviders?: string[];
+  /** Account linking policy. */
+  accountLinking?: AccountLinkingConfig;
 };
 
 export type NativeOAuthSignInArgs = {
@@ -24,21 +51,36 @@ export type NativeOAuthSignInArgs = {
   callbackURL?: string;
   errorURL?: string;
   newUserURL?: string;
+  /** Explicitly allow creating a new user when `disableImplicitSignUp` is set. */
+  requestSignUp?: boolean;
+  /** Link this OAuth account to the currently authenticated user (callback only). */
+  link?: boolean;
+  /** Untrusted client data preserved through the OAuth redirect. */
+  additionalData?: Record<string, unknown>;
 };
 
 export type NativeOAuthCallbackArgs = {
   provider: string;
   code: string;
   state: string;
+  /** User to link this OAuth account to when the sign-in state was initiated with `link: true`. */
+  linkingUserId?: string;
 };
 
 export type NativeOAuthCallbackResult = {
   token: string;
+  refreshToken: string;
   userId: string;
   identityId: string;
   sessionId: string;
   redirectUrl: string;
   createdUser: boolean;
+};
+
+export type NativeOAuthCallbackErrorResult = {
+  error: string;
+  errorDescription?: string;
+  redirectUrl: string;
 };
 
 const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -49,6 +91,9 @@ export function getProvider(config: NativeOAuthConfig, providerId: string): Nati
   }
   if (providerId === "google" && config.google) {
     return createGoogleProvider(config.google);
+  }
+  if (providerId === "discord" && config.discord) {
+    return createDiscordProvider(config.discord);
   }
   throw new Error(`Unsupported OAuth provider: ${providerId}`);
 }
@@ -76,6 +121,9 @@ export async function handleSignIn(
     callbackURL: args.callbackURL,
     errorURL: args.errorURL,
     newUserURL: args.newUserURL,
+    requestSignUp: args.requestSignUp,
+    link: args.link,
+    additionalData: args.additionalData,
   });
   const url = provider.createAuthorizationURL({
     state,
@@ -85,29 +133,128 @@ export async function handleSignIn(
   return { url: url.toString() };
 }
 
+function resolveErrorURL(statePayload: OAuthStatePayload): string {
+  return statePayload.errorURL || process.env.SITE_URL || "/";
+}
+
+function resolveCallbackURL(statePayload: OAuthStatePayload, createdUser: boolean): string {
+  return (
+    (createdUser && statePayload.newUserURL) ||
+    statePayload.callbackURL ||
+    process.env.SITE_URL ||
+    "/"
+  );
+}
+
 export async function handleCallback<DataModel extends GenericDataModel>(
   ctx: GenericActionCtx<DataModel>,
   component: NativeOAuthComponentHandle,
   config: NativeOAuthConfig,
   args: NativeOAuthCallbackArgs,
-): Promise<NativeOAuthCallbackResult> {
-  const statePayload = await verifyOAuthState(args.state);
+): Promise<NativeOAuthCallbackResult | NativeOAuthCallbackErrorResult> {
+  let statePayload: OAuthStatePayload;
+  try {
+    statePayload = await verifyOAuthState(args.state);
+  } catch {
+    return { error: "invalid_state", redirectUrl: process.env.SITE_URL || "/" };
+  }
+
   if (statePayload.provider !== args.provider) {
-    throw new Error("OAuth provider mismatch");
+    return { error: "provider_mismatch", redirectUrl: resolveErrorURL(statePayload) };
   }
 
   const provider = getProvider(config, args.provider);
   const redirectURI = getRedirectURI(config, provider);
 
-  const tokens = await provider.exchangeAuthorizationCode({
-    code: args.code,
-    codeVerifier: statePayload.codeVerifier,
-    redirectURI,
+  let tokens: OAuthToken;
+  let userInfo: { user: OAuthUserInfo; data: unknown };
+  try {
+    tokens = await provider.exchangeAuthorizationCode({
+      code: args.code,
+      codeVerifier: statePayload.codeVerifier,
+      redirectURI,
+    });
+    userInfo = await provider.getUserInfo({
+      accessToken: tokens.accessToken,
+      idToken: tokens.idToken,
+    });
+  } catch (e) {
+    return {
+      error: "token_exchange_failed",
+      errorDescription: e instanceof Error ? e.message : undefined,
+      redirectUrl: resolveErrorURL(statePayload),
+    };
+  }
+
+  const { user } = userInfo;
+  if (!user.id) {
+    return { error: "invalid_userinfo", redirectUrl: resolveErrorURL(statePayload) };
+  }
+
+  const existingAccount = await ctx.runQuery(component.native.accounts.getAccountBySubject, {
+    provider: provider.id,
+    issuer: provider.issuer,
+    subject: user.id,
   });
 
-  const { user } = await provider.getUserInfo({ accessToken: tokens.accessToken });
-  if (!user.id) {
-    throw new Error("OAuth provider did not return a user id");
+  let existingUserByEmail: NativeUserDoc | null = null;
+  if (user.email) {
+    existingUserByEmail = await ctx.runQuery(component.native.users.getUserByEmail, {
+      email: user.email,
+    });
+  }
+
+  let linkingUser: NativeUserDoc | null = null;
+  if (statePayload.link) {
+    if (!args.linkingUserId) {
+      return { error: "account_not_linked", redirectUrl: resolveErrorURL(statePayload) };
+    }
+    linkingUser = await ctx.runQuery(component.native.users.getUserById, {
+      userId: args.linkingUserId,
+    });
+    if (!linkingUser) {
+      return { error: "account_not_linked", redirectUrl: resolveErrorURL(statePayload) };
+    }
+    if (existingAccount && existingAccount.userId !== args.linkingUserId) {
+      return { error: "account_not_linked", redirectUrl: resolveErrorURL(statePayload) };
+    }
+    if (existingUserByEmail && existingUserByEmail._id !== args.linkingUserId) {
+      return { error: "account_not_linked", redirectUrl: resolveErrorURL(statePayload) };
+    }
+  }
+
+  const accountAlreadyLinked = existingAccount !== null;
+  const isNewAccount = !accountAlreadyLinked;
+  const isNewUser = !statePayload.link && isNewAccount && !existingUserByEmail;
+  const isImplicitLink =
+    !statePayload.link && isNewAccount && existingUserByEmail !== null && !linkingUser;
+
+  if (isNewUser) {
+    const disableSignUp =
+      provider.options?.disableSignUp ||
+      (provider.options?.disableImplicitSignUp && !statePayload.requestSignUp);
+    if (disableSignUp) {
+      return { error: "signup_disabled", redirectUrl: resolveErrorURL(statePayload) };
+    }
+  }
+
+  if (isImplicitLink) {
+    const isTrustedProvider = config.trustedProviders?.includes(provider.id) ?? false;
+    const accountLinking = config.accountLinking;
+    const requiresEmailVerification =
+      accountLinking?.requiresEmailVerification === true ? true : !isTrustedProvider;
+    if (
+      (requiresEmailVerification && !user.emailVerified) ||
+      accountLinking?.enabled === false ||
+      accountLinking?.disableImplicitLinking === true
+    ) {
+      return { error: "account_not_linked", redirectUrl: resolveErrorURL(statePayload) };
+    }
+  }
+
+  const linkTargetUser = linkingUser ?? undefined;
+  if (statePayload.link && !linkTargetUser) {
+    return { error: "account_not_linked", redirectUrl: resolveErrorURL(statePayload) };
   }
 
   const identityResult = await ctx.runMutation(component.identity.provisionFromIdentity, {
@@ -123,17 +270,18 @@ export async function handleCallback<DataModel extends GenericDataModel>(
     },
     user: {
       name: user.name,
-      email: user.email,
+      email: linkTargetUser?.email ?? user.email,
       image: user.image,
-      emailVerified: user.emailVerified,
+      emailVerified: linkTargetUser?.emailVerified ?? user.emailVerified,
     },
   });
 
-  const existingAccount = await ctx.runQuery(component.native.accounts.getAccountBySubject, {
-    provider: provider.id,
-    issuer: provider.issuer,
-    subject: user.id,
-  });
+  if (!identityResult.identityId) {
+    throw new Error("OAuth identity was not provisioned");
+  }
+
+  const encryptedTokens = await encryptOAuthTokens(tokens);
+
   if (!existingAccount) {
     await ctx.runMutation(component.native.accounts.createAccount, {
       userId: identityResult.userId,
@@ -141,13 +289,36 @@ export async function handleCallback<DataModel extends GenericDataModel>(
       issuer: provider.issuer,
       subject: user.id,
       credentialHash: "",
+      accessToken: encryptedTokens.accessToken,
+      refreshToken: encryptedTokens.refreshToken,
+      idToken: encryptedTokens.idToken,
+      tokenType: encryptedTokens.tokenType,
+      scopes: encryptedTokens.scopes,
+      accessTokenExpiresAt: encryptedTokens.expiresAt,
     });
+  } else {
+    await ctx.runMutation(component.native.accounts.updateAccountTokens, {
+      accountId: existingAccount._id,
+      accessToken: encryptedTokens.accessToken,
+      refreshToken: encryptedTokens.refreshToken,
+      idToken: encryptedTokens.idToken,
+      tokenType: encryptedTokens.tokenType,
+      scopes: encryptedTokens.scopes,
+      accessTokenExpiresAt: encryptedTokens.expiresAt,
+    });
+  }
+
+  if (provider.options?.requireEmailVerification && !user.emailVerified) {
+    return {
+      error: "email_not_verified",
+      redirectUrl: resolveErrorURL(statePayload),
+    };
   }
 
   const sessionId = crypto.randomUUID();
   const now = Date.now();
   const sessionTtlMs = config.sessionTtlMs ?? DEFAULT_SESSION_TTL_MS;
-  const expiresAt = now + sessionTtlMs;
+  const sessionExpiresAt = now + sessionTtlMs;
   const token = await mintToken(
     identityResult.userId,
     sessionId,
@@ -155,21 +326,23 @@ export async function handleCallback<DataModel extends GenericDataModel>(
     { expiresInSeconds: Math.floor(sessionTtlMs / 1000) },
   );
 
-  await ctx.runMutation(component.native.sessions.createSession, {
+  const refreshToken = generateVerificationToken();
+  const refreshTokenHash = await hashToken(refreshToken);
+  const refreshTokenExpiresAt = now + REFRESH_TOKEN_TTL_MS;
+  await ctx.runMutation(component.native.sessions.createSessionAndRefreshToken, {
     sessionId,
     userId: identityResult.userId,
     token,
-    expiresAt,
+    sessionExpiresAt,
+    refreshTokenHash,
+    refreshTokenExpiresAt,
   });
 
-  const redirectUrl =
-    (identityResult.createdUser && statePayload.newUserURL) ||
-    statePayload.callbackURL ||
-    process.env.SITE_URL ||
-    "/";
+  const redirectUrl = resolveCallbackURL(statePayload, identityResult.createdUser);
 
   return {
     token,
+    refreshToken,
     userId: identityResult.userId,
     identityId: identityResult.identityId,
     sessionId,

@@ -26,6 +26,7 @@
       "default": "./dist/index.js"
     },
     "./convex": {
+      "convex": "./src/convex-runtime/native/index.ts",
       "types": "./dist/convex.d.ts",
       "import": "./dist/convex.js",
       "default": "./dist/convex.js"
@@ -115,11 +116,18 @@
       "types": "./test.ts",
       "default": "./test.ts"
     },
+    "./convex/http": {
+      "convex": "./src/convex-runtime/native/http.ts",
+      "types": "./dist/convex.d.ts",
+      "import": "./dist/convex.js",
+      "default": "./dist/convex.js"
+    },
     "./convex.config.js": {
       "types": "./dist/component/convex.config.d.ts",
       "default": "./dist/component/convex.config.js"
     },
     "./convex.config": {
+      "convex": "./src/component/convex.config.ts",
       "types": "./dist/component/convex.config.d.ts",
       "default": "./dist/component/convex.config.js"
     },
@@ -136,7 +144,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "argon2": "^0.45.1",
     "convex-auth-core": "workspace:*",
     "convex-auth-react": "workspace:*",
     "convex-auth-react-native": "workspace:*",

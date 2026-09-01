@@ -5,13 +5,21 @@ import type {
   NativeAccountDoc,
   NativeEmailAndPasswordComponentHandle,
   NativeIdentityDoc,
+  NativeSessionDoc,
   NativeUserDoc,
-  NativeVerificationCodeDoc,
-  VerificationCodeType,
 } from "./types.js";
+import type { Id } from "convex/values";
 import { hashToken } from "./tokens.js";
 import { hashPassword, verifyPassword } from "./password.js";
 import { mintToken, verifyToken } from "./jwt.js";
+import { encryptAccountToken } from "./oauthCrypto.js";
+import {
+  decodeBase32,
+  encodeBase32,
+  generateSecret,
+  generateTOTP,
+  getCurrentTOTPCounter,
+} from "./totp.js";
 import type { FunctionReference } from "convex/server";
 import type { Mock } from "vitest";
 import type { EmailDraft, EmailSender, NativeEmailAndPasswordConfig } from "./provider.js";
@@ -20,12 +28,23 @@ async function dispatch(ref: unknown, args: Record<string, unknown>) {
   if (typeof ref === "function") {
     return await (ref as (args: Record<string, unknown>) => unknown)(args);
   }
+  if (typeof ref === "object" && ref !== null) {
+    const handler = Reflect.get(ref, "_handler");
+    if (typeof handler === "function") {
+      return await Reflect.apply(handler, ref, [
+        { runQuery: vi.fn(), runMutation: vi.fn(), runAction: vi.fn() },
+        args,
+      ]);
+    }
+  }
   return undefined;
 }
 
 const DEFAULT_PASSWORD = "hunter2!";
 const NEW_PASSWORD = "newHunter2!";
 let defaultPasswordHash: string;
+let defaultToken: string;
+let oneDayToken: string;
 
 async function setupTestKeysAndHashes() {
   const { publicKey, privateKey } = await generateKeyPair("RS256", { extractable: true });
@@ -34,6 +53,15 @@ async function setupTestKeysAndHashes() {
   process.env.JWT_PRIVATE_KEY = JSON.stringify(privateJwk);
   process.env.JWKS = JSON.stringify({ keys: [publicJwk] });
   defaultPasswordHash = await hashPassword(DEFAULT_PASSWORD);
+  defaultToken = await mintToken("user_1", "session_1", { identityId: "identity_1" });
+  oneDayToken = await mintToken(
+    "user_1",
+    "session_1",
+    { identityId: "identity_1" },
+    {
+      expiresInSeconds: 24 * 60 * 60,
+    },
+  );
 }
 
 function exec(registered: unknown) {
@@ -70,6 +98,9 @@ function createMockComponent(): MockedComponent {
   return {
     identity: {
       provisionFromIdentity: vi.fn(),
+      getUserAndAccount: vi.fn(),
+      verifyEmail: vi.fn(),
+      resetPassword: vi.fn(),
     },
     native: {
       accounts: {
@@ -78,11 +109,19 @@ function createMockComponent(): MockedComponent {
         getAccountBySubject: vi.fn(),
       },
       sessions: {
-        createSession: vi.fn(),
+        createSessionAndRefreshToken: vi.fn(),
         revokeSession: vi.fn(),
         listSessionsByUser: vi.fn(),
         getSessionByToken: vi.fn(),
+        getSessionBySessionId: vi.fn(),
         revokeSessionsForUser: vi.fn(),
+        rotateSession: vi.fn(),
+      },
+      refreshTokens: {
+        getRefreshTokenByTokenHash: vi.fn(),
+        consumeRefreshToken: vi.fn(),
+        revokeRefreshTokensForSession: vi.fn(),
+        revokeRefreshTokensForUser: vi.fn(),
       },
       identities: {
         getNativeIdentityByUser: vi.fn(),
@@ -92,6 +131,8 @@ function createMockComponent(): MockedComponent {
         getUserByEmail: vi.fn(),
         getUserById: vi.fn(),
         markEmailVerified: vi.fn(),
+        setTwoFactor: vi.fn(),
+        consumeBackupCode: vi.fn(),
       },
       codes: {
         createVerificationCode: vi.fn(),
@@ -103,11 +144,28 @@ function createMockComponent(): MockedComponent {
   } as unknown as MockedComponent;
 }
 
+function runActionDispatch(ctx: unknown, ref: unknown, args: Record<string, unknown>) {
+  if (typeof ref === "object" && ref !== null) {
+    const handler = Reflect.get(ref, "_handler");
+    if (typeof handler === "function") {
+      return Reflect.apply(handler, ref, [ctx, args]);
+    }
+  }
+  if (typeof ref === "function") {
+    return (ref as (args: Record<string, unknown>) => unknown)(args);
+  }
+  return undefined;
+}
+
 function createContext() {
-  return {
+  const ctx = {
     runQuery: vi.fn((ref: unknown, args: Record<string, unknown>) => dispatch(ref, args)),
     runMutation: vi.fn((ref: unknown, args: Record<string, unknown>) => dispatch(ref, args)),
+    runAction: vi.fn((ref: unknown, args: Record<string, unknown>) =>
+      runActionDispatch(ctx, ref, args),
+    ),
   };
+  return ctx;
 }
 
 function makeUser(overrides: Partial<NativeUserDoc> = {}): NativeUserDoc {
@@ -142,6 +200,20 @@ function makeIdentity(overrides: Partial<NativeIdentityDoc> = {}): NativeIdentit
   };
 }
 
+function makeSession(overrides: Record<string, unknown> = {}): NativeSessionDoc {
+  return {
+    _id: "session_1" as unknown as Id<"authSessions">,
+    _creationTime: 0,
+    sessionId: "session_1",
+    userId: "user_1" as unknown as Id<"users">,
+    token: defaultToken,
+    expiresAt: Date.now() + 60_000,
+    createdAt: 0,
+    updatedAt: 0,
+    ...overrides,
+  };
+}
+
 function makeAccount(overrides: Partial<NativeAccountDoc> = {}): NativeAccountDoc {
   return {
     _id: "account_1",
@@ -154,28 +226,6 @@ function makeAccount(overrides: Partial<NativeAccountDoc> = {}): NativeAccountDo
     createdAt: 0,
     updatedAt: 0,
     ...overrides,
-  };
-}
-
-function makeCode(
-  args: {
-    token?: string;
-    tokenHash?: string;
-    type: VerificationCodeType;
-    userId?: string;
-    expiresAt?: number;
-  } = { type: "email_verification" },
-): NativeVerificationCodeDoc {
-  const token = args.token ?? "test-token";
-  return {
-    _id: "code_1",
-    _creationTime: 0,
-    userId: args.userId ?? "user_1",
-    type: args.type,
-    tokenHash: args.tokenHash ?? hashToken(token),
-    expiresAt: args.expiresAt ?? Date.now() + 60_000,
-    createdAt: 0,
-    updatedAt: 0,
   };
 }
 
@@ -197,16 +247,16 @@ describe("nativeEmailAndPassword", () => {
 
   it("signs up a new user", async () => {
     const component = createMockComponent();
+    const user = makeUser();
     component.identity.provisionFromIdentity.mockResolvedValue({
       userId: "user_1",
       identityId: "identity_1",
       createdUser: true,
       linkedExistingIdentity: false,
+      user,
+      sessionId: "session_1",
+      token: defaultToken,
     });
-    component.native.accounts.createAccount.mockResolvedValue("account_1");
-    component.native.sessions.createSession.mockResolvedValue("session_1");
-    const user = makeUser();
-    component.native.users.getUserByEmail.mockResolvedValueOnce(null).mockResolvedValueOnce(user);
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -225,8 +275,8 @@ describe("nativeEmailAndPassword", () => {
     expect(result).toMatchObject({
       userId: "user_1",
       identityId: "identity_1",
-      token: expect.any(String),
-      sessionId: expect.any(String),
+      token: defaultToken,
+      sessionId: "session_1",
     });
     expect(result.user).toMatchObject({
       id: user._id,
@@ -239,23 +289,23 @@ describe("nativeEmailAndPassword", () => {
     expect(provisionCall.identity.provider).toBe("password");
     expect(provisionCall.identity.issuer).toBe("native");
     expect(provisionCall.user.email).toBe("shlomo@example.com");
+    expect(provisionCall.allowLink).toBe(false);
 
-    const createAccountCall = component.native.accounts.createAccount.mock.calls[0]?.[0];
-    expect(createAccountCall).toMatchObject({
-      userId: "user_1",
-      provider: "password",
-      issuer: "native",
-      subject: expect.any(String),
+    const account = provisionCall.account;
+    expect(account).toMatchObject({
+      credentialHash: expect.any(String),
     });
-    expect(await verifyPassword(DEFAULT_PASSWORD, createAccountCall.credentialHash)).toBe(true);
+    expect(await verifyPassword(DEFAULT_PASSWORD, account.credentialHash)).toBe(true);
 
-    const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
-    expect(createSessionCall).toMatchObject({
-      userId: "user_1",
-      sessionId: result.sessionId,
-      token: result.token,
-      expiresAt: expect.any(Number),
+    expect(provisionCall.verificationCode).toBeUndefined();
+    expect(provisionCall.initialSession).toBeDefined();
+    expect(provisionCall.initialSession).toMatchObject({
+      sessionId: expect.any(String),
+      sessionExpiresAt: expect.any(Number),
+      refreshTokenHash: expect.any(String),
+      refreshTokenExpiresAt: expect.any(Number),
     });
+    expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
 
     const payload = await verifyToken(result.token);
     expect(payload.sub).toBe("user_1");
@@ -265,16 +315,16 @@ describe("nativeEmailAndPassword", () => {
 
   it("signs up with rememberMe false uses a 1-day session and token TTL", async () => {
     const component = createMockComponent();
+    const user = makeUser();
     component.identity.provisionFromIdentity.mockResolvedValue({
       userId: "user_1",
       identityId: "identity_1",
       createdUser: true,
       linkedExistingIdentity: false,
+      user,
+      sessionId: "session_1",
+      token: oneDayToken,
     });
-    component.native.accounts.createAccount.mockResolvedValue("account_1");
-    component.native.sessions.createSession.mockResolvedValue("session_1");
-    const user = makeUser();
-    component.native.users.getUserByEmail.mockResolvedValueOnce(null).mockResolvedValueOnce(user);
 
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
@@ -291,9 +341,13 @@ describe("nativeEmailAndPassword", () => {
     };
     const after = Date.now();
 
-    const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
-    expect(createSessionCall.expiresAt).toBeGreaterThanOrEqual(before + 24 * 60 * 60 * 1000);
-    expect(createSessionCall.expiresAt).toBeLessThanOrEqual(after + 24 * 60 * 60 * 1000);
+    const provisionCall = component.identity.provisionFromIdentity.mock.calls[0]?.[0];
+    expect(provisionCall.initialSession.sessionExpiresAt).toBeGreaterThanOrEqual(
+      before + 24 * 60 * 60 * 1000,
+    );
+    expect(provisionCall.initialSession.sessionExpiresAt).toBeLessThanOrEqual(
+      after + 24 * 60 * 60 * 1000,
+    );
 
     const payload = await verifyToken(result.token);
     expect(payload.sub).toBe("user_1");
@@ -352,7 +406,12 @@ describe("nativeEmailAndPassword", () => {
 
   it("signUp throws when the email already exists", async () => {
     const component = createMockComponent();
-    component.native.users.getUserByEmail.mockResolvedValue(makeUser());
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      createdUser: false,
+      linkedExistingIdentity: false,
+      duplicate: true,
+    });
     const { signUp } = createActions(component);
     const { handler } = exec(signUp);
     await expect(
@@ -366,18 +425,25 @@ describe("nativeEmailAndPassword", () => {
 
   it("signUp returns a generic duplicate response when requireVerifiedEmail is true", async () => {
     const component = createMockComponent();
-    component.native.users.getUserByEmail.mockResolvedValue(makeUser());
+    component.identity.provisionFromIdentity.mockResolvedValue({
+      userId: "user_1",
+      createdUser: false,
+      linkedExistingIdentity: false,
+      duplicate: true,
+    });
     const { signUp } = createActions(component, { requireVerifiedEmail: true });
     const { handler } = exec(signUp);
     const result = (await handler(createContext(), {
       email: "shlomo@example.com",
       password: DEFAULT_PASSWORD,
       name: "Shlomo",
-    })) as { token?: string; user: { id: string; email?: string } };
-    expect(result.token).toBeUndefined();
+    })) as { token: string | null; user: { id: string; email?: string } };
+    expect(result.token).toBeNull();
     expect(result.user.email).toBe("shlomo@example.com");
     expect(result.user.id).toEqual(expect.any(String));
-    expect(component.native.sessions.createSession).not.toHaveBeenCalled();
+    const provisionCall = component.identity.provisionFromIdentity.mock.calls[0]?.[0];
+    expect(provisionCall.initialSession).toBeUndefined();
+    expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
   });
 
   it("signs in an existing user with a valid password", async () => {
@@ -385,10 +451,8 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: true });
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component);
     const { handler } = exec(signIn);
@@ -415,10 +479,8 @@ describe("nativeEmailAndPassword", () => {
       name: user.name,
     });
 
-    expect(component.native.accounts.getAccountBySubject).toHaveBeenCalledWith({
-      provider: "password",
-      issuer: "native",
-      subject: identity.subject,
+    expect(component.identity.getUserAndAccount).toHaveBeenCalledWith({
+      email: "shlomo@example.com",
     });
 
     const payload = await verifyToken(result.token);
@@ -432,10 +494,8 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: true });
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component);
     const { handler } = exec(signIn);
@@ -450,9 +510,14 @@ describe("nativeEmailAndPassword", () => {
     };
     const after = Date.now();
 
-    const createSessionCall = component.native.sessions.createSession.mock.calls[0]?.[0];
-    expect(createSessionCall.expiresAt).toBeGreaterThanOrEqual(before + 24 * 60 * 60 * 1000);
-    expect(createSessionCall.expiresAt).toBeLessThanOrEqual(after + 24 * 60 * 60 * 1000);
+    const createSessionAndRefreshTokenCall =
+      component.native.sessions.createSessionAndRefreshToken.mock.calls[0]?.[0];
+    expect(createSessionAndRefreshTokenCall.sessionExpiresAt).toBeGreaterThanOrEqual(
+      before + 24 * 60 * 60 * 1000,
+    );
+    expect(createSessionAndRefreshTokenCall.sessionExpiresAt).toBeLessThanOrEqual(
+      after + 24 * 60 * 60 * 1000,
+    );
 
     const payload = await verifyToken(result.token);
     expect((payload.exp as number) - (payload.iat as number)).toBe(24 * 60 * 60);
@@ -463,9 +528,7 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: false });
     const identity = makeIdentity({ emailVerified: false });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
 
     const { signIn } = createActions(component, { requireVerifiedEmail: true });
     const { handler } = exec(signIn);
@@ -474,7 +537,7 @@ describe("nativeEmailAndPassword", () => {
       handler(createContext(), { email: "shlomo@example.com", password: DEFAULT_PASSWORD }),
     ).rejects.toThrow("Email not verified");
 
-    expect(component.native.sessions.createSession).not.toHaveBeenCalled();
+    expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
   });
 
   it("signIn allows an unverified email by default", async () => {
@@ -482,10 +545,8 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: false });
     const identity = makeIdentity({ emailVerified: false });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component);
     const { handler } = exec(signIn);
@@ -518,10 +579,8 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: true });
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signIn } = createActions(component, { requireVerifiedEmail: true });
     const { handler } = exec(signIn);
@@ -554,10 +613,8 @@ describe("nativeEmailAndPassword", () => {
     const user = makeUser({ emailVerified: true });
     const identity = makeIdentity({ emailVerified: true });
     const account = makeAccount();
-    component.native.users.getUserByEmail.mockResolvedValue(user);
-    component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-    component.native.accounts.getAccountBySubject.mockResolvedValue(account);
-    component.native.sessions.createSession.mockResolvedValue("session_1");
+    component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
+    component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_1");
 
     const { signIn, signOut } = createActions(component);
     const signInResult = (await exec(signIn).handler(createContext(), {
@@ -571,7 +628,7 @@ describe("nativeEmailAndPassword", () => {
     const signOutResult = await exec(signOut).handler(createContext(), {
       token: signInResult.token,
     });
-    expect(signOutResult).toEqual({ success: true });
+    expect(signOutResult).toEqual({ success: true, redirect: false, url: undefined });
 
     expect(component.native.sessions.revokeSession).toHaveBeenCalledWith({
       sessionId: signInResult.sessionId,
@@ -618,7 +675,7 @@ describe("nativeEmailAndPassword", () => {
       expect(token).not.toBeNull();
       if (token === null) throw new Error("token not found in email html");
       expect(draft.html).toContain(token);
-      expect(createCall.tokenHash).toBe(hashToken(token));
+      expect(createCall.tokenHash).toBe(await hashToken(token));
     });
 
     it("returns not_configured when from or sendEmail is missing", async () => {
@@ -704,88 +761,40 @@ describe("nativeEmailAndPassword", () => {
   });
 
   describe("verifyEmail", () => {
-    it("returns success for a valid token and marks email verified", async () => {
+    it("returns success for a valid token", async () => {
       const component = createMockComponent();
       const token = "verify-token";
-      const code = makeCode({ token, type: "email_verification" });
-      const user = makeUser();
-      const identity = makeIdentity();
-      component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(code);
-      component.native.codes.consumeVerificationCode.mockResolvedValue(code);
-      component.native.users.getUserByEmail.mockResolvedValue(user);
-      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
+      component.identity.verifyEmail.mockResolvedValue({ success: true });
 
       const { verifyEmail } = createActions(component);
       const result = await exec(verifyEmail).handler(createContext(), { token });
 
       expect(result).toEqual({ success: true });
-
-      expect(component.native.codes.getVerificationCodeByTokenHash).toHaveBeenCalledWith({
-        tokenHash: hashToken(token),
-        type: "email_verification",
-      });
-      expect(component.native.codes.consumeVerificationCode).toHaveBeenCalledWith({
-        tokenHash: hashToken(token),
-        type: "email_verification",
-      });
-      expect(component.native.identities.getNativeIdentityByUser).toHaveBeenCalledWith({
-        userId: code.userId,
+      expect(component.identity.verifyEmail).toHaveBeenCalledWith({
+        tokenHash: await hashToken(token),
         provider: "password",
         issuer: "native",
-      });
-      expect(component.native.identities.markEmailVerified).toHaveBeenCalledWith({
-        identityId: identity._id,
-        emailVerified: true,
-      });
-      expect(component.native.users.markEmailVerified).toHaveBeenCalledWith({
-        userId: code.userId,
-        emailVerified: true,
       });
     });
 
     it("returns invalid for a non-existent token", async () => {
       const component = createMockComponent();
-      component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(null);
+      component.identity.verifyEmail.mockResolvedValue({ success: false, reason: "invalid" });
 
       const { verifyEmail } = createActions(component);
       const result = await exec(verifyEmail).handler(createContext(), { token: "missing" });
 
       expect(result).toEqual({ success: false, reason: "invalid" });
-      expect(component.native.codes.consumeVerificationCode).not.toHaveBeenCalled();
     });
 
-    it("returns expired for an expired token and consumes it", async () => {
+    it("returns expired for an expired token", async () => {
       const component = createMockComponent();
-      const token = "expired-token";
-      const code = makeCode({
-        token,
-        type: "email_verification",
-        expiresAt: Date.now() - 60_000,
-      });
-      component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(code);
-      component.native.codes.consumeVerificationCode.mockResolvedValue(code);
+      component.identity.verifyEmail.mockResolvedValue({ success: false, reason: "expired" });
 
       const { verifyEmail } = createActions(component);
-      const result = await exec(verifyEmail).handler(createContext(), { token });
+      const result = await exec(verifyEmail).handler(createContext(), { token: "expired" });
 
       expect(result).toEqual({ success: false, reason: "expired" });
-      expect(component.native.codes.consumeVerificationCode).toHaveBeenCalledWith({
-        tokenHash: hashToken(token),
-        type: "email_verification",
-      });
-    });
-
-    it("returns invalid if consumeVerificationCode returns null", async () => {
-      const component = createMockComponent();
-      const token = "concurrent-token";
-      const code = makeCode({ token, type: "email_verification" });
-      component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(code);
-      component.native.codes.consumeVerificationCode.mockResolvedValue(null);
-
-      const { verifyEmail } = createActions(component);
-      const result = await exec(verifyEmail).handler(createContext(), { token });
-
-      expect(result).toEqual({ success: false, reason: "invalid" });
     });
   });
 
@@ -825,7 +834,7 @@ describe("nativeEmailAndPassword", () => {
       expect(token).not.toBeNull();
       if (token === null) throw new Error("token not found in email html");
       expect(draft.html).toContain(token);
-      expect(createCall.tokenHash).toBe(hashToken(token));
+      expect(createCall.tokenHash).toBe(await hashToken(token));
     });
 
     it("returns not_configured when from or sendEmail is missing", async () => {
@@ -907,73 +916,51 @@ describe("nativeEmailAndPassword", () => {
   });
 
   describe("resetPassword", () => {
-    it("returns success, updates hash, and does not create a session by default", async () => {
+    it("returns status, hashes the new password, and does not create a session by default", async () => {
       const component = createMockComponent();
       const token = "reset-token";
-      const code = makeCode({ token, type: "password_reset" });
       const user = makeUser();
-      const identity = makeIdentity();
-      const account = makeAccount();
-      component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(code);
-      component.native.codes.consumeVerificationCode.mockResolvedValue(code);
-      component.native.users.getUserById.mockResolvedValue(user);
-      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-      component.native.accounts.getAccountBySubject.mockResolvedValue(account);
-      component.native.accounts.updateCredentialHash.mockResolvedValue(undefined);
-      component.native.sessions.revokeSessionsForUser.mockResolvedValue(1);
+      component.identity.resetPassword.mockResolvedValue({ status: true, user });
 
       const { resetPassword } = createActions(component);
       const result = (await exec(resetPassword).handler(createContext(), {
         token,
         newPassword: NEW_PASSWORD,
-      })) as { success: boolean; reason?: string };
+      })) as { status: boolean; reason?: string };
 
-      expect(result).toEqual({ success: true });
-
-      expect(component.native.accounts.getAccountBySubject).toHaveBeenCalledWith({
+      expect(result).toEqual({ status: true });
+      expect(component.identity.resetPassword).toHaveBeenCalledWith({
+        tokenHash: await hashToken(token),
+        credentialHash: expect.any(String),
         provider: "password",
         issuer: "native",
-        subject: identity.subject,
+        revokeSessions: false,
       });
 
-      const updateCall = component.native.accounts.updateCredentialHash.mock.calls[0]?.[0];
-      expect(updateCall.accountId).toBe(account._id);
-      expect(await verifyPassword(NEW_PASSWORD, updateCall.credentialHash)).toBe(true);
-
-      expect(component.native.sessions.createSession).not.toHaveBeenCalled();
-      expect(component.native.sessions.revokeSessionsForUser).not.toHaveBeenCalled();
+      const resetCall = component.identity.resetPassword.mock.calls[0]?.[0];
+      expect(await verifyPassword(NEW_PASSWORD, resetCall.credentialHash)).toBe(true);
+      expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
     });
 
     it("revokes all sessions when revokeSessionsOnPasswordReset is true", async () => {
       const component = createMockComponent();
-      const token = "reset-token";
-      const code = makeCode({ token, type: "password_reset" });
-      const user = makeUser();
-      const identity = makeIdentity();
-      const account = makeAccount();
-      component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(code);
-      component.native.codes.consumeVerificationCode.mockResolvedValue(code);
-      component.native.users.getUserById.mockResolvedValue(user);
-      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-      component.native.accounts.getAccountBySubject.mockResolvedValue(account);
-      component.native.accounts.updateCredentialHash.mockResolvedValue(undefined);
-      component.native.sessions.revokeSessionsForUser.mockResolvedValue(1);
+      component.identity.resetPassword.mockResolvedValue({ status: true });
 
       const { resetPassword } = createActions(component, { revokeSessionsOnPasswordReset: true });
       const result = (await exec(resetPassword).handler(createContext(), {
-        token,
+        token: "reset-token",
         newPassword: NEW_PASSWORD,
-      })) as { success: boolean };
+      })) as { status: boolean };
 
-      expect(result).toEqual({ success: true });
-      expect(component.native.sessions.revokeSessionsForUser).toHaveBeenCalledWith({
-        userId: code.userId,
-      });
+      expect(result).toEqual({ status: true });
+      expect(component.identity.resetPassword).toHaveBeenCalledWith(
+        expect.objectContaining({ revokeSessions: true }),
+      );
     });
 
     it("returns invalid for a non-existent token", async () => {
       const component = createMockComponent();
-      component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(null);
+      component.identity.resetPassword.mockResolvedValue({ status: false, reason: "invalid" });
 
       const { resetPassword } = createActions(component);
       const result = await exec(resetPassword).handler(createContext(), {
@@ -981,94 +968,69 @@ describe("nativeEmailAndPassword", () => {
         newPassword: NEW_PASSWORD,
       });
 
-      expect(result).toEqual({ success: false, reason: "invalid" });
+      expect(result).toEqual({ status: false, reason: "invalid" });
     });
 
     it("returns expired for an expired token", async () => {
       const component = createMockComponent();
-      const token = "expired-token";
-      const code = makeCode({
-        token,
-        type: "password_reset",
-        expiresAt: Date.now() - 60_000,
-      });
-      component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(code);
-      component.native.codes.consumeVerificationCode.mockResolvedValue(code);
+      component.identity.resetPassword.mockResolvedValue({ status: false, reason: "expired" });
 
       const { resetPassword } = createActions(component);
       const result = await exec(resetPassword).handler(createContext(), {
-        token,
+        token: "expired",
         newPassword: NEW_PASSWORD,
       });
 
-      expect(result).toEqual({ success: false, reason: "expired" });
-      expect(component.native.codes.consumeVerificationCode).toHaveBeenCalledWith({
-        tokenHash: hashToken(token),
-        type: "password_reset",
-      });
+      expect(result).toEqual({ status: false, reason: "expired" });
     });
 
-    it("returns invalid when identity or account is not found", async () => {
+    it("rejects a short or long password", async () => {
       const component = createMockComponent();
-      const token = "reset-token";
-      const code = makeCode({ token, type: "password_reset" });
-      const identity = makeIdentity();
-      component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(code);
-      component.native.codes.consumeVerificationCode.mockResolvedValue(code);
 
-      // identity not found
-      component.native.identities.getNativeIdentityByUser.mockResolvedValue(null);
       const { resetPassword } = createActions(component);
-      const identityResult = await exec(resetPassword).handler(createContext(), {
-        token,
-        newPassword: NEW_PASSWORD,
+      const short = await exec(resetPassword).handler(createContext(), {
+        token: "reset-token",
+        newPassword: "short",
       });
-      expect(identityResult).toEqual({ success: false, reason: "invalid" });
+      expect(short).toEqual({ status: false, reason: "password_too_short" });
+      expect(component.identity.resetPassword).not.toHaveBeenCalled();
 
-      // account not found
-      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-      component.native.accounts.getAccountBySubject.mockResolvedValue(null);
-      const accountResult = await exec(resetPassword).handler(createContext(), {
-        token,
-        newPassword: NEW_PASSWORD,
+      const long = await exec(resetPassword).handler(createContext(), {
+        token: "reset-token",
+        newPassword: "a".repeat(129),
       });
-      expect(accountResult).toEqual({ success: false, reason: "invalid" });
+      expect(long).toEqual({ status: false, reason: "password_too_long" });
     });
 
     it("calls onPasswordReset after a successful reset", async () => {
       const component = createMockComponent();
-      const token = "reset-token";
-      const code = makeCode({ token, type: "password_reset" });
       const user = makeUser();
-      const identity = makeIdentity();
-      const account = makeAccount();
-      component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(code);
-      component.native.codes.consumeVerificationCode.mockResolvedValue(code);
-      component.native.users.getUserById.mockResolvedValue(user);
-      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
-      component.native.accounts.getAccountBySubject.mockResolvedValue(account);
-      component.native.accounts.updateCredentialHash.mockResolvedValue(undefined);
+      component.identity.resetPassword.mockResolvedValue({ status: true, user });
       const onPasswordReset = vi.fn().mockResolvedValue(undefined);
 
       const { resetPassword } = createActions(component, { onPasswordReset });
       const result = (await exec(resetPassword).handler(createContext(), {
-        token,
+        token: "reset-token",
         newPassword: NEW_PASSWORD,
-      })) as { success: boolean };
+      })) as { status: boolean };
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ status: true });
       expect(onPasswordReset).toHaveBeenCalledWith({
         user: {
           id: user._id,
           email: user.email,
           name: user.name,
           emailVerified: user.emailVerified,
+          twoFactorEnabled: false,
+          isActive: true,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
         },
       });
     });
+  });
 
+  describe("verifyPassword", () => {
     it("verifies the current password", async () => {
       const component = createMockComponent();
       const sessionToken = await mintToken("user_1", "session_1");
@@ -1090,6 +1052,356 @@ describe("nativeEmailAndPassword", () => {
         password: DEFAULT_PASSWORD,
       });
       expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe("updateSession", () => {
+    it("rotates a refresh token into a new session and token pair", async () => {
+      const component = createMockComponent();
+      const user = makeUser();
+      const identity = makeIdentity();
+      const refreshToken = "refresh-token";
+      const refreshTokenHash = await hashToken(refreshToken);
+
+      component.native.refreshTokens.getRefreshTokenByTokenHash.mockResolvedValue({
+        _id: "refresh_doc_1",
+        _creationTime: 0,
+        tokenHash: refreshTokenHash,
+        sessionId: "session_1",
+        userId: "user_1",
+        expiresAt: Date.now() + 60_000,
+        createdAt: 0,
+        updatedAt: 0,
+      });
+      component.native.sessions.getSessionBySessionId.mockResolvedValue({
+        _id: "session_doc_1",
+        _creationTime: 0,
+        sessionId: "session_1",
+        userId: "user_1",
+        token: "old-token",
+        expiresAt: Date.now() + 60_000,
+        createdAt: 0,
+        updatedAt: 0,
+      });
+      component.native.users.getUserById.mockResolvedValue(user);
+      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
+      component.native.sessions.rotateSession.mockResolvedValue({
+        user,
+        identityId: "identity_1",
+      });
+
+      const { updateSession } = createActions(component);
+      const result = (await exec(updateSession).handler(createContext(), {
+        refreshToken,
+      })) as {
+        token: string;
+        refreshToken: string;
+        userId: string;
+        sessionId: string;
+        identityId: string;
+      };
+
+      expect(result).toMatchObject({
+        token: expect.any(String),
+        refreshToken: expect.any(String),
+        userId: "user_1",
+        identityId: "identity_1",
+        sessionId: expect.any(String),
+      });
+
+      const rotateCall = component.native.sessions.rotateSession.mock.calls[0]?.[0];
+      expect(rotateCall.oldRefreshTokenHash).toBe(refreshTokenHash);
+      expect(rotateCall.newSessionId).toBe(result.sessionId);
+      expect(rotateCall.newSessionToken).toBe(result.token);
+      expect(rotateCall.newSessionExpiresAt).toBeGreaterThan(Date.now());
+      expect(rotateCall.newRefreshTokenHash).toBe(await hashToken(result.refreshToken));
+      expect(rotateCall.newRefreshTokenExpiresAt).toBeGreaterThan(Date.now());
+      expect(rotateCall.provider).toBe("password");
+      expect(rotateCall.issuer).toBe("native");
+
+      const payload = await verifyToken(result.token);
+      expect(payload.sub).toBe("user_1");
+      expect(payload.sessionId).toBe(result.sessionId);
+      expect(payload.identityId).toBe("identity_1");
+    });
+
+    it("rejects an unknown refresh token", async () => {
+      const component = createMockComponent();
+      component.native.refreshTokens.getRefreshTokenByTokenHash.mockResolvedValue(null);
+
+      const { updateSession } = createActions(component);
+      await expect(
+        exec(updateSession).handler(createContext(), { refreshToken: "unknown" }),
+      ).rejects.toThrow("Invalid refresh token");
+    });
+  });
+
+  describe("two-factor", () => {
+    it("enables TOTP and returns a totpURI and backup codes", async () => {
+      const component = createMockComponent();
+      const user = makeUser({ emailVerified: true });
+      const identity = makeIdentity();
+      const account = makeAccount();
+      const session = makeSession();
+
+      component.native.sessions.getSessionByToken.mockResolvedValue(session);
+      component.native.users.getUserById.mockResolvedValue(user);
+      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
+      component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+      component.native.users.setTwoFactor.mockResolvedValue(undefined);
+
+      const { twoFactorEnable } = createActions(component);
+      const { handler } = exec(twoFactorEnable);
+
+      const result = (await handler(createContext(), {
+        token: defaultToken,
+        password: DEFAULT_PASSWORD,
+      })) as { totpURI?: string; backupCodes?: string[]; error?: string };
+
+      expect(result.error).toBeUndefined();
+      expect(result.totpURI).toMatch(/^otpauth:\/\/totp\//);
+      expect(result.backupCodes).toHaveLength(10);
+      expect(component.native.users.setTwoFactor).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user_1",
+          twoFactorEnabled: false,
+          twoFactorBackupCodes: expect.any(Array),
+          twoFactorSecret: expect.any(String),
+        }),
+      );
+    });
+
+    it("verifies an enrollment TOTP code and enables 2FA", async () => {
+      const component = createMockComponent();
+      const user = makeUser({ emailVerified: true });
+      const identity = makeIdentity();
+      const account = makeAccount();
+      const session = makeSession();
+
+      const secret = encodeBase32(generateSecret());
+      const code = await generateTOTP(decodeBase32(secret), getCurrentTOTPCounter());
+
+      component.native.sessions.getSessionByToken.mockResolvedValue(session);
+      component.native.users.getUserById.mockResolvedValue({
+        ...user,
+        twoFactorSecret: await encryptAccountToken(secret),
+      });
+      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
+      component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+      component.native.users.setTwoFactor.mockResolvedValue(undefined);
+
+      const { twoFactorVerifyTOTP } = createActions(component);
+      const { handler } = exec(twoFactorVerifyTOTP);
+
+      const result = (await handler(createContext(), {
+        token: defaultToken,
+        code,
+      })) as { token: string | null; user: unknown };
+
+      expect(result.token).toBeNull();
+      expect(component.native.users.setTwoFactor).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user_1",
+          twoFactorEnabled: true,
+        }),
+      );
+    });
+
+    it("sign-in returns a pending challenge when 2FA is enabled", async () => {
+      const component = createMockComponent();
+      const user = makeUser({ emailVerified: true, twoFactorEnabled: true });
+      const identity = makeIdentity();
+      const account = makeAccount();
+
+      component.identity.getUserAndAccount.mockResolvedValue({ user, identity, account });
+      component.native.codes.createVerificationCode.mockResolvedValue("code_doc_1");
+
+      const { signIn } = createActions(component);
+      const { handler } = exec(signIn);
+
+      const result = (await handler(createContext(), {
+        email: user.email,
+        password: DEFAULT_PASSWORD,
+      })) as {
+        token: string | null;
+        twoFactorRedirect: boolean;
+        twoFactorMethods: string[];
+        twoFactorChallengeToken: string;
+      };
+
+      expect(result.token).toBeNull();
+      expect(result.twoFactorRedirect).toBe(true);
+      expect(result.twoFactorMethods).toEqual(["totp"]);
+      expect(result.twoFactorChallengeToken).toEqual(expect.any(String));
+      expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
+    });
+
+    it("completes sign-in with a pending TOTP code", async () => {
+      const component = createMockComponent();
+      const user = makeUser({ emailVerified: true, twoFactorEnabled: true });
+      const account = makeAccount();
+      const secret = encodeBase32(generateSecret());
+      const code = await generateTOTP(decodeBase32(secret), getCurrentTOTPCounter());
+
+      const challengeToken = await mintToken(
+        "user_1",
+        "__two_factor",
+        {
+          identityId: "identity_1",
+          twoFactor: true,
+          rememberMe: true,
+        },
+        { expiresInSeconds: 600 },
+      );
+
+      component.native.users.getUserById.mockResolvedValue({
+        ...user,
+        twoFactorSecret: await encryptAccountToken(secret),
+      });
+      component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+      component.native.codes.consumeVerificationCode.mockResolvedValue({
+        _id: "code_1",
+        _creationTime: 0,
+        userId: "user_1",
+        type: "two_factor_pending",
+        tokenHash: await hashToken(challengeToken),
+        expiresAt: Date.now() + 60_000,
+        createdAt: 0,
+        updatedAt: 0,
+      });
+      component.native.sessions.createSessionAndRefreshToken.mockResolvedValue({
+        sessionId: "session_2",
+        token: oneDayToken,
+        refreshToken: "refresh_2",
+      });
+
+      const { twoFactorVerifyTOTP } = createActions(component);
+      const { handler } = exec(twoFactorVerifyTOTP);
+
+      const result = (await handler(createContext(), {
+        token: challengeToken,
+        code,
+      })) as { token: string | null; refreshToken: string };
+
+      expect(result.token).toEqual(expect.any(String));
+      expect(result.refreshToken).toEqual(expect.any(String));
+    });
+
+    it("completes sign-in with a backup code", async () => {
+      const component = createMockComponent();
+      const user = makeUser({ emailVerified: true, twoFactorEnabled: true });
+      const account = makeAccount();
+      const backupCode = "BACKUP123";
+      const backupCodeHash = await hashPassword(backupCode);
+
+      const challengeToken = await mintToken(
+        "user_1",
+        "__two_factor",
+        {
+          identityId: "identity_1",
+          twoFactor: true,
+          rememberMe: false,
+        },
+        { expiresInSeconds: 600 },
+      );
+
+      component.native.users.getUserById.mockResolvedValue({
+        ...user,
+        twoFactorBackupCodes: [backupCodeHash],
+      });
+      component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+      component.native.codes.consumeVerificationCode.mockResolvedValue({
+        _id: "code_1",
+        _creationTime: 0,
+        userId: "user_1",
+        type: "two_factor_pending",
+        tokenHash: await hashToken(challengeToken),
+        expiresAt: Date.now() + 60_000,
+        createdAt: 0,
+        updatedAt: 0,
+      });
+      component.native.users.consumeBackupCode.mockResolvedValue({ success: true });
+      component.native.sessions.createSessionAndRefreshToken.mockResolvedValue({
+        sessionId: "session_2",
+        token: oneDayToken,
+        refreshToken: "refresh_2",
+      });
+
+      const { twoFactorVerifyBackupCode } = createActions(component);
+      const { handler } = exec(twoFactorVerifyBackupCode);
+
+      const result = (await handler(createContext(), {
+        token: challengeToken,
+        code: backupCode,
+      })) as { token: string | null };
+
+      expect(result.token).toEqual(expect.any(String));
+      expect(component.native.users.consumeBackupCode).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: "user_1", backupCodeHash }),
+      );
+    });
+
+    it("disables 2FA when the current password is verified", async () => {
+      const component = createMockComponent();
+      const user = makeUser({ emailVerified: true, twoFactorEnabled: true });
+      const identity = makeIdentity();
+      const account = makeAccount();
+      const session = makeSession();
+
+      component.native.sessions.getSessionByToken.mockResolvedValue(session);
+      component.native.users.getUserById.mockResolvedValue(user);
+      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
+      component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+      component.native.users.setTwoFactor.mockResolvedValue(undefined);
+      component.native.codes.revokeVerificationCodesForUser.mockResolvedValue(undefined);
+
+      const { twoFactorDisable } = createActions(component);
+      const { handler } = exec(twoFactorDisable);
+
+      const result = (await handler(createContext(), {
+        token: defaultToken,
+        password: DEFAULT_PASSWORD,
+      })) as { success: boolean };
+
+      expect(result.success).toBe(true);
+      expect(component.native.users.setTwoFactor).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: "user_1", twoFactorEnabled: false }),
+      );
+      expect(component.native.codes.revokeVerificationCodesForUser).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: "user_1", type: "two_factor_trusted_device" }),
+      );
+    });
+
+    it("regenerates backup codes", async () => {
+      const component = createMockComponent();
+      const secret = encodeBase32(generateSecret());
+      const user = makeUser({
+        emailVerified: true,
+        twoFactorEnabled: true,
+        twoFactorSecret: await encryptAccountToken(secret),
+      });
+      const identity = makeIdentity();
+      const account = makeAccount();
+      const session = makeSession();
+
+      component.native.sessions.getSessionByToken.mockResolvedValue(session);
+      component.native.users.getUserById.mockResolvedValue(user);
+      component.native.identities.getNativeIdentityByUser.mockResolvedValue(identity);
+      component.native.accounts.getAccountBySubject.mockResolvedValue(account);
+      component.native.users.setTwoFactor.mockResolvedValue(undefined);
+
+      const { twoFactorGenerateBackupCodes } = createActions(component);
+      const { handler } = exec(twoFactorGenerateBackupCodes);
+
+      const result = (await handler(createContext(), {
+        token: defaultToken,
+        password: DEFAULT_PASSWORD,
+      })) as { backupCodes?: string[] };
+
+      expect(result.backupCodes).toHaveLength(10);
+      expect(component.native.users.setTwoFactor).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: "user_1", twoFactorBackupCodes: expect.any(Array) }),
+      );
     });
   });
 });

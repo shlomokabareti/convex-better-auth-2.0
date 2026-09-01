@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 
+import { bytesToBase64url } from "../convex-runtime/native/password.js";
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { mutation, query } from "./_generated/server.js";
@@ -789,9 +790,7 @@ async function hashLoginHint(value: string): Promise<string> {
 }
 
 function bytesToBase64Url(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
+  return bytesToBase64url(bytes);
 }
 
 function isOAuthScopeToken(value: string): boolean {

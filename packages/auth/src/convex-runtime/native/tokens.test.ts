@@ -13,31 +13,31 @@ describe("token utilities", () => {
     expect(a).not.toBe(b);
   });
 
-  it("hashes a token deterministically", () => {
+  it("hashes a token deterministically", async () => {
     const token = generateVerificationToken();
-    const hashA = hashToken(token);
-    const hashB = hashToken(token);
+    const hashA = await hashToken(token);
+    const hashB = await hashToken(token);
     expect(hashA).toBe(hashB);
     expect(hashA).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("different tokens produce different hashes", () => {
-    const a = hashToken(generateVerificationToken());
-    const b = hashToken(generateVerificationToken());
+  it("different tokens produce different hashes", async () => {
+    const a = await hashToken(generateVerificationToken());
+    const b = await hashToken(generateVerificationToken());
     expect(a).not.toBe(b);
   });
 
-  it("verifies a token against its hash", () => {
+  it("verifies a token against its hash", async () => {
     const token = generateVerificationToken();
-    const hash = hashToken(token);
-    expect(verifyTokenHash(token, hash)).toBe(true);
-    expect(verifyTokenHash("wrong-token", hash)).toBe(false);
+    const hash = await hashToken(token);
+    expect(await verifyTokenHash(token, hash)).toBe(true);
+    expect(await verifyTokenHash("wrong-token", hash)).toBe(false);
   });
 
-  it("rejects a hash with the wrong length", () => {
+  it("rejects a hash with the wrong length", async () => {
     const token = generateVerificationToken();
-    expect(verifyTokenHash(token, "short")).toBe(false);
-    expect(verifyTokenHash(token, hashToken(token).slice(0, -2))).toBe(false);
+    expect(await verifyTokenHash(token, "short")).toBe(false);
+    expect(await verifyTokenHash(token, (await hashToken(token)).slice(0, -2))).toBe(false);
   });
 
   it("reports expired tokens", () => {

@@ -1,7 +1,7 @@
-import { query } from "../../component/_generated/server.js";
+import { query, type QueryCtx } from "../../component/_generated/server.js";
 import { v } from "convex/values";
 import { verifyToken } from "./jwt.js";
-import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
+import type { NativeEmailAndPasswordComponentHandle, NativeSessionDoc } from "./types.js";
 import { nativeAuthUserValidator, toNativeAuthUser } from "./types.js";
 
 export type NativeAuthQueries = {
@@ -12,12 +12,33 @@ export function nativeAuthQueries(
   component: NativeEmailAndPasswordComponentHandle,
 ): NativeAuthQueries {
   const verifySession = query({
-    args: { token: v.string() },
+    args: {
+      token: v.optional(v.string()),
+      sessionId: v.optional(v.string()),
+    },
     returns: v.object({
       user: v.optional(nativeAuthUserValidator),
       sessionId: v.optional(v.string()),
     }),
     handler: async (ctx, args) => {
+      const identity = await ctx.auth.getUserIdentity();
+      if (identity) {
+        const userId = identity.subject;
+        const session = await resolveSessionFromAuth(ctx, component, userId, args.sessionId);
+        if (!session) {
+          return {};
+        }
+        const user = await ctx.runQuery(component.native.users.getUserById, { userId });
+        if (!user) {
+          return {};
+        }
+        return { user: toNativeAuthUser(user), sessionId: session.sessionId };
+      }
+
+      if (!args.token) {
+        return {};
+      }
+
       let payload;
       try {
         payload = await verifyToken(args.token);
@@ -47,4 +68,35 @@ export function nativeAuthQueries(
   });
 
   return { verifySession };
+}
+
+async function resolveSessionFromAuth(
+  ctx: QueryCtx,
+  component: NativeEmailAndPasswordComponentHandle,
+  userId: string,
+  sessionId?: string,
+) {
+  if (sessionId) {
+    const session = await ctx.runQuery(component.native.sessions.getSessionBySessionId, {
+      sessionId,
+    });
+    if (
+      session &&
+      session.userId === userId &&
+      (session.expiresAt ?? 0) >= Date.now() &&
+      session.revokedAt === undefined
+    ) {
+      return session;
+    }
+    return null;
+  }
+
+  const sessions = await ctx.runQuery(component.native.sessions.listSessionsByUser, {
+    userId,
+  });
+  const now = Date.now();
+  const active = sessions.find(
+    (s: NativeSessionDoc) => (s.expiresAt ?? 0) >= now && s.revokedAt === undefined,
+  );
+  return active ?? null;
 }

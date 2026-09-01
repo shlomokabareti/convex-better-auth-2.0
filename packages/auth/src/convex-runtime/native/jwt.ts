@@ -1,11 +1,5 @@
-import {
-  type JWTPayload,
-  type JSONWebKeySet,
-  SignJWT,
-  createLocalJWKSet,
-  importJWK,
-  jwtVerify,
-} from "jose";
+import { type JWTPayload, type JSONWebKeySet, SignJWT, importJWK } from "jose";
+import { base64urlToBytes } from "./password.js";
 
 let cachedPrivateKey: CryptoKey | undefined;
 let cachedJwks: JSONWebKeySet | undefined;
@@ -54,8 +48,89 @@ export async function mintToken(
     .sign(key);
 }
 
+function base64UrlToString(value: string): string {
+  return new TextDecoder().decode(base64urlToBytes(value));
+}
+
+function base64UrlToBytes(value: string): Uint8Array {
+  return base64urlToBytes(value);
+}
+
+function arrayBufferFromBytes(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+}
+
+type JwtHeader = {
+  alg: string;
+  typ?: string;
+  kid?: string;
+};
+
+async function importPublicKey(jwk: JsonWebKey): Promise<CryptoKey> {
+  return await crypto.subtle.importKey(
+    "jwk",
+    jwk,
+    { name: "RSASSA-PKCS1-v1_5", hash: { name: "SHA-256" } },
+    false,
+    ["verify"],
+  );
+}
+
+function findPublicKey(jwks: JSONWebKeySet, kid?: string): JsonWebKey | undefined {
+  if (kid) {
+    return jwks.keys.find((k) => k.kid === kid);
+  }
+  return jwks.keys[0];
+}
+
 export async function verifyToken(token: string): Promise<JWTPayload> {
-  const jwks = createLocalJWKSet(getJwks());
-  const { payload } = await jwtVerify(token, jwks, { algorithms: ["RS256"] });
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    throw new Error("Invalid JWT: expected three segments");
+  }
+
+  const [h64, p64, s64] = parts;
+  if (!h64 || !p64 || !s64) {
+    throw new Error("Invalid JWT: missing segment");
+  }
+
+  let header: JwtHeader;
+  let payload: JWTPayload;
+  try {
+    header = JSON.parse(base64UrlToString(h64)) as JwtHeader;
+    payload = JSON.parse(base64UrlToString(p64)) as JWTPayload;
+  } catch {
+    throw new Error("Invalid JWT: malformed header or payload");
+  }
+
+  if (header.alg !== "RS256") {
+    throw new Error(`Invalid JWT: unsupported algorithm ${header.alg ?? "none"}`);
+  }
+
+  const jwks = getJwks();
+  const jwk = findPublicKey(jwks, header.kid);
+  if (!jwk) {
+    throw new Error("Invalid JWT: no matching public key");
+  }
+
+  const key = await importPublicKey(jwk);
+  const data = new TextEncoder().encode(`${h64}.${p64}`);
+  const signature = arrayBufferFromBytes(base64UrlToBytes(s64));
+  const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, data);
+  if (!valid) {
+    throw new Error("Invalid JWT: signature verification failed");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp !== undefined && typeof payload.exp === "number" && now > payload.exp) {
+    throw new Error("Invalid JWT: token expired");
+  }
+  if (payload.nbf !== undefined && typeof payload.nbf === "number" && now < payload.nbf) {
+    throw new Error("Invalid JWT: token not yet valid");
+  }
+  if (payload.iat !== undefined && typeof payload.iat === "number" && now < payload.iat - 60) {
+    throw new Error("Invalid JWT: issued in the future");
+  }
+
   return payload;
 }
