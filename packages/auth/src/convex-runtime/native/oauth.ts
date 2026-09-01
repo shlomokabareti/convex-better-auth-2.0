@@ -1,4 +1,5 @@
 import { createLocalJWKSet, jwtVerify, type JSONWebKeySet } from "jose";
+import * as oauth from "oauth4webapi";
 
 export type OAuthUserInfo = {
   id: string;
@@ -35,10 +36,10 @@ export type NativeOAuthProvider = {
   options: OAuthProviderOptions;
   createAuthorizationURL(args: {
     state: string;
-    codeChallenge: string;
+    codeVerifier: string;
     redirectURI: string;
     scopes?: string[];
-  }): URL;
+  }): Promise<URL>;
   exchangeAuthorizationCode(args: {
     code: string;
     codeVerifier: string;
@@ -76,29 +77,6 @@ export type GitHubProviderConfig = OAuthProviderOptions & {
   fetchImpl?: typeof fetch;
 };
 
-function getGitHubUrls(config: GitHubProviderConfig): {
-  authorize: string;
-  token: string;
-  apiBase: string;
-  issuer: string;
-} {
-  if (config.enterpriseBaseUrl) {
-    const base = new URL(config.enterpriseBaseUrl);
-    return {
-      authorize: `${base.origin}/login/oauth/authorize`,
-      token: `${base.origin}/login/oauth/access_token`,
-      apiBase: `${base.origin}/api/v3`,
-      issuer: `${base.origin}/login/oauth`,
-    };
-  }
-  return {
-    authorize: "https://github.com/login/oauth/authorize",
-    token: "https://github.com/login/oauth/access_token",
-    apiBase: "https://api.github.com",
-    issuer: "https://github.com/login/oauth",
-  };
-}
-
 export type GoogleProfile = {
   sub: string;
   name?: string;
@@ -130,9 +108,168 @@ export type GoogleProviderConfig = OAuthProviderOptions & {
   maxTokenAge?: number;
 };
 
+export type DiscordProfile = {
+  id: string;
+  username: string;
+  email?: string;
+  verified?: boolean;
+  avatar?: string | null;
+};
+
+export type DiscordProviderConfig = OAuthProviderOptions & {
+  clientId: string;
+  clientSecret: string;
+  /** @default ["identify", "email"] */
+  scopes?: string[];
+  /** Override fetch for testing. */
+  fetchImpl?: typeof fetch;
+};
+
+function getGitHubUrls(config: GitHubProviderConfig): {
+  authorize: string;
+  token: string;
+  apiBase: string;
+  issuer: string;
+} {
+  if (config.enterpriseBaseUrl) {
+    const base = new URL(config.enterpriseBaseUrl);
+    return {
+      authorize: `${base.origin}/login/oauth/authorize`,
+      token: `${base.origin}/login/oauth/access_token`,
+      apiBase: `${base.origin}/api/v3`,
+      issuer: `${base.origin}/login/oauth`,
+    };
+  }
+  return {
+    authorize: "https://github.com/login/oauth/authorize",
+    token: "https://github.com/login/oauth/access_token",
+    apiBase: "https://api.github.com",
+    issuer: "https://github.com/login/oauth",
+  };
+}
+
+function makeCustomFetch(
+  fetchImpl: typeof fetch,
+): (url: string, init: RequestInit) => Promise<Response> {
+  return (url, init) => fetchImpl(url, init);
+}
+
+function makeClient(clientId: string): oauth.Client {
+  return { client_id: clientId };
+}
+
+function makeClientAuth(clientSecret: string): oauth.ClientAuth {
+  return oauth.ClientSecretPost(clientSecret);
+}
+
+function authorizationServer(
+  issuer: string,
+  endpoints: { authorize: string; token: string },
+): oauth.AuthorizationServer {
+  return {
+    issuer,
+    authorization_endpoint: endpoints.authorize,
+    token_endpoint: endpoints.token,
+  };
+}
+
+async function buildAuthorizationURL(
+  as: oauth.AuthorizationServer,
+  client: oauth.Client,
+  {
+    state,
+    codeVerifier,
+    redirectURI,
+    scopes,
+    additionalParams,
+  }: {
+    state: string;
+    codeVerifier: string;
+    redirectURI: string;
+    scopes: string[];
+    additionalParams?: Record<string, string>;
+  },
+): Promise<URL> {
+  const url = new URL(as.authorization_endpoint!);
+  url.searchParams.set("client_id", client.client_id);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("redirect_uri", redirectURI);
+  url.searchParams.set("state", state);
+  url.searchParams.set("code_challenge", await oauth.calculatePKCECodeChallenge(codeVerifier));
+  url.searchParams.set("code_challenge_method", "S256");
+  url.searchParams.set("scope", scopes.join(" "));
+
+  if (additionalParams) {
+    for (const [key, value] of Object.entries(additionalParams)) {
+      if (!url.searchParams.has(key)) {
+        url.searchParams.set(key, value);
+      }
+    }
+  }
+
+  return url;
+}
+
+function parseScopes(scope: string | undefined): string[] | undefined {
+  if (!scope) return undefined;
+  return scope.split(/[,\s]+/).filter(Boolean);
+}
+
+async function exchangeAuthorizationCode(
+  as: oauth.AuthorizationServer,
+  client: oauth.Client,
+  clientSecret: string,
+  {
+    code,
+    codeVerifier,
+    redirectURI,
+    fetchImpl,
+  }: {
+    code: string;
+    codeVerifier: string;
+    redirectURI: string;
+    fetchImpl: typeof fetch;
+  },
+): Promise<OAuthToken> {
+  const clientAuth = makeClientAuth(clientSecret);
+  const callbackParameters = oauth.validateAuthResponse(
+    as,
+    client,
+    new URLSearchParams({ code }),
+    oauth.skipStateCheck,
+  );
+  const customFetch = makeCustomFetch(fetchImpl);
+  const response = await oauth.authorizationCodeGrantRequest(
+    as,
+    client,
+    clientAuth,
+    callbackParameters,
+    redirectURI,
+    codeVerifier,
+    { [oauth.customFetch]: customFetch },
+  );
+  const result = await oauth.processAuthorizationCodeResponse(as, client, response, {
+    requireIdToken: false,
+  });
+
+  return {
+    accessToken: result.access_token,
+    tokenType: result.token_type,
+    refreshToken: result.refresh_token,
+    idToken: result.id_token,
+    expiresAt: result.expires_in ? Date.now() + result.expires_in * 1000 : undefined,
+    scopes: parseScopes(result.scope),
+  };
+}
+
 export function createGoogleProvider(config: GoogleProviderConfig): NativeOAuthProvider {
-  const fetchImpl = config.fetchImpl ?? fetch;
+  const fetchImpl = config.fetchImpl ?? globalThis.fetch;
   const defaultScopes = ["openid", "email", "profile"];
+  const as = authorizationServer("https://accounts.google.com", {
+    authorize: "https://accounts.google.com/o/oauth2/v2/auth",
+    token: "https://oauth2.googleapis.com/token",
+  });
+  const client = makeClient(config.clientId);
 
   const providerOptions: OAuthProviderOptions = {
     disableSignUp: config.disableSignUp,
@@ -141,93 +278,45 @@ export function createGoogleProvider(config: GoogleProviderConfig): NativeOAuthP
     additionalParams: config.additionalParams,
   };
 
+  const requestedScopes = [...defaultScopes];
+  if (config.scopes?.length) {
+    for (const scope of config.scopes) {
+      if (!requestedScopes.includes(scope)) {
+        requestedScopes.push(scope);
+      }
+    }
+  }
+
+  const additionalParams: Record<string, string> = {};
+  if (config.accessType) additionalParams.access_type = config.accessType;
+  if (config.prompt) additionalParams.prompt = config.prompt;
+  if (config.loginHint) additionalParams.login_hint = config.loginHint;
+  if (config.hd) additionalParams.hd = config.hd;
+  if (config.includeGrantedScopes !== false) additionalParams.include_granted_scopes = "true";
+  if (config.additionalParams) {
+    for (const [key, value] of Object.entries(config.additionalParams)) {
+      additionalParams[key] = value;
+    }
+  }
+
   return {
     id: "google",
     name: "Google",
-    issuer: "https://accounts.google.com",
+    issuer: as.issuer,
     options: providerOptions,
 
-    createAuthorizationURL({ state, codeChallenge, redirectURI, scopes }) {
-      const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-      url.searchParams.set("client_id", config.clientId);
-      url.searchParams.set("response_type", "code");
-      url.searchParams.set("redirect_uri", redirectURI);
-      url.searchParams.set("state", state);
-      url.searchParams.set("code_challenge", codeChallenge);
-      url.searchParams.set("code_challenge_method", "S256");
-
-      const requestedScopes = [...defaultScopes];
-      if (scopes?.length) {
-        for (const scope of scopes) {
-          if (!requestedScopes.includes(scope)) {
-            requestedScopes.push(scope);
-          }
-        }
-      }
-      url.searchParams.set("scope", requestedScopes.join(" "));
-
-      if (config.accessType) url.searchParams.set("access_type", config.accessType);
-      if (config.prompt) url.searchParams.set("prompt", config.prompt);
-      if (config.loginHint) url.searchParams.set("login_hint", config.loginHint);
-      if (config.hd) url.searchParams.set("hd", config.hd);
-      if (config.includeGrantedScopes !== false) {
-        url.searchParams.set("include_granted_scopes", "true");
-      }
-      if (config.additionalParams) {
-        for (const [key, value] of Object.entries(config.additionalParams)) {
-          if (!url.searchParams.has(key)) {
-            url.searchParams.set(key, value);
-          }
-        }
-      }
-
-      return url;
+    async createAuthorizationURL({ state, codeVerifier, redirectURI, scopes }) {
+      return buildAuthorizationURL(as, client, {
+        state,
+        codeVerifier,
+        redirectURI,
+        scopes: scopes?.length ? [...new Set([...requestedScopes, ...scopes])] : requestedScopes,
+        additionalParams,
+      });
     },
 
-    async exchangeAuthorizationCode({ code, codeVerifier, redirectURI }) {
-      const body = new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: redirectURI,
-        client_id: config.clientId,
-        client_secret: config.clientSecret,
-        code_verifier: codeVerifier,
-      });
-
-      const response = await fetchImpl("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body,
-      });
-
-      const data = (await response.json()) as
-        | {
-            access_token: string;
-            token_type?: string;
-            scope?: string;
-            refresh_token?: string;
-            id_token?: string;
-            expires_in?: number;
-          }
-        | { error: string; error_description?: string; error_uri?: string };
-
-      if ("error" in data) {
-        throw new Error(
-          `Google token exchange failed: ${data.error} ${data.error_description ?? ""}`.trim(),
-        );
-      }
-
-      return {
-        accessToken: data.access_token,
-        tokenType: data.token_type,
-        refreshToken: data.refresh_token,
-        idToken: data.id_token,
-        expiresAt: data.expires_in ? Date.now() + data.expires_in * 1000 : undefined,
-        scopes: data.scope ? data.scope.split(" ") : undefined,
-      };
+    async exchangeAuthorizationCode(args) {
+      return exchangeAuthorizationCode(as, client, config.clientSecret, { ...args, fetchImpl });
     },
 
     async getUserInfo({ accessToken, idToken }) {
@@ -289,8 +378,13 @@ export function createGoogleProvider(config: GoogleProviderConfig): NativeOAuthP
 
 export function createGitHubProvider(config: GitHubProviderConfig): NativeOAuthProvider {
   const urls = getGitHubUrls(config);
-  const fetchImpl = config.fetchImpl ?? fetch;
+  const fetchImpl = config.fetchImpl ?? globalThis.fetch;
   const defaultScopes = ["read:user", "user:email"];
+  const as = authorizationServer(urls.issuer, {
+    authorize: urls.authorize,
+    token: urls.token,
+  });
+  const client = makeClient(config.clientId);
 
   const providerOptions: OAuthProviderOptions = {
     disableSignUp: config.disableSignUp,
@@ -299,86 +393,33 @@ export function createGitHubProvider(config: GitHubProviderConfig): NativeOAuthP
     additionalParams: config.additionalParams,
   };
 
+  const requestedScopes = [...defaultScopes];
+  if (config.scopes?.length) {
+    for (const scope of config.scopes) {
+      if (!requestedScopes.includes(scope)) {
+        requestedScopes.push(scope);
+      }
+    }
+  }
+
   return {
     id: "github",
     name: "GitHub",
-    issuer: urls.issuer,
+    issuer: as.issuer,
     options: providerOptions,
 
-    createAuthorizationURL({ state, codeChallenge, redirectURI, scopes }) {
-      const url = new URL(urls.authorize);
-      url.searchParams.set("client_id", config.clientId);
-      url.searchParams.set("response_type", "code");
-      url.searchParams.set("redirect_uri", redirectURI);
-      url.searchParams.set("state", state);
-      url.searchParams.set("code_challenge", codeChallenge);
-      url.searchParams.set("code_challenge_method", "S256");
-
-      const requestedScopes = [...defaultScopes];
-      if (scopes?.length) {
-        for (const scope of scopes) {
-          if (!requestedScopes.includes(scope)) {
-            requestedScopes.push(scope);
-          }
-        }
-      }
-      url.searchParams.set("scope", requestedScopes.join(" "));
-
-      if (config.additionalParams) {
-        for (const [key, value] of Object.entries(config.additionalParams)) {
-          if (!url.searchParams.has(key)) {
-            url.searchParams.set(key, value);
-          }
-        }
-      }
-
-      return url;
+    async createAuthorizationURL({ state, codeVerifier, redirectURI, scopes }) {
+      return buildAuthorizationURL(as, client, {
+        state,
+        codeVerifier,
+        redirectURI,
+        scopes: scopes?.length ? [...new Set([...requestedScopes, ...scopes])] : requestedScopes,
+        additionalParams: config.additionalParams,
+      });
     },
 
-    async exchangeAuthorizationCode({ code, codeVerifier, redirectURI }) {
-      const body = new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: redirectURI,
-        client_id: config.clientId,
-        client_secret: config.clientSecret,
-        code_verifier: codeVerifier,
-      });
-
-      const response = await fetchImpl(urls.token, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body,
-      });
-
-      const data = (await response.json()) as
-        | {
-            access_token: string;
-            token_type?: string;
-            scope?: string;
-            refresh_token?: string;
-            id_token?: string;
-            expires_in?: number;
-          }
-        | { error: string; error_description?: string; error_uri?: string };
-
-      if ("error" in data) {
-        throw new Error(
-          `GitHub token exchange failed: ${data.error} ${data.error_description ?? ""}`.trim(),
-        );
-      }
-
-      return {
-        accessToken: data.access_token,
-        tokenType: data.token_type,
-        refreshToken: data.refresh_token,
-        idToken: data.id_token,
-        expiresAt: data.expires_in ? Date.now() + data.expires_in * 1000 : undefined,
-        scopes: data.scope ? data.scope.split(",") : undefined,
-      };
+    async exchangeAuthorizationCode(args) {
+      return exchangeAuthorizationCode(as, client, config.clientSecret, { ...args, fetchImpl });
     },
 
     async getUserInfo({ accessToken }) {
@@ -426,26 +467,14 @@ export function createGitHubProvider(config: GitHubProviderConfig): NativeOAuthP
   };
 }
 
-export type DiscordProfile = {
-  id: string;
-  username: string;
-  email?: string;
-  verified?: boolean;
-  avatar?: string | null;
-};
-
-export type DiscordProviderConfig = OAuthProviderOptions & {
-  clientId: string;
-  clientSecret: string;
-  /** @default ["identify", "email"] */
-  scopes?: string[];
-  /** Override fetch for testing. */
-  fetchImpl?: typeof fetch;
-};
-
 export function createDiscordProvider(config: DiscordProviderConfig): NativeOAuthProvider {
-  const fetchImpl = config.fetchImpl ?? fetch;
+  const fetchImpl = config.fetchImpl ?? globalThis.fetch;
   const defaultScopes = ["identify", "email"];
+  const as = authorizationServer("https://discord.com", {
+    authorize: "https://discord.com/oauth2/authorize",
+    token: "https://discord.com/api/oauth2/token",
+  });
+  const client = makeClient(config.clientId);
 
   const providerOptions: OAuthProviderOptions = {
     disableSignUp: config.disableSignUp,
@@ -454,84 +483,33 @@ export function createDiscordProvider(config: DiscordProviderConfig): NativeOAut
     additionalParams: config.additionalParams,
   };
 
+  const requestedScopes = [...defaultScopes];
+  if (config.scopes?.length) {
+    for (const scope of config.scopes) {
+      if (!requestedScopes.includes(scope)) {
+        requestedScopes.push(scope);
+      }
+    }
+  }
+
   return {
     id: "discord",
     name: "Discord",
-    issuer: "https://discord.com",
+    issuer: as.issuer,
     options: providerOptions,
 
-    createAuthorizationURL({ state, codeChallenge, redirectURI, scopes }) {
-      const url = new URL("https://discord.com/oauth2/authorize");
-      url.searchParams.set("client_id", config.clientId);
-      url.searchParams.set("response_type", "code");
-      url.searchParams.set("redirect_uri", redirectURI);
-      url.searchParams.set("state", state);
-      url.searchParams.set("code_challenge", codeChallenge);
-      url.searchParams.set("code_challenge_method", "S256");
-
-      const requestedScopes = [...defaultScopes];
-      if (scopes?.length) {
-        for (const scope of scopes) {
-          if (!requestedScopes.includes(scope)) {
-            requestedScopes.push(scope);
-          }
-        }
-      }
-      url.searchParams.set("scope", requestedScopes.join(" "));
-
-      if (config.additionalParams) {
-        for (const [key, value] of Object.entries(config.additionalParams)) {
-          if (!url.searchParams.has(key)) {
-            url.searchParams.set(key, value);
-          }
-        }
-      }
-
-      return url;
+    async createAuthorizationURL({ state, codeVerifier, redirectURI, scopes }) {
+      return buildAuthorizationURL(as, client, {
+        state,
+        codeVerifier,
+        redirectURI,
+        scopes: scopes?.length ? [...new Set([...requestedScopes, ...scopes])] : requestedScopes,
+        additionalParams: config.additionalParams,
+      });
     },
 
-    async exchangeAuthorizationCode({ code, codeVerifier, redirectURI }) {
-      const body = new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: redirectURI,
-        client_id: config.clientId,
-        client_secret: config.clientSecret,
-        code_verifier: codeVerifier,
-      });
-
-      const response = await fetchImpl("https://discord.com/api/oauth2/token", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body,
-      });
-
-      const data = (await response.json()) as
-        | {
-            access_token: string;
-            token_type?: string;
-            scope?: string;
-            refresh_token?: string;
-            expires_in?: number;
-          }
-        | { error: string; error_description?: string };
-
-      if ("error" in data) {
-        throw new Error(
-          `Discord token exchange failed: ${data.error} ${data.error_description ?? ""}`.trim(),
-        );
-      }
-
-      return {
-        accessToken: data.access_token,
-        tokenType: data.token_type,
-        refreshToken: data.refresh_token,
-        expiresAt: data.expires_in ? Date.now() + data.expires_in * 1000 : undefined,
-        scopes: data.scope ? data.scope.split(" ") : undefined,
-      };
+    async exchangeAuthorizationCode(args) {
+      return exchangeAuthorizationCode(as, client, config.clientSecret, { ...args, fetchImpl });
     },
 
     async getUserInfo({ accessToken }) {

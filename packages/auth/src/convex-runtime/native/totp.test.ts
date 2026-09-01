@@ -3,8 +3,8 @@ import {
   buildTOTPURI,
   decodeBase32,
   encodeBase32,
+  generateSecret,
   generateTOTP,
-  generateTOTPSecret,
   getCurrentTOTPCounter,
   verifyTOTP,
 } from "./totp.js";
@@ -55,31 +55,31 @@ describe("TOTP", () => {
   });
 
   it("verifies a code within the default window", async () => {
-    const secret = await generateTOTPSecret();
+    const secret = generateSecret();
     const now = Date.now();
     const code = await generateTOTP(secret, getCurrentTOTPCounter(30, now));
     expect(await verifyTOTP(secret, code, {}, 1, now)).toBe(true);
   });
 
   it("rejects an invalid code", async () => {
-    const secret = await generateTOTPSecret();
+    const secret = generateSecret();
     expect(await verifyTOTP(secret, "000000")).toBe(false);
   });
 
   it("rejects a code with a non-digits", async () => {
-    const secret = await generateTOTPSecret();
+    const secret = await generateSecret();
     expect(await verifyTOTP(secret, "abc123")).toBe(false);
   });
 
   it("rejects a code outside the window", async () => {
-    const secret = await generateTOTPSecret();
+    const secret = await generateSecret();
     const pastCounter = getCurrentTOTPCounter(30, Date.now()) - 10;
     const code = await generateTOTP(secret, pastCounter);
     expect(await verifyTOTP(secret, code, {}, 1)).toBe(false);
   });
 
   it("accepts a code one step before current", async () => {
-    const secret = await generateTOTPSecret();
+    const secret = await generateSecret();
     const now = Date.now() - 30_000;
     const code = await generateTOTP(secret, getCurrentTOTPCounter(30, now), {}, now);
     expect(await verifyTOTP(secret, code, {}, 1)).toBe(true);

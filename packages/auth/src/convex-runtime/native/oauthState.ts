@@ -1,5 +1,5 @@
 import { SignJWT, createLocalJWKSet, jwtVerify } from "jose";
-import { bytesToBase64url } from "./password.js";
+import { generateRandomCodeVerifier, calculatePKCECodeChallenge } from "oauth4webapi";
 import { getJwtPrivateKey, getJwks } from "./jwt.js";
 
 export type OAuthStatePayload = {
@@ -13,20 +13,12 @@ export type OAuthStatePayload = {
   additionalData?: Record<string, unknown>;
 };
 
-function base64url(bytes: Uint8Array): string {
-  return bytesToBase64url(bytes);
-}
-
 export async function generateCodeVerifier(): Promise<string> {
-  const bytes = crypto.getRandomValues(new Uint8Array(96));
-  return base64url(bytes);
+  return generateRandomCodeVerifier();
 }
 
 export async function generateCodeChallenge(verifier: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(verifier);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return base64url(new Uint8Array(digest));
+  return calculatePKCECodeChallenge(verifier);
 }
 
 export async function mintOAuthState(payload: OAuthStatePayload): Promise<string> {

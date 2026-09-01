@@ -138,11 +138,17 @@ function createMockFetch(): {
     const key = url;
     const response = responses.get(key);
     if (!response) {
-      return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
+      return new Response(JSON.stringify({ error: "not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
     return new Response(JSON.stringify(response.body), {
       status: response.status ?? 200,
-      headers: response.headers,
+      headers: {
+        "Content-Type": "application/json",
+        ...response.headers,
+      },
     });
   });
   return { fetch, responses };
@@ -272,20 +278,22 @@ describe("OAuth state and PKCE", () => {
 describe("GitHub provider", () => {
   beforeAll(setupTestKeys);
 
-  it("creates an authorization URL with client_id, PKCE, and state", () => {
+  it("creates an authorization URL with client_id, PKCE, and state", async () => {
     const config = createGitHubConfig();
     const provider = createGitHubProvider(config);
-    const url = provider.createAuthorizationURL({
+    const codeVerifier = await generateCodeVerifier();
+    const url = await provider.createAuthorizationURL({
       state: "state-token",
-      codeChallenge: "challenge",
+      codeVerifier,
       redirectURI: "https://app.example.com/api/auth/callback/github",
     });
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
     expect(url.origin).toBe("https://github.com");
     expect(url.pathname).toBe("/login/oauth/authorize");
     expect(url.searchParams.get("client_id")).toBe("client-id");
     expect(url.searchParams.get("response_type")).toBe("code");
     expect(url.searchParams.get("state")).toBe("state-token");
-    expect(url.searchParams.get("code_challenge")).toBe("challenge");
+    expect(url.searchParams.get("code_challenge")).toBe(codeChallenge);
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
     expect(url.searchParams.get("scope")).toContain("read:user");
   });
@@ -335,20 +343,22 @@ describe("GitHub provider", () => {
 describe("Google provider", () => {
   beforeAll(setupTestKeys);
 
-  it("creates an authorization URL with client_id, PKCE, and state", () => {
+  it("creates an authorization URL with client_id, PKCE, and state", async () => {
     const config = createGoogleConfig();
     const provider = createGoogleProvider(config);
-    const url = provider.createAuthorizationURL({
+    const codeVerifier = await generateCodeVerifier();
+    const url = await provider.createAuthorizationURL({
       state: "state-token",
-      codeChallenge: "challenge",
+      codeVerifier,
       redirectURI: "https://app.example.com/api/auth/callback/google",
     });
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
     expect(url.origin).toBe("https://accounts.google.com");
     expect(url.pathname).toBe("/o/oauth2/v2/auth");
     expect(url.searchParams.get("client_id")).toBe("google-client-id");
     expect(url.searchParams.get("response_type")).toBe("code");
     expect(url.searchParams.get("state")).toBe("state-token");
-    expect(url.searchParams.get("code_challenge")).toBe("challenge");
+    expect(url.searchParams.get("code_challenge")).toBe(codeChallenge);
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
     expect(url.searchParams.get("scope")).toContain("openid");
   });
@@ -416,20 +426,22 @@ describe("Google provider", () => {
 });
 
 describe("Discord provider", () => {
-  it("creates an authorization URL with client_id, PKCE, state, and scopes", () => {
+  it("creates an authorization URL with client_id, PKCE, state, and scopes", async () => {
     const config = createDiscordConfig();
     const provider = createDiscordProvider(config);
-    const url = provider.createAuthorizationURL({
+    const codeVerifier = await generateCodeVerifier();
+    const url = await provider.createAuthorizationURL({
       state: "state-token",
-      codeChallenge: "challenge",
+      codeVerifier,
       redirectURI: "https://app.example.com/api/auth/callback/discord",
     });
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
     expect(url.origin).toBe("https://discord.com");
     expect(url.pathname).toBe("/oauth2/authorize");
     expect(url.searchParams.get("client_id")).toBe("discord-client-id");
     expect(url.searchParams.get("response_type")).toBe("code");
     expect(url.searchParams.get("state")).toBe("state-token");
-    expect(url.searchParams.get("code_challenge")).toBe("challenge");
+    expect(url.searchParams.get("code_challenge")).toBe(codeChallenge);
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
     expect(url.searchParams.get("scope")).toContain("identify");
     expect(url.searchParams.get("scope")).toContain("email");

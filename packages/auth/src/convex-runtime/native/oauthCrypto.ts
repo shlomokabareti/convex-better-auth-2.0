@@ -1,9 +1,8 @@
-import { base64urlToBytes, bytesToBase64url } from "./password.js";
+import { CompactEncrypt, compactDecrypt } from "jose";
 import type { OAuthToken } from "./oauth.js";
 
 const ENCRYPTION_SALT = new TextEncoder().encode("convex-better-auth-2.0");
 const ENCRYPTION_INFO = new TextEncoder().encode("oauth-account-tokens");
-const AES_GCM_IV_BYTES = 12;
 
 export type EncryptedOAuthToken = {
   accessToken: string;
@@ -14,17 +13,9 @@ export type EncryptedOAuthToken = {
   scopes?: string[];
 };
 
-function bytesToBase64(bytes: Uint8Array): string {
-  return bytesToBase64url(bytes);
-}
+let cachedKey: Uint8Array | undefined;
 
-function base64ToBytes(base64: string): Uint8Array {
-  return base64urlToBytes(base64);
-}
-
-let cachedKey: ArrayBuffer | undefined;
-
-export async function getOAuthTokenEncryptionKey(): Promise<ArrayBuffer> {
+export async function getOAuthTokenEncryptionKey(): Promise<Uint8Array> {
   if (cachedKey) {
     return cachedKey;
   }
@@ -56,41 +47,20 @@ export async function getOAuthTokenEncryptionKey(): Promise<ArrayBuffer> {
     baseKey,
     256,
   );
-  cachedKey = bits;
+  cachedKey = new Uint8Array(bits);
   return cachedKey;
 }
 
 export async function encryptAccountToken(plaintext: string): Promise<string> {
-  const keyData = await getOAuthTokenEncryptionKey();
-  const cryptoKey = await globalThis.crypto.subtle.importKey("raw", keyData, "AES-GCM", false, [
-    "encrypt",
-  ]);
-  const iv = globalThis.crypto.getRandomValues(new Uint8Array(AES_GCM_IV_BYTES));
-  const encoder = new TextEncoder();
-  const ciphertext = await globalThis.crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
-    cryptoKey,
-    encoder.encode(plaintext),
-  );
-  const combined = new Uint8Array(iv.length + ciphertext.byteLength);
-  combined.set(iv);
-  combined.set(new Uint8Array(ciphertext), iv.length);
-  return bytesToBase64(combined);
+  const key = await getOAuthTokenEncryptionKey();
+  return await new CompactEncrypt(new TextEncoder().encode(plaintext))
+    .setProtectedHeader({ alg: "dir", enc: "A256GCM" })
+    .encrypt(key);
 }
 
 export async function decryptAccountToken(ciphertext: string): Promise<string> {
-  const keyData = await getOAuthTokenEncryptionKey();
-  const cryptoKey = await globalThis.crypto.subtle.importKey("raw", keyData, "AES-GCM", false, [
-    "decrypt",
-  ]);
-  const combined = base64ToBytes(ciphertext);
-  const iv = combined.slice(0, AES_GCM_IV_BYTES);
-  const encrypted = combined.slice(AES_GCM_IV_BYTES);
-  const plaintext = await globalThis.crypto.subtle.decrypt(
-    { name: "AES-GCM", iv },
-    cryptoKey,
-    encrypted,
-  );
+  const key = await getOAuthTokenEncryptionKey();
+  const { plaintext } = await compactDecrypt(ciphertext, key);
   return new TextDecoder().decode(plaintext);
 }
 

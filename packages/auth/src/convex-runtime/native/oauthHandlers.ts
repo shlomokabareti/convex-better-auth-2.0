@@ -10,7 +10,6 @@ import {
 import type { DiscordProviderConfig, GitHubProviderConfig, GoogleProviderConfig } from "./oauth.js";
 import type { NativeUserDoc } from "./types.js";
 import {
-  generateCodeChallenge,
   generateCodeVerifier,
   mintOAuthState,
   verifyOAuthState,
@@ -119,7 +118,6 @@ export async function handleSignIn(
   const provider = getProvider(config, args.provider);
   const redirectURI = getRedirectURI(config, provider);
   const codeVerifier = await generateCodeVerifier();
-  const codeChallenge = await generateCodeChallenge(codeVerifier);
   const state = await mintOAuthState({
     provider: provider.id,
     codeVerifier,
@@ -130,9 +128,9 @@ export async function handleSignIn(
     link: args.link,
     additionalData: args.additionalData,
   });
-  const url = provider.createAuthorizationURL({
+  const url = await provider.createAuthorizationURL({
     state,
-    codeChallenge,
+    codeVerifier,
     redirectURI,
   });
   return { url: url.toString() };
