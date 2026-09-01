@@ -141,6 +141,22 @@ export type NativeVerificationCodeDoc = {
   updatedAt: number;
 };
 
+export type NativeVerifierDoc = {
+  _id: string;
+  _creationTime: number;
+  verifierId: string;
+  type: string;
+  provider?: string;
+  codeChallenge?: string;
+  codeChallengeMethod?: string;
+  redirectUri?: string;
+  metadata?: string;
+  expiresAt: number;
+  consumedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type NativeUserDoc = {
   _id: string;
   _creationTime: number;
@@ -560,6 +576,38 @@ export type NativeEmailAndPasswordComponentHandle = {
         "public" | "internal",
         { userId: string; type: VerificationCodeType },
         number,
+        string
+      >;
+    };
+    verifiers: {
+      createVerifier: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        {
+          verifierId: string;
+          type: string;
+          provider?: string;
+          codeChallenge?: string;
+          codeChallengeMethod?: string;
+          redirectUri?: string;
+          metadata?: string;
+          expiresAt: number;
+        },
+        string,
+        string
+      >;
+      getVerifierByVerifierId: FunctionReference<
+        "query",
+        "public" | "internal",
+        { verifierId: string },
+        NativeVerifierDoc | null,
+        string
+      >;
+      consumeVerifier: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { verifierId: string },
+        NativeVerifierDoc | null,
         string
       >;
     };

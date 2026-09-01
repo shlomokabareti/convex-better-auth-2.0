@@ -9,15 +9,19 @@ import type {
   NativeEmailAndPasswordFunctionReferences,
 } from "./provider.js";
 import { nativeAuthQueries, type NativeAuthQueries } from "./queries.js";
+import { nativeMagicLink } from "./magicLink.js";
+import type { NativeMagicLinkConfig, NativeMagicLinkFunctionReferences } from "./magicLink.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 
 export type ConvexAuthConfig = {
   component: NativeEmailAndPasswordComponentHandle;
   emailAndPassword?: NativeEmailAndPasswordConfig;
   oauth?: NativeOAuthConfig;
+  magicLink?: NativeMagicLinkConfig;
 };
 
 export type ConvexAuth = NativeEmailAndPasswordFunctionReferences &
+  NativeMagicLinkFunctionReferences &
   NativeAuthQueries & {
     signInWithRedirect?: NativeOAuthFunctionReferences["signIn"];
     callback?: NativeOAuthFunctionReferences["callback"];
@@ -27,11 +31,15 @@ export type ConvexAuth = NativeEmailAndPasswordFunctionReferences &
 export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
   const emailAndPasswordActions = nativeEmailAndPassword(config.component, config.emailAndPassword);
   const authQueries = nativeAuthQueries(config.component);
+  const magicLinkActions = config.magicLink
+    ? nativeMagicLink(config.component, config.magicLink)
+    : undefined;
 
   const oauthActions = config.oauth ? nativeOAuth(config.component, config.oauth) : undefined;
 
   const auth = {
     ...emailAndPasswordActions,
+    ...magicLinkActions,
     ...authQueries,
     ...(oauthActions
       ? { signInWithRedirect: oauthActions.signIn, callback: oauthActions.callback }
