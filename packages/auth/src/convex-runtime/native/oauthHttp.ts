@@ -4,35 +4,11 @@ import { verifyOAuthState } from "./oauthState.js";
 import type { NativeOAuthComponentHandle } from "./types.js";
 import { verifyToken } from "./jwt.js";
 import { isAllowedRedirectUrl } from "./callback.js";
+import { setCookieHeader, readCookie } from "./cookies.js";
 
 const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
 const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
-
-function readCookie(request: Request, name: string): string | undefined {
-  const cookieHeader = request.headers.get("cookie");
-  if (!cookieHeader) {
-    return undefined;
-  }
-  const match = cookieHeader.match(new RegExp(`(?:^|;)\\s*${name}=([^;]+)`));
-  return match?.[1];
-}
-
-function setCookieHeader(
-  name: string,
-  value: string,
-  maxAgeSeconds?: number,
-  secure?: boolean,
-): string {
-  let header = `${name}=${value}; Path=/; HttpOnly; SameSite=Lax`;
-  if (maxAgeSeconds !== undefined) {
-    header += `; Max-Age=${maxAgeSeconds}`;
-  }
-  if (secure) {
-    header += "; Secure";
-  }
-  return header;
-}
 
 function parseProvider(url: URL): string {
   const parts = url.pathname.split("/").filter(Boolean);
