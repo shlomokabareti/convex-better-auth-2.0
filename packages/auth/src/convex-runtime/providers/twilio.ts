@@ -44,8 +44,7 @@ function isMessagingServiceSid(value: string): boolean {
   return value.startsWith("MG");
 }
 
-const BASE64_CHARS =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 function stringToBase64(input: string): string {
   const bytes = new TextEncoder().encode(input);
@@ -137,9 +136,7 @@ export type TwilioSmsOtpSenderOptions = TwilioSmsSenderOptions & {
  * This wraps {@link createTwilioSmsSender} and renders a minimal OTP SMS from
  * the `otp` and `type` fields.
  */
-export function createTwilioSmsOtpSender(
-  options: TwilioSmsOtpSenderOptions,
-): PhoneOtpSender {
+export function createTwilioSmsOtpSender(options: TwilioSmsOtpSenderOptions): PhoneOtpSender {
   const send = createTwilioSmsSender(options);
   const buildMessage = options.buildMessage ?? defaultSmsOtpMessage;
 

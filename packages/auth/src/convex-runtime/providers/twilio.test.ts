@@ -45,9 +45,7 @@ describe("createTwilioSmsSender", () => {
     expect(sid).toBe("SMtest");
     const request = getRequest();
     expect(request).toBeDefined();
-    expect(request!.url).toBe(
-      "https://api.twilio.com/2010-04-01/Accounts/ACtest/Messages.json",
-    );
+    expect(request!.url).toBe("https://api.twilio.com/2010-04-01/Accounts/ACtest/Messages.json");
     expect(request!.init.method).toBe("POST");
 
     const headers = request!.init.headers as Record<string, string>;
@@ -121,10 +119,9 @@ describe("createTwilioSmsSender", () => {
     const request = getRequest();
     expect(request).toBeDefined();
     const headers = request!.init.headers as Record<string, string>;
-    const value = Buffer.from(
-      (headers["Authorization"] as string).slice(6),
-      "base64",
-    ).toString("utf-8");
+    const value = Buffer.from((headers["Authorization"] as string).slice(6), "base64").toString(
+      "utf-8",
+    );
     expect(value).toBe("ACtest:authtoken");
   });
 });

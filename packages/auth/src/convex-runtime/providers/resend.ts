@@ -61,9 +61,7 @@ function defaultOtpText(otp: string, type: string): string {
  * the Resend email id. Errors are thrown as `Error` with a concise message so
  * callers can decide how to surface them to users.
  */
-export function createResendEmailSender(
-  options: ResendEmailSenderOptions,
-): EmailSender {
+export function createResendEmailSender(options: ResendEmailSenderOptions): EmailSender {
   const fetchImpl = options.fetch ?? globalThis.fetch;
   const defaultFrom = options.from;
   return async (draft: EmailDraft) => {
@@ -89,9 +87,7 @@ export function createResendEmailSender(
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(
-        `Resend email send failed (${response.status}): ${body.slice(0, 200)}`,
-      );
+      throw new Error(`Resend email send failed (${response.status}): ${body.slice(0, 200)}`);
     }
 
     const result = (await response.json()) as ResendEmailSendResponse;
@@ -118,9 +114,7 @@ export type ResendEmailOtpSenderOptions = ResendEmailSenderOptions & {
  * from the `otp` and `type` fields. Consumers can override the templates via
  * `buildSubject`, `buildHtml`, and `buildText`.
  */
-export function createResendEmailOtpSender(
-  options: ResendEmailOtpSenderOptions,
-): EmailOtpSender {
+export function createResendEmailOtpSender(options: ResendEmailOtpSenderOptions): EmailOtpSender {
   const sendEmail = createResendEmailSender(options);
   const buildSubject = options.buildSubject ?? defaultSubjectForOtpType;
   const buildHtml = options.buildHtml ?? defaultOtpHtml;
