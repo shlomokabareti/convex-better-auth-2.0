@@ -33,13 +33,26 @@ export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
       ? { signInWithRedirect: oauthActions.signIn, callback: oauthActions.callback }
       : {}),
     addHttpRoutes(http: HttpRouter) {
+      const emailConfig = config.emailAndPassword ?? {};
+      const trustedOrigins = [
+        ...(emailConfig.trustedOrigins ?? []),
+        ...(emailConfig.email?.appOrigin ? [emailConfig.email.appOrigin] : []),
+        ...(config.oauth?.trustedOrigins ?? []),
+        ...(process.env.SITE_URL ? [process.env.SITE_URL] : []),
+        ...(process.env.CONVEX_SITE_URL ? [process.env.CONVEX_SITE_URL] : []),
+      ];
       addNativeAuthHttpRoutes(
         http,
         config.component,
         emailAndPasswordActions as unknown as NativeEmailAndPasswordFunctionReferences,
+        { trustedOrigins },
       );
       if (oauthActions && config.oauth) {
-        addNativeOAuthHttpRoutes(http, { component: config.component, oauth: config.oauth });
+        addNativeOAuthHttpRoutes(http, {
+          component: config.component,
+          oauth: config.oauth,
+          trustedOrigins,
+        });
       }
     },
   };
