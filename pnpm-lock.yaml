@@ -46,6 +46,9 @@ importers:
       jose:
         specifier: ^6.2.2
         version: 6.2.10
+      oauth4webapi:
+        specifier: ^3.8.7
+        version: 3.8.7
       otpauth:
         specifier: ^9.5.1
         version: 9.5.1
@@ -7994,6 +7997,9 @@ packages:
 
   nullthrows@1.1.1:
     resolution: {integrity: sha512-2vPPEi+Z7WqML2jZYddDIfy5Dqb0r2fze2zTxNNknZaFpVHU3mFB3R+DWeJWGVx0ecvttSGlJTI+WG+8Z4cDWw==}
+
+  oauth4webapi@3.8.7:
+    resolution: {integrity: sha512-4RxcKxXjuItDFZ20RRPf4YTw3kpeXJyCgJFxVzJ068A7PNJ18st2Dg90tlC1LkSDS0GecroagCLHYEIVUhCAkw==}
 
   ob1@0.83.8:
     resolution: {integrity: sha512-pk7el+eTOzfSKMAY4QBiiwKzegXn633JQj13y+pW5E5IdS+yV2CfDJ9Hf20K/LKy8nCrP9dAmd7XOk52OJxifA==}
@@ -18653,6 +18659,8 @@ snapshots:
       boolbase: 1.0.0
 
   nullthrows@1.1.1: {}
+
+  oauth4webapi@3.8.7: {}
 
   ob1@0.83.8:
     dependencies:
