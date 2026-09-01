@@ -31,11 +31,7 @@ function canonicalAlgorithm(algorithm: string): keyof typeof hashFns {
   return normalized;
 }
 
-export function hmacFunction(
-  algorithm: string,
-  key: Uint8Array,
-  message: Uint8Array,
-): Uint8Array {
+export function hmacFunction(algorithm: string, key: Uint8Array, message: Uint8Array): Uint8Array {
   return hmac(hashFns[canonicalAlgorithm(algorithm)], key, message);
 }
 
@@ -54,9 +50,7 @@ export function decodeBase32(input: string): Uint8Array {
 function totpFromSecret(secret: Uint8Array | string, config: TOTPConfig = {}): TOTP {
   const algorithm = canonicalAlgorithm(config.algorithm ?? DEFAULT_ALGORITHM);
   const secretObj =
-    typeof secret === "string"
-      ? Secret.fromBase32(secret)
-      : new Secret({ buffer: secret.buffer });
+    typeof secret === "string" ? Secret.fromBase32(secret) : new Secret({ buffer: secret.buffer });
   return new TOTP({
     secret: secretObj,
     issuer: config.issuer ?? "Convex",

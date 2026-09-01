@@ -113,9 +113,7 @@ async function verifyScrypt(password: string, hash: string): Promise<boolean> {
   }
 }
 
-function parsePbkdf2Hash(
-  hash: string,
-): {
+function parsePbkdf2Hash(hash: string): {
   salt: Uint8Array;
   expected: Uint8Array;
   iterations: number;

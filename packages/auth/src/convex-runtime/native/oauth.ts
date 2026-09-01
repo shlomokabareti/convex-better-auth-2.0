@@ -162,7 +162,10 @@ function makeClientAuth(clientSecret: string): oauth.ClientAuth {
   return oauth.ClientSecretPost(clientSecret);
 }
 
-function authorizationServer(issuer: string, endpoints: { authorize: string; token: string }): oauth.AuthorizationServer {
+function authorizationServer(
+  issuer: string,
+  endpoints: { authorize: string; token: string },
+): oauth.AuthorizationServer {
   return {
     issuer,
     authorization_endpoint: endpoints.authorize,
@@ -245,7 +248,9 @@ async function exchangeAuthorizationCode(
     codeVerifier,
     { [oauth.customFetch]: customFetch },
   );
-  const result = await oauth.processAuthorizationCodeResponse(as, client, response, { requireIdToken: false });
+  const result = await oauth.processAuthorizationCodeResponse(as, client, response, {
+    requireIdToken: false,
+  });
 
   return {
     accessToken: result.access_token,
