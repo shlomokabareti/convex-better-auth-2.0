@@ -1,8 +1,42 @@
 import { v } from "convex/values";
-import { mutation, query } from "../_generated/server.js";
-import { verificationCodeTypeValidator } from "../schema.js";
+import { getPage } from "convex-helpers/server/pagination";
+import { mutation, query, type QueryCtx } from "../_generated/server.js";
+import schema, { verificationCodeTypeValidator } from "../schema.js";
 
 const MAX_VERIFICATION_CODES_PER_USER = 1000;
+
+async function getVerificationCodeByTokenHashAndType(
+  ctx: { db: QueryCtx["db"] },
+  tokenHash: string,
+  type: string,
+) {
+  const { page } = await getPage(ctx, {
+    table: "authVerificationCodes",
+    index: "by_token_hash",
+    startIndexKey: [tokenHash, type],
+    endIndexKey: [tokenHash, type],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
+async function getVerificationCodesByUserType(
+  ctx: { db: QueryCtx["db"] },
+  userId: string,
+  type: string | undefined,
+) {
+  const startIndexKey = type ? [userId, type] : [userId];
+  const { page } = await getPage(ctx, {
+    table: "authVerificationCodes",
+    index: "by_user_type",
+    startIndexKey,
+    endIndexKey: startIndexKey,
+    absoluteMaxRows: MAX_VERIFICATION_CODES_PER_USER,
+    schema,
+  });
+  return page;
+}
 
 export const createVerificationCode = mutation({
   args: {
@@ -14,10 +48,7 @@ export const createVerificationCode = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    const existing = await ctx.db
-      .query("authVerificationCodes")
-      .withIndex("by_user_type", (q) => q.eq("userId", args.userId).eq("type", args.type))
-      .take(MAX_VERIFICATION_CODES_PER_USER);
+    const existing = await getVerificationCodesByUserType(ctx, args.userId, args.type);
 
     await Promise.all(existing.map((code) => ctx.db.patch(code._id, { consumedAt: now })));
 
@@ -36,10 +67,7 @@ export const getVerificationCodeByTokenHash = query({
     type: verificationCodeTypeValidator,
   },
   handler: async (ctx, args) => {
-    return await ctx.db
-      .query("authVerificationCodes")
-      .withIndex("by_token_hash", (q) => q.eq("tokenHash", args.tokenHash).eq("type", args.type))
-      .unique();
+    return await getVerificationCodeByTokenHashAndType(ctx, args.tokenHash, args.type);
   },
 });
 
@@ -51,10 +79,7 @@ export const consumeVerificationCode = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    const code = await ctx.db
-      .query("authVerificationCodes")
-      .withIndex("by_token_hash", (q) => q.eq("tokenHash", args.tokenHash).eq("type", args.type))
-      .unique();
+    const code = await getVerificationCodeByTokenHashAndType(ctx, args.tokenHash, args.type);
 
     if (!code) {
       return null;
@@ -77,10 +102,7 @@ export const revokeVerificationCodesForUser = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    const existing = await ctx.db
-      .query("authVerificationCodes")
-      .withIndex("by_user_type", (q) => q.eq("userId", args.userId).eq("type", args.type))
-      .take(MAX_VERIFICATION_CODES_PER_USER);
+    const existing = await getVerificationCodesByUserType(ctx, args.userId, args.type);
 
     const unconsumed = existing.filter((code) => code.consumedAt === undefined);
 
@@ -104,13 +126,7 @@ export const cleanupVerificationCodes = mutation({
     const maxAgeMs = args.maxAgeMs ?? 0;
     const minConsumedAt = now - maxAgeMs;
 
-    const existing = await ctx.db
-      .query("authVerificationCodes")
-      .withIndex("by_user_type", (q) => {
-        const byUser = q.eq("userId", args.userId);
-        return args.type ? byUser.eq("type", args.type) : byUser;
-      })
-      .take(MAX_VERIFICATION_CODES_PER_USER);
+    const existing = await getVerificationCodesByUserType(ctx, args.userId, args.type);
 
     let deleted = 0;
     for (const code of existing) {

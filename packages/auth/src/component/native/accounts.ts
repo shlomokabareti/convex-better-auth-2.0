@@ -1,5 +1,7 @@
 import { v } from "convex/values";
+import { getPage } from "convex-helpers/server/pagination";
 import { mutation, query } from "../_generated/server.js";
+import schema from "../schema.js";
 import type { Doc } from "../_generated/dataModel.js";
 
 export const updateAccountTokens = mutation({
@@ -77,11 +79,14 @@ export const getAccountBySubject = query({
     subject: v.string(),
   },
   handler: async (ctx, args) => {
-    return await ctx.db
-      .query("authAccounts")
-      .withIndex("by_provider_issuer_subject", (q) =>
-        q.eq("provider", args.provider).eq("issuer", args.issuer).eq("subject", args.subject),
-      )
-      .unique();
+    const { page } = await getPage(ctx, {
+      table: "authAccounts",
+      index: "by_provider_issuer_subject",
+      startIndexKey: [args.provider, args.issuer, args.subject],
+      endIndexKey: [args.provider, args.issuer, args.subject],
+      absoluteMaxRows: 1,
+      schema,
+    });
+    return page[0] ?? null;
   },
 });

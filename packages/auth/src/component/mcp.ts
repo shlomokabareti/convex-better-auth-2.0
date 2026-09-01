@@ -11,6 +11,8 @@ import {
   type McpOAuthRefreshTokenRecord,
   type McpOAuthStoredClientRecord,
 } from "../mcp";
+import { getPage } from "convex-helpers/server/pagination";
+import { getOneFrom } from "convex-helpers/server/relationships";
 import { mergedStream, stream } from "convex-helpers/server/stream";
 import { ConvexError, v } from "convex/values";
 
@@ -255,10 +257,13 @@ export const consumeAuthorizationCode = mutation({
   returns: authorizationCodeResultValidator,
   handler: async (ctx, args) => {
     const now = Date.now();
-    const doc = await ctx.db
-      .query("mcp_oauth_authorization_codes")
-      .withIndex("by_code", (q) => q.eq("code", args.code))
-      .unique();
+    const doc = await getOneFrom(
+      ctx.db,
+      "mcp_oauth_authorization_codes",
+      "by_code",
+      args.code,
+      "code",
+    );
 
     if (doc === null) {
       return null;
@@ -295,10 +300,13 @@ export const resolveClient = query({
   },
   returns: storedClientValidator,
   handler: async (ctx, { clientId }) => {
-    const stored = (await ctx.db
-      .query("mcp_oauth_clients")
-      .withIndex("by_client_id", (q) => q.eq("clientId", clientId))
-      .unique()) as StoredMcpOAuthClientDoc | null;
+    const stored = (await getOneFrom(
+      ctx.db,
+      "mcp_oauth_clients",
+      "by_client_id",
+      clientId,
+      "clientId",
+    )) as StoredMcpOAuthClientDoc | null;
     if (stored === null) {
       return null;
     }
@@ -350,10 +358,13 @@ export const registerDynamicClient = mutation({
       createMcpOAuthStoredClientRecord(registeredClient, now),
     );
 
-    const existing = await ctx.db
-      .query("mcp_oauth_clients")
-      .withIndex("by_client_id", (q) => q.eq("clientId", args.clientId))
-      .unique();
+    const existing = await getOneFrom(
+      ctx.db,
+      "mcp_oauth_clients",
+      "by_client_id",
+      args.clientId,
+      "clientId",
+    );
 
     if (existing !== null) {
       await ctx.db.patch("mcp_oauth_clients", existing._id, {
@@ -514,17 +525,23 @@ export const redeemRefreshToken = mutation({
       storage: {
         findForRefreshToken: async ({ refreshToken, clientId }) => {
           const { tokenHash } = await hashMcpOAuthRefreshToken(refreshToken);
-          const doc = (await ctx.db
-            .query("mcp_oauth_refresh_tokens")
-            .withIndex("by_token_hash", (q) => q.eq("tokenHash", tokenHash))
-            .unique()) as StoredMcpOAuthRefreshTokenDoc | null;
+          const doc = (await getOneFrom(
+            ctx.db,
+            "mcp_oauth_refresh_tokens",
+            "by_token_hash",
+            tokenHash,
+            "tokenHash",
+          )) as StoredMcpOAuthRefreshTokenDoc | null;
           if (doc === null || doc.clientId !== clientId) {
             return null;
           }
-          const familyRevocation = await ctx.db
-            .query("mcp_oauth_revoked_families")
-            .withIndex("by_family_id", (q) => q.eq("familyId", doc.familyId))
-            .unique();
+          const familyRevocation = await getOneFrom(
+            ctx.db,
+            "mcp_oauth_revoked_families",
+            "by_family_id",
+            doc.familyId,
+            "familyId",
+          );
           const record = toMcpOAuthRefreshTokenRecord(doc);
           return familyRevocation === null
             ? record
@@ -532,17 +549,23 @@ export const redeemRefreshToken = mutation({
         },
         rotate: async (input) => {
           const currentHash = await hashMcpOAuthRefreshToken(input.currentRefreshToken);
-          const doc = (await ctx.db
-            .query("mcp_oauth_refresh_tokens")
-            .withIndex("by_token_hash", (q) => q.eq("tokenHash", currentHash.tokenHash))
-            .unique()) as StoredMcpOAuthRefreshTokenRow | null;
+          const doc = (await getOneFrom(
+            ctx.db,
+            "mcp_oauth_refresh_tokens",
+            "by_token_hash",
+            currentHash.tokenHash,
+            "tokenHash",
+          )) as StoredMcpOAuthRefreshTokenRow | null;
           if (doc === null || doc.clientId !== input.currentRecord.clientId) {
             return { ok: false as const, reason: "not_found" as const };
           }
-          const familyRevocation = await ctx.db
-            .query("mcp_oauth_revoked_families")
-            .withIndex("by_family_id", (q) => q.eq("familyId", doc.familyId))
-            .unique();
+          const familyRevocation = await getOneFrom(
+            ctx.db,
+            "mcp_oauth_revoked_families",
+            "by_family_id",
+            doc.familyId,
+            "familyId",
+          );
           if (
             familyRevocation !== null ||
             doc.consumedAt !== undefined ||
@@ -570,10 +593,13 @@ export const redeemRefreshToken = mutation({
           return { ok: true as const };
         },
         revokeFamily: async (input) => {
-          const existing = await ctx.db
-            .query("mcp_oauth_revoked_families")
-            .withIndex("by_family_id", (q) => q.eq("familyId", input.familyId))
-            .unique();
+          const existing = await getOneFrom(
+            ctx.db,
+            "mcp_oauth_revoked_families",
+            "by_family_id",
+            input.familyId,
+            "familyId",
+          );
           if (existing === null) {
             await ctx.db.insert("mcp_oauth_revoked_families", input);
           } else if (input.revokedAt < existing.revokedAt) {
@@ -610,12 +636,16 @@ export const getSigningKey = query({
   handler: async (ctx) => {
     // Signing keys are global rather than per-tenant. Each distinct keyId has one row;
     // rotations retain old rows so in-flight tokens can verify during the retirement window.
-    const active = await ctx.db
-      .query("mcp_oauth_signing_keys")
-      .withIndex("by_status_updated_at", (q) => q.eq("status", "active"))
-      .order("desc")
-      .first();
-    const latestActive = active ?? null;
+    const { page } = await getPage(ctx, {
+      table: "mcp_oauth_signing_keys",
+      index: "by_status_updated_at",
+      startIndexKey: ["active"],
+      endIndexKey: ["active"],
+      order: "desc",
+      absoluteMaxRows: 1,
+      schema,
+    });
+    const latestActive = page[0] ?? null;
     if (latestActive === null) {
       return null;
     }
@@ -691,10 +721,13 @@ export const upsertSigningKey = mutation({
   args: signingKeyRecordValidator,
   returns: v.id("mcp_oauth_signing_keys"),
   handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("mcp_oauth_signing_keys")
-      .withIndex("by_key_id", (q) => q.eq("keyId", args.keyId))
-      .unique();
+    const existing = await getOneFrom(
+      ctx.db,
+      "mcp_oauth_signing_keys",
+      "by_key_id",
+      args.keyId,
+      "keyId",
+    );
     const now = Date.now();
 
     if (existing !== null) {
@@ -726,10 +759,13 @@ export const updateSigningKeyStatus = mutation({
   },
   returns: v.id("mcp_oauth_signing_keys"),
   handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("mcp_oauth_signing_keys")
-      .withIndex("by_key_id", (q) => q.eq("keyId", args.keyId))
-      .unique();
+    const existing = await getOneFrom(
+      ctx.db,
+      "mcp_oauth_signing_keys",
+      "by_key_id",
+      args.keyId,
+      "keyId",
+    );
     if (existing === null) {
       throw new ConvexError({
         code: "NOT_FOUND",

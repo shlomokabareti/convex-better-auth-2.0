@@ -1,13 +1,11 @@
 import { v } from "convex/values";
+import { getOneFrom } from "convex-helpers/server/relationships";
 import { mutation, query } from "../_generated/server.js";
 
 export const getUserByEmail = query({
   args: { email: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email.toLowerCase().trim()))
-      .unique();
+    return await getOneFrom(ctx.db, "users", "by_email", args.email.toLowerCase().trim());
   },
 });
 

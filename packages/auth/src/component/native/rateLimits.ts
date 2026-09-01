@@ -1,5 +1,23 @@
 import { v } from "convex/values";
-import { mutation, query } from "../_generated/server.js";
+import { getPage } from "convex-helpers/server/pagination";
+import { mutation, query, type QueryCtx } from "../_generated/server.js";
+import schema from "../schema.js";
+
+async function getRateLimitByIdentifierAndWindow(
+  ctx: { db: QueryCtx["db"] },
+  identifier: string,
+  windowStart: number,
+) {
+  const { page } = await getPage(ctx, {
+    table: "authRateLimits",
+    index: "by_identifier_window",
+    startIndexKey: [identifier, windowStart],
+    endIndexKey: [identifier, windowStart],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
 
 export const recordAttempt = mutation({
   args: {
@@ -10,12 +28,11 @@ export const recordAttempt = mutation({
   returns: v.object({ allowed: v.boolean(), count: v.number() }),
   handler: async (ctx, args) => {
     const now = Date.now();
-    const existing = await ctx.db
-      .query("authRateLimits")
-      .withIndex("by_identifier_window", (q) =>
-        q.eq("identifier", args.identifier).eq("windowStart", args.windowStart),
-      )
-      .unique();
+    const existing = await getRateLimitByIdentifierAndWindow(
+      ctx,
+      args.identifier,
+      args.windowStart,
+    );
 
     if (existing) {
       const nextCount = existing.count + 1;
@@ -42,12 +59,11 @@ export const checkRateLimit = query({
   },
   returns: v.object({ allowed: v.boolean(), count: v.number() }),
   handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("authRateLimits")
-      .withIndex("by_identifier_window", (q) =>
-        q.eq("identifier", args.identifier).eq("windowStart", args.windowStart),
-      )
-      .unique();
+    const existing = await getRateLimitByIdentifierAndWindow(
+      ctx,
+      args.identifier,
+      args.windowStart,
+    );
 
     const count = existing?.count ?? 0;
     return { allowed: count < args.maxAttempts, count };
@@ -58,10 +74,14 @@ export const cleanupExpiredRateLimits = mutation({
   args: { before: v.number() },
   returns: v.number(),
   handler: async (ctx, args) => {
-    const records = await ctx.db
-      .query("authRateLimits")
-      .withIndex("by_window", (q) => q.lt("windowStart", args.before))
-      .take(1000);
+    const { page: records } = await getPage(ctx, {
+      table: "authRateLimits",
+      index: "by_window",
+      endIndexKey: [args.before],
+      endInclusive: false,
+      absoluteMaxRows: 1000,
+      schema,
+    });
     for (const record of records) {
       await ctx.db.delete("authRateLimits", record._id);
     }

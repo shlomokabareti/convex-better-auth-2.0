@@ -3,9 +3,14 @@ import { v } from "convex/values";
 
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
+import { getPage } from "convex-helpers/server/pagination";
+import { getOneFrom } from "convex-helpers/server/relationships";
 import { mutation, query } from "./_generated/server.js";
 import { mintToken } from "../convex-runtime/native/jwt.js";
-import { emailTwoFactorResetReasonValidator, emailTwoFactorStatusValidator } from "./schema.js";
+import schema, {
+  emailTwoFactorResetReasonValidator,
+  emailTwoFactorStatusValidator,
+} from "./schema.js";
 
 const MAX_EMAIL_VERIFICATION_CODE_REVOKE_BATCH = 100;
 const MAX_PASSWORD_RESET_SESSION_REVOKE_BATCH = 1000;
@@ -165,18 +170,19 @@ export const provisionFromIdentity = mutation({
       ? await ctx.db.get("users", existingIdentity.userId)
       : null;
     const existingUserByEmail = normalizedEmail
-      ? await ctx.db
-          .query("users")
-          .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
-          .unique()
+      ? await getOneFrom(ctx.db, "users", "by_email", normalizedEmail, "email")
       : null;
     const user = existingUserByIdentity ?? existingUserByEmail;
 
     if (!allowLink && existingUserByEmail && !existingIdentity) {
-      const identitiesForUser = await ctx.db
-        .query("auth_identities")
-        .withIndex("by_user", (q) => q.eq("userId", existingUserByEmail._id))
-        .take(1);
+      const { page: identitiesForUser } = await getPage(ctx, {
+        table: "auth_identities",
+        index: "by_user",
+        startIndexKey: [existingUserByEmail._id],
+        endIndexKey: [existingUserByEmail._id],
+        absoluteMaxRows: 1,
+        schema,
+      });
       return {
         userId: existingUserByEmail._id,
         identityId: identitiesForUser[0]?._id,
@@ -283,10 +289,14 @@ export const provisionFromIdentity = mutation({
     }
 
     if (args.verificationCode) {
-      const existingCodes = await ctx.db
-        .query("authVerificationCodes")
-        .withIndex("by_user_type", (q) => q.eq("userId", userId).eq("type", "email_verification"))
-        .take(MAX_EMAIL_VERIFICATION_CODE_REVOKE_BATCH);
+      const { page: existingCodes } = await getPage(ctx, {
+        table: "authVerificationCodes",
+        index: "by_user_type",
+        startIndexKey: [userId, "email_verification"],
+        endIndexKey: [userId, "email_verification"],
+        absoluteMaxRows: MAX_EMAIL_VERIFICATION_CODE_REVOKE_BATCH,
+        schema,
+      });
       await Promise.all(
         existingCodes.map((code) => ctx.db.patch(code._id, { consumedAt: now, updatedAt: now })),
       );
@@ -322,10 +332,7 @@ export const getUserAndAccount = query({
     if (!normalizedEmail) {
       return null;
     }
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
-      .unique();
+    const user = await getOneFrom(ctx.db, "users", "by_email", normalizedEmail, "email");
     if (!user) {
       return null;
     }
@@ -337,12 +344,11 @@ export const getUserAndAccount = query({
     if (!identity) {
       return null;
     }
-    const account = await ctx.db
-      .query("authAccounts")
-      .withIndex("by_provider_issuer_subject", (q) =>
-        q.eq("provider", "password").eq("issuer", "native").eq("subject", identity.subject),
-      )
-      .unique();
+    const account = await findAccountByProviderIssuerSubject(ctx, {
+      provider: "password",
+      issuer: "native",
+      subject: identity.subject,
+    });
     if (!account) {
       return null;
     }
@@ -363,12 +369,11 @@ export const verifyEmail = mutation({
   returns: emailVerificationResultValidator,
   handler: async (ctx, args) => {
     const now = Date.now();
-    const code = await ctx.db
-      .query("authVerificationCodes")
-      .withIndex("by_token_hash", (q) =>
-        q.eq("tokenHash", args.tokenHash).eq("type", "email_verification"),
-      )
-      .unique();
+    const code = await findVerificationCodeByTokenHashAndType(
+      ctx,
+      args.tokenHash,
+      "email_verification",
+    );
 
     if (!code) {
       return { success: false, reason: "invalid" };
@@ -407,12 +412,11 @@ export const resetPassword = mutation({
   returns: passwordResetResultValidator,
   handler: async (ctx, args) => {
     const now = Date.now();
-    const code = await ctx.db
-      .query("authVerificationCodes")
-      .withIndex("by_token_hash", (q) =>
-        q.eq("tokenHash", args.tokenHash).eq("type", "password_reset"),
-      )
-      .unique();
+    const code = await findVerificationCodeByTokenHashAndType(
+      ctx,
+      args.tokenHash,
+      "password_reset",
+    );
 
     if (!code || code.consumedAt || code.expiresAt <= now) {
       return { status: false, reason: !code ? "invalid" : "expired" };
@@ -427,12 +431,11 @@ export const resetPassword = mutation({
       return { status: false, reason: "invalid" };
     }
 
-    const account = await ctx.db
-      .query("authAccounts")
-      .withIndex("by_provider_issuer_subject", (q) =>
-        q.eq("provider", args.provider).eq("issuer", args.issuer).eq("subject", identity.subject),
-      )
-      .unique();
+    const account = await findAccountByProviderIssuerSubject(ctx, {
+      provider: args.provider,
+      issuer: args.issuer,
+      subject: identity.subject,
+    });
     if (!account) {
       return { status: false, reason: "invalid" };
     }
@@ -443,10 +446,14 @@ export const resetPassword = mutation({
     ];
 
     if (args.revokeSessions) {
-      const sessions = await ctx.db
-        .query("authSessions")
-        .withIndex("by_user", (q) => q.eq("userId", code.userId))
-        .take(MAX_PASSWORD_RESET_SESSION_REVOKE_BATCH);
+      const { page: sessions } = await getPage(ctx, {
+        table: "authSessions",
+        index: "by_user",
+        startIndexKey: [code.userId],
+        endIndexKey: [code.userId],
+        absoluteMaxRows: MAX_PASSWORD_RESET_SESSION_REVOKE_BATCH,
+        schema,
+      });
 
       for (const session of sessions) {
         if (session.revokedAt === undefined && session.expiresAt > now) {
@@ -513,31 +520,34 @@ export const getByTokenIdentifier = query({
   },
   returns: identityLookupResultValidator,
   handler: async (ctx, args) => {
-    const identity = await ctx.db
-      .query("auth_identities")
-      .withIndex("by_token_identifier", (q) => q.eq("tokenIdentifier", args.tokenIdentifier))
-      .unique();
+    const identity = await getOneFrom(
+      ctx.db,
+      "auth_identities",
+      "by_token_identifier",
+      args.tokenIdentifier,
+      "tokenIdentifier",
+    );
     return identity === null ? null : toIdentityLookupResult(identity);
   },
 });
 
 async function findIdentityByIdentityId(ctx: IdentityLookupCtx, identityId: string) {
-  return await ctx.db
-    .query("auth_identities")
-    .withIndex("by_identity_id", (q) => q.eq("identityId", identityId))
-    .unique();
+  return await getOneFrom(ctx.db, "auth_identities", "by_identity_id", identityId, "identityId");
 }
 
 async function findIdentityByProviderIssuerSubject(
-  ctx: IdentityLookupCtx,
+  ctx: { db: QueryCtx["db"] },
   args: { provider: string; issuer: string; subject: string },
 ) {
-  return await ctx.db
-    .query("auth_identities")
-    .withIndex("by_provider_issuer_subject", (q) =>
-      q.eq("provider", args.provider).eq("issuer", args.issuer).eq("subject", args.subject),
-    )
-    .unique();
+  const { page } = await getPage(ctx, {
+    table: "auth_identities",
+    index: "by_provider_issuer_subject",
+    startIndexKey: [args.provider, args.issuer, args.subject],
+    endIndexKey: [args.provider, args.issuer, args.subject],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
 }
 
 function toIdentityLookupResult(identity: Doc<"auth_identities">) {
@@ -555,16 +565,50 @@ function normalizeEmail(email: string | undefined): string | undefined {
   return normalized && normalized.length > 0 ? normalized : undefined;
 }
 
+async function findVerificationCodeByTokenHashAndType(
+  ctx: { db: QueryCtx["db"] },
+  tokenHash: string,
+  type: string,
+) {
+  const { page } = await getPage(ctx, {
+    table: "authVerificationCodes",
+    index: "by_token_hash",
+    startIndexKey: [tokenHash, type],
+    endIndexKey: [tokenHash, type],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
+async function findAccountByProviderIssuerSubject(
+  ctx: { db: QueryCtx["db"] },
+  args: { provider: string; issuer: string; subject: string },
+) {
+  const { page } = await getPage(ctx, {
+    table: "authAccounts",
+    index: "by_provider_issuer_subject",
+    startIndexKey: [args.provider, args.issuer, args.subject],
+    endIndexKey: [args.provider, args.issuer, args.subject],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
 async function findIdentityByUserAndProvider(
-  ctx: IdentityLookupCtx,
+  ctx: { db: QueryCtx["db"] },
   args: { userId: Id<"users">; provider: string; issuer: string },
 ) {
-  return await ctx.db
-    .query("auth_identities")
-    .withIndex("by_user_provider_issuer", (q) =>
-      q.eq("userId", args.userId).eq("provider", args.provider).eq("issuer", args.issuer),
-    )
-    .first();
+  const { page } = await getPage(ctx, {
+    table: "auth_identities",
+    index: "by_user_provider_issuer",
+    startIndexKey: [args.userId, args.provider, args.issuer],
+    endIndexKey: [args.userId, args.provider, args.issuer],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
 }
 
 function toIdentityReturn(identity: Doc<"auth_identities">) {

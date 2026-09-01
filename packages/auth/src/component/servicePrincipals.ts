@@ -1,9 +1,10 @@
 import { v } from "convex/values";
+import { getPage } from "convex-helpers/server/pagination";
 
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { mutation, query } from "./_generated/server.js";
-import { servicePrincipalStatusValidator } from "./schema.js";
+import schema, { servicePrincipalStatusValidator } from "./schema.js";
 
 type DbCtx = Pick<MutationCtx | QueryCtx, "db">;
 
@@ -152,26 +153,36 @@ export const listServicePrincipals = query({
   handler: async (ctx, { organizationId, status, limit }) => {
     const resolvedLimit = resolveListLimit(limit);
     if (organizationId === undefined && status !== undefined) {
-      return await ctx.db
-        .query("service_principals")
-        .withIndex("by_status", (q) => q.eq("status", status))
-        .take(resolvedLimit);
+      const { page } = await getPage(ctx, {
+        table: "service_principals",
+        index: "by_status",
+        startIndexKey: [status],
+        endIndexKey: [status],
+        absoluteMaxRows: resolvedLimit,
+        schema,
+      });
+      return page;
     }
 
     if (organizationId === undefined) {
-      return await ctx.db.query("service_principals").take(resolvedLimit);
+      const { page } = await getPage(ctx, {
+        table: "service_principals",
+        absoluteMaxRows: resolvedLimit,
+      });
+      return page;
     }
-    return status === undefined
-      ? await ctx.db
-          .query("service_principals")
-          .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
-          .take(resolvedLimit)
-      : await ctx.db
-          .query("service_principals")
-          .withIndex("by_organization_status", (q) =>
-            q.eq("organizationId", organizationId).eq("status", status),
-          )
-          .take(resolvedLimit);
+
+    const index = status === undefined ? "by_organization" : "by_organization_status";
+    const startIndexKey = status === undefined ? [organizationId] : [organizationId, status];
+    const { page } = await getPage(ctx, {
+      table: "service_principals",
+      index,
+      startIndexKey,
+      endIndexKey: startIndexKey,
+      absoluteMaxRows: resolvedLimit,
+      schema,
+    });
+    return page;
   },
 });
 
@@ -246,10 +257,15 @@ async function findServicePrincipalByKey(
   ctx: DbCtx,
   key: string,
 ): Promise<Doc<"service_principals"> | null> {
-  return await ctx.db
-    .query("service_principals")
-    .withIndex("by_key", (q) => q.eq("key", key))
-    .first();
+  const { page } = await getPage(ctx, {
+    table: "service_principals",
+    index: "by_key",
+    startIndexKey: [key],
+    endIndexKey: [key],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
 }
 
 async function requireServicePrincipal(

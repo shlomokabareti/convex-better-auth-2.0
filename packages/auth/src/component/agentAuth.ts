@@ -1,12 +1,14 @@
 import { intersectPermissions } from "../compat/permissions";
 import { v } from "convex/values";
+import { getPage } from "convex-helpers/server/pagination";
+import { getOneFrom } from "convex-helpers/server/relationships";
 
 import { base64urlToBytes, bytesToBase64url } from "../convex-runtime/native/password.js";
 import { internal } from "./_generated/api.js";
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { internalMutation, mutation, query } from "./_generated/server.js";
-import {
+import schema, {
   agentCapabilityGrantStatusValidator,
   agentDeviceAuthorizationStatusValidator,
   agentHostStatusValidator,
@@ -404,12 +406,13 @@ export const decideAgentDeviceAuthorization = mutation({
         retryAt: rateLimit.retryAt,
       } as const;
     }
-    const authorization = await ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_user_code_hash", (q) =>
-        q.eq("userCodeHash", requireHash(args.userCodeHash, "userCodeHash")),
-      )
-      .unique();
+    const authorization = await getOneFrom(
+      ctx.db,
+      "agent_device_authorizations",
+      "by_user_code_hash",
+      requireHash(args.userCodeHash, "userCodeHash"),
+      "userCodeHash",
+    );
     if (
       authorization === null ||
       authorization.organizationId !== args.organizationId ||
@@ -458,12 +461,13 @@ export const pollAgentDeviceAuthorization = mutation({
   args: { deviceCodeHash: v.string() },
   returns: deviceAuthorizationPollResultValidator,
   handler: async (ctx, args) => {
-    const authorization = await ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_device_code_hash", (q) =>
-        q.eq("deviceCodeHash", requireHash(args.deviceCodeHash, "deviceCodeHash")),
-      )
-      .unique();
+    const authorization = await getOneFrom(
+      ctx.db,
+      "agent_device_authorizations",
+      "by_device_code_hash",
+      requireHash(args.deviceCodeHash, "deviceCodeHash"),
+      "deviceCodeHash",
+    );
     if (authorization === null) {
       throw new Error("Device authorization grant is invalid");
     }
@@ -772,12 +776,7 @@ export const setAgentCapabilityGrantStatus = mutation({
     const agent = await requireAgentInOrganization(ctx, args.agentId, args.organizationId);
     await requireActiveOperator(ctx, args.organizationId, args.operatorUserId);
     const capability = requireText(args.capability, "capability");
-    const grant = await ctx.db
-      .query("agent_capability_grants")
-      .withIndex("by_agent_capability", (q) =>
-        q.eq("agentId", agent._id).eq("capability", capability),
-      )
-      .unique();
+    const grant = await findAgentCapabilityGrant(ctx, agent._id, capability);
     if (grant === null) throw new Error("Agent capability grant not found");
     if (args.status === "pending") {
       throw new Error("Agent capability grant cannot transition back to pending");
@@ -806,12 +805,13 @@ export const getAgentVerificationMaterial = query({
   args: { thumbprint: v.string() },
   returns: v.union(v.null(), verificationMaterialValidator),
   handler: async (ctx, args) => {
-    const key = await ctx.db
-      .query("agent_keys")
-      .withIndex("by_thumbprint", (q) =>
-        q.eq("thumbprint", requireText(args.thumbprint, "thumbprint")),
-      )
-      .unique();
+    const key = await getOneFrom(
+      ctx.db,
+      "agent_keys",
+      "by_thumbprint",
+      requireText(args.thumbprint, "thumbprint"),
+      "thumbprint",
+    );
     if (key === null) return null;
     const agent = await ctx.db.get("agents", key.agentId);
     if (agent === null) return null;
@@ -872,12 +872,13 @@ export const getAgentHostProtocolVerificationMaterial = query({
   args: { thumbprint: v.string() },
   returns: v.union(v.null(), hostProtocolVerificationMaterialValidator),
   handler: async (ctx, args) => {
-    const key = await ctx.db
-      .query("agent_host_keys")
-      .withIndex("by_thumbprint", (q) =>
-        q.eq("thumbprint", requireText(args.thumbprint, "thumbprint")),
-      )
-      .unique();
+    const key = await getOneFrom(
+      ctx.db,
+      "agent_host_keys",
+      "by_thumbprint",
+      requireText(args.thumbprint, "thumbprint"),
+      "thumbprint",
+    );
     if (key === null || key.status !== "active") return null;
     const host = await ctx.db.get("agent_hosts", key.hostId);
     if (host === null || host.status !== "active" || host.activeKeyGeneration !== key.generation) {
@@ -910,10 +911,13 @@ export const consumeAgentHostRequest = mutation({
     const now = Date.now();
     requireReplayLifetime(args.replayExpiresAt, now);
     const replayHash = requireText(args.replayIdHash, "replayIdHash");
-    const replay = await ctx.db
-      .query("agent_host_replay_records")
-      .withIndex("by_replay_hash", (q) => q.eq("replayIdHash", replayHash))
-      .unique();
+    const replay = await getOneFrom(
+      ctx.db,
+      "agent_host_replay_records",
+      "by_replay_hash",
+      replayHash,
+      "replayIdHash",
+    );
     if (replay !== null) throw new Error("Agent host request replayed");
     const host = await ctx.db.get("agent_hosts", args.hostId);
     if (host === null || host.status !== "active") {
@@ -1100,10 +1104,13 @@ export const consumeAgentCredential = mutation({
       throw new Error("Agent host key generation is invalid");
     }
     const replayHash = requireText(args.replayIdHash, "replayIdHash");
-    const replay = await ctx.db
-      .query("agent_replay_records")
-      .withIndex("by_replay_hash", (q) => q.eq("replayIdHash", replayHash))
-      .unique();
+    const replay = await getOneFrom(
+      ctx.db,
+      "agent_replay_records",
+      "by_replay_hash",
+      replayHash,
+      "replayIdHash",
+    );
     if (replay !== null) throw new Error("Agent credential replayed");
     const agent = await ctx.db.get("agents", args.agentId);
     if (agent === null || agent.status !== "active") {
@@ -1204,10 +1211,14 @@ export const cleanupExpiredAgentReplayRecords = mutation({
     const now = Date.now();
     const limit = args.limit ?? MAX_REPLAY_CLEANUP_BATCH;
     requireReplayCleanupLimit(limit);
-    const expired = await ctx.db
-      .query("agent_replay_records")
-      .withIndex("by_expiry", (q) => q.lte("expiresAt", now))
-      .take(limit);
+    const { page: expired } = await getPage(ctx, {
+      table: "agent_replay_records",
+      index: "by_expiry",
+      endIndexKey: [now],
+      endInclusive: true,
+      absoluteMaxRows: limit,
+      schema,
+    });
     await Promise.all(
       expired.map(async (record) => {
         await ctx.db.delete("agent_replay_records", record._id);
@@ -1226,10 +1237,14 @@ export const cleanupExpiredAgentHostReplayRecords = mutation({
     const now = Date.now();
     const limit = args.limit ?? MAX_REPLAY_CLEANUP_BATCH;
     requireReplayCleanupLimit(limit);
-    const expired = await ctx.db
-      .query("agent_host_replay_records")
-      .withIndex("by_expiry", (q) => q.lte("expiresAt", now))
-      .take(limit);
+    const { page: expired } = await getPage(ctx, {
+      table: "agent_host_replay_records",
+      index: "by_expiry",
+      endIndexKey: [now],
+      endInclusive: true,
+      absoluteMaxRows: limit,
+      schema,
+    });
     await Promise.all(
       expired.map(async (record) => await ctx.db.delete("agent_host_replay_records", record._id)),
     );
@@ -1245,10 +1260,14 @@ export const cascadeRevokedAgentHost = internalMutation({
   handler: async (ctx, args) => {
     const host = await ctx.db.get("agent_hosts", args.hostId);
     if (host === null || host.status !== "revoked") return null;
-    const agents = await ctx.db
-      .query("agents")
-      .withIndex("by_host_status", (q) => q.eq("hostId", host._id).eq("status", args.phase))
-      .take(HOST_REVOCATION_BATCH_SIZE);
+    const { page: agents } = await getPage(ctx, {
+      table: "agents",
+      index: "by_host_status",
+      startIndexKey: [host._id, args.phase],
+      endIndexKey: [host._id, args.phase],
+      absoluteMaxRows: HOST_REVOCATION_BATCH_SIZE,
+      schema,
+    });
     const now = Date.now();
     await Promise.all(
       agents.map(async (agent) => {
@@ -1354,10 +1373,14 @@ async function readActiveAgentGrants(
   ctx: DbCtx,
   agentId: Id<"agents">,
 ): Promise<Array<Doc<"agent_capability_grants">>> {
-  const grants = await ctx.db
-    .query("agent_capability_grants")
-    .withIndex("by_agent_status", (q) => q.eq("agentId", agentId).eq("status", "active"))
-    .take(MAX_AGENT_GRANTS + 1);
+  const { page: grants } = await getPage(ctx, {
+    table: "agent_capability_grants",
+    index: "by_agent_status",
+    startIndexKey: [agentId, "active"],
+    endIndexKey: [agentId, "active"],
+    absoluteMaxRows: MAX_AGENT_GRANTS + 1,
+    schema,
+  });
   if (grants.length > MAX_AGENT_GRANTS) {
     throw new Error("Agent capability grant limit exceeded");
   }
@@ -1377,10 +1400,14 @@ async function revokeAgentGrants(
   agentId: Id<"agents">,
   input: { now: number; reason: string },
 ): Promise<void> {
-  const grants = await ctx.db
-    .query("agent_capability_grants")
-    .withIndex("by_agent", (q) => q.eq("agentId", agentId))
-    .take(MAX_AGENT_GRANTS + 1);
+  const { page: grants } = await getPage(ctx, {
+    table: "agent_capability_grants",
+    index: "by_agent",
+    startIndexKey: [agentId],
+    endIndexKey: [agentId],
+    absoluteMaxRows: MAX_AGENT_GRANTS + 1,
+    schema,
+  });
   if (grants.length > MAX_AGENT_GRANTS) {
     throw new Error("Agent capability grant limit exceeded");
   }
@@ -1405,14 +1432,22 @@ async function revokeAgentDependents(
 ): Promise<void> {
   const [key, pendingAuthorizations, approvedAuthorizations] = await Promise.all([
     requireAgentKey(ctx, agent._id, agent.activeKeyGeneration),
-    ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_agent_status", (q) => q.eq("agentId", agent._id).eq("status", "pending"))
-      .take(2),
-    ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_agent_status", (q) => q.eq("agentId", agent._id).eq("status", "approved"))
-      .take(2),
+    getPage(ctx, {
+      table: "agent_device_authorizations",
+      index: "by_agent_status",
+      startIndexKey: [agent._id, "pending"],
+      endIndexKey: [agent._id, "pending"],
+      absoluteMaxRows: 2,
+      schema,
+    }).then((r) => r.page),
+    getPage(ctx, {
+      table: "agent_device_authorizations",
+      index: "by_agent_status",
+      startIndexKey: [agent._id, "approved"],
+      endIndexKey: [agent._id, "approved"],
+      absoluteMaxRows: 2,
+      schema,
+    }).then((r) => r.page),
   ]);
   if (pendingAuthorizations.length > 1 || approvedAuthorizations.length > 1) {
     throw new Error("Agent has multiple pending device authorizations");
@@ -1485,18 +1520,20 @@ async function requireUnusedDeviceAuthorizationCodes(
   deviceCodeHash: string,
 ): Promise<void> {
   const [byUserCode, byDeviceCode] = await Promise.all([
-    ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_user_code_hash", (q) =>
-        q.eq("userCodeHash", requireHash(userCodeHash, "userCodeHash")),
-      )
-      .unique(),
-    ctx.db
-      .query("agent_device_authorizations")
-      .withIndex("by_device_code_hash", (q) =>
-        q.eq("deviceCodeHash", requireHash(deviceCodeHash, "deviceCodeHash")),
-      )
-      .unique(),
+    getOneFrom(
+      ctx.db,
+      "agent_device_authorizations",
+      "by_user_code_hash",
+      requireHash(userCodeHash, "userCodeHash"),
+      "userCodeHash",
+    ),
+    getOneFrom(
+      ctx.db,
+      "agent_device_authorizations",
+      "by_device_code_hash",
+      requireHash(deviceCodeHash, "deviceCodeHash"),
+      "deviceCodeHash",
+    ),
   ]);
   if (byUserCode !== null || byDeviceCode !== null) {
     throw new Error("Device authorization code is already registered");
@@ -1516,10 +1553,13 @@ async function readDeviceAuthorizationAttemptLimit(
   operatorUserId: Id<"users">,
   now: number,
 ): Promise<DeviceAuthorizationAttemptLimit> {
-  const record = await ctx.db
-    .query("agent_device_authorization_attempts")
-    .withIndex("by_operator", (q) => q.eq("operatorUserId", operatorUserId))
-    .unique();
+  const record = await getOneFrom(
+    ctx.db,
+    "agent_device_authorization_attempts",
+    "by_operator",
+    operatorUserId,
+    "operatorUserId",
+  );
   if (record === null) {
     return { allowed: true, attempts: 0, windowStartedAt: now };
   }
@@ -1582,10 +1622,13 @@ async function clearDeviceAuthorizationAttempts(
   ctx: MutationCtx,
   operatorUserId: Id<"users">,
 ): Promise<void> {
-  const record = await ctx.db
-    .query("agent_device_authorization_attempts")
-    .withIndex("by_operator", (q) => q.eq("operatorUserId", operatorUserId))
-    .unique();
+  const record = await getOneFrom(
+    ctx.db,
+    "agent_device_authorization_attempts",
+    "by_operator",
+    operatorUserId,
+    "operatorUserId",
+  );
   if (record !== null) {
     await ctx.db.delete("agent_device_authorization_attempts", record._id);
   }
@@ -1626,12 +1669,7 @@ async function requireActiveOperator(
   await requireActiveOrganization(ctx, organizationId);
   const user = await ctx.db.get("users", userId);
   if (user === null || !user.isActive) throw new Error("User is not active");
-  const membership = await ctx.db
-    .query("organization_members")
-    .withIndex("by_user_organization", (q) =>
-      q.eq("userId", userId).eq("organizationId", organizationId),
-    )
-    .unique();
+  const membership = await findOrganizationMemberByUser(ctx, userId, organizationId);
   if (membership === null || membership.status !== "active") {
     throw new Error("User is not an active organization member");
   }
@@ -1683,12 +1721,7 @@ async function inspectStoredModeOwner(
   if (user === null || !user.isActive) {
     return { active: false, permissions: null };
   }
-  const membership = await ctx.db
-    .query("organization_members")
-    .withIndex("by_user_organization", (q) =>
-      q.eq("userId", delegatedUserId).eq("organizationId", agent.organizationId),
-    )
-    .unique();
+  const membership = await findOrganizationMemberByUser(ctx, delegatedUserId, agent.organizationId);
   if (membership === null || membership.status !== "active") {
     return { active: false, permissions: null };
   }
@@ -1730,34 +1763,82 @@ async function requireAgentInOrganization(
   return agent;
 }
 
+async function findAgentCapabilityGrant(ctx: DbCtx, agentId: Id<"agents">, capability: string) {
+  const { page } = await getPage(ctx, {
+    table: "agent_capability_grants",
+    index: "by_agent_capability",
+    startIndexKey: [agentId, capability],
+    endIndexKey: [agentId, capability],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
+async function findOrganizationMemberByUser(
+  ctx: DbCtx,
+  userId: Id<"users">,
+  organizationId: Id<"organizations">,
+) {
+  const { page } = await getPage(ctx, {
+    table: "organization_members",
+    index: "by_user_organization",
+    startIndexKey: [userId, organizationId],
+    endIndexKey: [userId, organizationId],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
+async function findAgentKeyByAgentAndGeneration(
+  ctx: DbCtx,
+  agentId: Id<"agents">,
+  generation: number,
+) {
+  const { page } = await getPage(ctx, {
+    table: "agent_keys",
+    index: "by_agent_generation",
+    startIndexKey: [agentId, generation],
+    endIndexKey: [agentId, generation],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
 async function requireAgentKey(ctx: DbCtx, agentId: Id<"agents">, generation: number) {
-  const key = await ctx.db
-    .query("agent_keys")
-    .withIndex("by_agent_generation", (q) => q.eq("agentId", agentId).eq("generation", generation))
-    .unique();
+  const key = await findAgentKeyByAgentAndGeneration(ctx, agentId, generation);
   if (key === null) throw new Error("Agent key not found");
   return key;
 }
 
+async function findHostKeyByHostAndGeneration(
+  ctx: DbCtx,
+  hostId: Id<"agent_hosts">,
+  generation: number,
+) {
+  const { page } = await getPage(ctx, {
+    table: "agent_host_keys",
+    index: "by_host_generation",
+    startIndexKey: [hostId, generation],
+    endIndexKey: [hostId, generation],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
+}
+
 async function requireHostKey(ctx: DbCtx, hostId: Id<"agent_hosts">, generation: number) {
-  const key = await ctx.db
-    .query("agent_host_keys")
-    .withIndex("by_host_generation", (q) => q.eq("hostId", hostId).eq("generation", generation))
-    .unique();
+  const key = await findHostKeyByHostAndGeneration(ctx, hostId, generation);
   if (key === null) throw new Error("Agent host key not found");
   return key;
 }
 
 async function requireUnusedThumbprint(ctx: DbCtx, thumbprint: string) {
   const [agentKey, hostKey] = await Promise.all([
-    ctx.db
-      .query("agent_keys")
-      .withIndex("by_thumbprint", (q) => q.eq("thumbprint", thumbprint))
-      .unique(),
-    ctx.db
-      .query("agent_host_keys")
-      .withIndex("by_thumbprint", (q) => q.eq("thumbprint", thumbprint))
-      .unique(),
+    getOneFrom(ctx.db, "agent_keys", "by_thumbprint", thumbprint, "thumbprint"),
+    getOneFrom(ctx.db, "agent_host_keys", "by_thumbprint", thumbprint, "thumbprint"),
   ]);
   if (agentKey !== null || hostKey !== null) {
     throw new Error("Agent Auth public key is already registered");

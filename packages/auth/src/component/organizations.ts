@@ -1,9 +1,11 @@
 import { v } from "convex/values";
+import { getPage } from "convex-helpers/server/pagination";
+import { getOneFrom } from "convex-helpers/server/relationships";
 
 import type { Doc, Id } from "./_generated/dataModel.js";
 import type { MutationCtx, QueryCtx } from "./_generated/server.js";
 import { mutation, query } from "./_generated/server.js";
-import {
+import schema, {
   invitationEmailDeliveryStatusValidator,
   organizationInvitationStatusValidator,
   organizationMemberStatusValidator,
@@ -330,11 +332,23 @@ export const listOrganizations = query({
   },
   returns: v.array(organizationDocValidator),
   handler: async (ctx, { status, limit }) => {
-    const queryBuilder =
-      status === undefined
-        ? ctx.db.query("organizations")
-        : ctx.db.query("organizations").withIndex("by_status", (q) => q.eq("status", status));
-    return await queryBuilder.take(resolveListLimit(limit));
+    const resolvedLimit = resolveListLimit(limit);
+    if (status === undefined) {
+      const { page } = await getPage(ctx, {
+        table: "organizations",
+        absoluteMaxRows: resolvedLimit,
+      });
+      return page;
+    }
+    const { page } = await getPage(ctx, {
+      table: "organizations",
+      index: "by_status",
+      startIndexKey: [status],
+      endIndexKey: [status],
+      absoluteMaxRows: resolvedLimit,
+      schema,
+    });
+    return page;
   },
 });
 
@@ -673,18 +687,26 @@ export const deleteRole = mutation({
       throw new Error("System organization roles cannot be deleted");
     }
 
-    const membersUsingRole = await ctx.db
-      .query("organization_members")
-      .withIndex("by_role", (q) => q.eq("roleId", role._id))
-      .take(1);
+    const { page: membersUsingRole } = await getPage(ctx, {
+      table: "organization_members",
+      index: "by_role",
+      startIndexKey: [role._id],
+      endIndexKey: [role._id],
+      absoluteMaxRows: 1,
+      schema,
+    });
     if (membersUsingRole.length > 0) {
       throw new Error("Organization role is assigned to members");
     }
 
-    const invitationsUsingRole = await ctx.db
-      .query("organization_invitations")
-      .withIndex("by_role", (q) => q.eq("roleId", role._id))
-      .take(1);
+    const { page: invitationsUsingRole } = await getPage(ctx, {
+      table: "organization_invitations",
+      index: "by_role",
+      startIndexKey: [role._id],
+      endIndexKey: [role._id],
+      absoluteMaxRows: 1,
+      schema,
+    });
     if (invitationsUsingRole.length > 0) {
       throw new Error("Organization role is assigned to invitations");
     }
@@ -730,10 +752,15 @@ export const listRolesByOrganization = query({
   },
   returns: v.array(roleDocValidator),
   handler: async (ctx, { organizationId, limit }) => {
-    return await ctx.db
-      .query("organization_roles")
-      .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
-      .take(resolveListLimit(limit));
+    const { page } = await getPage(ctx, {
+      table: "organization_roles",
+      index: "by_organization",
+      startIndexKey: [organizationId],
+      endIndexKey: [organizationId],
+      absoluteMaxRows: resolveListLimit(limit),
+      schema,
+    });
+    return page;
   },
 });
 
@@ -846,17 +873,18 @@ export const listMembersByOrganization = query({
   },
   returns: v.array(memberDocValidator),
   handler: async (ctx, { organizationId, status, limit }) => {
-    const queryBuilder =
-      status === undefined
-        ? ctx.db
-            .query("organization_members")
-            .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
-        : ctx.db
-            .query("organization_members")
-            .withIndex("by_org_status", (q) =>
-              q.eq("organizationId", organizationId).eq("status", status),
-            );
-    return await queryBuilder.take(resolveListLimit(limit));
+    const resolvedLimit = resolveListLimit(limit);
+    const index = status === undefined ? "by_organization" : "by_org_status";
+    const startIndexKey = status === undefined ? [organizationId] : [organizationId, status];
+    const { page } = await getPage(ctx, {
+      table: "organization_members",
+      index,
+      startIndexKey,
+      endIndexKey: startIndexKey,
+      absoluteMaxRows: resolvedLimit,
+      schema,
+    });
+    return page;
   },
 });
 
@@ -868,10 +896,14 @@ export const listMembershipsByUser = query({
   },
   returns: v.array(memberDocValidator),
   handler: async (ctx, { userId, status, limit }) => {
-    const rows = await ctx.db
-      .query("organization_members")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .take(resolveListLimit(limit));
+    const { page: rows } = await getPage(ctx, {
+      table: "organization_members",
+      index: "by_user",
+      startIndexKey: [userId],
+      endIndexKey: [userId],
+      absoluteMaxRows: resolveListLimit(limit),
+      schema,
+    });
     return status === undefined ? rows : rows.filter((m) => m.status === status);
   },
 });
@@ -986,10 +1018,7 @@ export const getInvitationByEmailId = query({
   },
   returns: v.union(v.null(), invitationDocValidator),
   handler: async (ctx, { emailId }) => {
-    return await ctx.db
-      .query("organization_invitations")
-      .withIndex("by_email_id", (q) => q.eq("emailId", emailId))
-      .unique();
+    return await getOneFrom(ctx.db, "organization_invitations", "by_email_id", emailId, "emailId");
   },
 });
 
@@ -1038,17 +1067,18 @@ export const listInvitationsByOrganization = query({
   },
   returns: v.array(invitationDocValidator),
   handler: async (ctx, { organizationId, status, limit }) => {
-    const queryBuilder =
-      status === undefined
-        ? ctx.db
-            .query("organization_invitations")
-            .withIndex("by_organization", (q) => q.eq("organizationId", organizationId))
-        : ctx.db
-            .query("organization_invitations")
-            .withIndex("by_org_status", (q) =>
-              q.eq("organizationId", organizationId).eq("status", status),
-            );
-    return await queryBuilder.take(resolveListLimit(limit));
+    const resolvedLimit = resolveListLimit(limit);
+    const index = status === undefined ? "by_organization" : "by_org_status";
+    const startIndexKey = status === undefined ? [organizationId] : [organizationId, status];
+    const { page } = await getPage(ctx, {
+      table: "organization_invitations",
+      index,
+      startIndexKey,
+      endIndexKey: startIndexKey,
+      absoluteMaxRows: resolvedLimit,
+      schema,
+    });
+    return page;
   },
 });
 
@@ -1255,10 +1285,7 @@ export const recordInvitationEmailDelivery = mutation({
 });
 
 async function findOrganizationBySlug(ctx: DbCtx, slug: string) {
-  return await ctx.db
-    .query("organizations")
-    .withIndex("by_slug", (q) => q.eq("slug", slug))
-    .unique();
+  return await getOneFrom(ctx.db, "organizations", "by_slug", slug, "slug");
 }
 
 async function findRoleByKey(
@@ -1266,10 +1293,15 @@ async function findRoleByKey(
   organizationId: Id<"organizations">,
   key: string,
 ): Promise<Doc<"organization_roles"> | null> {
-  return await ctx.db
-    .query("organization_roles")
-    .withIndex("by_organization_key", (q) => q.eq("organizationId", organizationId).eq("key", key))
-    .unique();
+  const { page } = await getPage(ctx, {
+    table: "organization_roles",
+    index: "by_organization_key",
+    startIndexKey: [organizationId, key],
+    endIndexKey: [organizationId, key],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
 }
 
 async function requireRoleById(
@@ -1288,12 +1320,15 @@ async function findMemberByUserOrganization(
   userId: Id<"users">,
   organizationId: Id<"organizations">,
 ): Promise<Doc<"organization_members"> | null> {
-  return await ctx.db
-    .query("organization_members")
-    .withIndex("by_user_organization", (q) =>
-      q.eq("userId", userId).eq("organizationId", organizationId),
-    )
-    .unique();
+  const { page } = await getPage(ctx, {
+    table: "organization_members",
+    index: "by_user_organization",
+    startIndexKey: [userId, organizationId],
+    endIndexKey: [userId, organizationId],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
 }
 
 async function requireMember(
@@ -1312,12 +1347,15 @@ async function findInvitedMember(
   organizationId: Id<"organizations">,
   invitedEmail: string,
 ): Promise<Doc<"organization_members"> | null> {
-  return await ctx.db
-    .query("organization_members")
-    .withIndex("by_organization_invited_email", (q) =>
-      q.eq("organizationId", organizationId).eq("invitedEmail", invitedEmail),
-    )
-    .unique();
+  const { page } = await getPage(ctx, {
+    table: "organization_members",
+    index: "by_organization_invited_email",
+    startIndexKey: [organizationId, invitedEmail],
+    endIndexKey: [organizationId, invitedEmail],
+    absoluteMaxRows: 1,
+    schema,
+  });
+  return page[0] ?? null;
 }
 
 type UpsertOrganizationMemberArgs = {
@@ -1613,10 +1651,13 @@ async function findInvitationByTokenHash(
   ctx: DbCtx,
   tokenHash: string,
 ): Promise<Doc<"organization_invitations"> | null> {
-  return await ctx.db
-    .query("organization_invitations")
-    .withIndex("by_token_hash", (q) => q.eq("tokenHash", tokenHash))
-    .unique();
+  return await getOneFrom(
+    ctx.db,
+    "organization_invitations",
+    "by_token_hash",
+    tokenHash,
+    "tokenHash",
+  );
 }
 
 async function requireOrganization(
