@@ -1,0 +1,152 @@
+/**
+ * First-party Twilio SMS sender for Convex actions.
+ *
+ * These helpers use the Twilio Programmable Messaging REST API directly via
+ * `fetch`, so they work in Convex `action` handlers without any Node SDK. API
+ * credentials should live in Convex environment variables, not source code.
+ */
+
+export type TwilioSmsDraft = {
+  /** Recipient phone number in E.164 format. */
+  to: string;
+  /** Message body. Messages longer than 1600 characters will fail at Twilio. */
+  body: string;
+  /** Optional override. Defaults to the sender's `from` or `messagingServiceSid`. */
+  from?: string;
+};
+
+export type SmsSender = (draft: TwilioSmsDraft) => Promise<string>;
+
+export type PhoneOtpSender = (data: {
+  phone: string;
+  otp: string;
+  type: string;
+}) => Promise<string>;
+
+export type TwilioSmsSenderOptions = {
+  /** Twilio Account SID. */
+  accountSid: string;
+  /** Twilio Auth Token. */
+  authToken: string;
+  /** Default Twilio phone number or Messaging Service SID to send from. */
+  from: string;
+  /** Optional `fetch` implementation for testing or custom runtimes. */
+  fetch?: typeof fetch;
+};
+
+export type TwilioMessageResponse = {
+  sid: string;
+  status: string;
+  error_message?: string;
+};
+
+function isMessagingServiceSid(value: string): boolean {
+  return value.startsWith("MG");
+}
+
+const BASE64_CHARS =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+function stringToBase64(input: string): string {
+  const bytes = new TextEncoder().encode(input);
+  let result = "";
+  for (let i = 0; i < bytes.length; i += 3) {
+    const a = bytes[i];
+    const b = bytes[i + 1] ?? 0;
+    const c = bytes[i + 2] ?? 0;
+    const chunk = (a << 16) | (b << 8) | c;
+    result += BASE64_CHARS[(chunk >> 18) & 63];
+    result += BASE64_CHARS[(chunk >> 12) & 63];
+    result += i + 1 < bytes.length ? BASE64_CHARS[(chunk >> 6) & 63] : "=";
+    result += i + 2 < bytes.length ? BASE64_CHARS[chunk & 63] : "=";
+  }
+  return result;
+}
+
+/**
+ * Create a first-party Twilio {@link SmsSender} for Convex actions.
+ *
+ * The returned function POSTs to the Twilio Messages API and returns the
+ * message SID. Non-2xx responses are thrown as `Error` with the Twilio error
+ * message when available.
+ */
+export function createTwilioSmsSender(options: TwilioSmsSenderOptions): SmsSender {
+  const fetchImpl = options.fetch ?? globalThis.fetch;
+  const credentials = stringToBase64(`${options.accountSid}:${options.authToken}`);
+
+  return async (draft: TwilioSmsDraft) => {
+    const from = draft.from ?? options.from;
+    if (!from) {
+      throw new Error("Twilio SMS sender requires a 'from' number or messaging service SID");
+    }
+
+    const params = new URLSearchParams();
+    params.append("To", draft.to);
+    params.append("Body", draft.body);
+    if (isMessagingServiceSid(from)) {
+      params.append("MessagingServiceSid", from);
+    } else {
+      params.append("From", from);
+    }
+
+    const response = await fetchImpl(
+      `https://api.twilio.com/2010-04-01/Accounts/${options.accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${credentials}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      },
+    );
+
+    const result = (await response.json()) as TwilioMessageResponse;
+
+    if (!response.ok) {
+      throw new Error(
+        `Twilio SMS send failed (${response.status}): ${result.error_message ?? JSON.stringify(result)}`,
+      );
+    }
+
+    return result.sid;
+  };
+}
+
+function defaultSmsOtpMessage(otp: string, type: string): string {
+  switch (type) {
+    case "sign-in":
+      return `Your sign-in code is: ${otp}`;
+    case "phone-verification":
+      return `Your phone verification code is: ${otp}`;
+    case "password-reset":
+      return `Your password reset code is: ${otp}`;
+    default:
+      return `Your verification code is: ${otp}`;
+  }
+}
+
+export type TwilioSmsOtpSenderOptions = TwilioSmsSenderOptions & {
+  /** Optional message builder. Defaults to a type-specific plain-text message. */
+  buildMessage?: (otp: string, type: string) => string;
+};
+
+/**
+ * Create a first-party Twilio {@link PhoneOtpSender} for Convex actions.
+ *
+ * This wraps {@link createTwilioSmsSender} and renders a minimal OTP SMS from
+ * the `otp` and `type` fields.
+ */
+export function createTwilioSmsOtpSender(
+  options: TwilioSmsOtpSenderOptions,
+): PhoneOtpSender {
+  const send = createTwilioSmsSender(options);
+  const buildMessage = options.buildMessage ?? defaultSmsOtpMessage;
+
+  return async ({ phone, otp, type }) => {
+    return await send({
+      to: phone,
+      body: buildMessage(otp, type),
+    });
+  };
+}
