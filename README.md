@@ -271,6 +271,8 @@ export function SignIn() {
 }
 ```
 
+Email verification and password reset are one-click via the `/api/auth/verify-email` and `/api/auth/reset-password/:token` HTTP routes. The user clicks the link, the route validates the token, and the browser is redirected to `callbackURL` with the token (reset only) or success state (verification). In production `sendEmail` should call Resend/Postmark/SES/etc.
+
 See `packages/conformance-consumer` for a working deployment with email capture and OAuth stubs, and [`docs/convex-native-auth-strategy.md`](docs/convex-native-auth-strategy.md) for the long-term roadmap.
 
 ## Compatibility and migration
