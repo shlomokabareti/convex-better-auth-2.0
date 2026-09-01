@@ -2,6 +2,8 @@
 
 This document explains why the long-term goal of this repository is to move authentication _itself_ into Convex-native components, queries, mutations, and actions, and what that means for the Better Auth dependency. It is a strategy, not a specification.
 
+For the recorded decisions on what is aligned with Convex Auth 2.0 and what is intentionally different, see [`docs/decisions/ADR-001-convex-auth-2.0-alignment.md`](./decisions/ADR-001-convex-auth-2.0-alignment.md).
+
 ## The short version
 
 - Better Auth is a high-quality **Node.js/Edge** auth framework. Its plugin model, bundle shape, and crypto/runtime assumptions are built for a long-lived Node process, not Convex's V8 isolate runtime.
