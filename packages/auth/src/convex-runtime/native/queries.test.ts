@@ -27,6 +27,7 @@ async function setupTestKeys() {
   const publicJwk = await exportJWK(publicKey);
   process.env.JWT_PRIVATE_KEY = JSON.stringify(privateJwk);
   process.env.JWKS = JSON.stringify({ keys: [publicJwk] });
+  process.env.CONVEX_SITE_URL = "https://test.convex.site";
 }
 
 type MockComponent = NativeEmailAndPasswordComponentHandle & {
@@ -172,6 +173,29 @@ describe("nativeAuthQueries", () => {
 
     const result = await handler(createContext(), { token: "not-a-token" });
     expect(result).toEqual({});
+  });
+
+  it("isAuthenticated returns true when ctx.auth resolves an identity", async () => {
+    const component = createMockComponent();
+    const { isAuthenticated } = nativeAuthQueries(component);
+    const { handler } = exec(isAuthenticated);
+    const result = await handler(
+      createContext({
+        tokenIdentifier: "tid",
+        issuer: "https://test.convex.site",
+        subject: "user_1",
+      }),
+      {},
+    );
+    expect(result).toBe(true);
+  });
+
+  it("isAuthenticated returns false when ctx.auth resolves null", async () => {
+    const component = createMockComponent();
+    const { isAuthenticated } = nativeAuthQueries(component);
+    const { handler } = exec(isAuthenticated);
+    const result = await handler(createContext(), {});
+    expect(result).toBe(false);
   });
 });
 

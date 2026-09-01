@@ -8,6 +8,7 @@ import type {
   NativeEmailAndPasswordConfig,
   NativeEmailAndPasswordFunctionReferences,
 } from "./provider.js";
+import { nativeAuthQueries, type NativeAuthQueries } from "./queries.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 
 export type ConvexAuthConfig = {
@@ -16,19 +17,22 @@ export type ConvexAuthConfig = {
   oauth?: NativeOAuthConfig;
 };
 
-export type ConvexAuth = NativeEmailAndPasswordFunctionReferences & {
-  signInWithRedirect?: NativeOAuthFunctionReferences["signIn"];
-  callback?: NativeOAuthFunctionReferences["callback"];
-  addHttpRoutes(http: HttpRouter): void;
-};
+export type ConvexAuth = NativeEmailAndPasswordFunctionReferences &
+  NativeAuthQueries & {
+    signInWithRedirect?: NativeOAuthFunctionReferences["signIn"];
+    callback?: NativeOAuthFunctionReferences["callback"];
+    addHttpRoutes(http: HttpRouter): void;
+  };
 
 export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
   const emailAndPasswordActions = nativeEmailAndPassword(config.component, config.emailAndPassword);
+  const authQueries = nativeAuthQueries(config.component);
 
   const oauthActions = config.oauth ? nativeOAuth(config.component, config.oauth) : undefined;
 
   const auth = {
     ...emailAndPasswordActions,
+    ...authQueries,
     ...(oauthActions
       ? { signInWithRedirect: oauthActions.signIn, callback: oauthActions.callback }
       : {}),

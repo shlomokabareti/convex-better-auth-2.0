@@ -1,5 +1,7 @@
 export { convexAuth } from "./convexAuth.js";
 export type { ConvexAuth, ConvexAuthConfig } from "./convexAuth.js";
+export { createConvexAuthProvider } from "./authProvider.js";
+export type { ConvexAuthProvider } from "./authProvider.js";
 export { nativeEmailAndPassword } from "./provider.js";
 export { type NativeEmailAndPasswordActions } from "./provider.js";
 export { type EmailDraft, type EmailSender } from "./provider.js";

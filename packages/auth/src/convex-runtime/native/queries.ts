@@ -6,6 +6,7 @@ import { nativeAuthUserValidator, toNativeAuthUser } from "./types.js";
 
 export type NativeAuthQueries = {
   verifySession: ReturnType<typeof query>;
+  isAuthenticated: ReturnType<typeof query>;
 };
 
 export function nativeAuthQueries(
@@ -67,7 +68,16 @@ export function nativeAuthQueries(
     },
   });
 
-  return { verifySession };
+  const isAuthenticated = query({
+    args: {},
+    returns: v.boolean(),
+    handler: async (ctx, _args) => {
+      const identity = await ctx.auth.getUserIdentity();
+      return identity !== null;
+    },
+  });
+
+  return { verifySession, isAuthenticated };
 }
 
 async function resolveSessionFromAuth(

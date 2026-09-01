@@ -49,6 +49,7 @@ async function setupTestKeys() {
   const publicJwk = await exportJWK(publicKey);
   process.env.JWT_PRIVATE_KEY = JSON.stringify(privateJwk);
   process.env.JWKS = JSON.stringify({ keys: [publicJwk] });
+  process.env.CONVEX_SITE_URL = "https://test.convex.site";
 
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(32));
   let binary = "";

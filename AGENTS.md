@@ -33,10 +33,12 @@ This is enforced by the router implementation in `convex/src/server/router.ts`.
 
 The canonical consumer entrypoints are:
 
+- `convex/convex.config.ts` — `app.use(convexAuth)` so the `convex-auth` component is installed.
+- `convex/auth.config.ts` — `export default { providers: [createConvexAuthProvider()] }` so `ctx.auth.getUserIdentity()` works with the native JWTs.
 - `convex/auth.ts` — call `convexAuth({ component, emailAndPassword, oauth })`, export the `auth` object and the action references.
 - `convex/http.ts` — import `auth` from `./auth` and call `auth.addHttpRoutes(http)`. Do not call the lower-level `addNativeAuthHttpRoutes` directly unless you only want email/password.
 
-See `packages/conformance-consumer/convex/auth.ts` and `packages/conformance-consumer/convex/http.ts` for a working example.
+See `packages/conformance-consumer/convex/convex.config.ts`, `packages/conformance-consumer/convex/auth.config.ts`, `packages/conformance-consumer/convex/auth.ts`, and `packages/conformance-consumer/convex/http.ts` for a working example.
 
 ## Runtime portability
 
