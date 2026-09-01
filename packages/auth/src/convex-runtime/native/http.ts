@@ -773,9 +773,47 @@ export function addNativeAuthHttpRoutes(
 
       try {
         const result = await handleUpdateSession(ctx, component, parsed.refreshToken);
+        const secure = new URL(request.url).protocol === "https:";
+        const headers = new Headers({ "Content-Type": "application/json" });
+        if (result.token) {
+          const expiry = getTokenExpiry(result.token);
+          const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
+          headers.append(
+            "Set-Cookie",
+            setCookieHeader(ACCESS_TOKEN_COOKIE, result.token, maxAge, secure),
+          );
+        }
+        if (result.refreshToken) {
+          headers.append(
+            "Set-Cookie",
+            setCookieHeader(
+              REFRESH_TOKEN_COOKIE,
+              result.refreshToken,
+              REFRESH_TOKEN_MAX_AGE_SECONDS,
+              secure,
+            ),
+          );
+        }
+        if (result.twoFactorChallengeToken) {
+          headers.append("Set-Cookie", clearCookieHeader(TWO_FACTOR_PENDING_COOKIE, secure));
+        }
+        if (result.trustDeviceToken) {
+          const maxAge = result.trustDeviceMaxAgeMs
+            ? Math.floor(result.trustDeviceMaxAgeMs / 1000)
+            : undefined;
+          headers.append(
+            "Set-Cookie",
+            setCookieHeader(
+              TWO_FACTOR_TRUSTED_DEVICE_COOKIE,
+              result.trustDeviceToken,
+              maxAge,
+              secure,
+            ),
+          );
+        }
         return new Response(JSON.stringify({ success: true, ...result }), {
           status: 200,
-          headers: { "Content-Type": "application/json" },
+          headers,
         });
       } catch {
         return new Response(JSON.stringify({ success: false, reason: "invalid_refresh_token" }), {
