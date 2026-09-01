@@ -30,14 +30,16 @@ packages/auth/src/convex-runtime/native/magicLink.test.ts     # unit/flow tests
 packages/auth/src/convex-runtime/native/http.ts               # GET /magic-link/verify route
 packages/auth/src/convex-runtime/native/provider.ts           # expose signInMagicLink action
 packages/auth/src/convex-runtime/native/convexAuth.ts         # wire magicLink config
-packages/auth/src/convex-runtime/native/types.ts              # NativeAuthSession / magic-link types; expose verifiers on component handle
+packages/auth/src/convex-runtime/native/types.ts              # NativeAuthSession / magic-link types
+packages/auth/src/component/schema.ts                         # authMagicLinkTokens table
+packages/auth/src/component/native/magicLinkTokens.ts         # create/get/consume mutations and queries
 packages/react/src/ConvexAuthProvider.tsx                     # add signIn.magicLink client helper
 ```
 
 ## Code style
 
 - Default Convex runtime for token generation and hashing; no Node crypto required.
-- Magic-link tokens are stored in the existing generic `authVerifiers` table with `type: "magic-link"`, because the user may not exist when the token is created and the table already provides create/get/consume semantics.
+- Magic-link tokens live in a dedicated `authMagicLinkTokens` table, not `authVerificationCodes`, because the user may not exist when the token is created.
 - HTTP routes stay thin and call actions; actions call component mutations for token and user/session creation.
 - Response and error shapes follow Better Auth's `magic-link` plugin where practical.
 
@@ -65,9 +67,9 @@ packages/react/src/ConvexAuthProvider.tsx                     # add signIn.magic
 
 ## Build order
 
-1. Expose `authVerifiers` create/get/consume functions on the component handle.
-2. Add `signInMagicLink` action (token generation, hash, store in verifier, send email).
-3. Add `verifyMagicLink` action (consume verifier, create/find user, create session).
+1. Add `authMagicLinkTokens` table and component mutations/queries.
+2. Add `signInMagicLink` action (token generation, hash, store, email send).
+3. Add `verifyMagicLink` action (consume token, create/find user, create session).
 4. Add `GET /magic-link/verify` HTTP route.
 5. Wire `convexAuth` and `ConvexAuthProvider`.
 6. Run full proof and open PR.
@@ -76,4 +78,3 @@ packages/react/src/ConvexAuthProvider.tsx                     # add signIn.magic
 
 - Should `signInMagicLink` be gated by `disableSignUp` or `enabled`? For now it will respect `emailAndPassword.enabled === false` and `emailAndPassword.disableSignUp`.
 - Should the magic-link email use `email.sendEmail` or a separate `magicLink.sendMagicLink`? The first slice will use a dedicated `magicLink.sendMagicLink` config function because it receives the link URL, not a pre-rendered email draft.
-- A dedicated `authMagicLinkTokens` table may be introduced later; the first slice reuses `authVerifiers` to avoid a new component table and codegen churn.
