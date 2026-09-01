@@ -1,4 +1,3 @@
-"use node";
 import { action } from "../../component/_generated/server.js";
 import type { FunctionReference, GenericActionCtx } from "convex/server";
 import type { DataModel } from "../../component/_generated/dataModel.js";

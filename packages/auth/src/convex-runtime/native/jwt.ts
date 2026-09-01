@@ -1,4 +1,5 @@
 import { type JWTPayload, type JSONWebKeySet, SignJWT, importJWK } from "jose";
+import { base64urlToBytes } from "./password.js";
 
 let cachedPrivateKey: CryptoKey | undefined;
 let cachedJwks: JSONWebKeySet | undefined;
@@ -47,24 +48,12 @@ export async function mintToken(
     .sign(key);
 }
 
-function base64UrlToBase64(value: string): string {
-  return value
-    .replaceAll("-", "+")
-    .replaceAll("_", "/")
-    .padEnd(Math.ceil(value.length / 4) * 4, "=");
-}
-
 function base64UrlToString(value: string): string {
-  return atob(base64UrlToBase64(value));
+  return new TextDecoder().decode(base64urlToBytes(value));
 }
 
 function base64UrlToBytes(value: string): Uint8Array {
-  const binary = atob(base64UrlToBase64(value));
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
+  return base64urlToBytes(value);
 }
 
 function arrayBufferFromBytes(bytes: Uint8Array): ArrayBuffer {

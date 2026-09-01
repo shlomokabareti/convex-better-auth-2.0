@@ -60,6 +60,7 @@ const userReturnValidator = v.object({
   emailTwoFactorResetAt: v.optional(v.number()),
   emailTwoFactorResetReason: v.optional(emailTwoFactorResetReasonValidator),
   activeOrganizationId: v.optional(v.id("organizations")),
+  twoFactorEnabled: v.optional(v.boolean()),
   isActive: v.boolean(),
   isSuperAdmin: v.optional(v.boolean()),
   metadataJson: v.optional(v.string()),
@@ -98,16 +99,6 @@ const listedIdentityValidator = v.object({
   emailVerified: v.boolean(),
 });
 
-const userAndAccountUserValidator = v.object({
-  _id: v.id("users"),
-  email: v.optional(v.string()),
-  name: v.optional(v.string()),
-  image: v.optional(v.string()),
-  emailVerified: v.boolean(),
-  createdAt: v.number(),
-  updatedAt: v.number(),
-});
-
 const userAndAccountIdentityValidator = v.object({
   _id: v.id("auth_identities"),
   userId: v.id("users"),
@@ -130,7 +121,7 @@ const userAndAccountAccountValidator = v.object({
 const userAndAccountResultValidator = v.union(
   v.null(),
   v.object({
-    user: userAndAccountUserValidator,
+    user: userReturnValidator,
     identity: userAndAccountIdentityValidator,
     account: userAndAccountAccountValidator,
   }),
@@ -355,7 +346,7 @@ export const getUserAndAccount = query({
     if (!account) {
       return null;
     }
-    return { user, identity, account };
+    return { user: toUserReturn(user), identity: toIdentityReturn(identity), account: toAccountReturn(account) };
   },
 });
 
@@ -570,6 +561,29 @@ async function findIdentityByUserAndProvider(
       q.eq("userId", args.userId).eq("provider", args.provider).eq("issuer", args.issuer),
     )
     .first();
+}
+
+function toIdentityReturn(identity: Doc<"auth_identities">) {
+  return {
+    _id: identity._id,
+    userId: identity.userId,
+    provider: identity.provider,
+    issuer: identity.issuer,
+    subject: identity.subject,
+    email: identity.email,
+    emailVerified: identity.emailVerified,
+  };
+}
+
+function toAccountReturn(account: Doc<"authAccounts">) {
+  return {
+    _id: account._id,
+    userId: account.userId,
+    provider: account.provider,
+    issuer: account.issuer,
+    subject: account.subject,
+    credentialHash: account.credentialHash,
+  };
 }
 
 function toUserReturn(user: Doc<"users">) {

@@ -1,5 +1,6 @@
 import { httpActionGeneric, type HttpRouter } from "convex/server";
 import { v } from "convex/values";
+import { base64urlToBytes } from "./password.js";
 import { getJwks, verifyToken } from "./jwt.js";
 import { parse } from "../helpers/index.js";
 import { hashToken, isTokenExpired } from "./tokens.js";
@@ -39,11 +40,8 @@ function buildTokenRedirect(callbackURL: string, token: string): Response {
 }
 
 function base64UrlDecode(value: string): string {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = (4 - (normalized.length % 4)) % 4;
-  const base64 = normalized + "=".repeat(padding);
   try {
-    return atob(base64);
+    return new TextDecoder().decode(base64urlToBytes(value));
   } catch {
     return "";
   }

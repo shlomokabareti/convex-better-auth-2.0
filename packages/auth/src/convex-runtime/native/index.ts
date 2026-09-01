@@ -28,4 +28,5 @@ export {
   verifyOAuthState,
 } from "./oauthState.js";
 export { addNativeOAuthHttpRoutes, type NativeOAuthHttpConfig } from "./oauthHttp.js";
+export { addNativeAuthHttpRoutes } from "./http.js";
 export type { NativeEmailAndPasswordComponentHandle, NativeOAuthComponentHandle } from "./types.js";

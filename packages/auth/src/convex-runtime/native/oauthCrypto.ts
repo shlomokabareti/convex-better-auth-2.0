@@ -1,3 +1,4 @@
+import { base64urlToBytes, bytesToBase64url } from "./password.js";
 import type { OAuthToken } from "./oauth.js";
 
 const ENCRYPTION_SALT = new TextEncoder().encode("convex-better-auth-2.0");
@@ -14,20 +15,11 @@ export type EncryptedOAuthToken = {
 };
 
 function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+  return bytesToBase64url(bytes);
 }
 
 function base64ToBytes(base64: string): Uint8Array {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
+  return base64urlToBytes(base64);
 }
 
 let cachedKey: ArrayBuffer | undefined;

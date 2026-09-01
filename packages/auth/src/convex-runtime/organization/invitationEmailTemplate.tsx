@@ -1,12 +1,3 @@
-import {
-  Button,
-  EmailHeading,
-  EmailLayout,
-  EmailText,
-  renderEmail,
-  renderEmailText,
-} from "../../lib/email";
-
 import type { OrganizationInvitationEmailDraft } from "./invitationEmail";
 
 export type OrganizationInvitationEmailTemplateProps = {
@@ -17,24 +8,41 @@ export type OrganizationInvitationEmailTemplateProps = {
   expiresAt: number;
 };
 
-export function OrganizationInvitationEmailTemplate(
-  props: OrganizationInvitationEmailTemplateProps,
-) {
-  const expiresAt = new Date(props.expiresAt).toUTCString();
-
-  return (
-    <EmailLayout preview={`You're invited to ${props.organizationName}`}>
-      <EmailHeading>You're invited to {props.organizationName}</EmailHeading>
-      <EmailText>
-        {props.inviterLabel} invited you to join {props.organizationName} as {props.roleName}.
-      </EmailText>
-      <Button href={props.acceptUrl}>Accept invitation</Button>
-      <EmailText muted>This invitation expires {expiresAt}.</EmailText>
-    </EmailLayout>
-  );
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
-export async function renderOrganizationInvitationEmailDraft(args: {
+export function OrganizationInvitationEmailTemplate(
+  props: OrganizationInvitationEmailTemplateProps,
+): { html: string; text: string } {
+  const expiresAt = new Date(props.expiresAt).toUTCString();
+  const subject = `You're invited to ${props.organizationName}`;
+
+  const text = `${subject}\n\n${props.inviterLabel} invited you to join ${props.organizationName} as ${props.roleName}.\n\nAccept invitation: ${props.acceptUrl}\n\nThis invitation expires ${expiresAt}.`;
+  const html = `<!doctype html>
+<html>
+  <head><title>${escapeHtml(subject)}</title></head>
+  <body style="font-family:sans-serif;padding:24px;">
+    <h1 style="margin:0 0 16px;">${escapeHtml(subject)}</h1>
+    <p style="margin:0 0 12px;">${escapeHtml(props.inviterLabel)} invited you to join ${escapeHtml(
+      props.organizationName,
+    )} as ${escapeHtml(props.roleName)}.</p>
+    <p style="margin:0 0 12px;"><a href="${escapeHtml(
+      props.acceptUrl,
+    )}" style="display:inline-block;padding:12px 24px;background-color:#111;color:#fff;border-radius:6px;text-decoration:none;">Accept invitation</a></p>
+    <p style="margin:0 0 12px;color:#666;">This invitation expires ${escapeHtml(expiresAt)}.</p>
+  </body>
+</html>`;
+
+  return { html, text };
+}
+
+export function renderOrganizationInvitationEmailDraft(args: {
   from: string;
   to: string;
   acceptUrl: string;
@@ -42,9 +50,8 @@ export async function renderOrganizationInvitationEmailDraft(args: {
   roleName: string;
   inviterLabel: string;
   expiresAt: number;
-}): Promise<OrganizationInvitationEmailDraft> {
-  const template = <OrganizationInvitationEmailTemplate {...args} />;
-  const [html, text] = await Promise.all([renderEmail(template), renderEmailText(template)]);
+}): OrganizationInvitationEmailDraft {
+  const { html, text } = OrganizationInvitationEmailTemplate(args);
 
   return {
     from: args.from,

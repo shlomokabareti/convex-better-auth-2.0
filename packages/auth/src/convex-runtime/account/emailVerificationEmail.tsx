@@ -1,5 +1,3 @@
-import { Button, EmailLayout, EmailText, renderEmail, renderEmailText } from "../../lib/email";
-
 import {
   buildTokenUrl,
   mapResendAccountEmailDelivery,
@@ -82,17 +80,7 @@ export async function createEmailVerificationEmailDraft(args: {
     return { status: "not_configured", reason: "missing_verify_url" };
   }
 
-  const template = (
-    <EmailVerificationEmailTemplate verifyUrl={args.verifyUrl} expiresAt={args.expiresAt} />
-  );
-  const textTemplate = (
-    <EmailVerificationEmailTemplate
-      verifyUrl={args.verifyUrl}
-      expiresAt={args.expiresAt}
-      plainText
-    />
-  );
-  const [html, text] = await Promise.all([renderEmail(template), renderEmailText(textTemplate)]);
+  const { html, text } = buildEmailVerificationEmail(args.verifyUrl, args.expiresAt);
 
   return {
     from,
@@ -243,22 +231,36 @@ export function mapResendEventToVerificationEmailDelivery(args: {
   return mapResendAccountEmailDelivery({ event: args.event });
 }
 
-function EmailVerificationEmailTemplate(args: {
-  verifyUrl: string;
-  expiresAt?: number;
-  plainText?: boolean;
-}) {
-  return (
-    <EmailLayout preview="Verify your email">
-      <EmailText>Confirm your email address to finish setting up your account.</EmailText>
-      {args.plainText === true ? (
-        <EmailText>Verify your email: {args.verifyUrl}</EmailText>
-      ) : (
-        <Button href={args.verifyUrl}>Verify your email</Button>
-      )}
-      {args.expiresAt === undefined ? null : (
-        <EmailText>This link expires {new Date(args.expiresAt).toUTCString()}.</EmailText>
-      )}
-    </EmailLayout>
-  );
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildEmailVerificationEmail(
+  verifyUrl: string,
+  expiresAt?: number,
+): { html: string; text: string } {
+  const expirationText =
+    expiresAt === undefined ? "" : `\n\nThis link expires ${new Date(expiresAt).toUTCString()}.`;
+  const expirationHtml =
+    expiresAt === undefined
+      ? ""
+      : `<p>This link expires ${new Date(expiresAt).toUTCString()}.</p>`;
+
+  const text = `Verify your email\n\nConfirm your email address to finish setting up your account.\n\nVerify your email: ${verifyUrl}${expirationText}`;
+  const html = `<!doctype html>
+<html>
+  <head><title>Verify your email</title></head>
+  <body style="font-family:sans-serif;padding:24px;">
+    <p>Confirm your email address to finish setting up your account.</p>
+    <p><a href="${escapeHtml(verifyUrl)}" style="display:inline-block;padding:12px 24px;background-color:#111;color:#fff;border-radius:6px;text-decoration:none;">Verify your email</a></p>
+    ${expirationHtml}
+  </body>
+</html>`;
+
+  return { html, text };
 }

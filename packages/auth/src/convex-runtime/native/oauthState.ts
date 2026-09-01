@@ -1,4 +1,5 @@
 import { SignJWT, createLocalJWKSet, jwtVerify } from "jose";
+import { bytesToBase64url } from "./password.js";
 import { getJwtPrivateKey, getJwks } from "./jwt.js";
 
 export type OAuthStatePayload = {
@@ -13,12 +14,7 @@ export type OAuthStatePayload = {
 };
 
 function base64url(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  const base64 = btoa(binary);
-  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  return bytesToBase64url(bytes);
 }
 
 export async function generateCodeVerifier(): Promise<string> {

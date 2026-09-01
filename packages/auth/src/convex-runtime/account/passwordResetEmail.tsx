@@ -1,5 +1,3 @@
-import { Button, EmailLayout, EmailText, renderEmail, renderEmailText } from "../../lib/email";
-
 import {
   buildTokenUrl,
   mapResendAccountEmailDelivery,
@@ -81,13 +79,7 @@ export async function createPasswordResetEmailDraft(args: {
     return { status: "not_configured", reason: "missing_reset_url" };
   }
 
-  const template = (
-    <PasswordResetEmailTemplate resetUrl={args.resetUrl} expiresAt={args.expiresAt} />
-  );
-  const textTemplate = (
-    <PasswordResetEmailTemplate resetUrl={args.resetUrl} expiresAt={args.expiresAt} plainText />
-  );
-  const [html, text] = await Promise.all([renderEmail(template), renderEmailText(textTemplate)]);
+  const { html, text } = buildPasswordResetEmail(args.resetUrl, args.expiresAt);
 
   return {
     from,
@@ -238,23 +230,37 @@ export function mapResendEventToPasswordResetEmailDelivery(args: {
   return mapResendAccountEmailDelivery({ event: args.event });
 }
 
-function PasswordResetEmailTemplate(args: {
-  resetUrl: string;
-  expiresAt?: number;
-  plainText?: boolean;
-}) {
-  return (
-    <EmailLayout preview="Reset your password">
-      <EmailText>We received a request to reset your password.</EmailText>
-      {args.plainText === true ? (
-        <EmailText>Reset your password: {args.resetUrl}</EmailText>
-      ) : (
-        <Button href={args.resetUrl}>Reset your password</Button>
-      )}
-      <EmailText>If you did not request this, you can safely ignore this email.</EmailText>
-      {args.expiresAt === undefined ? null : (
-        <EmailText>This link expires {new Date(args.expiresAt).toUTCString()}.</EmailText>
-      )}
-    </EmailLayout>
-  );
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildPasswordResetEmail(
+  resetUrl: string,
+  expiresAt?: number,
+): { html: string; text: string } {
+  const expirationText =
+    expiresAt === undefined ? "" : `\n\nThis link expires ${new Date(expiresAt).toUTCString()}.`;
+  const expirationHtml =
+    expiresAt === undefined
+      ? ""
+      : `<p>This link expires ${new Date(expiresAt).toUTCString()}.</p>`;
+
+  const text = `Reset your password\n\nWe received a request to reset your password.\n\nReset your password: ${resetUrl}\n\nIf you did not request this, you can safely ignore this email.${expirationText}`;
+  const html = `<!doctype html>
+<html>
+  <head><title>Reset your password</title></head>
+  <body style="font-family:sans-serif;padding:24px;">
+    <p>We received a request to reset your password.</p>
+    <p><a href="${escapeHtml(resetUrl)}" style="display:inline-block;padding:12px 24px;background-color:#111;color:#fff;border-radius:6px;text-decoration:none;">Reset your password</a></p>
+    <p>If you did not request this, you can safely ignore this email.</p>
+    ${expirationHtml}
+  </body>
+</html>`;
+
+  return { html, text };
 }
