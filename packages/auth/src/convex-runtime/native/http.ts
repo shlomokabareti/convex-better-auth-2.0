@@ -14,6 +14,7 @@ import { validateCsrfHeaders } from "./csrf.js";
 
 const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
+const SESSION_ID_COOKIE = "convex-auth-session-id";
 const TWO_FACTOR_PENDING_COOKIE = "convex-auth-two-factor";
 const TWO_FACTOR_TRUSTED_DEVICE_COOKIE = "convex-auth-trusted-device";
 const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
@@ -782,11 +783,24 @@ export function addNativeAuthHttpRoutes(
               REFRESH_TOKEN_MAX_AGE_SECONDS,
             ),
           );
+          if (result.sessionId) {
+            headers.append(
+              "Set-Cookie",
+              setCookieHeader(SESSION_ID_COOKIE, result.sessionId, REFRESH_TOKEN_MAX_AGE_SECONDS),
+            );
+          }
 
           const redirect = new URL(
             callbackURL,
             callbackURL.startsWith("http") ? undefined : "http://localhost",
           );
+          redirect.searchParams.set("token", result.token);
+          if (result.refreshToken) {
+            redirect.searchParams.set("refreshToken", result.refreshToken);
+          }
+          if (result.sessionId) {
+            redirect.searchParams.set("sessionId", result.sessionId);
+          }
           return new Response(null, {
             status: 302,
             headers: {

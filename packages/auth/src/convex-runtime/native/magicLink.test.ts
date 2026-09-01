@@ -140,7 +140,7 @@ describe("nativeMagicLink", () => {
       callbackURL: "/dashboard",
     });
 
-    expect(result).toMatchObject({ status: true });
+    expect(result).toMatchObject({ status: "queued" });
 
     const createCall = (component as any).native.verifiers.createVerifier.mock.calls[0]?.[0];
     expect(createCall).toMatchObject({

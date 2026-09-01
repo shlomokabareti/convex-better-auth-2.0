@@ -19,10 +19,16 @@ const MAGIC_LINK_TOKEN_TTL_MS = 5 * 60 * 1000;
 const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const DEFAULT_REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
+export type NativeAuthSendResult =
+  | { status: "queued"; emailId: string }
+  | { status: "not_configured"; reason: string }
+  | { status: "failed"; reason: string };
+
 export type MagicLinkSender = (data: {
   email: string;
   url: string;
   token: string;
+  name?: string;
   metadata?: Record<string, string>;
 }) => Promise<string>;
 
@@ -107,7 +113,11 @@ export function nativeMagicLink(
       errorCallbackURL: v.optional(v.string()),
       metadata: v.optional(v.record(v.string(), v.string())),
     },
-    returns: v.object({ status: v.boolean() }),
+    returns: v.object({
+      status: v.union(v.literal("queued"), v.literal("not_configured"), v.literal("failed")),
+      reason: v.optional(v.string()),
+      emailId: v.optional(v.string()),
+    }),
     handler: async (ctx: GenericActionCtx<DataModel>, args: SignInMagicLinkBody) => {
       if (!enabled) {
         throw new Error("Magic link authentication is disabled");
@@ -145,14 +155,15 @@ export function nativeMagicLink(
         args.errorCallbackURL,
       );
 
-      await config.sendMagicLink({
+      const emailId = await config.sendMagicLink({
         email: normalizedEmail,
         url,
         token,
+        name: args.name,
         metadata: args.metadata,
       });
 
-      return { status: true };
+      return { status: "queued" as const, emailId };
     },
   });
 

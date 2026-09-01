@@ -110,6 +110,15 @@ export type NativeAuthSignInArgs = {
   rememberMe?: boolean;
 };
 
+export type NativeAuthSignInMagicLinkArgs = {
+  email: string;
+  name?: string;
+  callbackURL?: string;
+  newUserCallbackURL?: string;
+  errorCallbackURL?: string;
+  metadata?: Record<string, string>;
+};
+
 export type NativeAuthSignOutArgs = {
   token: string;
   callbackURL?: string;
@@ -191,6 +200,12 @@ export type NativeAuthActions = {
     { token?: string; sessionId?: string },
     { user?: NativeAuthUser; sessionId?: string }
   >;
+  signInMagicLink: FunctionReference<
+    "action",
+    "public",
+    NativeAuthSignInMagicLinkArgs,
+    NativeAuthSendResult
+  >;
 };
 
 type ConvexAuthContextValue = NativeAuthActions & {
@@ -222,20 +237,45 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
   useEffect(() => {
     const resolved = resolveStorage(props.storage);
     setStorage(resolved);
-    const storedToken = resolved.get(TOKEN_KEY);
-    const storedRefresh = resolved.get(REFRESH_TOKEN_KEY);
-    const storedSessionId = resolved.get(SESSION_ID_KEY);
-    if (storedToken) {
-      setToken(storedToken);
-      if (storedRefresh) {
-        setRefreshToken(storedRefresh);
+
+    let initialToken: string | null = null;
+    let initialRefresh: string | null = null;
+    let initialSessionId: string | null = null;
+
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      initialToken = searchParams.get("token");
+      initialRefresh = searchParams.get("refreshToken");
+      initialSessionId = searchParams.get("sessionId");
+      if (initialToken) {
+        searchParams.delete("token");
+        searchParams.delete("refreshToken");
+        searchParams.delete("sessionId");
+        const cleaned =
+          searchParams.toString() === ""
+            ? window.location.pathname
+            : `${window.location.pathname}?${searchParams.toString()}`;
+        window.history.replaceState(null, "", cleaned);
       }
-      if (storedSessionId) {
-        setSessionId(storedSessionId);
+    }
+
+    if (!initialToken) {
+      initialToken = resolved.get(TOKEN_KEY);
+      initialRefresh = resolved.get(REFRESH_TOKEN_KEY);
+      initialSessionId = resolved.get(SESSION_ID_KEY);
+    }
+
+    if (initialToken) {
+      setToken(initialToken);
+      if (initialRefresh) {
+        setRefreshToken(initialRefresh);
       }
-      const expiry = getTokenExpiry(storedToken);
-      if (expiry !== null && expiry <= Date.now() + REFRESH_BUFFER_MS && storedRefresh) {
-        updateSessionAction({ refreshToken: storedRefresh })
+      if (initialSessionId) {
+        setSessionId(initialSessionId);
+      }
+      const expiry = getTokenExpiry(initialToken);
+      if (expiry !== null && expiry <= Date.now() + REFRESH_BUFFER_MS && initialRefresh) {
+        updateSessionAction({ refreshToken: initialRefresh })
           .then((session) => {
             setToken(session.token ?? null);
             setRefreshToken(session.refreshToken ?? null);
@@ -330,6 +370,7 @@ export function useAuthActions() {
 
   const signUpAction = useAction(ctx.signUp);
   const signInAction = useAction(ctx.signIn);
+  const signInMagicLinkAction = useAction(ctx.signInMagicLink);
   const signOutAction = useAction(ctx.signOut);
   const updateSessionAction = useAction(ctx.updateSession);
   const sendEmailVerificationAction = useAction(ctx.sendEmailVerification);
@@ -374,6 +415,18 @@ export function useAuthActions() {
       }
     },
     [signInAction, ctx],
+  );
+
+  const signInWithMagicLink = useCallback(
+    async (args: NativeAuthSignInMagicLinkArgs) => {
+      setIsLoading(true);
+      try {
+        return await signInMagicLinkAction(args);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [signInMagicLinkAction],
   );
 
   const signOut = useCallback(
@@ -485,6 +538,7 @@ export function useAuthActions() {
   return {
     signUp,
     signIn,
+    signInWithMagicLink,
     signOut,
     updateSession,
     sendEmailVerification,
