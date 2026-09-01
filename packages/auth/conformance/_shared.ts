@@ -2,7 +2,7 @@
  * Shared helpers for the convex-auth conformance suite.
  * No consumer `api.*` imports — only HTTP + standard libs.
  */
-import { parseSetCookieHeader } from "better-auth/cookies";
+import { parseSetCookie } from "set-cookie-parser";
 
 export const ORIGIN_WEB = "http://127.0.0.1:4173";
 export const ORIGIN_NATIVE = "crm://";
@@ -52,7 +52,8 @@ export function mergeCookies(res: Response, prev = ""): string {
     const i = p.indexOf("=");
     jar.set(p.slice(0, i), p.slice(i + 1));
   }
-  for (const [k, v] of parseSetCookieHeader(res.headers.get("set-cookie") ?? "").entries()) {
+  const incoming = parseSetCookie(res, { map: true, decodeValues: false });
+  for (const [k, v] of Object.entries(incoming)) {
     jar.set(k, v.value);
   }
   return Array.from(jar.entries())
