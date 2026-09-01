@@ -636,7 +636,7 @@ export function addNativeAuthHttpRoutes(
   }
 
   http.route({
-    path: "/api/auth/reset-password/:token",
+    pathPrefix: "/api/auth/reset-password/",
     method: "GET",
     handler: httpActionGeneric(async (ctx, request) => {
       const url = new URL(request.url);

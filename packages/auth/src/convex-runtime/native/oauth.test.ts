@@ -1226,13 +1226,15 @@ describe("addNativeOAuthHttpRoutes", () => {
     component.native.sessions.createSessionAndRefreshToken.mockResolvedValue("session_doc_1");
 
     const routes: {
-      path: string;
+      path?: string;
+      pathPrefix?: string;
       method: string;
       handler: (ctx: unknown, request: Request) => Promise<Response>;
     }[] = [];
     const http = {
       route: (r: {
-        path: string;
+        path?: string;
+        pathPrefix?: string;
         method: string;
         handler: (ctx: unknown, request: Request) => Promise<Response>;
       }) => routes.push(r),
@@ -1244,8 +1246,8 @@ describe("addNativeOAuthHttpRoutes", () => {
     });
 
     expect(routes).toHaveLength(2);
-    const signinRoute = routes.find((r) => r.path === "/api/auth/signin/:provider")!;
-    const callbackRoute = routes.find((r) => r.path === "/api/auth/callback/:provider")!;
+    const signinRoute = routes.find((r) => r.pathPrefix === "/api/auth/signin/")!;
+    const callbackRoute = routes.find((r) => r.pathPrefix === "/api/auth/callback/")!;
 
     const signinResponse = (await exec(signinRoute.handler).handler(
       createContext(),

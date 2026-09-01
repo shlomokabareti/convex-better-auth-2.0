@@ -1,6 +1,7 @@
 import { resolveAgentPrincipal } from "./compat/convex/resolveAgentPrincipal";
 import { decodeJwt, decodeProtectedHeader } from "jose";
 
+import { bytesToBase64url } from "./convex-runtime/native/password.js";
 import {
   parseAgentAuthProtocolAgentJwt,
   parseAgentAuthProtocolHostJwt,
@@ -300,11 +301,7 @@ async function hashAgentAuthProtocolReplayId(agentId: string, replayId: string):
     "SHA-256",
     new TextEncoder().encode(`${agentId}\u0000${replayId}`),
   );
-  let binary = "";
-  for (const byte of new Uint8Array(digest)) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
+  return bytesToBase64url(new Uint8Array(digest));
 }
 
 function parseConstraints(

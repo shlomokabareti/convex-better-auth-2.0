@@ -55,7 +55,7 @@ export type NativeOAuthHttpConfig = {
 
 export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHttpConfig): void {
   http.route({
-    path: "/api/auth/signin/:provider",
+    pathPrefix: "/api/auth/signin/",
     method: "GET",
     handler: httpActionGeneric(async (_ctx, request) => {
       const url = new URL(request.url);
@@ -84,7 +84,7 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
   });
 
   http.route({
-    path: "/api/auth/callback/:provider",
+    pathPrefix: "/api/auth/callback/",
     method: "GET",
     handler: httpActionGeneric(async (ctx, request) => {
       const url = new URL(request.url);

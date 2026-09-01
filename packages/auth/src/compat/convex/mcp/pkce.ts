@@ -1,3 +1,4 @@
+import { bytesToBase64url } from "../../../convex-runtime/native/password.js";
 import type { PkcePair } from "./types";
 
 export async function createPkcePair(): Promise<PkcePair> {
@@ -13,14 +14,9 @@ export async function createPkcePair(): Promise<PkcePair> {
 
 export async function derivePkceChallenge(verifier: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
-  return base64UrlEncode(new Uint8Array(digest));
+  return bytesToBase64url(new Uint8Array(digest));
 }
 
 function base64UrlEncode(value: Uint8Array): string {
-  let binary = "";
-  for (const byte of value) {
-    binary += String.fromCharCode(byte);
-  }
-
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  return bytesToBase64url(value);
 }

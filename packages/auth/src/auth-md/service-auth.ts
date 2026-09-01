@@ -1,3 +1,5 @@
+import { bytesToBase64url } from "../convex-runtime/native/password.js";
+
 export const AUTH_MD_SERVICE_AUTH_DEFAULT_EXPIRES_IN_SECONDS = 900 as const;
 export const AUTH_MD_SERVICE_AUTH_DEFAULT_USER_CODE_EXPIRES_IN_SECONDS = 600 as const;
 export const AUTH_MD_SERVICE_AUTH_DEFAULT_INTERVAL_SECONDS = 5 as const;
@@ -130,9 +132,7 @@ function secureRandomBytes(length: number): Uint8Array {
 }
 
 function bytesToBase64Url(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
+  return bytesToBase64url(bytes);
 }
 
 function requireNonnegativeSafeInteger(value: number, name: string): void {

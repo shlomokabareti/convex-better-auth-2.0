@@ -252,20 +252,21 @@ describe("addNativeAuthHttpRoutes", () => {
       expiresAt: Date.now() + 60_000,
     });
     const routes: {
-      path: string;
+      path?: string;
+      pathPrefix?: string;
       method: string;
       handler: (ctx: unknown, request: Request) => Promise<Response>;
     }[] = [];
     const http: HttpRouter = {
       route: (r) => {
-        routes.push(r);
+        routes.push(r as any);
         return http;
       },
     } as unknown as HttpRouter;
 
     addNativeAuthHttpRoutes(http, component);
     const resetRoute = routes.find(
-      (r) => r.path === "/api/auth/reset-password/:token" && r.method === "GET",
+      (r) => r.pathPrefix === "/api/auth/reset-password/" && r.method === "GET",
     );
     expect(resetRoute).toBeDefined();
 
@@ -286,20 +287,21 @@ describe("addNativeAuthHttpRoutes", () => {
     const component = createMockComponent();
     component.native.codes.getVerificationCodeByTokenHash.mockResolvedValue(null);
     const routes: {
-      path: string;
+      path?: string;
+      pathPrefix?: string;
       method: string;
       handler: (ctx: unknown, request: Request) => Promise<Response>;
     }[] = [];
     const http: HttpRouter = {
       route: (r) => {
-        routes.push(r);
+        routes.push(r as any);
         return http;
       },
     } as unknown as HttpRouter;
 
     addNativeAuthHttpRoutes(http, component);
     const resetRoute = routes.find(
-      (r) => r.path === "/api/auth/reset-password/:token" && r.method === "GET",
+      (r) => r.pathPrefix === "/api/auth/reset-password/" && r.method === "GET",
     );
     expect(resetRoute).toBeDefined();
 

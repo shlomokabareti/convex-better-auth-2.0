@@ -1,5 +1,6 @@
 import { decodeProtectedHeader, decodeJwt, importJWK, jwtVerify } from "jose";
 
+import { bytesToBase64url } from "../native/password.js";
 import type { AgentCapabilityConstraint, AgentPrincipal } from "../coreTypes";
 import { resolveAgentPrincipal } from "../principal";
 
@@ -233,9 +234,5 @@ function requireClaim(value: unknown, name: string) {
 
 async function sha256Base64Url(value: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  let binary = "";
-  for (const byte of new Uint8Array(digest)) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
+  return bytesToBase64url(new Uint8Array(digest));
 }
