@@ -139,6 +139,12 @@ export type NativeAuthVerifyEmailOtpResult =
   | NativeAuthChangeEmailResult;
 
 export type NativeAuthChangeEmailResult = { status: boolean; reason?: string };
+
+export type NativeAuthChangeEmailArgs = {
+  newEmail: string;
+  callbackURL?: string;
+};
+
 export type NativeAuthSignOutArgs = {
   token: string;
   callbackURL?: string;
@@ -487,6 +493,25 @@ export function useAuthActions() {
     [sendVerificationOtpAction],
   );
 
+  const changeEmail = useCallback(
+    async (args: NativeAuthChangeEmailArgs) => {
+      const trimmed = args.newEmail.trim().toLowerCase();
+      if (trimmed.length === 0) {
+        throw new Error("Invalid email");
+      }
+      setIsLoading(true);
+      try {
+        return await sendVerificationOtpAction({
+          email: trimmed,
+          type: "change-email",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [sendVerificationOtpAction],
+  );
+
   const verifyEmailOtp = useCallback(
     async (args: NativeAuthVerifyEmailOtpArgs) => {
       setIsLoading(true);
@@ -618,6 +643,7 @@ export function useAuthActions() {
     signInWithMagicLink,
     signInWithEmailOtp,
     sendVerificationOtp,
+    changeEmail,
     verifyEmailOtp,
     signOut,
     updateSession,
