@@ -130,7 +130,6 @@ export type NativeAuthVerifyEmailOtpArgs = {
   otp: string;
   type?: string;
 };
-
 export type NativeAuthSignOutArgs = {
   token: string;
   callbackURL?: string;
@@ -484,7 +483,6 @@ export function useAuthActions() {
     },
     [verifyEmailOtpAction, ctx],
   );
-
   const signOut = useCallback(
     async (args?: { callbackURL?: string }): Promise<NativeAuthSignOutResult> => {
       if (ctx.token === null) {
