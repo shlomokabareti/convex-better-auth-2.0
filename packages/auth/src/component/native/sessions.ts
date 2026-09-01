@@ -1,4 +1,5 @@
 import { v, type Infer } from "convex/values";
+import { getOneFrom } from "convex-helpers/server/relationships";
 import { mutation, query } from "../_generated/server.js";
 import type { Doc } from "../_generated/dataModel.js";
 
@@ -92,10 +93,7 @@ export const createSessionAndRefreshToken = mutation({
 export const revokeSession = mutation({
   args: { sessionId: v.string() },
   handler: async (ctx, args) => {
-    const session = await ctx.db
-      .query("authSessions")
-      .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
-      .unique();
+    const session = await getOneFrom(ctx.db, "authSessions", "by_session_id", args.sessionId, "sessionId");
     if (session) {
       await ctx.db.patch(session._id, { revokedAt: Date.now() });
     }
@@ -116,20 +114,20 @@ export const listSessionsByUser = query({
 export const getSessionByToken = query({
   args: { token: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
-      .query("authSessions")
-      .withIndex("by_token", (q) => q.eq("token", args.token))
-      .unique();
+    return await getOneFrom(ctx.db, "authSessions", "by_token", args.token, "token");
   },
 });
 
 export const getSessionBySessionId = query({
   args: { sessionId: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
-      .query("authSessions")
-      .withIndex("by_session_id", (q) => q.eq("sessionId", args.sessionId))
-      .unique();
+    return await getOneFrom(
+      ctx.db,
+      "authSessions",
+      "by_session_id",
+      args.sessionId,
+      "sessionId",
+    );
   },
 });
 
@@ -178,18 +176,24 @@ export const rotateSession = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    const refresh = await ctx.db
-      .query("authRefreshTokens")
-      .withIndex("by_token_hash", (q) => q.eq("tokenHash", args.oldRefreshTokenHash))
-      .unique();
+    const refresh = await getOneFrom(
+      ctx.db,
+      "authRefreshTokens",
+      "by_token_hash",
+      args.oldRefreshTokenHash,
+      "tokenHash",
+    );
     if (!refresh || refresh.revokedAt || refresh.expiresAt <= now) {
       return null;
     }
 
-    const session = await ctx.db
-      .query("authSessions")
-      .withIndex("by_session_id", (q) => q.eq("sessionId", refresh.sessionId))
-      .unique();
+    const session = await getOneFrom(
+      ctx.db,
+      "authSessions",
+      "by_session_id",
+      refresh.sessionId,
+      "sessionId",
+    );
     if (!session || session.revokedAt || session.expiresAt <= now) {
       return null;
     }
