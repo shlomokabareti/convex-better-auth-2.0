@@ -9,6 +9,7 @@ import type { NativeEmailAndPasswordFunctionReferences } from "./provider.js";
 import { toNativeAuthUser } from "./types.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 import { isAllowedRedirectUrl } from "./callback.js";
+import { validateCsrfHeaders } from "./csrf.js";
 
 const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
@@ -174,7 +175,7 @@ function errorStatusAndReason(error: unknown): { status: number; reason: string 
 }
 
 function buildErrorResponse(status: number, reason: string): Response {
-  return new Response(JSON.stringify({ success: false, reason }), {
+  return new Response(JSON.stringify({ message: reason, code: reason }), {
     status,
     headers: { "Content-Type": "application/json" },
   });
@@ -182,7 +183,20 @@ function buildErrorResponse(status: number, reason: string): Response {
 
 export type NativeAuthHttpOptions = {
   trustedOrigins?: string[];
+  disableCSRFCheck?: boolean;
 };
+
+function checkCsrf(request: Request, options?: NativeAuthHttpOptions): Response | undefined {
+  const result = validateCsrfHeaders(
+    request,
+    options?.trustedOrigins ?? [],
+    options?.disableCSRFCheck,
+  );
+  if (!result.allowed) {
+    return buildErrorResponse(result.status, result.reason);
+  }
+  return undefined;
+}
 
 export function addNativeAuthHttpRoutes(
   http: HttpRouter,
@@ -231,6 +245,11 @@ export function addNativeAuthHttpRoutes(
       path: "/api/auth/sign-up",
       method: "POST",
       handler: httpActionGeneric(async (ctx, request) => {
+        const csrf = checkCsrf(request, options);
+        if (csrf) {
+          return csrf;
+        }
+
         const body = await request.json().catch(() => undefined);
 
         let parsed: {
@@ -294,6 +313,11 @@ export function addNativeAuthHttpRoutes(
       path: "/api/auth/sign-in",
       method: "POST",
       handler: httpActionGeneric(async (ctx, request) => {
+        const csrf = checkCsrf(request, options);
+        if (csrf) {
+          return csrf;
+        }
+
         const body = await request.json().catch(() => undefined);
 
         let parsed: {
@@ -379,6 +403,11 @@ export function addNativeAuthHttpRoutes(
       path: "/api/auth/sign-out",
       method: "POST",
       handler: httpActionGeneric(async (ctx, request) => {
+        const csrf = checkCsrf(request, options);
+        if (csrf) {
+          return csrf;
+        }
+
         const body = await request.json().catch(() => undefined);
 
         let parsed: { token?: string; callbackURL?: string };
@@ -434,6 +463,11 @@ export function addNativeAuthHttpRoutes(
       path: "/api/auth/two-factor/enable",
       method: "POST",
       handler: httpActionGeneric(async (ctx, request) => {
+        const csrf = checkCsrf(request, options);
+        if (csrf) {
+          return csrf;
+        }
+
         const body = await request.json().catch(() => undefined);
         let parsed: { password: string; issuer?: string };
         try {
@@ -486,6 +520,11 @@ export function addNativeAuthHttpRoutes(
       path: "/api/auth/two-factor/verify-totp",
       method: "POST",
       handler: httpActionGeneric(async (ctx, request) => {
+        const csrf = checkCsrf(request, options);
+        if (csrf) {
+          return csrf;
+        }
+
         const body = await request.json().catch(() => undefined);
         let parsed: { code: string; trustDevice?: boolean };
         try {
@@ -533,6 +572,11 @@ export function addNativeAuthHttpRoutes(
       path: "/api/auth/two-factor/verify-backup-code",
       method: "POST",
       handler: httpActionGeneric(async (ctx, request) => {
+        const csrf = checkCsrf(request, options);
+        if (csrf) {
+          return csrf;
+        }
+
         const body = await request.json().catch(() => undefined);
         let parsed: { code: string; trustDevice?: boolean };
         try {
@@ -578,6 +622,11 @@ export function addNativeAuthHttpRoutes(
       path: "/api/auth/two-factor/disable",
       method: "POST",
       handler: httpActionGeneric(async (ctx, request) => {
+        const csrf = checkCsrf(request, options);
+        if (csrf) {
+          return csrf;
+        }
+
         const body = await request.json().catch(() => undefined);
         let parsed: { password: string };
         try {
@@ -624,6 +673,11 @@ export function addNativeAuthHttpRoutes(
       path: "/api/auth/two-factor/generate-backup-codes",
       method: "POST",
       handler: httpActionGeneric(async (ctx, request) => {
+        const csrf = checkCsrf(request, options);
+        if (csrf) {
+          return csrf;
+        }
+
         const body = await request.json().catch(() => undefined);
         let parsed: { password: string };
         try {
