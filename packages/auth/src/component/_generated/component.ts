@@ -1417,6 +1417,21 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         >;
       };
       codes: {
+        cleanupVerificationCodes: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            maxAgeMs?: number;
+            type?:
+              | "email_verification"
+              | "password_reset"
+              | "two_factor_pending"
+              | "two_factor_trusted_device";
+            userId: string;
+          },
+          number,
+          Name
+        >;
         consumeVerificationCode: FunctionReference<
           "mutation",
           "internal",

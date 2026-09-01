@@ -934,7 +934,7 @@ describe("nativeEmailAndPassword", () => {
         credentialHash: expect.any(String),
         provider: "password",
         issuer: "native",
-        revokeSessions: false,
+        revokeSessions: true,
       });
 
       const resetCall = component.identity.resetPassword.mock.calls[0]?.[0];
@@ -942,11 +942,11 @@ describe("nativeEmailAndPassword", () => {
       expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
     });
 
-    it("revokes all sessions when revokeSessionsOnPasswordReset is true", async () => {
+    it("does not revoke sessions when revokeSessionsOnPasswordReset is false", async () => {
       const component = createMockComponent();
       component.identity.resetPassword.mockResolvedValue({ status: true });
 
-      const { resetPassword } = createActions(component, { revokeSessionsOnPasswordReset: true });
+      const { resetPassword } = createActions(component, { revokeSessionsOnPasswordReset: false });
       const result = (await exec(resetPassword).handler(createContext(), {
         token: "reset-token",
         newPassword: NEW_PASSWORD,
@@ -954,7 +954,7 @@ describe("nativeEmailAndPassword", () => {
 
       expect(result).toEqual({ status: true });
       expect(component.identity.resetPassword).toHaveBeenCalledWith(
-        expect.objectContaining({ revokeSessions: true }),
+        expect.objectContaining({ revokeSessions: false }),
       );
     });
 

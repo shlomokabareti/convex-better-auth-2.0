@@ -91,3 +91,38 @@ export const revokeVerificationCodesForUser = mutation({
     return unconsumed.length;
   },
 });
+
+export const cleanupVerificationCodes = mutation({
+  args: {
+    userId: v.id("users"),
+    type: v.optional(verificationCodeTypeValidator),
+    maxAgeMs: v.optional(v.number()),
+  },
+  returns: v.number(),
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const maxAgeMs = args.maxAgeMs ?? 0;
+    const minConsumedAt = now - maxAgeMs;
+
+    const existing = await ctx.db
+      .query("authVerificationCodes")
+      .withIndex("by_user_type", (q) => {
+        const byUser = q.eq("userId", args.userId);
+        return args.type ? byUser.eq("type", args.type) : byUser;
+      })
+      .take(MAX_VERIFICATION_CODES_PER_USER);
+
+    let deleted = 0;
+    for (const code of existing) {
+      if (code.consumedAt !== undefined && code.consumedAt <= minConsumedAt) {
+        await ctx.db.delete(code._id);
+        deleted++;
+      } else if (code.expiresAt <= now) {
+        await ctx.db.delete(code._id);
+        deleted++;
+      }
+    }
+
+    return deleted;
+  },
+});
