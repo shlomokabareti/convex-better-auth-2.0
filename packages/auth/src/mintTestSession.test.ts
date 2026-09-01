@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 
 import { describe, it } from "vitest";
 
-import { mintConvexAuthTestSession } from "./testing";
+import { mintConvexAuthTestSession } from "./better-auth/testing";
 
 // ---------------------------------------------------------------------------
 // Form-free headless session mint. Mocks fetch to assert the two-step flow:
