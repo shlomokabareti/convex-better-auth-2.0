@@ -119,6 +119,44 @@ export type NativeAuthSignInMagicLinkArgs = {
   metadata?: Record<string, string>;
 };
 
+export type NativeAuthSignInWithRedirectArgs = {
+  provider: string;
+  callbackURL?: string;
+  errorURL?: string;
+  newUserURL?: string;
+  requestSignUp?: boolean;
+  link?: boolean;
+};
+
+export type NativeAuthSignInWithRedirectResult = { url: string };
+
+export type NativeAuthOAuthCallbackArgs = {
+  provider: string;
+  code: string;
+  state: string;
+  linkingUserId?: string;
+};
+
+export type NativeAuthOAuthCallbackSuccess = {
+  token: string;
+  refreshToken: string;
+  userId: string;
+  identityId: string;
+  sessionId: string;
+  redirectUrl: string;
+  createdUser: boolean;
+};
+
+export type NativeAuthOAuthCallbackError = {
+  error: string;
+  errorDescription?: string;
+  redirectUrl: string;
+};
+
+export type NativeAuthOAuthCallbackResult =
+  | NativeAuthOAuthCallbackSuccess
+  | NativeAuthOAuthCallbackError;
+
 export type NativeAuthSendVerificationOtpArgs = {
   email: string;
   type?: string;
@@ -225,6 +263,18 @@ export type NativeAuthActions = {
     "public",
     NativeAuthSignInMagicLinkArgs,
     NativeAuthSendResult
+  >;
+  signInWithRedirect?: FunctionReference<
+    "action",
+    "public",
+    NativeAuthSignInWithRedirectArgs,
+    NativeAuthSignInWithRedirectResult
+  >;
+  callback?: FunctionReference<
+    "action",
+    "public",
+    NativeAuthOAuthCallbackArgs,
+    NativeAuthOAuthCallbackResult
   >;
   sendVerificationOtp: FunctionReference<
     "action",
@@ -396,6 +446,7 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
 
 export function useAuthActions() {
   const ctx = useContext(ConvexAuthContext);
+  const client = useConvex();
   if (ctx === null) {
     throw new Error("useAuthActions must be used within a ConvexAuthProvider");
   }
@@ -461,6 +512,42 @@ export function useAuthActions() {
       }
     },
     [signInMagicLinkAction],
+  );
+
+  const signInWithRedirect = useCallback(
+    async (args: NativeAuthSignInWithRedirectArgs) => {
+      if (!ctx.signInWithRedirect) {
+        throw new Error("OAuth sign-in is not configured");
+      }
+      setIsLoading(true);
+      try {
+        return await client.action(ctx.signInWithRedirect, args);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [client, ctx.signInWithRedirect],
+  );
+
+  const oauthCallback = useCallback(
+    async (args: NativeAuthOAuthCallbackArgs) => {
+      if (!ctx.callback) {
+        throw new Error("OAuth callback is not configured");
+      }
+      setIsLoading(true);
+      try {
+        const result = await client.action(ctx.callback, args);
+        if ("token" in result) {
+          ctx.setToken(result.token);
+          ctx.setSessionId(result.sessionId);
+          ctx.setRefreshToken(result.refreshToken);
+        }
+        return result;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [client, ctx.callback],
   );
 
   const signInWithEmailOtp = useCallback(
@@ -616,6 +703,8 @@ export function useAuthActions() {
     signUp,
     signIn,
     signInWithMagicLink,
+    signInWithRedirect,
+    oauthCallback,
     signInWithEmailOtp,
     sendVerificationOtp,
     verifyEmailOtp,
