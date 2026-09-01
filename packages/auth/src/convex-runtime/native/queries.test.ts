@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { addNativeAuthHttpRoutes } from "./http.js";
 import { mintToken } from "./jwt.js";
 import { nativeAuthQueries } from "./queries.js";
+import type { NativeEmailAndPasswordFunctionReferences } from "./provider.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 
 function exec(registered: unknown) {
@@ -99,6 +100,9 @@ function createContext(authIdentity?: {
       (ref: (args: Record<string, unknown>) => unknown, args: Record<string, unknown>) => ref(args),
     ),
     runMutation: vi.fn(
+      (ref: (args: Record<string, unknown>) => unknown, args: Record<string, unknown>) => ref(args),
+    ),
+    runAction: vi.fn(
       (ref: (args: Record<string, unknown>) => unknown, args: Record<string, unknown>) => ref(args),
     ),
     db: {},
@@ -347,6 +351,42 @@ describe("addNativeAuthHttpRoutes", () => {
         "https://api.example.com/api/auth/reset-password/the-token?callbackURL=" +
           encodeURIComponent("https://evil.example.com/callback"),
       ),
+    );
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects a sign-out callbackURL with an untrusted origin", async () => {
+    const component = createMockComponent();
+    const routes: {
+      path?: string;
+      pathPrefix?: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http: HttpRouter = {
+      route: (r) => {
+        routes.push(r as any);
+        return http;
+      },
+    } as unknown as HttpRouter;
+
+    addNativeAuthHttpRoutes(
+      http,
+      component,
+      { signOut: vi.fn() } as unknown as NativeEmailAndPasswordFunctionReferences,
+      { trustedOrigins: ["https://app.example.com"] },
+    );
+    const signOutRoute = routes.find((r) => r.path === "/api/auth/sign-out" && r.method === "POST");
+    expect(signOutRoute).toBeDefined();
+
+    const response = await exec(signOutRoute!.handler).handler(
+      createContext(),
+      new Request("https://api.example.com/api/auth/sign-out", {
+        method: "POST",
+        body: JSON.stringify({
+          callbackURL: "https://evil.example.com/signed-out",
+        }),
+      }),
     );
     expect(response.status).toBe(400);
   });
