@@ -1,7 +1,7 @@
 {
   "name": "conformance-consumer",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "dependencies": {
     "convex": "^1.45.0",

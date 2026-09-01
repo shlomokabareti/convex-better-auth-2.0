@@ -16,13 +16,7 @@ import { hashPassword, verifyPassword as verifyPasswordHash } from "./password.j
 import { generateVerificationToken, hashToken } from "./tokens.js";
 import { handleUpdateSession } from "./updateSession.js";
 import { decryptAccountToken, encryptAccountToken } from "./oauthCrypto.js";
-import {
-  buildTOTPURI,
-  decodeBase32,
-  encodeBase32,
-  generateSecret,
-  verifyTOTP,
-} from "./totp.js";
+import { buildTOTPURI, decodeBase32, encodeBase32, generateSecret, verifyTOTP } from "./totp.js";
 import {
   type NativeAuthSession,
   type NativeAuthUser,
@@ -927,7 +921,11 @@ export function nativeEmailAndPassword(
   async function resolveTwoFactorChallengeToken(ctx: GenericActionCtx<DataModel>, token: string) {
     const payload = await verifyToken(token);
     const userId = payload.sub;
-    if (typeof userId !== "string" || payload.sessionId !== TWO_FACTOR_SESSION_ID || payload.twoFactor !== true) {
+    if (
+      typeof userId !== "string" ||
+      payload.sessionId !== TWO_FACTOR_SESSION_ID ||
+      payload.twoFactor !== true
+    ) {
       return null;
     }
     const tokenHash = await hashToken(token);
@@ -1147,7 +1145,9 @@ export function nativeEmailAndPassword(
       const passwordValid = await verifyUserPassword(ctx, resolved.userId, args.password);
       if (!passwordValid) return { error: "invalid_password", backupCodes: [] };
 
-      const user = await ctx.runQuery(component.native.users.getUserById, { userId: resolved.userId });
+      const user = await ctx.runQuery(component.native.users.getUserById, {
+        userId: resolved.userId,
+      });
       if (!user?.twoFactorEnabled || !user.twoFactorSecret) {
         return { error: "two_factor_not_enabled", backupCodes: [] };
       }

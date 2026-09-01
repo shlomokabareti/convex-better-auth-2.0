@@ -247,9 +247,7 @@ function buildEmailVerificationEmail(
   const expirationText =
     expiresAt === undefined ? "" : `\n\nThis link expires ${new Date(expiresAt).toUTCString()}.`;
   const expirationHtml =
-    expiresAt === undefined
-      ? ""
-      : `<p>This link expires ${new Date(expiresAt).toUTCString()}.</p>`;
+    expiresAt === undefined ? "" : `<p>This link expires ${new Date(expiresAt).toUTCString()}.</p>`;
 
   const text = `Verify your email\n\nConfirm your email address to finish setting up your account.\n\nVerify your email: ${verifyUrl}${expirationText}`;
   const html = `<!doctype html>

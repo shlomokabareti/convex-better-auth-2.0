@@ -31,7 +31,10 @@ async function dispatch(ref: unknown, args: Record<string, unknown>) {
   if (typeof ref === "object" && ref !== null) {
     const handler = Reflect.get(ref, "_handler");
     if (typeof handler === "function") {
-      return await Reflect.apply(handler, ref, [{ runQuery: vi.fn(), runMutation: vi.fn(), runAction: vi.fn() }, args]);
+      return await Reflect.apply(handler, ref, [
+        { runQuery: vi.fn(), runMutation: vi.fn(), runAction: vi.fn() },
+        args,
+      ]);
     }
   }
   return undefined;
@@ -158,7 +161,9 @@ function createContext() {
   const ctx = {
     runQuery: vi.fn((ref: unknown, args: Record<string, unknown>) => dispatch(ref, args)),
     runMutation: vi.fn((ref: unknown, args: Record<string, unknown>) => dispatch(ref, args)),
-    runAction: vi.fn((ref: unknown, args: Record<string, unknown>) => runActionDispatch(ctx, ref, args)),
+    runAction: vi.fn((ref: unknown, args: Record<string, unknown>) =>
+      runActionDispatch(ctx, ref, args),
+    ),
   };
   return ctx;
 }
@@ -1217,7 +1222,12 @@ describe("nativeEmailAndPassword", () => {
       const result = (await handler(createContext(), {
         email: user.email,
         password: DEFAULT_PASSWORD,
-      })) as { token: string | null; twoFactorRedirect: boolean; twoFactorMethods: string[]; twoFactorChallengeToken: string };
+      })) as {
+        token: string | null;
+        twoFactorRedirect: boolean;
+        twoFactorMethods: string[];
+        twoFactorChallengeToken: string;
+      };
 
       expect(result.token).toBeNull();
       expect(result.twoFactorRedirect).toBe(true);
@@ -1233,11 +1243,16 @@ describe("nativeEmailAndPassword", () => {
       const secret = encodeBase32(generateSecret());
       const code = await generateTOTP(decodeBase32(secret), getCurrentTOTPCounter());
 
-      const challengeToken = await mintToken("user_1", "__two_factor", {
-        identityId: "identity_1",
-        twoFactor: true,
-        rememberMe: true,
-      }, { expiresInSeconds: 600 });
+      const challengeToken = await mintToken(
+        "user_1",
+        "__two_factor",
+        {
+          identityId: "identity_1",
+          twoFactor: true,
+          rememberMe: true,
+        },
+        { expiresInSeconds: 600 },
+      );
 
       component.native.users.getUserById.mockResolvedValue({
         ...user,
@@ -1279,11 +1294,16 @@ describe("nativeEmailAndPassword", () => {
       const backupCode = "BACKUP123";
       const backupCodeHash = await hashPassword(backupCode);
 
-      const challengeToken = await mintToken("user_1", "__two_factor", {
-        identityId: "identity_1",
-        twoFactor: true,
-        rememberMe: false,
-      }, { expiresInSeconds: 600 });
+      const challengeToken = await mintToken(
+        "user_1",
+        "__two_factor",
+        {
+          identityId: "identity_1",
+          twoFactor: true,
+          rememberMe: false,
+        },
+        { expiresInSeconds: 600 },
+      );
 
       component.native.users.getUserById.mockResolvedValue({
         ...user,

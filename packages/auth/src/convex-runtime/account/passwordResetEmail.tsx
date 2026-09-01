@@ -246,9 +246,7 @@ function buildPasswordResetEmail(
   const expirationText =
     expiresAt === undefined ? "" : `\n\nThis link expires ${new Date(expiresAt).toUTCString()}.`;
   const expirationHtml =
-    expiresAt === undefined
-      ? ""
-      : `<p>This link expires ${new Date(expiresAt).toUTCString()}.</p>`;
+    expiresAt === undefined ? "" : `<p>This link expires ${new Date(expiresAt).toUTCString()}.</p>`;
 
   const text = `Reset your password\n\nWe received a request to reset your password.\n\nReset your password: ${resetUrl}\n\nIf you did not request this, you can safely ignore this email.${expirationText}`;
   const html = `<!doctype html>

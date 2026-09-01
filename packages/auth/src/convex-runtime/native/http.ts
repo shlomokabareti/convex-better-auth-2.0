@@ -86,7 +86,12 @@ function setCookieHeader(
 
 function buildTwoFactorVerifyResponse(
   request: Request,
-  session: { token: string | null; refreshToken?: string; trustDeviceToken?: string; trustDeviceMaxAgeMs?: number },
+  session: {
+    token: string | null;
+    refreshToken?: string;
+    trustDeviceToken?: string;
+    trustDeviceMaxAgeMs?: number;
+  },
   trustDeviceToken?: string,
 ): Response {
   const secure = new URL(request.url).protocol === "https:";
@@ -95,16 +100,32 @@ function buildTwoFactorVerifyResponse(
   if (session.token) {
     const expiry = getTokenExpiry(session.token);
     const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
-    headers.append("Set-Cookie", setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure));
+    headers.append(
+      "Set-Cookie",
+      setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure),
+    );
     headers.append("Set-Cookie", clearCookieHeader(TWO_FACTOR_PENDING_COOKIE, secure));
   }
   if (session.refreshToken) {
-    headers.append("Set-Cookie", setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, REFRESH_TOKEN_MAX_AGE_SECONDS, secure));
+    headers.append(
+      "Set-Cookie",
+      setCookieHeader(
+        REFRESH_TOKEN_COOKIE,
+        session.refreshToken,
+        REFRESH_TOKEN_MAX_AGE_SECONDS,
+        secure,
+      ),
+    );
   }
   const trustedToken = trustDeviceToken ?? session.trustDeviceToken;
   if (trustedToken) {
-    const maxAge = session.trustDeviceMaxAgeMs ? Math.floor(session.trustDeviceMaxAgeMs / 1000) : undefined;
-    headers.append("Set-Cookie", setCookieHeader(TWO_FACTOR_TRUSTED_DEVICE_COOKIE, trustedToken, maxAge, secure));
+    const maxAge = session.trustDeviceMaxAgeMs
+      ? Math.floor(session.trustDeviceMaxAgeMs / 1000)
+      : undefined;
+    headers.append(
+      "Set-Cookie",
+      setCookieHeader(TWO_FACTOR_TRUSTED_DEVICE_COOKIE, trustedToken, maxAge, secure),
+    );
   }
 
   const responseBody = { success: true, ...session } as Record<string, unknown>;
@@ -315,10 +336,7 @@ export function addNativeAuthHttpRoutes(
             setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure),
           );
           if (session.twoFactorChallengeToken) {
-            headers.append(
-              "Set-Cookie",
-              clearCookieHeader(TWO_FACTOR_PENDING_COOKIE, secure),
-            );
+            headers.append("Set-Cookie", clearCookieHeader(TWO_FACTOR_PENDING_COOKIE, secure));
           }
         }
         if (session.refreshToken) {
@@ -334,7 +352,12 @@ export function addNativeAuthHttpRoutes(
             : undefined;
           headers.append(
             "Set-Cookie",
-            setCookieHeader(TWO_FACTOR_PENDING_COOKIE, session.twoFactorChallengeToken, maxAge, secure),
+            setCookieHeader(
+              TWO_FACTOR_PENDING_COOKIE,
+              session.twoFactorChallengeToken,
+              maxAge,
+              secure,
+            ),
           );
         }
 

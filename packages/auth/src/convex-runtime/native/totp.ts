@@ -79,11 +79,7 @@ export async function generateTOTP(
   );
 
   const counterBuffer = numberToUint8Buffer(counter);
-  const signature = await globalThis.crypto.subtle.sign(
-    "HMAC",
-    cryptoKey,
-    counterBuffer,
-  );
+  const signature = await globalThis.crypto.subtle.sign("HMAC", cryptoKey, counterBuffer);
   const h = new Uint8Array(signature);
 
   const offset = h[h.length - 1] & 0x0f;

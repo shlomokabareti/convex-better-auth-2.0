@@ -35,15 +35,15 @@ Read the full rationale in [`docs/motivation.md`](docs/motivation.md) and the de
 
 ## Packages
 
-| Package                      | npm                          | Path                           | Description                                                                                   |
-| ---------------------------- | ---------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
+| Package                      | npm                          | Path                           | Description                                                                                          |
+| ---------------------------- | ---------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------- |
 | `convex-auth`                | `convex-auth`                | `packages/auth`                | Convex auth component, control plane, and native server integration. This is what most apps install. |
-| `convex-auth-react`          | `convex-auth-react`          | `packages/react`               | React UI and hooks.                                                                           |
-| `convex-auth-react-native`   | `convex-auth-react-native`   | `packages/react-native`        | Expo / React Native client.                                                                   |
-| `convex-auth-core`           | `convex-auth-core`           | `packages/core`                | Auth domain core (permissions, roles, scopes).                                                |
-| `convex-auth-ui`             | `convex-auth-ui`             | `packages/ui`                  | Base shadcn-style UI primitives.                                                              |
-| `convex-better-auth`         | `convex-better-auth`         | `packages/better-auth`         | Better Auth compatibility bridge (runtime + client).                                          |
-| `convex-better-auth-adapter` | `convex-better-auth-adapter` | `packages/better-auth-adapter` | Low-level Better Auth ↔ Convex adapter, vendored and maintained here.                         |
+| `convex-auth-react`          | `convex-auth-react`          | `packages/react`               | React UI and hooks.                                                                                  |
+| `convex-auth-react-native`   | `convex-auth-react-native`   | `packages/react-native`        | Expo / React Native client.                                                                          |
+| `convex-auth-core`           | `convex-auth-core`           | `packages/core`                | Auth domain core (permissions, roles, scopes).                                                       |
+| `convex-auth-ui`             | `convex-auth-ui`             | `packages/ui`                  | Base shadcn-style UI primitives.                                                                     |
+| `convex-better-auth`         | `convex-better-auth`         | `packages/better-auth`         | Better Auth compatibility bridge (runtime + client).                                                 |
+| `convex-better-auth-adapter` | `convex-better-auth-adapter` | `packages/better-auth-adapter` | Low-level Better Auth ↔ Convex adapter, vendored and maintained here.                                |
 
 All packages are independently buildable and published under the Apache-2.0 license.
 

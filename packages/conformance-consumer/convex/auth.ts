@@ -1,7 +1,8 @@
 import { components } from "./_generated/api";
 import { convexAuth, type EmailDraft } from "convex-auth/convex";
 
-const siteUrl = process.env.CONVEX_SITE_URL?.replace(/\/$/, "") ??
+const siteUrl =
+  process.env.CONVEX_SITE_URL?.replace(/\/$/, "") ??
   process.env.SITE_URL?.replace(/\/$/, "") ??
   "http://localhost:3000";
 

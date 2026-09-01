@@ -31,12 +31,16 @@ export function base64urlToBytes(value: string): Uint8Array {
   }
   const result: number[] = [];
   for (let i = 0; i < b64.length; i += 4) {
-    const c1 = b64[i] === "=" ? -1 : map.get(b64[i]) ?? -1;
-    const c2 = b64[i + 1] === "=" ? -1 : map.get(b64[i + 1]) ?? -1;
-    const c3 = b64[i + 2] === "=" ? -1 : map.get(b64[i + 2]) ?? -1;
-    const c4 = b64[i + 3] === "=" ? -1 : map.get(b64[i + 3]) ?? -1;
+    const c1 = b64[i] === "=" ? -1 : (map.get(b64[i]) ?? -1);
+    const c2 = b64[i + 1] === "=" ? -1 : (map.get(b64[i + 1]) ?? -1);
+    const c3 = b64[i + 2] === "=" ? -1 : (map.get(b64[i + 2]) ?? -1);
+    const c4 = b64[i + 3] === "=" ? -1 : (map.get(b64[i + 3]) ?? -1);
     if (c1 === -1 || c2 === -1) break;
-    const bits = ((c1 & 63) << 18) | ((c2 & 63) << 12) | ((c3 === -1 ? 0 : c3 & 63) << 6) | (c4 === -1 ? 0 : c4 & 63);
+    const bits =
+      ((c1 & 63) << 18) |
+      ((c2 & 63) << 12) |
+      ((c3 === -1 ? 0 : c3 & 63) << 6) |
+      (c4 === -1 ? 0 : c4 & 63);
     result.push((bits >> 16) & 255);
     if (c3 !== -1) result.push((bits >> 8) & 255);
     if (c4 !== -1) result.push(bits & 255);

@@ -346,7 +346,11 @@ export const getUserAndAccount = query({
     if (!account) {
       return null;
     }
-    return { user: toUserReturn(user), identity: toIdentityReturn(identity), account: toAccountReturn(account) };
+    return {
+      user: toUserReturn(user),
+      identity: toIdentityReturn(identity),
+      account: toAccountReturn(account),
+    };
   },
 });
 
