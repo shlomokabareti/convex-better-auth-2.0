@@ -23,16 +23,21 @@ We will split the monolithic `convexAuth` component into feature-scoped componen
 
 ## Capability map / build order
 
-| Module            | Responsibility                                                                          | Tables                                                                                                                                           | Depends on                       |
+Components are **self-contained** (architecture A): each component includes its own
+local copies of the tables its runtime logic needs. The `Depends on` column is the
+logical build/source order, not a Convex `defineComponent(..., { _dependencies })`
+edge. Independent `app.use()` of a component gets only that component’s tables.
+
+| Module            | Responsibility                                                                          | Tables                                                                                                                                           | Depends on (logical)             |
 | ----------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
 | core              | users, identities, sessions, codes, verifiers, accounts, magic link tokens, rate limits | users, auth_identities, authAccounts, authSessions, authRefreshTokens, authVerificationCodes, authVerifiers, authRateLimits, authMagicLinkTokens | —                                |
-| organizations     | orgs, roles, members, invitations                                                       | organizations, organization_roles, organization_members, organization_invitations                                                                | core                             |
-| servicePrincipals | service-to-service principals                                                           | service_principals                                                                                                                               | organizations                    |
-| apiKeys           | machine API keys and audit events                                                       | api_keys, auth_audit_events                                                                                                                      | organizations, servicePrincipals |
-| agentAuth         | agent hosts, devices, grants, audit                                                     | agent\_\* tables                                                                                                                                 | core                             |
-| authMd            | metadata registrations/assertions/credentials                                           | auth*md*\*                                                                                                                                       | core                             |
-| webhooks          | webhook endpoints and deliveries                                                        | webhook_endpoints, webhook_deliveries                                                                                                            | core                             |
-| mcpOauth          | MCP OAuth clients/codes/tokens                                                          | mcp*oauth*\*                                                                                                                                     | core                             |
+| organizations     | orgs, roles, members, invitations                                                       | users, organizations, organization_roles, organization_members, organization_invitations                                                         | core                             |
+| servicePrincipals | service-to-service principals                                                           | users, organizations, service_principals                                                                                                         | organizations                    |
+| apiKeys           | machine API keys and audit events                                                       | users, organizations, service_principals, api_keys, auth_audit_events                                                                            | organizations, servicePrincipals |
+| agentAuth         | agent hosts, devices, grants, audit                                                     | users, organizations, agent\_\* tables                                                                                                           | organizations                    |
+| authMd            | metadata registrations/assertions/credentials                                           | users, organizations, auth*md*\*                                                                                                                 | organizations                    |
+| webhooks          | webhook endpoints and deliveries                                                        | users, organizations, webhook_endpoints, webhook_deliveries                                                                                      | organizations                    |
+| mcpOauth          | MCP OAuth clients/codes/tokens                                                          | mcp*oauth*\*                                                                                                                                     | core (no user/org tables used)   |
 
 Build order: core → organizations → servicePrincipals → apiKeys → agentAuth, authMd, webhooks, mcpOauth
 
@@ -46,7 +51,8 @@ Build order: core → organizations → servicePrincipals → apiKeys → agentA
 
 ## Project structure
 
-- `packages/auth/src/component/core/` — core component (`convex.config.ts`, `schema.ts`, runtime modules copied from current `component/`)
+- `packages/auth/src/component/` — full component that re-exports all tables/modules for backward compatibility
+- `packages/auth/src/component/core/` — core component (`convex.config.ts`, `schema.ts`)
 - `packages/auth/src/component/organizations/` — organizations component
 - `packages/auth/src/component/apiKeys/` — api keys component
 - `packages/auth/src/component/servicePrincipals/` — service principals component
@@ -54,8 +60,7 @@ Build order: core → organizations → servicePrincipals → apiKeys → agentA
 - `packages/auth/src/component/authMd/` — auth-md component
 - `packages/auth/src/component/webhooks/` — webhooks component
 - `packages/auth/src/component/mcpOauth/` — MCP OAuth component
-- `packages/auth/src/component/full/` — full component that re-exports all the above for backward compatibility
-- `packages/auth/src/convex-runtime/native/convexAuth.ts` — updated to accept `components` object and route to per-feature components
+- `packages/auth/src/convex-runtime/native/convexAuth.ts` — `convexAuth()` entry point; accepts `components: { core }` or legacy `component`
 
 ## Code style
 
