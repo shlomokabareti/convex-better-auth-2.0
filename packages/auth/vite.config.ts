@@ -26,6 +26,11 @@ export default defineConfig({
         mcp: "src/mcp.ts",
         "component/convex.config": "src/component/convex.config.ts",
         "component/_generated/component": "src/component/_generated/component.ts",
+        "component/core/convex.config": "src/component/core/convex.config.ts",
+        "component/core/_generated/component": "src/component/core/_generated/component.ts",
+        "component/organizations/convex.config": "src/component/organizations/convex.config.ts",
+        "component/organizations/_generated/component":
+          "src/component/organizations/_generated/component.ts",
       },
       format: "esm",
       dts: true,

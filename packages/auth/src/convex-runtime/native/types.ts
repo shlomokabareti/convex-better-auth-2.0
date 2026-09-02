@@ -30,27 +30,8 @@ export type NativeAuthUser = {
   updatedAt: number;
 };
 
-export function toNativeAuthUser(user: {
-  _id: string;
-  email?: string;
-  name?: string;
-  image?: string;
-  emailVerified: boolean;
-  emailTwoFactorStatus?: "disabled" | "enabled" | "reset_required";
-  emailTwoFactorEmail?: string;
-  emailTwoFactorEnabledAt?: number;
-  emailTwoFactorDisabledAt?: number;
-  emailTwoFactorLastVerifiedAt?: number;
-  emailTwoFactorResetAt?: number;
-  emailTwoFactorResetReason?: "missing_email" | "email_not_verified" | "email_changed";
-  twoFactorEnabled?: boolean;
-  activeOrganizationId?: string;
-  isActive?: boolean;
-  isSuperAdmin?: boolean;
-  metadataJson?: string;
-  createdAt: number;
-  updatedAt: number;
-}): NativeAuthUser {
+export function toNativeAuthUser(user: NativeUserDoc): NativeAuthUser {
+  const now = Date.now();
   const nativeUser: NativeAuthUser = {
     id: user._id,
     email: user.email,
@@ -59,8 +40,8 @@ export function toNativeAuthUser(user: {
     emailVerified: user.emailVerified,
     twoFactorEnabled: user.twoFactorEnabled ?? false,
     isActive: user.isActive ?? true,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
+    createdAt: user.createdAt ?? now,
+    updatedAt: user.updatedAt ?? now,
   };
   if (user.emailTwoFactorStatus !== undefined)
     nativeUser.emailTwoFactorStatus = user.emailTwoFactorStatus;
@@ -132,7 +113,7 @@ export type NativeAuthSession = {
 
 export type NativeVerificationCodeDoc = {
   _id: string;
-  _creationTime: number;
+  _creationTime?: number;
   userId: string;
   type: VerificationCodeType;
   tokenHash: string;
@@ -144,7 +125,7 @@ export type NativeVerificationCodeDoc = {
 
 export type NativeVerifierDoc = {
   _id: string;
-  _creationTime: number;
+  _creationTime?: number;
   verifierId: string;
   type: string;
   provider?: string;
@@ -160,7 +141,7 @@ export type NativeVerifierDoc = {
 
 export type NativeUserDoc = {
   _id: string;
-  _creationTime: number;
+  _creationTime?: number;
   email?: string;
   name?: string;
   image?: string;
@@ -176,16 +157,16 @@ export type NativeUserDoc = {
   twoFactorSecret?: string;
   twoFactorBackupCodes?: string[];
   activeOrganizationId?: string;
-  isActive: boolean;
+  isActive?: boolean;
   isSuperAdmin?: boolean;
   metadataJson?: string;
-  createdAt: number;
-  updatedAt: number;
+  createdAt?: number;
+  updatedAt?: number;
 };
 
 export type NativeAccountDoc = {
   _id: string;
-  _creationTime: number;
+  _creationTime?: number;
   userId: string;
   provider: string;
   issuer: string;
@@ -198,13 +179,13 @@ export type NativeAccountDoc = {
   scopes?: string[];
   accessTokenExpiresAt?: number;
   refreshTokenExpiresAt?: number;
-  createdAt: number;
-  updatedAt: number;
+  createdAt?: number;
+  updatedAt?: number;
 };
 
 export type NativeSessionDoc = {
   _id: string;
-  _creationTime: number;
+  _creationTime?: number;
   sessionId: string;
   userId: string;
   token: string;
@@ -218,7 +199,7 @@ export type NativeSessionDoc = {
 
 export type NativeRefreshTokenDoc = {
   _id: string;
-  _creationTime: number;
+  _creationTime?: number;
   tokenHash: string;
   sessionId: string;
   userId: string;
@@ -230,18 +211,18 @@ export type NativeRefreshTokenDoc = {
 
 export type NativeIdentityDoc = {
   _id: string;
-  _creationTime: number;
-  identityId: string;
+  _creationTime?: number;
+  identityId?: string;
   userId: string;
   provider: string;
   issuer: string;
   subject: string;
-  tokenIdentifier: string;
+  tokenIdentifier?: string;
   email?: string;
   emailVerified: boolean;
   sessionId?: string | null;
-  createdAt: number;
-  updatedAt: number;
+  createdAt?: number;
+  updatedAt?: number;
 };
 
 export type NativeEmailAndPasswordComponentHandle = {
