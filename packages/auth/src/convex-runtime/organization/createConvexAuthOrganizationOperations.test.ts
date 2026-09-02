@@ -5,6 +5,7 @@ import { describe, it } from "vitest";
 
 import { api as componentApi } from "../../component/_generated/api";
 import type { Id } from "../../component/_generated/dataModel";
+import type { ComponentApi as CoreComponentApi } from "../../component/core/_generated/component";
 import type { ComponentApi as OrganizationsComponentApi } from "../../component/organizations/_generated/component";
 import type { GlueCtx } from "../glue/types";
 import {
@@ -13,6 +14,7 @@ import {
   type ResolvedComponentInvitation,
   type ResolvedComponentMembership,
   type ConvexAuthOrganizationOperationsComponentHandle,
+  type ConvexAuthOrganizationOperationsComponentsHandle,
   type ConvexAuthOrganizationOperationsConfig,
 } from "./createConvexAuthOrganizationOperations";
 
@@ -20,6 +22,21 @@ import {
 // the operations handle, so consumers can pass `convexAuthOrganizations`.
 type _AssertOrganizationsComponentSatisfiesHandle =
   OrganizationsComponentApi<"convexAuthOrganizations"> extends ConvexAuthOrganizationOperationsComponentHandle
+    ? true
+    : false;
+
+// Compile-time checks that the split `components` bag can be satisfied by the
+// feature-gated core + organizations components.
+type _AssertCoreSatisfiesComponentsCore =
+  CoreComponentApi<"convexAuthCore"> extends ConvexAuthOrganizationOperationsComponentsHandle["core"]
+    ? true
+    : false;
+type _AssertOrganizationsSatisfiesComponentsOrganizations =
+  OrganizationsComponentApi<"convexAuthOrganizations"> extends ConvexAuthOrganizationOperationsComponentsHandle["organizations"]
+    ? true
+    : false;
+type _AssertOrganizationsSatisfiesComponentsApiKeys =
+  OrganizationsComponentApi<"convexAuthOrganizations">["apiKeys"] extends ConvexAuthOrganizationOperationsComponentsHandle["apiKeys"]
     ? true
     : false;
 

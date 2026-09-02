@@ -324,6 +324,19 @@ export type ConvexAuthOrganizationOperationsComponentHandle = OperationsGlueComp
   >;
 };
 
+/**
+ * Feature-gated component bag. Consumers can pass a single `component` (legacy
+ * full or organizations component) OR this `components` object when they mount
+ * the features as separate Convex components.
+ */
+export type ConvexAuthOrganizationOperationsComponentsHandle = {
+  core: {
+    identity: PickComponentFunctions<OperationsComponentApi["identity"], "getByIdentity">;
+  };
+  organizations: ConvexAuthOrganizationOperationsComponentHandle["organizations"];
+  apiKeys: ConvexAuthOrganizationOperationsComponentHandle["apiKeys"];
+};
+
 // ----------------------------------------------------------------------------
 // Errors
 //
@@ -382,15 +395,13 @@ function defaultCreateOperationsError(args: ConvexAuthOrganizationOperationsErro
   return new ConvexAuthOrganizationOperationsError(args);
 }
 
-export type ConvexAuthOrganizationOperationsConfig<
+type ConvexAuthOrganizationOperationsConfigBase<
   TOrgId,
   TUserId,
   TRole extends string,
   TReadCtx extends ConvexAuthOperationsReadCtx = GlueCtx,
   TWriteCtx extends ConvexAuthOperationsWriteCtx = GlueCtx,
 > = {
-  component: ConvexAuthOrganizationOperationsComponentHandle;
-
   // -- bridge: component id → local id (the glue's anchor adapters) --
   resolveLocalOrganizationId: (
     ctx: TReadCtx,
@@ -420,6 +431,22 @@ export type ConvexAuthOrganizationOperationsConfig<
   // the client directly at the failure site.
   createError?: (args: ConvexAuthOrganizationOperationsErrorInput) => Error;
 };
+
+export type ConvexAuthOrganizationOperationsConfig<
+  TOrgId,
+  TUserId,
+  TRole extends string,
+  TReadCtx extends ConvexAuthOperationsReadCtx = GlueCtx,
+  TWriteCtx extends ConvexAuthOperationsWriteCtx = GlueCtx,
+> =
+  | (ConvexAuthOrganizationOperationsConfigBase<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx> & {
+      component: ConvexAuthOrganizationOperationsComponentHandle;
+      components?: never;
+    })
+  | (ConvexAuthOrganizationOperationsConfigBase<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx> & {
+      component?: never;
+      components: ConvexAuthOrganizationOperationsComponentsHandle;
+    });
 
 export type ConvexAuthOrganizationReads<
   TOrgId,
@@ -656,10 +683,12 @@ function createOperationsRuntime<
 >(
   config: ConvexAuthOrganizationOperationsConfig<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx>,
 ): ConvexAuthOrganizationOperationsRuntime<TOrgId, TUserId, TRole, TReadCtx, TWriteCtx> {
+  const orgOps = config.component?.organizations ?? config.components!.organizations;
+  const apiKeyOps = config.component?.apiKeys ?? config.components!.apiKeys;
   return {
     ...config,
-    orgOps: config.component.organizations,
-    apiKeyOps: config.component.apiKeys,
+    orgOps,
+    apiKeyOps,
     createOperationsError: config.createError ?? defaultCreateOperationsError,
   };
 }
