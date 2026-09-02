@@ -453,64 +453,6 @@ function mapRuntimeReadiness(args: {
   return "convexReady";
 }
 
-export function useAuthState(authClient: ConvexBetterAuthClient | null): ConvexAuthState {
-  if (authClient === null) {
-    return {
-      isLoaded: false,
-      isSignedIn: false,
-    };
-  }
-
-  const session = authClient.useSession();
-  return {
-    isLoaded: !session.isPending,
-    isSignedIn: session.data !== null && session.data !== undefined,
-  };
-}
-
-export function getConvexAuthActions(args: {
-  authClient: ConvexBetterAuthClient | null;
-  signInPath: string;
-  signUpPath: string;
-  assignLocation?: (url: string) => void;
-}) {
-  const assignLocation =
-    args.assignLocation ??
-    ((url: string) => {
-      if (typeof window !== "undefined") {
-        window.location.assign(url);
-      }
-    });
-
-  return {
-    signInSocial: async (options: { provider: string; callbackURL?: string }) => {
-      if (args.authClient === null) {
-        return;
-      }
-
-      await args.authClient.signIn.social({
-        provider: options.provider,
-        callbackURL: options.callbackURL,
-      });
-    },
-    signOut: async (options?: { redirectUrl?: string }) => {
-      if (args.authClient !== null) {
-        await args.authClient.signOut({
-          fetchOptions: {
-            credentials: "include",
-          },
-        });
-      }
-
-      assignLocation(options?.redirectUrl ?? args.signInPath);
-    },
-    redirectToSignIn: async (options?: { signInForceRedirectUrl?: string }) => {
-      assignLocation(options?.signInForceRedirectUrl ?? args.signInPath);
-    },
-    buildSignUpUrl: () => args.signUpPath,
-  };
-}
-
 export function toAuthProviderOptions(
   socialProviders: readonly ConvexAuthSocialProvider[] | undefined,
 ): readonly AuthProviderOption[] | undefined {
@@ -812,40 +754,4 @@ export function ConvexAuthSignUpScreen(args: {
   );
 }
 
-export function ConvexBetterAuthIdentityProvisioner(args: {
-  auth: ConvexAuthState;
-  currentUser: unknown;
-  sessionSubject: string | null;
-  provisionCurrentUser: () => Promise<unknown>;
-}) {
-  const inFlightRef = useRef(false);
-  const attemptedSubjectRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!args.auth.isSignedIn) {
-      attemptedSubjectRef.current = null;
-      return;
-    }
-
-    if (
-      !args.auth.isLoaded ||
-      args.currentUser !== null ||
-      args.currentUser === undefined ||
-      args.sessionSubject === null
-    ) {
-      return;
-    }
-
-    if (inFlightRef.current || attemptedSubjectRef.current === args.sessionSubject) {
-      return;
-    }
-
-    inFlightRef.current = true;
-    attemptedSubjectRef.current = args.sessionSubject;
-    void args.provisionCurrentUser().finally(() => {
-      inFlightRef.current = false;
-    });
-  }, [args]);
-
-  return null;
-}
+export { ConvexAuthIdentityProvisioner as ConvexBetterAuthIdentityProvisioner } from "./auth-client-identity-provisioner";

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import type {
   ConvexBetterAuthClient,
   ConvexAuthSessionListItem,
+  ConvexAuthState,
   ConvexAuthUserState,
 } from "./auth-client-types";
 
@@ -776,4 +777,62 @@ export function extractTotpSecret(totpURI: string): string | null {
     const secret = match?.[1];
     return secret === undefined ? null : decodeURIComponent(secret);
   }
+}
+
+export function useAuthState(authClient: ConvexBetterAuthClient | null): ConvexAuthState {
+  if (authClient === null) {
+    return {
+      isLoaded: false,
+      isSignedIn: false,
+    };
+  }
+
+  const session = authClient.useSession();
+  return {
+    isLoaded: !session.isPending,
+    isSignedIn: session.data !== null && session.data !== undefined,
+  };
+}
+
+export function getConvexAuthActions(args: {
+  authClient: ConvexBetterAuthClient | null;
+  signInPath: string;
+  signUpPath: string;
+  assignLocation?: (url: string) => void;
+}) {
+  const assignLocation =
+    args.assignLocation ??
+    ((url: string) => {
+      if (typeof window !== "undefined") {
+        window.location.assign(url);
+      }
+    });
+
+  return {
+    signInSocial: async (options: { provider: string; callbackURL?: string }) => {
+      if (args.authClient === null) {
+        return;
+      }
+
+      await args.authClient.signIn.social({
+        provider: options.provider,
+        callbackURL: options.callbackURL,
+      });
+    },
+    signOut: async (options?: { redirectUrl?: string }) => {
+      if (args.authClient !== null) {
+        await args.authClient.signOut({
+          fetchOptions: {
+            credentials: "include",
+          },
+        });
+      }
+
+      assignLocation(options?.redirectUrl ?? args.signInPath);
+    },
+    redirectToSignIn: async (options?: { signInForceRedirectUrl?: string }) => {
+      assignLocation(options?.signInForceRedirectUrl ?? args.signInPath);
+    },
+    buildSignUpUrl: () => args.signUpPath,
+  };
 }
