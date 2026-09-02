@@ -1,0 +1,14 @@
+feat(react): native two-factor client parity
+
+Wire the server's native TOTP/backup-code actions into the React client:
+
+- Add two-factor action refs to `NativeAuthActions` (enable, verifyTOTP,
+  verifyBackupCode, disable, generateBackupCodes).
+- Add `twoFactor` group to `useAuthActions` with session token injection.
+- Add `twoFactor` surface to `convex-auth-client.ts` matching
+  `ConvexBetterAuthTwoFactorApi`.
+- Extend `NativeAuthSession` with `twoFactorRedirect`, `twoFactorChallengeToken`,
+  `trustDeviceToken`, etc.
+- Capture the challenge token after sign-in/sign-up for step-up verification.
+
+Proof: `pnpm typecheck`, `pnpm check`, `pnpm test` all green (1068 tests).
