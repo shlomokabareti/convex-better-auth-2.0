@@ -1,5 +1,6 @@
 import "./uniwind-env.d.ts";
 export * from "./client";
+export * from "./ConvexAuthProvider";
 export * from "./config";
 export * from "./hosted";
 export * from "./invite-flow";

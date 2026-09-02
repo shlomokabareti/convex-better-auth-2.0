@@ -751,9 +751,12 @@ export function useAuthActions() {
     resetPassword,
     verifyPassword,
     token: ctx.token,
+    setToken: ctx.setToken,
     refreshToken: ctx.refreshToken,
+    setRefreshToken: ctx.setRefreshToken,
     user,
     sessionId,
+    setSessionId: ctx.setSessionId,
     isLoading: isLoading || isSessionLoading,
     isAuthenticated: user !== null,
   };
