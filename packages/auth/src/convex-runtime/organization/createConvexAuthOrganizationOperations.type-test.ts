@@ -25,9 +25,13 @@ import type {
 } from "convex/server";
 import { v } from "convex/values";
 
+import type { ComponentApi as ApiKeysComponentApi } from "../../component/apiKeys/_generated/component";
+import type { ComponentApi as CoreComponentApi } from "../../component/core/_generated/component";
+import type { ComponentApi as OrganizationsComponentApi } from "../../component/organizations/_generated/component";
 import {
   createConvexAuthOrganizationOperations,
   type ConvexAuthOrganizationOperationsComponentHandle,
+  type ConvexAuthOrganizationOperationsComponentsHandle,
 } from "./createConvexAuthOrganizationOperations";
 
 // A throwaway consumer DataModel, mirroring `_generated/server`.
@@ -111,4 +115,34 @@ type DefaultOps = ReturnType<
 type DefaultReadCtx = Parameters<DefaultOps["reads"]["resolveMemberships"]>[0];
 export type DefaultRequiresAuth = Expect<
   Equal<DefaultReadCtx extends { auth: unknown } ? true : false, true>
+>;
+
+// --- split-component bag guard ------------------------------------------------
+// Compile-time proof that the factory can be wired with the independently
+// mounted `core`, `organizations`, and `apiKeys` components (architecture A).
+declare const coreComponent: CoreComponentApi<"convexAuthCore">;
+declare const organizationsComponent: OrganizationsComponentApi<"convexAuthOrganizations">;
+declare const apiKeysComponent: ApiKeysComponentApi<"convexAuthApiKeys">;
+
+const splitHandle: ConvexAuthOrganizationOperationsComponentsHandle = {
+  core: { identity: { getByIdentity: coreComponent.identity.getByIdentity } },
+  organizations: organizationsComponent.organizations,
+  apiKeys: apiKeysComponent.apiKeys,
+};
+
+const splitOps = createConvexAuthOrganizationOperations<LocalOrgId, LocalUserId, TestRole>({
+  components: splitHandle,
+  resolveLocalOrganizationId: async () => null,
+  resolveLocalUserId: async () => null,
+  validateRoleKey: (key): key is TestRole => key === "owner" || key === "admin" || key === "member",
+  roleCatalog: { owner: ["*"], admin: ["org:read"], member: ["org:read"] },
+  loadOrganizationForUpsert: async () => null,
+  backfillOrganizationBridgeId: async () => {
+    /* no-op */
+  },
+  loadUserBridgeId: async () => null,
+});
+
+export type SplitOpsCompiles = Expect<
+  Equal<typeof splitOps extends DefaultOps ? true : false, true>
 >;
