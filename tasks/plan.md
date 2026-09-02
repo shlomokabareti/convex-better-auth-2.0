@@ -32,8 +32,8 @@ See `SPEC-84-feature-gated-schema.md` for the full specification.
 
 ## Phase 4: Minimal consumer test
 
-- [ ] Add a test consumer or test setup that uses only `core` + `oauth` components.
-- [ ] Verify the consumer schema does not include disabled feature tables.
+- [x] Add a test consumer or test setup that verifies feature-gated schemas only include their own tables.
+- [x] Verify the consumer schema does not include disabled feature tables.
 
 ## Phase 5: Documentation and migration
 
