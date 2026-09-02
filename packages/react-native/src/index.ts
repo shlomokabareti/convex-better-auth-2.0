@@ -10,6 +10,7 @@ export * from "./organization-list";
 export * from "./organization-members";
 export * from "./organization-profile";
 export * from "./organization-switcher";
+export * from "./convex-auth-client-screens";
 export * from "./convex-change-email-form";
 export * from "./convex-enable-two-factor-form";
 export * from "./convex-forgot-password-form";

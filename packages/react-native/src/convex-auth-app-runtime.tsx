@@ -16,13 +16,36 @@ import { DEFAULT_AUTH_RUNTIME_STATUS } from "convex-auth-react/client";
 import type { NativeAuthActions } from "convex-auth-react/client";
 
 import { ExpoConvexAuthClientProvider } from "./convex-auth-client-provider";
+import {
+  ExpoAuthClientSignInScreen,
+  ExpoAuthClientSignUpScreen,
+} from "./convex-auth-client-screens";
 import type { ExpoConvexAuthStorage } from "./ConvexAuthProvider";
+
+type NavigateTo = (args: { to: string; replace?: boolean }) => void | Promise<void>;
 
 type ConvexAuthRuntimeCreateArgs = {
   actions: NativeAuthActions;
   storage: ExpoConvexAuthStorage;
   signInPath: string;
   signUpPath: string;
+};
+
+export type ConvexAuthSignInRoutePageProps = {
+  signUpPath: string;
+  postSignInPath: string;
+  navigate: NavigateTo;
+  forgotPasswordHref?: string;
+  title?: string;
+  description?: string;
+};
+
+export type ConvexAuthSignUpRoutePageProps = {
+  signInPath: string;
+  postSignUpPath: string;
+  navigate: NavigateTo;
+  title?: string;
+  description?: string;
 };
 
 type ConvexAuthConvexIdentityProvisionerProps = {
@@ -100,8 +123,37 @@ export function createExpoConvexAuthRuntime(args: ConvexAuthRuntimeCreateArgs) {
     return <>{props.children}</>;
   }
 
+  function SignInScreen(props: ConvexAuthSignInRoutePageProps) {
+    return (
+      <ExpoAuthClientSignInScreen
+        description={props.description}
+        forceRedirectUrl={props.postSignInPath}
+        forgotPasswordHref={props.forgotPasswordHref}
+        navigate={props.navigate}
+        signUpUrl={props.signUpPath}
+        title={props.title}
+      />
+    );
+  }
+
+  function SignUpScreen(props: ConvexAuthSignUpRoutePageProps) {
+    return (
+      <ExpoAuthClientSignUpScreen
+        description={props.description}
+        forceRedirectUrl={props.postSignUpPath}
+        navigate={props.navigate}
+        signInUrl={props.signInPath}
+        title={props.title}
+      />
+    );
+  }
+
   return {
     AuthRuntimeProvider: RuntimeProvider,
+    AuthSignInRoutePage: SignInScreen,
+    AuthSignUpRoutePage: SignUpScreen,
+    AuthSignInScreen: SignInScreen,
+    AuthSignUpScreen: SignUpScreen,
     ConvexIdentityProvisioner,
     SignedIn,
     SignedOut,
