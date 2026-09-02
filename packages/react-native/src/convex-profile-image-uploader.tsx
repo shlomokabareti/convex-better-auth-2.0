@@ -35,8 +35,11 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { ExpoBetterAuthClient } from "./client";
-import { useExpoAuthUploadProfileImage } from "./runtime";
+import {
+  useConvexAuthUploadProfileImage,
+  useConvexAuthClientContext,
+  type ConvexBetterAuthClient,
+} from "convex-auth-react/client";
 
 export type ExpoProfileImageUploaderStyles = {
   root?: StyleProp<ViewStyle>;
@@ -62,7 +65,7 @@ export type ExpoProfileImageUploaderCopy = {
 };
 
 export type ExpoProfileImageUploaderProps = {
-  authClient: ExpoBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   /** Consumer-provided picker. Returns a local file URI or null if cancelled. */
   pickImage: () => Promise<string | Blob | null>;
   /** Consumer-provided uploader. Returns the canonical public URL. */
@@ -84,9 +87,11 @@ const DEFAULT_COPY: Required<ExpoProfileImageUploaderCopy> = {
 };
 
 export function ConvexProfileImageUploader(props: ExpoProfileImageUploaderProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient ?? null;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { uploadAndSave, isUploading } = useExpoAuthUploadProfileImage(props.authClient, {
+  const { uploadAndSave, isUploading } = useConvexAuthUploadProfileImage(authClient, {
     uploadFile: props.uploadFile,
   });
   const [currentImage, setCurrentImage] = useState(props.initialImage ?? null);

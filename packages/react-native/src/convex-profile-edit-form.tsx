@@ -25,8 +25,11 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { ExpoBetterAuthClient } from "./client";
-import { useExpoAuthUpdateProfile } from "./runtime";
+import {
+  useConvexAuthUpdateProfile,
+  useConvexAuthClientContext,
+  type ConvexBetterAuthClient,
+} from "convex-auth-react/client";
 
 export type ExpoProfileEditFormStyles = {
   root?: StyleProp<ViewStyle>;
@@ -54,7 +57,7 @@ export type ExpoProfileEditFormCopy = {
 };
 
 export type ExpoProfileEditFormProps = {
-  authClient: ExpoBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   initialName?: string;
   initialImage?: string;
   showImageField?: boolean;
@@ -75,17 +78,19 @@ const DEFAULT_COPY: Required<ExpoProfileEditFormCopy> = {
 };
 
 export function ConvexProfileEditForm(props: ExpoProfileEditFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient ?? null;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
 
-  const { updateProfile, isUpdating } = useExpoAuthUpdateProfile(props.authClient);
+  const { updateProfile, isUpdating } = useConvexAuthUpdateProfile(authClient);
   const [name, setName] = useState(props.initialName ?? "");
   const [image, setImage] = useState(props.initialImage ?? "");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const showImageField = props.showImageField ?? true;
-  const isAvailable = props.authClient?.updateUser !== undefined;
+  const isAvailable = authClient?.updateUser !== undefined;
 
   async function handleSubmit() {
     setSuccess(null);

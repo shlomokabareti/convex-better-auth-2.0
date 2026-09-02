@@ -25,8 +25,13 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { ExpoBetterAuthClient } from "./client";
-import { extractTotpSecret, useExpoAuthEnableTwoFactor, useExpoAuthVerifyTotp } from "./runtime";
+import {
+  extractTotpSecret,
+  useConvexAuthEnableTwoFactor,
+  useConvexAuthVerifyTotp,
+  useConvexAuthClientContext,
+  type ConvexBetterAuthClient,
+} from "convex-auth-react/client";
 
 export type ExpoEnableTwoFactorFormStyles = {
   root?: StyleProp<ViewStyle>;
@@ -65,7 +70,7 @@ export type ExpoEnableTwoFactorFormCopy = {
 };
 
 export type ExpoEnableTwoFactorFormProps = {
-  authClient: ExpoBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   issuer?: string;
   renderQR?: (totpURI: string) => ReactNode;
   styles?: ExpoEnableTwoFactorFormStyles;
@@ -98,11 +103,13 @@ type Step = "password" | "verify" | "backup";
 type TwoFactorFormCopy = Required<ExpoEnableTwoFactorFormCopy>;
 
 export function ConvexEnableTwoFactorForm(props: ExpoEnableTwoFactorFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient ?? null;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
 
-  const { enable, isEnabling } = useExpoAuthEnableTwoFactor(props.authClient);
-  const { verifyTotp, isVerifying } = useExpoAuthVerifyTotp(props.authClient);
+  const { enable, isEnabling } = useConvexAuthEnableTwoFactor(authClient);
+  const { verifyTotp, isVerifying } = useConvexAuthVerifyTotp(authClient);
 
   const [step, setStep] = useState<Step>("password");
   const [password, setPassword] = useState("");
@@ -111,7 +118,7 @@ export function ConvexEnableTwoFactorForm(props: ExpoEnableTwoFactorFormProps) {
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const isAvailable = props.authClient !== null;
+  const isAvailable = authClient !== null;
   const secret = totpURI === null ? null : extractTotpSecret(totpURI);
   const header = getTwoFactorHeader(copy, step);
 

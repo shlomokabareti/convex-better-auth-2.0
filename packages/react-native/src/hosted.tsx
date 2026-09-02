@@ -12,6 +12,8 @@ import {
   View,
 } from "react-native";
 
+import type { ConvexBetterAuthClient } from "convex-auth-react/client";
+
 import type { ExpoAuthRuntime } from "./runtime";
 import { parseExpoSessionRestore } from "./session-restore";
 import { ConvexVerifyTwoFactorForm } from "./convex-verify-two-factor-form";
@@ -293,7 +295,7 @@ export function HostedSignInScreen(props: {
         {/* On success the session becomes authenticated and the app's
             protected gate navigates away; no explicit redirect needed. */}
         <ConvexVerifyTwoFactorForm
-          authClient={props.runtime.authClient}
+          authClient={props.runtime.authClient as unknown as ConvexBetterAuthClient}
           onVerified={() => undefined}
         />
       </HostedAuthScaffold>

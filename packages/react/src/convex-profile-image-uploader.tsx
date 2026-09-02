@@ -47,12 +47,13 @@ export type ConvexProfileImageUploaderCopy = {
 export type ConvexProfileImageUploaderProps = {
   authClient?: ConvexBetterAuthClient | null;
   /**
-   * Consumer-provided upload strategy. Receives the picked File and
-   * MUST return the canonical URL of the uploaded image (the URL
-   * that will be stored on the user). The package never sees the
-   * storage backend.
+   * Consumer-provided upload strategy. Receives the picked file (a
+   * browser `File`/`Blob` on web, a `Blob` or a base64/URI string on
+   * React Native) and MUST return the canonical URL of the uploaded
+   * image (the URL that will be stored on the user). The package
+   * never sees the storage backend.
    */
-  uploadFile: (file: File | Blob) => Promise<string>;
+  uploadFile: (file: Blob | string) => Promise<string>;
   initialImage?: string | null;
   /** File-input `accept` attribute (defaults to image/*). */
   accept?: string;

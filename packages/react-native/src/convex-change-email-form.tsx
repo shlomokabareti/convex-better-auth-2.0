@@ -82,7 +82,7 @@ export function ConvexChangeEmailForm(props: ExpoChangeEmailFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const contextClient = useConvexAuthClientContext();
-  const authClient = props.authClient ?? contextClient;
+  const authClient = props.authClient ?? contextClient ?? null;
   const { requestChange, isRequesting } = useConvexAuthChangeEmail(authClient);
   const [newEmail, setNewEmail] = useState("");
   const [success, setSuccess] = useState<string | null>(null);

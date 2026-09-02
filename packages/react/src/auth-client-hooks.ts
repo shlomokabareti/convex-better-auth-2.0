@@ -455,20 +455,20 @@ export type ConvexAuthUploadProfileImageState = {
    * three booleans.
    */
   uploadAndSave: (
-    file: File | Blob,
+    file: Blob | string,
   ) => Promise<{ ok: boolean; url: string | null; error: string | null }>;
   isUploading: boolean;
 };
 
 export function useConvexAuthUploadProfileImage(
   authClient: ConvexBetterAuthClient | null,
-  options: { uploadFile: (file: File | Blob) => Promise<string> },
+  options: { uploadFile: (file: Blob | string) => Promise<string> },
 ): ConvexAuthUploadProfileImageState {
   const [isUploading, setIsUploading] = useState(false);
   const { uploadFile } = options;
 
   const uploadAndSave = useCallback(
-    async (file: File | Blob) => {
+    async (file: Blob | string) => {
       if (authClient?.updateUser === undefined) {
         return {
           ok: false,

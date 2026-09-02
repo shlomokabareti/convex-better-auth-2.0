@@ -23,8 +23,12 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { ExpoBetterAuthClient } from "./client";
-import { useExpoAuthVerifyBackupCode, useExpoAuthVerifyTotp } from "./runtime";
+import {
+  useConvexAuthVerifyBackupCode,
+  useConvexAuthVerifyTotp,
+  useConvexAuthClientContext,
+  type ConvexBetterAuthClient,
+} from "convex-auth-react/client";
 
 export type ExpoVerifyTwoFactorFormStyles = {
   root?: StyleProp<ViewStyle>;
@@ -59,7 +63,7 @@ export type ExpoVerifyTwoFactorFormCopy = {
 };
 
 export type ExpoVerifyTwoFactorFormProps = {
-  authClient: ExpoBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   showTrustDevice?: boolean;
   styles?: ExpoVerifyTwoFactorFormStyles;
   copy?: ExpoVerifyTwoFactorFormCopy;
@@ -84,21 +88,22 @@ const DEFAULT_COPY: Required<ExpoVerifyTwoFactorFormCopy> = {
 type Mode = "totp" | "backup";
 
 export function ConvexVerifyTwoFactorForm(props: ExpoVerifyTwoFactorFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient ?? null;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const showTrustDevice = props.showTrustDevice ?? true;
 
-  const { verifyTotp, isVerifying: isVerifyingTotp } = useExpoAuthVerifyTotp(props.authClient);
-  const { verifyBackupCode, isVerifying: isVerifyingBackup } = useExpoAuthVerifyBackupCode(
-    props.authClient,
-  );
+  const { verifyTotp, isVerifying: isVerifyingTotp } = useConvexAuthVerifyTotp(authClient);
+  const { verifyBackupCode, isVerifying: isVerifyingBackup } =
+    useConvexAuthVerifyBackupCode(authClient);
 
   const [mode, setMode] = useState<Mode>("totp");
   const [code, setCode] = useState("");
   const [trustDevice, setTrustDevice] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isAvailable = props.authClient !== null;
+  const isAvailable = authClient !== null;
   const isVerifying = isVerifyingTotp || isVerifyingBackup;
 
   async function handleSubmit() {

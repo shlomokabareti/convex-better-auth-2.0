@@ -26,12 +26,13 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { ExpoBetterAuthClient } from "./client";
 import {
-  useExpoAuthRevokeSession,
-  useExpoAuthSessionList,
-  type ExpoAuthSessionListItem,
-} from "./runtime";
+  useConvexAuthRevokeSession,
+  useConvexAuthSessionList,
+  type ConvexAuthSessionListItem,
+  useConvexAuthClientContext,
+  type ConvexBetterAuthClient,
+} from "convex-auth-react/client";
 
 export type ExpoSessionListStyles = {
   root?: StyleProp<ViewStyle>;
@@ -67,7 +68,7 @@ export type ExpoSessionListCopy = {
 };
 
 export type ExpoSessionListProps = {
-  authClient: ExpoBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   currentSessionToken?: string | null;
   showRevokeOthersAction?: boolean;
   styles?: ExpoSessionListStyles;
@@ -96,14 +97,14 @@ function defaultFormatTimestamp(value: string | Date): string {
 }
 
 export function ConvexSessionList(props: ExpoSessionListProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient ?? null;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const fmt = props.formatTimestamp ?? defaultFormatTimestamp;
 
-  const { sessions, isLoading, error, refetch } = useExpoAuthSessionList(props.authClient);
-  const { revokeSession, revokeOtherSessions, isRevoking } = useExpoAuthRevokeSession(
-    props.authClient,
-  );
+  const { sessions, isLoading, error, refetch } = useConvexAuthSessionList(authClient);
+  const { revokeSession, revokeOtherSessions, isRevoking } = useConvexAuthRevokeSession(authClient);
   const [revokingToken, setRevokingToken] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -192,7 +193,7 @@ export function ConvexSessionList(props: ExpoSessionListProps) {
 }
 
 function SessionRow(args: {
-  session: ExpoAuthSessionListItem;
+  session: ConvexAuthSessionListItem;
   isCurrent: boolean;
   isRevoking: boolean;
   copy: Required<ExpoSessionListCopy>;
