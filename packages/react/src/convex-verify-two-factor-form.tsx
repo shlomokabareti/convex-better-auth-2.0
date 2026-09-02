@@ -18,11 +18,9 @@
  */
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-import {
-  useConvexAuthVerifyBackupCode,
-  useConvexAuthVerifyTotp,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
+import { useConvexAuthVerifyBackupCode, useConvexAuthVerifyTotp } from "./auth-client-hooks";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
+import { useConvexAuthClientContext } from "./convex-auth-client-provider";
 import {
   AuthButton,
   AuthCard,
@@ -61,7 +59,7 @@ export type ConvexVerifyTwoFactorFormCopy = {
 };
 
 export type ConvexVerifyTwoFactorFormProps = {
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   /**
    * Show the "trust this device" checkbox (skips 2FA on this device for
    * the server's trust window). Defaults to true.
@@ -91,21 +89,22 @@ const DEFAULT_COPY: Required<ConvexVerifyTwoFactorFormCopy> = {
 type Mode = "totp" | "backup";
 
 export function ConvexVerifyTwoFactorForm(props: ConvexVerifyTwoFactorFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
   const showTrustDevice = props.showTrustDevice ?? true;
 
-  const { verifyTotp, isVerifying: isVerifyingTotp } = useConvexAuthVerifyTotp(props.authClient);
-  const { verifyBackupCode, isVerifying: isVerifyingBackup } = useConvexAuthVerifyBackupCode(
-    props.authClient,
-  );
+  const { verifyTotp, isVerifying: isVerifyingTotp } = useConvexAuthVerifyTotp(authClient);
+  const { verifyBackupCode, isVerifying: isVerifyingBackup } =
+    useConvexAuthVerifyBackupCode(authClient);
 
   const [mode, setMode] = useState<Mode>("totp");
   const [code, setCode] = useState("");
   const [trustDevice, setTrustDevice] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isAvailable = props.authClient?.twoFactor?.verifyTotp !== undefined;
+  const isAvailable = authClient?.twoFactor?.verifyTotp !== undefined;
   const isVerifying = isVerifyingTotp || isVerifyingBackup;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

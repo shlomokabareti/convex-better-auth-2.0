@@ -20,12 +20,9 @@
  */
 import { useState, type ReactNode } from "react";
 
-import {
-  useConvexAuthRevokeSession,
-  useConvexAuthSessionList,
-  type ConvexAuthSessionListItem,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
+import { useConvexAuthRevokeSession, useConvexAuthSessionList } from "./auth-client-hooks";
+import type { ConvexAuthSessionListItem, ConvexBetterAuthClient } from "./auth-client-types";
+import { useConvexAuthClientContext } from "./convex-auth-client-provider";
 import { AuthCard, AuthCardContent, AuthCardHeader } from "./ui";
 
 export type ConvexSessionListClassNames = {
@@ -55,7 +52,7 @@ export type ConvexSessionListCopy = {
 };
 
 export type ConvexSessionListProps = {
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   /**
    * Token of the session currently powering this browser. Used to
    * mark the row as the active session and to suppress the
@@ -94,14 +91,14 @@ function defaultFormatTimestamp(value: string | Date): string {
 }
 
 export function ConvexSessionList(props: ConvexSessionListProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
   const fmt = props.formatTimestamp ?? defaultFormatTimestamp;
 
-  const { sessions, isLoading, error, refetch } = useConvexAuthSessionList(props.authClient);
-  const { revokeSession, revokeOtherSessions, isRevoking } = useConvexAuthRevokeSession(
-    props.authClient,
-  );
+  const { sessions, isLoading, error, refetch } = useConvexAuthSessionList(authClient);
+  const { revokeSession, revokeOtherSessions, isRevoking } = useConvexAuthRevokeSession(authClient);
   const [revokingToken, setRevokingToken] = useState<string | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 

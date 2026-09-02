@@ -19,7 +19,9 @@
  */
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-import { useConvexAuthUpdateProfile, type ConvexBetterAuthClient } from "./better-auth-runtime";
+import { useConvexAuthUpdateProfile } from "./auth-client-hooks";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
+import { useConvexAuthClientContext } from "./convex-auth-client-provider";
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthField, AuthInput, AuthLabel } from "./ui";
 
 export type ConvexProfileEditFormClassNames = {
@@ -45,7 +47,7 @@ export type ConvexProfileEditFormCopy = {
 };
 
 export type ConvexProfileEditFormProps = {
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   initialName?: string;
   initialImage?: string;
   /**
@@ -70,17 +72,19 @@ const DEFAULT_COPY: Required<ConvexProfileEditFormCopy> = {
 };
 
 export function ConvexProfileEditForm(props: ConvexProfileEditFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { updateProfile, isUpdating } = useConvexAuthUpdateProfile(props.authClient);
+  const { updateProfile, isUpdating } = useConvexAuthUpdateProfile(authClient);
   const [name, setName] = useState(props.initialName ?? "");
   const [image, setImage] = useState(props.initialImage ?? "");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const showImageField = props.showImageField ?? true;
-  const isAvailable = props.authClient?.updateUser !== undefined;
+  const isAvailable = authClient?.updateUser !== undefined;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

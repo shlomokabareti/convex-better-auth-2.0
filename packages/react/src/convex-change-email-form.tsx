@@ -18,7 +18,9 @@
  */
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-import { useConvexAuthChangeEmail, type ConvexBetterAuthClient } from "./better-auth-runtime";
+import { useConvexAuthChangeEmail } from "./auth-client-hooks";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
+import { useConvexAuthClientContext } from "./convex-auth-client-provider";
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthField, AuthInput, AuthLabel } from "./ui";
 
 export type ConvexChangeEmailFormClassNames = {
@@ -46,7 +48,7 @@ export type ConvexChangeEmailFormCopy = {
 };
 
 export type ConvexChangeEmailFormProps = {
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   /** The user's current email, displayed read-only above the new-email field. */
   currentEmail?: string | null;
   /**
@@ -74,15 +76,17 @@ const DEFAULT_COPY: Required<ConvexChangeEmailFormCopy> = {
 };
 
 export function ConvexChangeEmailForm(props: ConvexChangeEmailFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { requestChange, isRequesting } = useConvexAuthChangeEmail(props.authClient);
+  const { requestChange, isRequesting } = useConvexAuthChangeEmail(authClient);
   const [newEmail, setNewEmail] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isAvailable = props.authClient?.changeEmail !== undefined;
+  const isAvailable = authClient?.changeEmail !== undefined;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

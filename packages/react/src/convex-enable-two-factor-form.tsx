@@ -27,8 +27,9 @@ import {
   extractTotpSecret,
   useConvexAuthEnableTwoFactor,
   useConvexAuthVerifyTotp,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
+} from "./auth-client-hooks";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
+import { useConvexAuthClientContext } from "./convex-auth-client-provider";
 import {
   AuthButton,
   AuthCard,
@@ -74,7 +75,7 @@ export type ConvexEnableTwoFactorFormCopy = {
 };
 
 export type ConvexEnableTwoFactorFormProps = {
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   /** Authenticator label shown alongside the account (e.g. "Pile"). */
   issuer?: string;
   /**
@@ -114,11 +115,13 @@ type Step = "password" | "verify" | "backup";
 type TwoFactorFormCopy = Required<ConvexEnableTwoFactorFormCopy>;
 
 export function ConvexEnableTwoFactorForm(props: ConvexEnableTwoFactorFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { enable, isEnabling } = useConvexAuthEnableTwoFactor(props.authClient);
-  const { verifyTotp, isVerifying } = useConvexAuthVerifyTotp(props.authClient);
+  const { enable, isEnabling } = useConvexAuthEnableTwoFactor(authClient);
+  const { verifyTotp, isVerifying } = useConvexAuthVerifyTotp(authClient);
 
   const [step, setStep] = useState<Step>("password");
   const [password, setPassword] = useState("");
@@ -127,7 +130,7 @@ export function ConvexEnableTwoFactorForm(props: ConvexEnableTwoFactorFormProps)
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const isAvailable = props.authClient?.twoFactor?.enable !== undefined;
+  const isAvailable = authClient?.twoFactor?.enable !== undefined;
   const secret = totpURI === null ? null : extractTotpSecret(totpURI);
   const header = getTwoFactorHeader(copy, step);
 
