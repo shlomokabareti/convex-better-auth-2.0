@@ -181,6 +181,30 @@
     },
     "./_generated/component/agentAuth": {
       "types": "./dist/component/agentAuth/_generated/component.d.ts"
+    },
+    "./convex.config/authMd": {
+      "convex": "./src/component/authMd/convex.config.ts",
+      "types": "./dist/component/authMd/convex.config.d.ts",
+      "default": "./dist/component/authMd/convex.config.js"
+    },
+    "./_generated/component/authMd": {
+      "types": "./dist/component/authMd/_generated/component.d.ts"
+    },
+    "./convex.config/webhooks": {
+      "convex": "./src/component/webhooks/convex.config.ts",
+      "types": "./dist/component/webhooks/convex.config.d.ts",
+      "default": "./dist/component/webhooks/convex.config.js"
+    },
+    "./_generated/component/webhooks": {
+      "types": "./dist/component/webhooks/_generated/component.d.ts"
+    },
+    "./convex.config/mcpOauth": {
+      "convex": "./src/component/mcpOauth/convex.config.ts",
+      "types": "./dist/component/mcpOauth/convex.config.d.ts",
+      "default": "./dist/component/mcpOauth/convex.config.js"
+    },
+    "./_generated/component/mcpOauth": {
+      "types": "./dist/component/mcpOauth/_generated/component.d.ts"
     }
   },
   "scripts": {

@@ -40,6 +40,12 @@ export default defineConfig({
         "component/agentAuth/convex.config": "src/component/agentAuth/convex.config.ts",
         "component/agentAuth/_generated/component":
           "src/component/agentAuth/_generated/component.ts",
+        "component/authMd/convex.config": "src/component/authMd/convex.config.ts",
+        "component/authMd/_generated/component": "src/component/authMd/_generated/component.ts",
+        "component/webhooks/convex.config": "src/component/webhooks/convex.config.ts",
+        "component/webhooks/_generated/component": "src/component/webhooks/_generated/component.ts",
+        "component/mcpOauth/convex.config": "src/component/mcpOauth/convex.config.ts",
+        "component/mcpOauth/_generated/component": "src/component/mcpOauth/_generated/component.ts",
       },
       format: "esm",
       dts: true,
