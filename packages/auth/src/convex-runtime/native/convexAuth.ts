@@ -15,13 +15,24 @@ import { nativeEmailOtp } from "./emailOtp.js";
 import type { NativeEmailOtpConfig, NativeEmailOtpFunctionReferences } from "./emailOtp.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 
-export type ConvexAuthConfig = {
-  component: NativeEmailAndPasswordComponentHandle;
+type ConvexAuthConfigBase = {
   emailAndPassword?: NativeEmailAndPasswordConfig;
   oauth?: NativeOAuthConfig;
   magicLink?: NativeMagicLinkConfig;
   emailOtp?: NativeEmailOtpConfig;
 };
+
+export type ConvexAuthConfig =
+  | (ConvexAuthConfigBase & {
+      component: NativeEmailAndPasswordComponentHandle;
+      components?: never;
+    })
+  | (ConvexAuthConfigBase & {
+      components: {
+        core: NativeEmailAndPasswordComponentHandle;
+      };
+      component?: never;
+    });
 
 export type ConvexAuth = NativeEmailAndPasswordFunctionReferences &
   NativeMagicLinkFunctionReferences &
@@ -33,16 +44,24 @@ export type ConvexAuth = NativeEmailAndPasswordFunctionReferences &
   };
 
 export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
-  const emailAndPasswordActions = nativeEmailAndPassword(config.component, config.emailAndPassword);
-  const authQueries = nativeAuthQueries(config.component);
+  const component =
+    config.component ?? config.components?.core;
+  if (!component) {
+    throw new Error(
+      "convexAuth: either config.component or config.components.core is required.",
+    );
+  }
+
+  const emailAndPasswordActions = nativeEmailAndPassword(component, config.emailAndPassword);
+  const authQueries = nativeAuthQueries(component);
   const magicLinkActions = config.magicLink
-    ? nativeMagicLink(config.component, config.magicLink)
+    ? nativeMagicLink(component, config.magicLink)
     : undefined;
   const emailOtpActions = config.emailOtp
-    ? nativeEmailOtp(config.component, config.emailOtp)
+    ? nativeEmailOtp(component, config.emailOtp)
     : undefined;
 
-  const oauthActions = config.oauth ? nativeOAuth(config.component, config.oauth) : undefined;
+  const oauthActions = config.oauth ? nativeOAuth(component, config.oauth) : undefined;
 
   const auth = {
     ...emailAndPasswordActions,
@@ -70,10 +89,10 @@ export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
         : (emailAndPasswordActions as unknown as NativeEmailAndPasswordFunctionReferences &
             Partial<NativeMagicLinkFunctionReferences>);
 
-      addNativeAuthHttpRoutes(http, config.component, httpActions, { trustedOrigins });
+      addNativeAuthHttpRoutes(http, component, httpActions, { trustedOrigins });
       if (oauthActions && config.oauth) {
         addNativeOAuthHttpRoutes(http, {
-          component: config.component,
+          component,
           oauth: config.oauth,
           trustedOrigins,
         });
