@@ -1,9 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import {
-  emailTwoFactorResetReasonValidator,
-  emailTwoFactorStatusValidator,
-} from "./validators.js";
+import { emailTwoFactorResetReasonValidator, emailTwoFactorStatusValidator } from "./validators.js";
 
 export const users = defineTable({
   email: v.optional(v.string()),
