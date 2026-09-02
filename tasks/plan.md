@@ -26,9 +26,9 @@ See `SPEC-84-feature-gated-schema.md` for the full specification.
 
 - [x] Update `ConvexAuthConfig` to accept `components: { core: ... }` in addition to the legacy `component`.
 - [x] Update `convexAuth()` to route actions to the core component handle.
-- [ ] Update `createConvexAuthOrganizationOperations` to accept `components: { core, organizations, apiKeys }` and route to the right component.
+- [x] Update `createConvexAuthOrganizationOperations` to accept `components: { core, organizations, apiKeys }` and route to the right component.
+- [x] Type-test that `convexAuth()` only accepts compatible component handles as `components.core`.
 - [ ] Add per-feature operation helpers for `servicePrincipals`, `agentAuth`, `authMd`, `webhooks`, and `mcpOauth` components (or confirm consumers can use the generated component APIs directly).
-- [ ] Type-test that `convexAuth()` only accepts compatible component handles as `components.core`.
 
 ## Phase 4: Minimal consumer test
 
