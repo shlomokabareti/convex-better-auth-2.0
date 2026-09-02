@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "convex/react";
 import type { FunctionReference } from "convex/server";
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import type { ConvexAuthState, ConvexAuthUserState } from "convex-auth-react/client";
 import {
@@ -58,6 +58,18 @@ export type ConvexAuthRuntimeConvexIdentityProvisionerProps = Omit<
   ConvexAuthConvexIdentityProvisionerProps,
   "auth"
 >;
+
+export type ExpoAuthAuthenticatedRouteProps = {
+  children: ReactNode;
+  getDefaultOrganization: FunctionReference<"query", "public", Record<string, never>, unknown>;
+  navigate: NavigateTo;
+  pathname: string;
+  signInPath: string;
+  chooseOrganizationPath?: string;
+  requireOrganization?: boolean;
+  renderLoading: () => ReactNode;
+  renderOrganizationRequired?: () => ReactNode;
+};
 
 export function createExpoConvexAuthRuntime(args: ConvexAuthRuntimeCreateArgs) {
   function useAuth() {
@@ -148,12 +160,54 @@ export function createExpoConvexAuthRuntime(args: ConvexAuthRuntimeCreateArgs) {
     );
   }
 
+  function AuthenticatedRoute(props: ExpoAuthAuthenticatedRouteProps) {
+    const auth = useAuth();
+    const organization = useQuery(props.getDefaultOrganization, auth.isSignedIn ? {} : "skip");
+
+    useEffect(() => {
+      if (!auth.isLoaded) {
+        return;
+      }
+      if (!auth.isSignedIn) {
+        void props.navigate({ to: props.signInPath, replace: true });
+        return;
+      }
+      if (props.requireOrganization && organization === null) {
+        if (props.chooseOrganizationPath !== undefined) {
+          void props.navigate({ to: props.chooseOrganizationPath, replace: true });
+        }
+      }
+    }, [auth, organization, props]);
+
+    if (!auth.isLoaded) {
+      return <>{props.renderLoading()}</>;
+    }
+    if (!auth.isSignedIn) {
+      return <>{props.renderLoading()}</>;
+    }
+    if (props.requireOrganization) {
+      if (organization === undefined) {
+        return <>{props.renderLoading()}</>;
+      }
+      if (organization === null) {
+        return props.renderOrganizationRequired ? (
+          <>{props.renderOrganizationRequired()}</>
+        ) : (
+          <>{props.renderLoading()}</>
+        );
+      }
+    }
+
+    return <>{props.children}</>;
+  }
+
   return {
     AuthRuntimeProvider: RuntimeProvider,
     AuthSignInRoutePage: SignInScreen,
     AuthSignUpRoutePage: SignUpScreen,
     AuthSignInScreen: SignInScreen,
     AuthSignUpScreen: SignUpScreen,
+    AuthenticatedRoute,
     ConvexIdentityProvisioner,
     SignedIn,
     SignedOut,
