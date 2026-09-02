@@ -34,6 +34,14 @@ import {
 } from "./better-auth-runtime";
 import { getAfterSignUpPath } from "./invite-sign-up";
 import { useGuardedProtectedWrite } from "./protected-writes";
+import {
+  getConvexAuthenticatedRouteRedirectPath,
+  shouldCaptureConvexAuthenticatedRouteSuccess,
+  shouldShowConvexAuthenticatedRouteLoading,
+  shouldShowConvexAuthenticatedRouteOrganizationRequired,
+} from "./auth-client-route-helpers";
+
+export * from "./auth-client-route-helpers";
 
 type ConvexClientLike = {
   setAuth(fetchToken: (args: { forceRefreshToken: boolean }) => Promise<string | null>): void;
@@ -816,38 +824,6 @@ function isRedeemableInvitationLookupResult(result: InvitationLookupResult): res
   }
 
   return typeof result.expiresAt !== "number" || result.expiresAt > Date.now();
-}
-
-export function shouldShowConvexAuthenticatedRouteOrganizationRequired(args: {
-  hasOrganization: boolean;
-  isChooseOrganizationRoute: boolean;
-  isPostSignUpRoute: boolean;
-}): boolean {
-  return !args.hasOrganization && !args.isChooseOrganizationRoute && !args.isPostSignUpRoute;
-}
-
-export function shouldShowConvexAuthenticatedRouteLoading(args: {
-  isAuthLoaded: boolean;
-  isOrganizationLoading: boolean;
-  isPostSignUpRoute: boolean;
-}): boolean {
-  return !args.isAuthLoaded || (args.isOrganizationLoading && !args.isPostSignUpRoute);
-}
-
-export function shouldCaptureConvexAuthenticatedRouteSuccess(args: {
-  isAuthLoaded: boolean;
-  isSignedIn: boolean;
-  isOrganizationLoading: boolean;
-}): boolean {
-  return args.isAuthLoaded && args.isSignedIn && !args.isOrganizationLoading;
-}
-
-export function getConvexAuthenticatedRouteRedirectPath(args: {
-  pathname: string;
-  search?: string;
-  hash?: string;
-}): string {
-  return `${args.pathname}${args.search ?? ""}${args.hash ?? ""}`;
 }
 
 function getBrowserCurrentRedirectPath(fallbackPathname: string): string {
