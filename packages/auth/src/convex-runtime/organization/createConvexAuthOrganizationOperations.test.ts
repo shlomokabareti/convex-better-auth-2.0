@@ -5,6 +5,7 @@ import { describe, it } from "vitest";
 
 import { api as componentApi } from "../../component/_generated/api";
 import type { Id } from "../../component/_generated/dataModel";
+import type { ComponentApi as OrganizationsComponentApi } from "../../component/organizations/_generated/component";
 import type { GlueCtx } from "../glue/types";
 import {
   createConvexAuthOrganizationOperations,
@@ -14,6 +15,13 @@ import {
   type ConvexAuthOrganizationOperationsComponentHandle,
   type ConvexAuthOrganizationOperationsConfig,
 } from "./createConvexAuthOrganizationOperations";
+
+// Compile-time check that the feature-gated organizations component satisfies
+// the operations handle, so consumers can pass `convexAuthOrganizations`.
+type _AssertOrganizationsComponentSatisfiesHandle =
+  OrganizationsComponentApi<"convexAuthOrganizations"> extends ConvexAuthOrganizationOperationsComponentHandle
+    ? true
+    : false;
 
 // ---------------------------------------------------------------------------
 // Test domain: branded local ids + a fixed role-template literal union.
