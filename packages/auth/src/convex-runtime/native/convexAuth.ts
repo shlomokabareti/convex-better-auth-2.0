@@ -61,12 +61,9 @@ export type ConvexAuth = NativeEmailAndPasswordFunctionReferences &
   };
 
 export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
-  const component =
-    config.component ?? config.components?.core;
+  const component = config.component ?? config.components?.core;
   if (!component) {
-    throw new Error(
-      "convexAuth: either config.component or config.components.core is required.",
-    );
+    throw new Error("convexAuth: either config.component or config.components.core is required.");
   }
 
   const emailAndPasswordActions = nativeEmailAndPassword(component, config.emailAndPassword);
@@ -74,9 +71,7 @@ export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
   const magicLinkActions = config.magicLink
     ? nativeMagicLink(component, config.magicLink)
     : undefined;
-  const emailOtpActions = config.emailOtp
-    ? nativeEmailOtp(component, config.emailOtp)
-    : undefined;
+  const emailOtpActions = config.emailOtp ? nativeEmailOtp(component, config.emailOtp) : undefined;
 
   const oauthActions = config.oauth ? nativeOAuth(component, config.oauth) : undefined;
 
