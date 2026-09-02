@@ -23,16 +23,16 @@ We will split the monolithic `convexAuth` component into feature-scoped componen
 
 ## Capability map / build order
 
-| Module            | Responsibility                                                                          | Tables                                                                                                                                           | Depends on |
-| ----------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
-| core              | users, identities, sessions, codes, verifiers, accounts, magic link tokens, rate limits | users, auth_identities, authAccounts, authSessions, authRefreshTokens, authVerificationCodes, authVerifiers, authRateLimits, authMagicLinkTokens | —          |
-| organizations     | orgs, roles, members, invitations                                                       | organizations, organization_roles, organization_members, organization_invitations                                                                | core       |
-| apiKeys           | machine API keys and audit events                                                       | api_keys, auth_audit_events                                                                                                                      | core       |
-| servicePrincipals | service-to-service principals                                                           | service_principals                                                                                                                               | core       |
-| agentAuth         | agent hosts, devices, grants, audit                                                     | agent\_\* tables                                                                                                                                 | core       |
-| authMd            | metadata registrations/assertions/credentials                                           | auth*md*\*                                                                                                                                       | core       |
-| webhooks          | webhook endpoints and deliveries                                                        | webhook_endpoints, webhook_deliveries                                                                                                            | core       |
-| mcpOauth          | MCP OAuth clients/codes/tokens                                                          | mcp*oauth*\*                                                                                                                                     | core       |
+| Module | Responsibility | Tables | Depends on |
+|---|---|---|---|
+| core | users, identities, sessions, codes, verifiers, accounts, magic link tokens, rate limits | users, auth_identities, authAccounts, authSessions, authRefreshTokens, authVerificationCodes, authVerifiers, authRateLimits, authMagicLinkTokens | — |
+| organizations | orgs, roles, members, invitations | organizations, organization_roles, organization_members, organization_invitations | core |
+| apiKeys | machine API keys and audit events | api_keys, auth_audit_events | core |
+| servicePrincipals | service-to-service principals | service_principals | core |
+| agentAuth | agent hosts, devices, grants, audit | agent_* tables | core |
+| authMd | metadata registrations/assertions/credentials | auth_md_* | core |
+| webhooks | webhook endpoints and deliveries | webhook_endpoints, webhook_deliveries | core |
+| mcpOauth | MCP OAuth clients/codes/tokens | mcp_oauth_* | core |
 
 Build order: core → organizations, apiKeys, servicePrincipals → agentAuth, authMd, webhooks, mcpOauth
 
