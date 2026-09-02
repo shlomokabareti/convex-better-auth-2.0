@@ -15,12 +15,17 @@ import {
 import { DEFAULT_AUTH_RUNTIME_STATUS } from "convex-auth-react/client";
 import type { NativeAuthActions } from "convex-auth-react/client";
 
+import { ExpoAuthOrganizationChooserPage } from "./auth-pages";
 import { ExpoConvexAuthClientProvider } from "./convex-auth-client-provider";
 import {
   ExpoAuthClientSignInScreen,
   ExpoAuthClientSignUpScreen,
 } from "./convex-auth-client-screens";
 import type { ExpoConvexAuthStorage } from "./ConvexAuthProvider";
+
+export type ConvexAuthOrganizationChooserRoutePageProps = Parameters<
+  typeof ExpoAuthOrganizationChooserPage
+>[0];
 
 type NavigateTo = (args: { to: string; replace?: boolean }) => void | Promise<void>;
 
@@ -207,6 +212,7 @@ export function createExpoConvexAuthRuntime(args: ConvexAuthRuntimeCreateArgs) {
     AuthSignUpRoutePage: SignUpScreen,
     AuthSignInScreen: SignInScreen,
     AuthSignUpScreen: SignUpScreen,
+    AuthOrganizationChooserRoutePage: ExpoAuthOrganizationChooserPage,
     AuthenticatedRoute,
     ConvexIdentityProvisioner,
     SignedIn,

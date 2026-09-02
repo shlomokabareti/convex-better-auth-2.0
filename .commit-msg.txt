@@ -1,0 +1,9 @@
+feat(react-native): add native organization chooser page
+
+Add ExpoAuthOrganizationChooserPage in auth-pages.tsx and export it.
+It uses the consumer's Convex function refs for getDefaultOrganization,
+getAvailableOrganizations, and setActiveOrganization.
+
+Wired into createExpoConvexAuthRuntime as AuthOrganizationChooserRoutePage.
+
+Proof: workspace typecheck, check, build, 1068 tests pass.
