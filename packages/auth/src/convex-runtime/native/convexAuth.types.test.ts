@@ -1,7 +1,13 @@
 import { describe, it } from "vitest";
 import type { ComponentApi as FullComponentApi } from "../../component/_generated/component";
+import type { ComponentApi as AgentAuthComponentApi } from "../../component/agentAuth/_generated/component";
+import type { ComponentApi as ApiKeysComponentApi } from "../../component/apiKeys/_generated/component";
+import type { ComponentApi as AuthMdComponentApi } from "../../component/authMd/_generated/component";
 import type { ComponentApi as CoreComponentApi } from "../../component/core/_generated/component";
+import type { ComponentApi as McpOauthComponentApi } from "../../component/mcpOauth/_generated/component";
 import type { ComponentApi as OrganizationsComponentApi } from "../../component/organizations/_generated/component";
+import type { ComponentApi as ServicePrincipalsComponentApi } from "../../component/servicePrincipals/_generated/component";
+import type { ComponentApi as WebhooksComponentApi } from "../../component/webhooks/_generated/component";
 import { convexAuth } from "./convexAuth";
 import type { NativeEmailAndPasswordComponentHandle } from "./types";
 
@@ -30,6 +36,29 @@ describe("convexAuth component handle types", () => {
     convexAuth({ components: { core: fullComponent } });
     convexAuth({ components: { core: coreComponent } });
     convexAuth({ components: { core: organizationsComponent } });
+
+    const agentAuthComponent = {} as unknown as AgentAuthComponentApi<"convexAuthAgentAuth">;
+    const apiKeysComponent = {} as unknown as ApiKeysComponentApi<"convexAuthApiKeys">;
+    const authMdComponent = {} as unknown as AuthMdComponentApi<"convexAuthAuthMd">;
+    const mcpOauthComponent = {} as unknown as McpOauthComponentApi<"convexAuthMcpOauth">;
+    const servicePrincipalsComponent =
+      {} as unknown as ServicePrincipalsComponentApi<"convexAuthServicePrincipals">;
+    const webhooksComponent = {} as unknown as WebhooksComponentApi<"convexAuthWebhooks">;
+
+    // These are not valid as the core native-auth handle because they do not
+    // expose the email/password, session, and verifier functions.
+    // @ts-expect-error agentAuth is not a core auth component
+    convexAuth({ components: { core: agentAuthComponent } });
+    // @ts-expect-error apiKeys is not a core auth component
+    convexAuth({ components: { core: apiKeysComponent } });
+    // @ts-expect-error authMd is not a core auth component
+    convexAuth({ components: { core: authMdComponent } });
+    // @ts-expect-error mcpOauth is not a core auth component
+    convexAuth({ components: { core: mcpOauthComponent } });
+    // @ts-expect-error servicePrincipals is not a core auth component
+    convexAuth({ components: { core: servicePrincipalsComponent } });
+    // @ts-expect-error webhooks is not a core auth component
+    convexAuth({ components: { core: webhooksComponent } });
 
     // Runtime assertion placeholder.
     const _yes = true;

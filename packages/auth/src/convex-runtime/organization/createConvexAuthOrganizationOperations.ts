@@ -43,6 +43,9 @@ import type {
 } from "convex/server";
 
 import type { ComponentApi as ConvexAuthGeneratedComponentApi } from "../../component/_generated/component";
+import type { ComponentApi as CoreComponentApi } from "../../component/core/_generated/component";
+import type { ComponentApi as OrganizationsComponentApi } from "../../component/organizations/_generated/component";
+import type { ComponentApi as ApiKeysComponentApi } from "../../component/apiKeys/_generated/component";
 import type { GlueCtx, PickComponentFunctions } from "../glue/types";
 
 /**
@@ -131,10 +134,23 @@ function mapMemberStatus(status: ComponentMemberStatus): OperationsMemberStatus 
 // source modules, whose branded ids no consumer can supply across the boundary.
 type OperationsComponentApi = ConvexAuthGeneratedComponentApi;
 
+type ConvexAuthOrganizationOperationsIdentityModule =
+  | CoreComponentApi["identity"]
+  | OrganizationsComponentApi["identity"]
+  | OperationsComponentApi["identity"];
+
+type ConvexAuthOrganizationOperationsOrganizationsModule =
+  | OrganizationsComponentApi["organizations"]
+  | OperationsComponentApi["organizations"];
+
+type ConvexAuthOrganizationOperationsApiKeysModule =
+  | ApiKeysComponentApi["apiKeys"]
+  | OperationsComponentApi["apiKeys"];
+
 type OperationsGlueComponentHandle = {
-  identity: PickComponentFunctions<OperationsComponentApi["identity"], "getByIdentity">;
+  identity: PickComponentFunctions<ConvexAuthOrganizationOperationsIdentityModule, "getByIdentity">;
   organizations: PickComponentFunctions<
-    OperationsComponentApi["organizations"],
+    ConvexAuthOrganizationOperationsOrganizationsModule,
     | "getMemberByUserOrganization"
     | "listMembersByOrganization"
     | "listMembershipsByUser"
@@ -299,7 +315,7 @@ export type OrganizationUpsertFields = {
  */
 export type ConvexAuthOrganizationOperationsComponentHandle = OperationsGlueComponentHandle & {
   organizations: PickComponentFunctions<
-    OperationsComponentApi["organizations"],
+    ConvexAuthOrganizationOperationsOrganizationsModule,
     | "getMember"
     | "getMemberByIdForSystem"
     | "listRolesByOrganization"
@@ -312,7 +328,7 @@ export type ConvexAuthOrganizationOperationsComponentHandle = OperationsGlueComp
     | "listInvitationsByOrganization"
   >;
   apiKeys: PickComponentFunctions<
-    OperationsComponentApi["apiKeys"],
+    ConvexAuthOrganizationOperationsApiKeysModule,
     | "getApiKey"
     | "getApiKeyByPrefix"
     | "getApiKeyByRequestId"
@@ -331,7 +347,10 @@ export type ConvexAuthOrganizationOperationsComponentHandle = OperationsGlueComp
  */
 export type ConvexAuthOrganizationOperationsComponentsHandle = {
   core: {
-    identity: PickComponentFunctions<OperationsComponentApi["identity"], "getByIdentity">;
+    identity: PickComponentFunctions<
+      ConvexAuthOrganizationOperationsIdentityModule,
+      "getByIdentity"
+    >;
   };
   organizations: ConvexAuthOrganizationOperationsComponentHandle["organizations"];
   apiKeys: ConvexAuthOrganizationOperationsComponentHandle["apiKeys"];

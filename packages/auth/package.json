@@ -157,6 +157,54 @@
     },
     "./_generated/component/organizations": {
       "types": "./dist/component/organizations/_generated/component.d.ts"
+    },
+    "./convex.config/servicePrincipals": {
+      "convex": "./src/component/servicePrincipals/convex.config.ts",
+      "types": "./dist/component/servicePrincipals/convex.config.d.ts",
+      "default": "./dist/component/servicePrincipals/convex.config.js"
+    },
+    "./_generated/component/servicePrincipals": {
+      "types": "./dist/component/servicePrincipals/_generated/component.d.ts"
+    },
+    "./convex.config/apiKeys": {
+      "convex": "./src/component/apiKeys/convex.config.ts",
+      "types": "./dist/component/apiKeys/convex.config.d.ts",
+      "default": "./dist/component/apiKeys/convex.config.js"
+    },
+    "./_generated/component/apiKeys": {
+      "types": "./dist/component/apiKeys/_generated/component.d.ts"
+    },
+    "./convex.config/agentAuth": {
+      "convex": "./src/component/agentAuth/convex.config.ts",
+      "types": "./dist/component/agentAuth/convex.config.d.ts",
+      "default": "./dist/component/agentAuth/convex.config.js"
+    },
+    "./_generated/component/agentAuth": {
+      "types": "./dist/component/agentAuth/_generated/component.d.ts"
+    },
+    "./convex.config/authMd": {
+      "convex": "./src/component/authMd/convex.config.ts",
+      "types": "./dist/component/authMd/convex.config.d.ts",
+      "default": "./dist/component/authMd/convex.config.js"
+    },
+    "./_generated/component/authMd": {
+      "types": "./dist/component/authMd/_generated/component.d.ts"
+    },
+    "./convex.config/webhooks": {
+      "convex": "./src/component/webhooks/convex.config.ts",
+      "types": "./dist/component/webhooks/convex.config.d.ts",
+      "default": "./dist/component/webhooks/convex.config.js"
+    },
+    "./_generated/component/webhooks": {
+      "types": "./dist/component/webhooks/_generated/component.d.ts"
+    },
+    "./convex.config/mcpOauth": {
+      "convex": "./src/component/mcpOauth/convex.config.ts",
+      "types": "./dist/component/mcpOauth/convex.config.d.ts",
+      "default": "./dist/component/mcpOauth/convex.config.js"
+    },
+    "./_generated/component/mcpOauth": {
+      "types": "./dist/component/mcpOauth/_generated/component.d.ts"
     }
   },
   "scripts": {
