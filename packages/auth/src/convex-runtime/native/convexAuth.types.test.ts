@@ -7,9 +7,13 @@ import type { NativeEmailAndPasswordComponentHandle } from "./types";
 // Compile-time checks that the full and core components can be passed to
 // convexAuth() as components.core.
 type _AssertFullSatisfiesNativeHandle =
-  FullComponentApi<"convexAuth"> extends NativeEmailAndPasswordComponentHandle ? true : false;
+  FullComponentApi<"convexAuth"> extends NativeEmailAndPasswordComponentHandle
+    ? true
+    : false;
 type _AssertCoreSatisfiesNativeHandle =
-  CoreComponentApi<"convexAuthCore"> extends NativeEmailAndPasswordComponentHandle ? true : false;
+  CoreComponentApi<"convexAuthCore"> extends NativeEmailAndPasswordComponentHandle
+    ? true
+    : false;
 
 describe("convexAuth component handle types", () => {
   it("accepts convexAuth and convexAuthCore as component/components.core", () => {
