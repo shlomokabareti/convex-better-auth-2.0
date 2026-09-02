@@ -13,6 +13,8 @@ import {
 import type { ConvexAuthSocialProvider } from "convex-auth-react/client";
 import { useConvexAuthClientContext } from "convex-auth-react/client";
 
+import { ConvexVerifyTwoFactorForm } from "./convex-verify-two-factor-form";
+
 export type ExpoAuthClientScreenStyles = {
   root?: StyleProp<ViewStyle>;
   title?: StyleProp<TextStyle>;
@@ -48,6 +50,7 @@ export function ExpoAuthClientSignInScreen(props: ExpoAuthClientSignInScreenProp
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [twoFactorPending, setTwoFactorPending] = useState(false);
 
   const s = props.styles ?? {};
   const copy = {
@@ -106,6 +109,10 @@ export function ExpoAuthClientSignInScreen(props: ExpoAuthClientSignInScreenProp
         setError(result.error.message ?? "Sign-in failed");
         return;
       }
+      if (result.data?.twoFactorRedirect === true) {
+        setTwoFactorPending(true);
+        return;
+      }
       await props.navigate?.({ to: props.forceRedirectUrl, replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed");
@@ -120,6 +127,18 @@ export function ExpoAuthClientSignInScreen(props: ExpoAuthClientSignInScreenProp
     props.navigate,
     props.onRuntimeUnavailable,
   ]);
+
+  if (twoFactorPending) {
+    return (
+      <View className="p-4" style={s.root}>
+        <ConvexVerifyTwoFactorForm
+          onVerified={() => {
+            void props.navigate?.({ to: props.forceRedirectUrl, replace: true });
+          }}
+        />
+      </View>
+    );
+  }
 
   return (
     <View className="p-4" style={s.root}>
@@ -201,6 +220,7 @@ export function ExpoAuthClientSignUpScreen(props: ExpoAuthClientSignUpScreenProp
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [twoFactorPending, setTwoFactorPending] = useState(false);
 
   const s = props.styles ?? {};
   const copy = {
@@ -231,6 +251,10 @@ export function ExpoAuthClientSignUpScreen(props: ExpoAuthClientSignUpScreenProp
         setError(result.error.message ?? "Sign-up failed");
         return;
       }
+      if (result.data?.twoFactorRedirect === true) {
+        setTwoFactorPending(true);
+        return;
+      }
       await props.navigate?.({ to: props.forceRedirectUrl, replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-up failed");
@@ -246,6 +270,18 @@ export function ExpoAuthClientSignUpScreen(props: ExpoAuthClientSignUpScreenProp
     props.navigate,
     props.onRuntimeUnavailable,
   ]);
+
+  if (twoFactorPending) {
+    return (
+      <View className="p-4" style={s.root}>
+        <ConvexVerifyTwoFactorForm
+          onVerified={() => {
+            void props.navigate?.({ to: props.forceRedirectUrl, replace: true });
+          }}
+        />
+      </View>
+    );
+  }
 
   return (
     <View className="p-4" style={s.root}>
