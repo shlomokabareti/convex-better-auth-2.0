@@ -1,1 +1,1 @@
-export * from "../native/rateLimits.js";
+export * from "../../native/rateLimits.js";
