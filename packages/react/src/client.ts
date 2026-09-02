@@ -13,3 +13,4 @@ export * from "./convex-reset-password-form";
 export * from "./convex-session-list";
 export * from "./convex-verify-email-screen";
 export * from "./convex-verify-two-factor-form";
+export * from "./auth-pages";

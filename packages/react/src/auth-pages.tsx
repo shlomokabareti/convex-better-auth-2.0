@@ -2,13 +2,12 @@ import { cn } from "./lib/ui";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import type { AuthFormClassNames } from "./auth-forms";
-import {
-  AuthLoadedBoundaryView,
-  AuthLoadingBoundaryView,
-  type ConvexAuthSocialProvider,
-  type ConvexAuthState,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
+import { AuthLoadedBoundaryView, AuthLoadingBoundaryView } from "./auth-client-boundaries";
+import type {
+  ConvexAuthSocialProvider,
+  ConvexAuthState,
+  ConvexBetterAuthClient,
+} from "./auth-client-types";
 import {
   ConvexAuthClientSignInScreen,
   ConvexAuthClientSignUpScreen,

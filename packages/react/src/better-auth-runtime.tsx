@@ -525,21 +525,7 @@ export function toAuthProviderOptions(
   }));
 }
 
-export function AuthSignedInBoundary(args: { auth: ConvexAuthState; children: ReactNode }) {
-  return args.auth.isSignedIn ? <>{args.children}</> : null;
-}
-
-export function AuthSignedOutBoundary(args: { auth: ConvexAuthState; children: ReactNode }) {
-  return args.auth.isLoaded && !args.auth.isSignedIn ? <>{args.children}</> : null;
-}
-
-export function AuthLoadingBoundaryView(args: { auth: ConvexAuthState; children: ReactNode }) {
-  return args.auth.isLoaded ? null : <>{args.children}</>;
-}
-
-export function AuthLoadedBoundaryView(args: { auth: ConvexAuthState; children: ReactNode }) {
-  return args.auth.isLoaded ? <>{args.children}</> : null;
-}
+export * from "./auth-client-boundaries";
 
 export function AuthFailedBoundaryView(args: {
   authClient: ConvexBetterAuthClient | null;
