@@ -1,9 +1,0 @@
-feat(react-native): native two-factor step-up in sign-in and sign-up screens
-
-- `ExpoAuthClientSignInScreen` and `ExpoAuthClientSignUpScreen` now detect
-  `data.twoFactorRedirect` and render `ConvexVerifyTwoFactorForm` inline.
-- `ConvexVerifyTwoFactorForm` uses the native `ConvexAuthClientContext`
-  `twoFactor` surface added in the previous commit.
-- On verified, navigation to `forceRedirectUrl` proceeds.
-
-Proof: workspace typecheck, check, and 1068 tests pass.
