@@ -13,6 +13,8 @@ import { nativeMagicLink } from "./magicLink.js";
 import type { NativeMagicLinkConfig, NativeMagicLinkFunctionReferences } from "./magicLink.js";
 import { nativeEmailOtp } from "./emailOtp.js";
 import type { NativeEmailOtpConfig, NativeEmailOtpFunctionReferences } from "./emailOtp.js";
+import type { ComponentApi as FullComponentApi } from "../../component/_generated/component.js";
+import type { ComponentApi as CoreComponentApi } from "../../component/core/_generated/component.js";
 import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 
 type ConvexAuthConfigBase = {
@@ -22,14 +24,29 @@ type ConvexAuthConfigBase = {
   emailOtp?: NativeEmailOtpConfig;
 };
 
+/**
+ * Any component handle that exposes the core native-auth API.
+ * Supports the full legacy `convexAuth` component and the stripped
+ * `convexAuthCore` component.
+ *
+ * Note: `convexAuthOrganizations` intentionally does not satisfy this handle
+ * because its generated `ComponentApi` currently omits the `native` submodule,
+ * which the native runtime needs. Use `convexAuthOrganizations` with the
+ * organization-operations runtime, not as `components.core` for `convexAuth()`.
+ */
+export type ConvexAuthComponentHandle =
+  | NativeEmailAndPasswordComponentHandle
+  | FullComponentApi<"convexAuth">
+  | CoreComponentApi<"convexAuthCore">;
+
 export type ConvexAuthConfig =
   | (ConvexAuthConfigBase & {
-      component: NativeEmailAndPasswordComponentHandle;
+      component: ConvexAuthComponentHandle;
       components?: never;
     })
   | (ConvexAuthConfigBase & {
       components: {
-        core: NativeEmailAndPasswordComponentHandle;
+        core: ConvexAuthComponentHandle;
       };
       component?: never;
     });
