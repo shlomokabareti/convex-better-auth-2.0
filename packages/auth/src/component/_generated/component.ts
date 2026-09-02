@@ -915,6 +915,38 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       >;
     };
     identity: {
+      changeEmail: FunctionReference<
+        "mutation",
+        "internal",
+        { newEmail: string; tokenHash: string },
+        {
+          reason?: string;
+          status: boolean;
+          user?: {
+            _id: string;
+            activeOrganizationId?: string;
+            createdAt: number;
+            email?: string;
+            emailTwoFactorDisabledAt?: number;
+            emailTwoFactorEmail?: string;
+            emailTwoFactorEnabledAt?: number;
+            emailTwoFactorLastVerifiedAt?: number;
+            emailTwoFactorResetAt?: number;
+            emailTwoFactorResetReason?:
+              "missing_email" | "email_not_verified" | "email_changed";
+            emailTwoFactorStatus?: "disabled" | "enabled" | "reset_required";
+            emailVerified: boolean;
+            image?: string;
+            isActive: boolean;
+            isSuperAdmin?: boolean;
+            metadataJson?: string;
+            name?: string;
+            twoFactorEnabled?: boolean;
+            updatedAt: number;
+          };
+        },
+        Name
+      >;
       getByIdentity: FunctionReference<
         "query",
         "internal",
@@ -1425,6 +1457,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             type?:
               | "email_verification"
               | "password_reset"
+              | "email_change"
               | "two_factor_pending"
               | "two_factor_trusted_device";
             userId: string;
@@ -1440,6 +1473,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             type:
               | "email_verification"
               | "password_reset"
+              | "email_change"
               | "two_factor_pending"
               | "two_factor_trusted_device";
           },
@@ -1455,6 +1489,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             type:
               | "email_verification"
               | "password_reset"
+              | "email_change"
               | "two_factor_pending"
               | "two_factor_trusted_device";
             userId: string;
@@ -1470,6 +1505,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             type:
               | "email_verification"
               | "password_reset"
+              | "email_change"
               | "two_factor_pending"
               | "two_factor_trusted_device";
           },
@@ -1483,6 +1519,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             type:
               | "email_verification"
               | "password_reset"
+              | "email_change"
               | "two_factor_pending"
               | "two_factor_trusted_device";
             userId: string;
