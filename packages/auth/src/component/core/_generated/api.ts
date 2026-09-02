@@ -8,6 +8,18 @@
  * @module
  */
 
+import type * as identity from "../identity.js";
+import type * as native_accounts from "../native/accounts.js";
+import type * as native_codes from "../native/codes.js";
+import type * as native_identities from "../native/identities.js";
+import type * as native_rateLimits from "../native/rateLimits.js";
+import type * as native_refreshTokens from "../native/refreshTokens.js";
+import type * as native_sessions from "../native/sessions.js";
+import type * as native_users from "../native/users.js";
+import type * as native_verifiers from "../native/verifiers.js";
+import type * as scopes from "../scopes.js";
+import type * as status from "../status.js";
+
 import type {
   ApiFromModules,
   FilterApi,
@@ -15,7 +27,19 @@ import type {
 } from "convex/server";
 import { anyApi, componentsGeneric } from "convex/server";
 
-const fullApi: ApiFromModules<{}> = anyApi as any;
+const fullApi: ApiFromModules<{
+  identity: typeof identity;
+  "native/accounts": typeof native_accounts;
+  "native/codes": typeof native_codes;
+  "native/identities": typeof native_identities;
+  "native/rateLimits": typeof native_rateLimits;
+  "native/refreshTokens": typeof native_refreshTokens;
+  "native/sessions": typeof native_sessions;
+  "native/users": typeof native_users;
+  "native/verifiers": typeof native_verifiers;
+  scopes: typeof scopes;
+  status: typeof status;
+}> = anyApi as any;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
