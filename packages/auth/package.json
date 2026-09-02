@@ -141,6 +141,14 @@
     },
     "./_generated/component": {
       "types": "./dist/component/_generated/component.d.ts"
+    },
+    "./convex.config/core": {
+      "convex": "./src/component/core/convex.config.ts",
+      "types": "./dist/component/core/convex.config.d.ts",
+      "default": "./dist/component/core/convex.config.js"
+    },
+    "./_generated/component/core": {
+      "types": "./dist/component/core/_generated/component.d.ts"
     }
   },
   "scripts": {
