@@ -99,7 +99,7 @@
     "@better-auth/core": "1.7.2",
     "@better-auth/test-utils": "1.7.2",
     "@edge-runtime/vm": "5.0.0",
-    "@tanstack/react-start": "1.167.65",
+    "@tanstack/react-start": "1.168.49",
     "@types/common-tags": "1.8.4",
     "@types/node": "^26.4.0",
     "@types/react": "^19.0.0",
