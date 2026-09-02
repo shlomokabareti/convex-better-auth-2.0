@@ -35,7 +35,7 @@
     "convex": "^1.45.0",
     "convex-better-auth-adapter": "workspace:*",
     "react": "^19.0.0",
-    "react-native": "^0.84.1",
+    "react-native": "^0.87.1",
     "typescript": "^5.7.0",
     "vitest": "^4.1.10"
   },
