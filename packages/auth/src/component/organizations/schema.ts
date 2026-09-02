@@ -15,6 +15,8 @@ import {
   authVerificationCodes,
   authVerifiers,
 } from "../schema/native.js";
+import { api_keys, auth_audit_events } from "../schema/apiKeys.js";
+import { service_principals } from "../schema/servicePrincipals.js";
 
 export default defineSchema({
   users,
@@ -30,4 +32,7 @@ export default defineSchema({
   organization_roles,
   organization_members,
   organization_invitations,
+  api_keys,
+  auth_audit_events,
+  service_principals,
 });
