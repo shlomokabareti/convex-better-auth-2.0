@@ -33,9 +33,10 @@ See `SPEC-84-feature-gated-schema.md` for the full specification.
 ## Phase 4: Minimal consumer test
 
 - [x] Add a test consumer or test setup that verifies feature-gated schemas only include their own tables.
+- [x] Add a split-component fixture to `packages/conformance-consumer` and a `validate:split` script that mounts `convexAuthCore`, `convexAuthOrganizations`, and `convexAuthApiKeys` against a real deployment.
 - [x] Verify the consumer schema does not include disabled feature tables.
 
 ## Phase 5: Documentation and migration
 
-- [ ] Update `docs/` to show the new opt-in component registration.
-- [ ] Add migration notes for existing full-schema consumers.
+- [x] Update `docs/` to show the new opt-in component registration.
+- [x] Add migration notes for existing full-schema consumers.
