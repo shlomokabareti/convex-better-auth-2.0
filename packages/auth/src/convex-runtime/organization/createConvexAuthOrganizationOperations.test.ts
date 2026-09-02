@@ -5,6 +5,8 @@ import { describe, it } from "vitest";
 
 import { api as componentApi } from "../../component/_generated/api";
 import type { Id } from "../../component/_generated/dataModel";
+import type { ComponentApi as FullComponentApi } from "../../component/_generated/component";
+import type { ComponentApi as ApiKeysComponentApi } from "../../component/apiKeys/_generated/component";
 import type { ComponentApi as CoreComponentApi } from "../../component/core/_generated/component";
 import type { ComponentApi as OrganizationsComponentApi } from "../../component/organizations/_generated/component";
 import type { GlueCtx } from "../glue/types";
@@ -18,15 +20,15 @@ import {
   type ConvexAuthOrganizationOperationsConfig,
 } from "./createConvexAuthOrganizationOperations";
 
-// Compile-time check that the feature-gated organizations component satisfies
-// the operations handle, so consumers can pass `convexAuthOrganizations`.
-type _AssertOrganizationsComponentSatisfiesHandle =
-  OrganizationsComponentApi<"convexAuthOrganizations"> extends ConvexAuthOrganizationOperationsComponentHandle
+// Compile-time check that the legacy full component satisfies the operations
+// handle, so existing consumers do not break.
+type _AssertFullComponentSatisfiesHandle =
+  FullComponentApi<"convexAuth"> extends ConvexAuthOrganizationOperationsComponentHandle
     ? true
     : false;
 
 // Compile-time checks that the split `components` bag can be satisfied by the
-// feature-gated core + organizations components.
+// feature-gated components.
 type _AssertCoreSatisfiesComponentsCore =
   CoreComponentApi<"convexAuthCore"> extends ConvexAuthOrganizationOperationsComponentsHandle["core"]
     ? true
@@ -35,8 +37,8 @@ type _AssertOrganizationsSatisfiesComponentsOrganizations =
   OrganizationsComponentApi<"convexAuthOrganizations"> extends ConvexAuthOrganizationOperationsComponentsHandle["organizations"]
     ? true
     : false;
-type _AssertOrganizationsSatisfiesComponentsApiKeys =
-  OrganizationsComponentApi<"convexAuthOrganizations">["apiKeys"] extends ConvexAuthOrganizationOperationsComponentsHandle["apiKeys"]
+type _AssertApiKeysSatisfiesComponentsApiKeys =
+  ApiKeysComponentApi<"convexAuthApiKeys">["apiKeys"] extends ConvexAuthOrganizationOperationsComponentsHandle["apiKeys"]
     ? true
     : false;
 

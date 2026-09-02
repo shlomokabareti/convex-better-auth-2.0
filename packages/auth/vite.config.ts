@@ -31,6 +31,12 @@ export default defineConfig({
         "component/organizations/convex.config": "src/component/organizations/convex.config.ts",
         "component/organizations/_generated/component":
           "src/component/organizations/_generated/component.ts",
+        "component/servicePrincipals/convex.config":
+          "src/component/servicePrincipals/convex.config.ts",
+        "component/servicePrincipals/_generated/component":
+          "src/component/servicePrincipals/_generated/component.ts",
+        "component/apiKeys/convex.config": "src/component/apiKeys/convex.config.ts",
+        "component/apiKeys/_generated/component": "src/component/apiKeys/_generated/component.ts",
       },
       format: "esm",
       dts: true,
