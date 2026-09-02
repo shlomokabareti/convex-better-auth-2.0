@@ -173,6 +173,14 @@
     },
     "./_generated/component/apiKeys": {
       "types": "./dist/component/apiKeys/_generated/component.d.ts"
+    },
+    "./convex.config/agentAuth": {
+      "convex": "./src/component/agentAuth/convex.config.ts",
+      "types": "./dist/component/agentAuth/convex.config.d.ts",
+      "default": "./dist/component/agentAuth/convex.config.js"
+    },
+    "./_generated/component/agentAuth": {
+      "types": "./dist/component/agentAuth/_generated/component.d.ts"
     }
   },
   "scripts": {

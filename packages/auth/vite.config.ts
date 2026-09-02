@@ -37,6 +37,9 @@ export default defineConfig({
           "src/component/servicePrincipals/_generated/component.ts",
         "component/apiKeys/convex.config": "src/component/apiKeys/convex.config.ts",
         "component/apiKeys/_generated/component": "src/component/apiKeys/_generated/component.ts",
+        "component/agentAuth/convex.config": "src/component/agentAuth/convex.config.ts",
+        "component/agentAuth/_generated/component":
+          "src/component/agentAuth/_generated/component.ts",
       },
       format: "esm",
       dts: true,
