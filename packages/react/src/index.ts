@@ -1,3 +1,4 @@
+export * from "./auth-client-types";
 export * from "./auth-forms";
 export * from "./auth-flow";
 export * from "./auth-pages";
@@ -7,6 +8,9 @@ export * from "./better-auth-app-runtime";
 export * from "./better-auth-runtime";
 export * from "./BetterAuthConvexProvider";
 export * from "./ConvexAuthProvider";
+export * from "./convex-auth-client";
+export * from "./convex-auth-client-provider";
+export * from "./convex-auth-client-screens";
 export * from "./create-organization";
 export * from "./email-templates";
 export * from "./invite-sign-up";

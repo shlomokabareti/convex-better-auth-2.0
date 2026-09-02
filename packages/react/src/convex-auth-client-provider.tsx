@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 
 import { ConvexAuthProvider, type ConvexAuthProviderProps } from "./ConvexAuthProvider";
-import type { ConvexBetterAuthClient } from "./better-auth-runtime";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
 import { useConvexAuthClient } from "./convex-auth-client";
 
 const ConvexAuthClientContext = createContext<ConvexBetterAuthClient | null>(null);

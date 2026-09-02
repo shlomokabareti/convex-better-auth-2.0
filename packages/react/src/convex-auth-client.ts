@@ -1,5 +1,5 @@
 import { useAuthActions } from "./ConvexAuthProvider";
-import type { ConvexBetterAuthClient } from "./better-auth-runtime";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
 
 function toError(err: unknown): { message: string } {
   return { message: err instanceof Error ? err.message : "Unknown error" };

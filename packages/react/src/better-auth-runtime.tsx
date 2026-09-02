@@ -14,6 +14,7 @@ import {
   fetchBetterAuthConvexBearerToken,
   type BetterAuthConvexTokenFetchOptions,
 } from "./better-auth-convex-token";
+export type { BetterAuthConvexTokenFetchOptions } from "./better-auth-convex-token";
 import { BetterAuthConvexProvider } from "./BetterAuthConvexProvider";
 import {
   getAuthRuntimeTransitionEvent,
@@ -30,12 +31,12 @@ import {
   AuthLabel,
 } from "./ui";
 
-type ConvexClientLike = {
+export type ConvexClientLike = {
   setAuth(fetchToken: (args: { forceRefreshToken: boolean }) => Promise<string | null>): void;
   clearAuth(): void;
 };
 
-type BetterAuthUser = {
+export type BetterAuthUser = {
   id: string;
   email: string;
   emailVerified?: boolean;
@@ -43,12 +44,12 @@ type BetterAuthUser = {
   name?: string | null;
 };
 
-type BetterAuthSession = {
+export type BetterAuthSession = {
   id: string;
   token?: string | null;
 };
 
-type BetterAuthSessionState = {
+export type BetterAuthSessionState = {
   data?: {
     session: BetterAuthSession;
     user: BetterAuthUser;
@@ -58,7 +59,7 @@ type BetterAuthSessionState = {
   isRefetching?: boolean;
 };
 
-type BetterAuthResponse = {
+export type BetterAuthResponse = {
   // When two-factor is enabled for the account, sign-in does NOT
   // complete — Better Auth returns `data.twoFactorRedirect: true` and
   // sets a short-lived 2FA-pending cookie. Consumers check this flag to
@@ -77,7 +78,7 @@ type BetterAuthResponse = {
   } | null;
 };
 
-type BetterAuthConvexTokenResponse = {
+export type BetterAuthConvexTokenResponse = {
   data?: {
     token?: string | null;
   } | null;

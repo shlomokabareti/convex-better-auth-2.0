@@ -8,9 +8,12 @@ import {
   type ConvexAuthSocialProvider,
   type ConvexAuthState,
   type ConvexBetterAuthClient,
-  ConvexAuthSignInScreen,
-  ConvexAuthSignUpScreen,
 } from "./better-auth-runtime";
+import {
+  ConvexAuthClientSignInScreen,
+  ConvexAuthClientSignUpScreen,
+} from "./convex-auth-client-screens";
+import { useConvexAuthClientContext } from "./convex-auth-client-provider";
 import {
   getAfterSignUpPath,
   getInvitationToken,
@@ -68,7 +71,7 @@ export type ConvexAuthPageClassNames = {
 
 export type ConvexAuthSignInPageProps = ConvexAuthPageCopy & {
   auth: ConvexAuthState;
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   signUpUrl: string;
   forceRedirectUrl: string;
   /** When set, AuthSignInForm renders a forgot-password link to this href. */
@@ -81,7 +84,7 @@ export type ConvexAuthSignInPageProps = ConvexAuthPageCopy & {
 
 export type ConvexAuthSignUpPageProps = ConvexAuthPageCopy & {
   auth: ConvexAuthState;
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   signInUrl: string;
   forceRedirectUrl: string;
   onOpened?: () => void;
@@ -455,8 +458,11 @@ export function ConvexAuthSignInPage(args: ConvexAuthSignInPageProps) {
   const description =
     args.description ?? "Access your workspace with the shared authentication flow.";
 
+  const contextClient = useConvexAuthClientContext();
+  const authClient = args.authClient ?? contextClient;
+
   useOnce(args.onOpened);
-  useRuntimeUnavailableEffect(args.authClient, args.onRuntimeUnavailable);
+  useRuntimeUnavailableEffect(authClient, args.onRuntimeUnavailable);
 
   return (
     <ConvexAuthSurface
@@ -464,7 +470,7 @@ export function ConvexAuthSignInPage(args: ConvexAuthSignInPageProps) {
       description={description}
       classNames={args.classNames?.surface}
     >
-      {args.authClient === null ? (
+      {authClient === null ? (
         <ConvexAuthUnavailableCard
           title={args.unavailableTitle ?? "Sign-in is unavailable"}
           description={
@@ -491,8 +497,8 @@ export function ConvexAuthSignInPage(args: ConvexAuthSignInPageProps) {
             />
           </AuthLoadingBoundaryView>
           <AuthLoadedBoundaryView auth={args.auth}>
-            <ConvexAuthSignInScreen
-              authClient={args.authClient}
+            <ConvexAuthClientSignInScreen
+              authClient={authClient}
               classNames={args.classNames?.form}
               description={description}
               forceRedirectUrl={args.forceRedirectUrl}
@@ -512,8 +518,11 @@ export function ConvexAuthSignUpPage(args: ConvexAuthSignUpPageProps) {
   const title = args.title ?? "Create account";
   const description = args.description ?? "Create your account, then continue into setup.";
 
+  const contextClient = useConvexAuthClientContext();
+  const authClient = args.authClient ?? contextClient;
+
   useOnce(args.onOpened);
-  useRuntimeUnavailableEffect(args.authClient, args.onRuntimeUnavailable);
+  useRuntimeUnavailableEffect(authClient, args.onRuntimeUnavailable);
 
   return (
     <ConvexAuthSurface
@@ -521,7 +530,7 @@ export function ConvexAuthSignUpPage(args: ConvexAuthSignUpPageProps) {
       description={description}
       classNames={args.classNames?.surface}
     >
-      {args.authClient === null ? (
+      {authClient === null ? (
         <ConvexAuthUnavailableCard
           title={args.unavailableTitle ?? "Sign-up is unavailable"}
           description={
@@ -548,8 +557,8 @@ export function ConvexAuthSignUpPage(args: ConvexAuthSignUpPageProps) {
             />
           </AuthLoadingBoundaryView>
           <AuthLoadedBoundaryView auth={args.auth}>
-            <ConvexAuthSignUpScreen
-              authClient={args.authClient}
+            <ConvexAuthClientSignUpScreen
+              authClient={authClient}
               classNames={args.classNames?.form}
               description={description}
               forceRedirectUrl={args.forceRedirectUrl}
