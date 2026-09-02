@@ -1,6 +1,8 @@
 import "./uniwind-env.d.ts";
 export * from "./client";
+export * from "./convex-auth-client-provider";
 export * from "./ConvexAuthProvider";
+export { useConvexAuthClientContext } from "convex-auth-react/client";
 export * from "./config";
 export * from "./hosted";
 export * from "./invite-flow";
