@@ -11,6 +11,8 @@ import {
   type ViewStyle,
 } from "react-native";
 
+import { buildExpoAuthSignUpUrl } from "./auth-page-utils";
+
 type NavigateTo = (args: { to: string; replace?: boolean }) => void | Promise<void>;
 
 type OrganizationChooserItem = {
@@ -199,14 +201,11 @@ export function ExpoAuthAcceptInvitePage(props: AcceptInvitePageProps) {
           email?: string | null;
         };
         if (canceled) return;
-        const signUpUrl = `${props.signUpPath}?token=${encodeURIComponent(props.invitationToken!)}`;
-        if (result.email !== undefined && result.email !== null) {
-          await props.navigate({
-            to: `${signUpUrl}&email=${encodeURIComponent(result.email)}`,
-            replace: true,
-          });
-          return;
-        }
+        const signUpUrl = buildExpoAuthSignUpUrl({
+          signUpPath: props.signUpPath,
+          token: props.invitationToken!,
+          email: result.email,
+        });
         await props.navigate({ to: signUpUrl, replace: true });
       } catch (err) {
         if (canceled) return;

@@ -1,0 +1,8 @@
+feat(react-native): add tests for auth page url building
+
+- Extract `buildExpoAuthSignUpUrl` to a platform-agnostic helper.
+- Use `URL` to correctly append and encode `token` and optional `email`.
+- Preserve existing search params on the sign-up path.
+- Add `auth-pages.test.ts` covering encoding, email handling, and existing params.
+
+Proof: workspace `pnpm check`, `pnpm typecheck`, and `pnpm test` all green.
