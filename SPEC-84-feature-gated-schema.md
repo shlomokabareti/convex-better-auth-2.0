@@ -61,6 +61,13 @@ Build order: core → organizations → servicePrincipals → apiKeys → agentA
 - `packages/auth/src/component/webhooks/` — webhooks component
 - `packages/auth/src/component/mcpOauth/` — MCP OAuth component
 - `packages/auth/src/convex-runtime/native/convexAuth.ts` — `convexAuth()` entry point; accepts `components: { core }` or legacy `component`
+- `packages/auth/src/convex-runtime/organization/createConvexAuthOrganizationOperations.ts` — accepts a `components: { core, organizations, apiKeys }` bag
+
+## Add-on feature runtime interface
+
+Each add-on component (`servicePrincipals`, `agentAuth`, `authMd`, `webhooks`, `mcpOauth`) is exposed through its generated `ComponentApi` handle. Consumers mount the component they need and call its functions directly via `ctx.runQuery` / `ctx.runMutation`.
+
+We do not provide a dedicated operation-helper factory for these add-ons because each feature is self-contained and Convex's generated `ComponentApi` already gives type-safe access to every function. The split `convexAuthOrganizationOperations` factory covers the cross-cutting `core` + `organizations` + `apiKeys` interaction; other features are consumed through their own handles.
 
 ## Code style
 
