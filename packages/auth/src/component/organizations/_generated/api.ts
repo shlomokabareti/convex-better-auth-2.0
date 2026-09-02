@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as apiKeys from "../apiKeys.js";
 import type * as identity from "../identity.js";
 import type * as native_accounts from "../native/accounts.js";
 import type * as native_codes from "../native/codes.js";
@@ -19,6 +20,7 @@ import type * as native_users from "../native/users.js";
 import type * as native_verifiers from "../native/verifiers.js";
 import type * as organizations from "../organizations.js";
 import type * as scopes from "../scopes.js";
+import type * as servicePrincipals from "../servicePrincipals.js";
 import type * as status from "../status.js";
 
 import type {
@@ -29,6 +31,7 @@ import type {
 import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
+  apiKeys: typeof apiKeys;
   identity: typeof identity;
   "native/accounts": typeof native_accounts;
   "native/codes": typeof native_codes;
@@ -40,6 +43,7 @@ const fullApi: ApiFromModules<{
   "native/verifiers": typeof native_verifiers;
   organizations: typeof organizations;
   scopes: typeof scopes;
+  servicePrincipals: typeof servicePrincipals;
   status: typeof status;
 }> = anyApi as any;
 
