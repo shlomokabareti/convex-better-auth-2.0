@@ -2,10 +2,9 @@
   "name": "convex-better-auth-2.0",
   "version": "2.0.0-alpha.0",
   "private": true,
-  "description": "Convex + Better Auth full-stack auth packages.",
+  "description": "Convex-native full-stack auth packages.",
   "keywords": [
     "auth",
-    "better-auth",
     "convex",
     "typescript"
   ],
