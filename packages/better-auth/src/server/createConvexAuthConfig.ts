@@ -1,5 +1,11 @@
 import type { AuthProvider } from "convex/server";
 
+let migrationBridgeWarningShown = false;
+const MIGRATION_BRIDGE_WARNING =
+  "[convex-better-auth] This package is a migration bridge from Better Auth to convex-auth. " +
+  "New projects should use convex-auth directly. " +
+  "See https://github.com/shlomokabareti/convex-better-auth-2.0/blob/main/docs/migrating-from-better-auth.md";
+
 type BetterAuthJwksDocument = {
   id: string;
   publicKey: string;
@@ -78,6 +84,11 @@ export function createConvexAuthConfig(args?: {
   jwksUrl?: string;
   applicationID?: string;
 }): BetterAuthConvexAuthProvider {
+  if (!migrationBridgeWarningShown) {
+    migrationBridgeWarningShown = true;
+    console.warn(MIGRATION_BRIDGE_WARNING);
+  }
+
   if (
     args?.baseURL === undefined &&
     args?.issuer === undefined &&

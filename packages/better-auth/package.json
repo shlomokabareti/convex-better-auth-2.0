@@ -1,7 +1,7 @@
 {
   "name": "convex-better-auth",
   "version": "2.0.1",
-  "description": "A public Better Auth runtime for Convex.",
+  "description": "A Better Auth -> Convex Auth 2.0 migration bridge. New projects should use convex-auth directly.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
