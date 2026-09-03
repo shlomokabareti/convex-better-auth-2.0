@@ -11,7 +11,7 @@ import {
   type VerificationCodeType,
 } from "./types.js";
 
-// Approximation of the `z.email()` check used by Better Auth.
+// Common RFC-style email validation regex.
 const EMAIL_REGEX =
   /^(?!\.)(?!.*\.\.)([A-Z0-9_+-]\.?)+[A-Z0-9_+-]@([A-Z0-9][A-Z0-9-]*\.)+[A-Z]{2,}$/i;
 

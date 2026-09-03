@@ -507,10 +507,10 @@ export const setUserActiveOrganization = mutation({
     userId: v.id("users"),
     organizationId: v.union(v.id("organizations"), v.null()),
     /**
-     * Caller-attested Better Auth `user.twoFactorEnabled` (VOR-183).
+     * Caller-attested legacy auth provider (`better-auth`) `user.twoFactorEnabled` (VOR-183).
      * Required to be true when the target org has `security.requireMfa`.
      * Trusted callers (glue / consumer auth wrappers) must read this from
-     * the Better Auth user row — never from the client alone.
+     * the legacy auth user row — never from the client alone.
      */
     twoFactorEnabled: v.optional(v.boolean()),
   },

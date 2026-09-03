@@ -247,7 +247,7 @@ describe("mcp oauth runtime helpers", () => {
       requireAllowedRedirectUri: () => {},
       resolveRequestedScopes: (scope) => scope.split(" "),
       resolveSessionFromToken: async () => ({
-        subjectId: "better-auth-user-1",
+        subjectId: "external-user-1",
       }),
       resolveIdentityForSession: async () => ({ userId: "user-1" }),
       authorize: async ({ requestedScopes }) => ({
@@ -291,7 +291,7 @@ describe("mcp oauth runtime helpers", () => {
       requireAllowedRedirectUri: () => {},
       resolveRequestedScopes: (scope) => scope.split(" "),
       resolveSessionFromToken: async () => ({
-        subjectId: "better-auth-user-1",
+        subjectId: "external-user-1",
       }),
       resolveIdentityForSession: async () => ({ userId: "user-1" }),
       authorize: async () => ({
@@ -407,7 +407,7 @@ describe("mcp oauth runtime helpers", () => {
       }),
       consumeAuthorizationCode: async () => ({
         clientId: "management-client",
-        subjectId: "better-auth-user-1",
+        subjectId: "external-user-1",
         organizationId: "organization-1",
         scopes: ["crm:growth:write"],
         codeChallenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",

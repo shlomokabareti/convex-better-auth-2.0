@@ -118,7 +118,7 @@ const DEFAULT_TWO_FACTOR_SECRET_BYTES = 20;
 const DEFAULT_TWO_FACTOR_PENDING_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_TRUST_DEVICE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-// Approximation of the `z.email()` check used by Better Auth.
+// Common RFC-style email validation regex.
 const EMAIL_REGEX =
   /^(?!\.)(?!.*\.\.)([A-Z0-9_+-]\.?)+[A-Z0-9_+-]@([A-Z0-9][A-Z0-9-]*\.)+[A-Z]{2,}$/i;
 

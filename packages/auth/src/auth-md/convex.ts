@@ -29,7 +29,7 @@ import {
 } from "./service-auth";
 
 const DEFAULT_ACCESS_TOKEN_EXPIRES_IN_SECONDS = 60 * 60;
-const BETTER_AUTH_IDENTITY_PROVIDER = "better-auth";
+const DEFAULT_IDENTITY_PROVIDER = "better-auth";
 
 /**
  * Exactly the component functions this runtime calls -- not three whole namespaces.
@@ -199,7 +199,7 @@ export function createAuthMdServiceAuthRuntime(
   const resource = normalizeResource(config.resource);
   const scopesSupported = normalizeScopes(config.scopesSupported);
   const supportedScopeSet = new Set(scopesSupported);
-  const identityProvider = config.identityProvider ?? BETTER_AUTH_IDENTITY_PROVIDER;
+  const identityProvider = config.identityProvider ?? DEFAULT_IDENTITY_PROVIDER;
   const accessTokenExpiresInSeconds = requireAccessTokenLifetime(
     config.accessTokenExpiresInSeconds ?? DEFAULT_ACCESS_TOKEN_EXPIRES_IN_SECONDS,
   );

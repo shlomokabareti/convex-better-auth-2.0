@@ -198,7 +198,7 @@ describe("testing helpers", () => {
     );
   });
 
-  it("signs in through Better Auth email password UI defaults", async () => {
+  it("signs in through legacy email password UI defaults", async () => {
     const page = new SignInPage();
 
     await signInWithConvexAuthEmailPassword(page, {

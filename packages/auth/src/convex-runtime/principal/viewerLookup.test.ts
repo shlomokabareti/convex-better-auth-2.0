@@ -29,7 +29,7 @@ describe("viewerLookup", () => {
     const result = resolveViewerLookup({
       pieces: {
         identity: {
-          subject: "better-auth-user-123",
+          subject: "external-user-123",
           issuer: "https://issuer.example",
           tokenIdentifier: "issuer|identity_123",
           sid: "session_123",

@@ -37,7 +37,7 @@ describe("resolveAuthorizedApiAuthContext", () => {
     const resolved = await resolveAuthorizedApiAuthContext({
       auth: baseAuth,
       authType: "jwt",
-      authSubject: "better-auth-user-1",
+      authSubject: "external-user-1",
       authorizeOrganizationAccess: async () => ({
         role: "owner",
         permissions: ["organization:view"],
@@ -47,7 +47,7 @@ describe("resolveAuthorizedApiAuthContext", () => {
     assert.deepEqual(resolved, {
       auth: baseAuth,
       authType: "jwt",
-      authSubject: "better-auth-user-1",
+      authSubject: "external-user-1",
       scopes: ["crm:organization:read"],
       userId: "user_1",
       organizationId: "org_1",
@@ -60,7 +60,7 @@ describe("resolveAuthorizedApiAuthContext", () => {
     const resolved = await resolveAuthorizedApiAuthContext({
       auth: baseAuth,
       authType: "oauth",
-      authSubject: "better-auth-user-1",
+      authSubject: "external-user-1",
       authorizeOrganizationAccess: async () => null,
     });
 

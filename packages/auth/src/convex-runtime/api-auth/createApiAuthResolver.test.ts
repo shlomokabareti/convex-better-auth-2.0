@@ -39,8 +39,8 @@ function buildVerifiedUserToken(overrides: Partial<VerifiedUserToken> = {}): Ver
     credentialType: "userBearer",
     provider: "convex",
     issuer: "https://issuer.test",
-    subject: "better-auth-user-1",
-    tokenIdentifier: "https://issuer.test|better-auth-user-1",
+    subject: "external-user-1",
+    tokenIdentifier: "https://issuer.test|external-user-1",
     sessionId: "session-1",
     scopes: [],
     audience: null,
@@ -146,7 +146,7 @@ function jwtRequest(token = "eyJ.jwt.token"): Request {
 function mcpSession(scopes: string[]): McpSessionLike {
   return {
     clientId: "mcp-client-1",
-    userId: "better-auth-user-1",
+    userId: "external-user-1",
     scopes,
     accessToken: "mcp-access-token",
   };

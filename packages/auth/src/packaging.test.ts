@@ -27,7 +27,7 @@ const componentFiles = [
 ] as const;
 
 describe("package public entry points", () => {
-  it("does not import Better Auth in the default convex-auth runtime", async () => {
+  it("does not import from the better-auth runtime in the default convex-auth runtime", async () => {
     await Promise.all(
       publicEntryFiles.map(async (fileName) => {
         const source = await readFile(join(import.meta.dirname, fileName), "utf8");
@@ -35,7 +35,7 @@ describe("package public entry points", () => {
           assert.equal(
             source.includes(forbidden),
             false,
-            `${fileName} must not import from the Better Auth runtime: ${forbidden}`,
+            `${fileName} must not import from the better-auth runtime: ${forbidden}`,
           );
         }
       }),
