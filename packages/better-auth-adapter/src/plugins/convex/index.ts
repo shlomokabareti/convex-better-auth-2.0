@@ -151,7 +151,7 @@ export const convex = (opts: {
    * currently used to keep discovery metadata aligned with the basePath.
    */
   options?: BetterAuthOptions;
-}) => {
+}): BetterAuthPlugin => {
   const jwtExpirationSeconds = opts.jwt?.expirationSeconds ?? opts.jwtExpirationSeconds ?? 60 * 15;
   const providerConfig = parseAuthConfig(opts.authConfig, opts);
 
@@ -613,5 +613,5 @@ export const convex = (opts: {
       ),
     },
     schema,
-  } satisfies BetterAuthPlugin;
+  };
 };

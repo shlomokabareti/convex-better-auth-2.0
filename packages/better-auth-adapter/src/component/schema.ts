@@ -144,6 +144,19 @@ export const tables = {
     count: v.number(),
     lastRequest: v.number(),
   }).index("key", ["key"]),
+  migrationConfig: defineTable({
+    migrateUserHandle: v.string(),
+    migrateAccountHandle: v.string(),
+    migrateSessionHandle: v.string(),
+  }),
+  migrationUserIdMap: defineTable({
+    legacyUserId: v.string(),
+    newUserId: v.string(),
+    email: v.string(),
+    emailVerified: v.boolean(),
+  })
+    .index("by_legacy_user_id", ["legacyUserId"])
+    .index("by_new_user_id", ["newUserId"]),
 };
 
 const schema = defineSchema(tables);

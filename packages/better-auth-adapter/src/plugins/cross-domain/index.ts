@@ -6,7 +6,7 @@ import { oneTimeToken as oneTimeTokenPlugin } from "better-auth/plugins/one-time
 import { z } from "zod";
 import { VERSION } from "../../version.js";
 
-export const crossDomain = ({ siteUrl }: { siteUrl: string }) => {
+export const crossDomain = ({ siteUrl }: { siteUrl: string }): BetterAuthPlugin => {
   const oneTimeToken = oneTimeTokenPlugin();
 
   const rewriteCallbackURL = (callbackURL?: string) => {
@@ -194,5 +194,5 @@ export const crossDomain = ({ siteUrl }: { siteUrl: string }) => {
         },
       ),
     },
-  } satisfies BetterAuthPlugin;
+  };
 };
