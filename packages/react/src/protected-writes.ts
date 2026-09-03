@@ -1,4 +1,4 @@
-import type { AuthRuntimeStatus } from "convex-better-auth";
+import type { AuthRuntimeStatus } from "convex-auth-core";
 import type { ReactAction, ReactMutation } from "convex/react";
 import type { FunctionReference, OptionalRestArgs } from "convex/server";
 

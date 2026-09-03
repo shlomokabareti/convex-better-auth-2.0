@@ -18,27 +18,32 @@ import {
   type ConvexAuthInviteOpenedEvent,
   type ConvexAuthInviteRedirectedEvent,
 } from "./auth-pages";
+import { AuthRuntimeProvider } from "./AuthRuntimeProvider";
+import { AuthSignedInBoundary, AuthSignedOutBoundary } from "./auth-client-boundaries";
+import type {
+  ConvexAuthCaptureException,
+  ConvexAuthSocialProvider,
+  ConvexAuthState,
+  ConvexAuthUserState,
+} from "./auth-client-types";
+import { getConvexAuthActions, useAuthState, useConvexAuthUser } from "./auth-client-hooks";
+import { ConvexAuthIdentityProvisioner } from "./auth-client-identity-provisioner";
 import {
-  AuthSignedInBoundary,
-  AuthSignedOutBoundary,
-  getConvexAuthActions,
-  useAuthState,
-  useConvexAuthUser,
-  ConvexBetterAuthIdentityProvisioner,
-  ConvexAuthRuntimeProvider,
-  type ConvexAuthCaptureException,
-  type ConvexAuthSocialProvider,
-  type ConvexBetterAuthClient,
-  type ConvexAuthState,
-  type ConvexAuthUserState,
-} from "./better-auth-runtime";
+  ConvexAuthClientProvider,
+  useConvexAuthClientContext,
+} from "./convex-auth-client-provider";
+import type { NativeAuthActions } from "./ConvexAuthProvider";
+import { DEFAULT_AUTH_RUNTIME_STATUS } from "./types";
 import { getAfterSignUpPath } from "./invite-sign-up";
 import { useGuardedProtectedWrite } from "./protected-writes";
+import {
+  getConvexAuthenticatedRouteRedirectPath,
+  shouldCaptureConvexAuthenticatedRouteSuccess,
+  shouldShowConvexAuthenticatedRouteLoading,
+  shouldShowConvexAuthenticatedRouteOrganizationRequired,
+} from "./auth-client-route-helpers";
 
-type ConvexClientLike = {
-  setAuth(fetchToken: (args: { forceRefreshToken: boolean }) => Promise<string | null>): void;
-  clearAuth(): void;
-};
+export * from "./auth-client-route-helpers";
 
 type EmptyArgs = Record<string, never>;
 type PendingAuthFlow = ConvexAuthPendingFlow;
@@ -69,19 +74,18 @@ type InvitationLookupResult = {
   status?: string | null;
 } | null;
 
-export type ConvexBetterAuthConvexIdentityProvisionerProps = {
+export type ConvexAuthConvexIdentityProvisionerProps = {
   auth: ConvexAuthState;
-  authClient: ConvexBetterAuthClient | null;
   getCurrentUser: FunctionReference<"query", "public", EmptyArgs, unknown>;
   provisionCurrentUser: FunctionReference<"mutation", "public", EmptyArgs, unknown>;
 };
 
-export type ConvexBetterAuthRuntimeConvexIdentityProvisionerProps = Omit<
-  ConvexBetterAuthConvexIdentityProvisionerProps,
-  "auth" | "authClient"
+export type ConvexAuthRuntimeConvexIdentityProvisionerProps = Omit<
+  ConvexAuthConvexIdentityProvisionerProps,
+  "auth"
 >;
 
-export type ConvexBetterAuthRuntimeCopy = {
+export type ConvexAuthRuntimeCopy = {
   signInTitle?: string;
   signInDescription?: string;
   signInUnavailableTitle?: string;
@@ -92,7 +96,7 @@ export type ConvexBetterAuthRuntimeCopy = {
   signUpUnavailableDescription?: string;
 };
 
-export type ConvexBetterAuthSignInRoutePageProps = {
+export type ConvexAuthSignInRoutePageProps = {
   signUpPath: string;
   postSignInPath: string;
   /** When set, sign-in form renders a forgot-password link to this href. */
@@ -102,7 +106,7 @@ export type ConvexBetterAuthSignInRoutePageProps = {
   captureException?: CaptureException;
 };
 
-export type ConvexBetterAuthSignUpRoutePageProps = {
+export type ConvexAuthSignUpRoutePageProps = {
   signInPath: string;
   postSignUpPath: string;
   markPendingAuthFlow?: MarkPendingAuthFlow;
@@ -110,7 +114,7 @@ export type ConvexBetterAuthSignUpRoutePageProps = {
   captureAuthEvent?: CaptureAuthEvent;
 };
 
-export type ConvexBetterAuthAcceptInviteRoutePageProps = {
+export type ConvexAuthAcceptInviteRoutePageProps = {
   getInvitationByToken: FunctionReference<
     "action",
     "public",
@@ -128,7 +132,7 @@ export type ConvexBetterAuthAcceptInviteRoutePageProps = {
   eyebrow?: string;
 };
 
-export type ConvexBetterAuthPostSignUpRoutePageProps = {
+export type ConvexAuthPostSignUpRoutePageProps = {
   getDefaultOrganization: FunctionReference<
     "query",
     "public",
@@ -155,7 +159,7 @@ export type ConvexBetterAuthPostSignUpRoutePageProps = {
   timeoutMs?: number;
 };
 
-export type ConvexBetterAuthOrganizationChooserRoutePageProps = {
+export type ConvexAuthOrganizationChooserRoutePageProps = {
   getDefaultOrganization: FunctionReference<
     "query",
     "public",
@@ -184,12 +188,12 @@ export type ConvexBetterAuthOrganizationChooserRoutePageProps = {
   emptyDescription?: string;
 };
 
-export type ConvexBetterAuthAuthenticatedRouteGateRenderArgs = {
+export type ConvexAuthAuthenticatedRouteGateRenderArgs = {
   organization: CurrentOrganizationRecord | null;
   isPostSignUpRoute: boolean;
 };
 
-export type ConvexBetterAuthAuthenticatedRouteGateProps = {
+export type ConvexAuthAuthenticatedRouteGateProps = {
   getDefaultOrganization: FunctionReference<
     "query",
     "public",
@@ -201,7 +205,7 @@ export type ConvexBetterAuthAuthenticatedRouteGateProps = {
   chooseOrganizationPath: string;
   postSignUpPath: string;
   navigate: NavigateTo;
-  children: (args: ConvexBetterAuthAuthenticatedRouteGateRenderArgs) => ReactNode;
+  children: (args: ConvexAuthAuthenticatedRouteGateRenderArgs) => ReactNode;
   renderLoading: () => ReactNode;
   renderOrganizationRequired: (args: { chooseOrganizationPath: string }) => ReactNode;
   renderRedirectingToSignIn: () => ReactNode;
@@ -212,31 +216,31 @@ export type ConvexBetterAuthAuthenticatedRouteGateProps = {
   toSafeRedirectPath?: (url: string) => string | undefined;
 };
 
-type ConvexBetterAuthRuntimeCreateArgs = {
-  authClient: ConvexBetterAuthClient | null;
-  betterAuthBaseUrl?: string | null;
+type ConvexAuthRuntimeCreateArgs = {
+  actions: NativeAuthActions;
+  storage?: "local" | "session";
   captureAuthEvent?: CaptureAuthEvent;
   captureException?: CaptureException;
   signInPath: string;
   signUpPath: string;
-  copy?: ConvexBetterAuthRuntimeCopy;
+  copy?: ConvexAuthRuntimeCopy;
   socialProviders?: readonly ConvexAuthSocialProvider[];
 };
 
-type ConvexBetterAuthRuntimeHooks = ReturnType<typeof createConvexBetterAuthRuntimeHooks>;
-type ConvexBetterAuthRuntimeScreens = ReturnType<typeof createConvexBetterAuthRuntimeScreens>;
+type ConvexAuthRuntimeHooks = ReturnType<typeof createConvexAuthRuntimeHooks>;
+type ConvexAuthRuntimeScreens = ReturnType<typeof createConvexAuthRuntimeScreens>;
 
-export function createConvexBetterAuthRuntime(args: ConvexBetterAuthRuntimeCreateArgs) {
-  const hooks = createConvexBetterAuthRuntimeHooks(args);
-  const providers = createConvexBetterAuthProviderComponents(args, hooks);
-  const screens = createConvexBetterAuthRuntimeScreens(args, hooks);
-  const entryRoutes = createConvexBetterAuthEntryRoutePages(hooks, screens);
-  const workspaceRoutes = createConvexBetterAuthWorkspaceRoutePages();
-  const AuthenticatedRouteGate = createConvexBetterAuthAuthenticatedRouteGate(hooks);
+export function createConvexAuthRuntime(args: ConvexAuthRuntimeCreateArgs) {
+  const hooks = createConvexAuthRuntimeHooks(args);
+  const providers = createConvexAuthProviderComponents(args, hooks);
+  const screens = createConvexAuthRuntimeScreens(args, hooks);
+  const entryRoutes = createConvexAuthEntryRoutePages(hooks, screens);
+  const workspaceRoutes = createConvexAuthWorkspaceRoutePages();
+  const AuthenticatedRouteGate = createConvexAuthAuthenticatedRouteGate(hooks);
 
   return {
     AuthRuntimeProvider: providers.RuntimeProvider,
-    BetterAuthConvexIdentityProvisioner: providers.BetterAuthConvexIdentityProvisioner,
+    ConvexIdentityProvisioner: providers.ConvexIdentityProvisioner,
     AuthAcceptInviteRoutePage: entryRoutes.AcceptInviteRoutePage,
     AuthAuthenticatedRouteGate: AuthenticatedRouteGate,
     AuthOrganizationChooserRoutePage: workspaceRoutes.OrganizationChooserRoutePage,
@@ -247,26 +251,29 @@ export function createConvexBetterAuthRuntime(args: ConvexBetterAuthRuntimeCreat
     AuthSignedOut: providers.SignedOut,
     AuthSignInScreen: screens.SignInScreen,
     AuthSignUpScreen: screens.SignUpScreen,
-    authClient: args.authClient,
-    betterAuthBaseUrl: args.betterAuthBaseUrl ?? null,
+    actions: args.actions,
+    storage: args.storage ?? "local",
     useAppAuth: hooks.useAuth,
     useAppAuthActions: hooks.useAuthActions,
     useAppUser: hooks.useUser,
   };
 }
 
-function createConvexBetterAuthRuntimeHooks(args: ConvexBetterAuthRuntimeCreateArgs) {
+function createConvexAuthRuntimeHooks(args: ConvexAuthRuntimeCreateArgs) {
   function useAuth() {
-    return useAuthState(args.authClient);
+    const authClient = useConvexAuthClientContext();
+    return useAuthState(authClient);
   }
 
   function useUser(): ConvexAuthUserState {
-    return useConvexAuthUser(args.authClient);
+    const authClient = useConvexAuthClientContext();
+    return useConvexAuthUser(authClient);
   }
 
   function useAuthActions() {
+    const authClient = useConvexAuthClientContext();
     return getConvexAuthActions({
-      authClient: args.authClient,
+      authClient,
       signInPath: args.signInPath,
       signUpPath: args.signUpPath,
     });
@@ -275,26 +282,18 @@ function createConvexBetterAuthRuntimeHooks(args: ConvexBetterAuthRuntimeCreateA
   return { useAuth, useAuthActions, useUser };
 }
 
-function createConvexBetterAuthProviderComponents(
-  args: ConvexBetterAuthRuntimeCreateArgs,
-  hooks: ConvexBetterAuthRuntimeHooks,
+function createConvexAuthProviderComponents(
+  args: ConvexAuthRuntimeCreateArgs,
+  hooks: ConvexAuthRuntimeHooks,
 ) {
-  function RuntimeProvider(props: {
-    children: ReactNode;
-    convex: ConvexClientLike;
-    identityProvisioner?: ReactNode;
-  }) {
+  function RuntimeProvider(props: { children: ReactNode; identityProvisioner?: ReactNode }) {
     return (
-      <ConvexAuthRuntimeProvider
-        authClient={args.authClient}
-        betterAuthBaseUrl={args.betterAuthBaseUrl}
-        captureAuthEvent={args.captureAuthEvent}
-        captureException={args.captureException}
-        convex={props.convex}
-        identityProvisioner={props.identityProvisioner}
-      >
-        {props.children}
-      </ConvexAuthRuntimeProvider>
+      <ConvexAuthClientProvider actions={args.actions} storage={args.storage}>
+        <AuthRuntimeProvider status={DEFAULT_AUTH_RUNTIME_STATUS}>
+          {props.identityProvisioner}
+          {props.children}
+        </AuthRuntimeProvider>
+      </ConvexAuthClientProvider>
     );
   }
 
@@ -307,29 +306,35 @@ function createConvexBetterAuthProviderComponents(
   }
 
   function RuntimeConvexIdentityProvisioner(
-    props: ConvexBetterAuthRuntimeConvexIdentityProvisionerProps,
+    props: ConvexAuthRuntimeConvexIdentityProvisionerProps,
   ) {
+    const auth = hooks.useAuth();
+    const currentUser = useQuery(props.getCurrentUser, auth.isSignedIn ? {} : "skip");
+    const provisionCurrentUser = useGuardedProtectedWrite(useMutation(props.provisionCurrentUser));
+    const authClient = useConvexAuthClientContext();
+    const session = authClient?.useSession();
+
     return (
-      <ConvexBetterAuthConvexIdentityProvisioner
-        auth={hooks.useAuth()}
-        authClient={args.authClient}
-        getCurrentUser={props.getCurrentUser}
-        provisionCurrentUser={props.provisionCurrentUser}
+      <ConvexAuthIdentityProvisioner
+        auth={auth}
+        currentUser={currentUser}
+        provisionCurrentUser={async () => await provisionCurrentUser({})}
+        sessionSubject={session?.data?.user.id ?? null}
       />
     );
   }
 
   return {
-    BetterAuthConvexIdentityProvisioner: RuntimeConvexIdentityProvisioner,
+    ConvexIdentityProvisioner: RuntimeConvexIdentityProvisioner,
     RuntimeProvider,
     SignedIn,
     SignedOut,
   };
 }
 
-function createConvexBetterAuthRuntimeScreens(
-  args: ConvexBetterAuthRuntimeCreateArgs,
-  hooks: ConvexBetterAuthRuntimeHooks,
+function createConvexAuthRuntimeScreens(
+  args: ConvexAuthRuntimeCreateArgs,
+  hooks: ConvexAuthRuntimeHooks,
 ) {
   function SignInScreen(props: {
     signUpUrl: string;
@@ -341,7 +346,6 @@ function createConvexBetterAuthRuntimeScreens(
     return (
       <ConvexAuthSignInPage
         auth={hooks.useAuth()}
-        authClient={args.authClient}
         description={args.copy?.signInDescription}
         forceRedirectUrl={props.forceRedirectUrl}
         forgotPasswordHref={props.forgotPasswordHref}
@@ -365,7 +369,6 @@ function createConvexBetterAuthRuntimeScreens(
     return (
       <ConvexAuthSignUpPage
         auth={hooks.useAuth()}
-        authClient={args.authClient}
         description={args.copy?.signUpDescription}
         forceRedirectUrl={props.forceRedirectUrl}
         onOpened={props.onOpened}
@@ -382,11 +385,11 @@ function createConvexBetterAuthRuntimeScreens(
   return { SignInScreen, SignUpScreen };
 }
 
-function createConvexBetterAuthEntryRoutePages(
-  hooks: ConvexBetterAuthRuntimeHooks,
-  screens: ConvexBetterAuthRuntimeScreens,
+function createConvexAuthEntryRoutePages(
+  hooks: ConvexAuthRuntimeHooks,
+  screens: ConvexAuthRuntimeScreens,
 ) {
-  const SignInRoutePage = (props: ConvexBetterAuthSignInRoutePageProps) => {
+  const SignInRoutePage = (props: ConvexAuthSignInRoutePageProps) => {
     const Screen = screens.SignInScreen;
     return (
       <Screen
@@ -412,7 +415,7 @@ function createConvexBetterAuthEntryRoutePages(
     );
   };
 
-  const SignUpRoutePage = (props: ConvexBetterAuthSignUpRoutePageProps) => {
+  const SignUpRoutePage = (props: ConvexAuthSignUpRoutePageProps) => {
     const Screen = screens.SignUpScreen;
     const redirectPath = useMemo(() => {
       if (typeof window === "undefined") {
@@ -438,7 +441,7 @@ function createConvexBetterAuthEntryRoutePages(
     );
   };
 
-  function AcceptInviteRoutePage(props: ConvexBetterAuthAcceptInviteRoutePageProps) {
+  function AcceptInviteRoutePage(props: ConvexAuthAcceptInviteRoutePageProps) {
     const { redirectToSignIn, buildSignUpUrl } = hooks.useAuthActions();
     const getInvitation = useAction(props.getInvitationByToken);
     const getInviteEmailAddress = useInviteEmailAddress(getInvitation);
@@ -485,8 +488,8 @@ function useInviteEmailAddress(
   );
 }
 
-function createConvexBetterAuthWorkspaceRoutePages() {
-  function PostSignUpRoutePage(props: ConvexBetterAuthPostSignUpRoutePageProps) {
+function createConvexAuthWorkspaceRoutePages() {
+  function PostSignUpRoutePage(props: ConvexAuthPostSignUpRoutePageProps) {
     const currentOrganization = useQuery(props.getDefaultOrganization, {});
     const availableOrganizations = useQuery(props.getAvailableOrganizations, {});
     const ensureActiveOrganization = useGuardedProtectedWrite(
@@ -515,7 +518,7 @@ function createConvexBetterAuthWorkspaceRoutePages() {
     );
   }
 
-  function OrganizationChooserRoutePage(props: ConvexBetterAuthOrganizationChooserRoutePageProps) {
+  function OrganizationChooserRoutePage(props: ConvexAuthOrganizationChooserRoutePageProps) {
     const currentOrganization = useQuery(props.getDefaultOrganization, {});
     const organizations = useQuery(props.getAvailableOrganizations, {});
     const setActiveOrganization = useGuardedProtectedWrite(
@@ -560,7 +563,7 @@ function useInvitationToken(): string | null {
   }, []);
 }
 
-function useCurrentOrganizationReadyHandler(props: ConvexBetterAuthPostSignUpRoutePageProps) {
+function useCurrentOrganizationReadyHandler(props: ConvexAuthPostSignUpRoutePageProps) {
   const { clearPendingPostSignUpSync, navigate, postSignInPath } = props;
 
   return useCallback(() => {
@@ -569,7 +572,7 @@ function useCurrentOrganizationReadyHandler(props: ConvexBetterAuthPostSignUpRou
   }, [clearPendingPostSignUpSync, navigate, postSignInPath]);
 }
 
-function useSignUpSuccessCapture(props: ConvexBetterAuthPostSignUpRoutePageProps): void {
+function useSignUpSuccessCapture(props: ConvexAuthPostSignUpRoutePageProps): void {
   const { captureAuthEvent, consumePendingAuthFlow, postSignInPath } = props;
 
   useEffect(() => {
@@ -583,13 +586,13 @@ function useSignUpSuccessCapture(props: ConvexBetterAuthPostSignUpRoutePageProps
   }, [captureAuthEvent, consumePendingAuthFlow, postSignInPath]);
 }
 
-function openOrganizationSetup(props: ConvexBetterAuthPostSignUpRoutePageProps): void {
+function openOrganizationSetup(props: ConvexAuthPostSignUpRoutePageProps): void {
   props.clearPendingPostSignUpSync?.();
   void props.navigate({ to: props.chooseOrganizationPath });
 }
 
 function useOrganizationChooserOpenedCapture(
-  props: ConvexBetterAuthOrganizationChooserRoutePageProps,
+  props: ConvexAuthOrganizationChooserRoutePageProps,
 ): void {
   const { captureAuthEvent, markPendingAuthFlow, postChooseOrganizationPath } = props;
 
@@ -604,8 +607,8 @@ function useOrganizationChooserOpenedCapture(
   }, [captureAuthEvent, markPendingAuthFlow, postChooseOrganizationPath]);
 }
 
-function createConvexBetterAuthAuthenticatedRouteGate(hooks: ConvexBetterAuthRuntimeHooks) {
-  function AuthenticatedRouteGate(props: ConvexBetterAuthAuthenticatedRouteGateProps) {
+function createConvexAuthAuthenticatedRouteGate(hooks: ConvexAuthRuntimeHooks) {
+  function AuthenticatedRouteGate(props: ConvexAuthAuthenticatedRouteGateProps) {
     const auth = hooks.useAuth();
     const organization = useQuery(props.getDefaultOrganization, auth.isSignedIn ? {} : "skip");
     const routeState = createAuthenticatedRouteState(props, auth, organization);
@@ -631,7 +634,7 @@ function createConvexBetterAuthAuthenticatedRouteGate(hooks: ConvexBetterAuthRun
 }
 
 function createAuthenticatedRouteState(
-  props: ConvexBetterAuthAuthenticatedRouteGateProps,
+  props: ConvexAuthAuthenticatedRouteGateProps,
   auth: ConvexAuthState,
   organization: CurrentOrganizationRecord | null | undefined,
 ) {
@@ -656,7 +659,7 @@ function createAuthenticatedRouteState(
 }
 
 function useSignedOutRedirectEffect(
-  props: ConvexBetterAuthAuthenticatedRouteGateProps,
+  props: ConvexAuthAuthenticatedRouteGateProps,
   auth: ConvexAuthState,
 ): void {
   const { navigate, signInPath } = props;
@@ -669,7 +672,7 @@ function useSignedOutRedirectEffect(
 }
 
 function useAuthenticatedRouteSuccessCapture(
-  props: ConvexBetterAuthAuthenticatedRouteGateProps,
+  props: ConvexAuthAuthenticatedRouteGateProps,
   auth: ConvexAuthState,
   organization: CurrentOrganizationRecord | null | undefined,
   routeState: ReturnType<typeof createAuthenticatedRouteState>,
@@ -711,7 +714,7 @@ function useAuthenticatedRouteSuccessCapture(
 
 function captureAuthenticatedRouteSuccess(
   props: Pick<
-    ConvexBetterAuthAuthenticatedRouteGateProps,
+    ConvexAuthAuthenticatedRouteGateProps,
     "captureAuthEvent" | "consumePendingAuthFlow" | "pathname" | "toSafeRedirectPath"
   >,
   organization: CurrentOrganizationRecord | null | undefined,
@@ -737,18 +740,19 @@ function captureAuthenticatedRouteSuccess(
   });
 }
 
-export function ConvexBetterAuthConvexIdentityProvisioner(
-  args: ConvexBetterAuthConvexIdentityProvisionerProps,
+export function ConvexAuthConvexIdentityProvisioner(
+  args: ConvexAuthConvexIdentityProvisionerProps,
 ) {
   const currentUser = useQuery(args.getCurrentUser, args.auth.isSignedIn ? {} : "skip");
-  const provisionMutation = useGuardedProtectedWrite(useMutation(args.provisionCurrentUser));
-  const session = args.authClient?.useSession();
+  const provisionCurrentUser = useGuardedProtectedWrite(useMutation(args.provisionCurrentUser));
+  const authClient = useConvexAuthClientContext();
+  const session = authClient?.useSession();
 
   return (
-    <ConvexBetterAuthIdentityProvisioner
+    <ConvexAuthIdentityProvisioner
       auth={args.auth}
       currentUser={currentUser}
-      provisionCurrentUser={async () => await provisionMutation({})}
+      provisionCurrentUser={async () => await provisionCurrentUser({})}
       sessionSubject={session?.data?.user.id ?? null}
     />
   );
@@ -816,38 +820,6 @@ function isRedeemableInvitationLookupResult(result: InvitationLookupResult): res
   }
 
   return typeof result.expiresAt !== "number" || result.expiresAt > Date.now();
-}
-
-export function shouldShowConvexAuthenticatedRouteOrganizationRequired(args: {
-  hasOrganization: boolean;
-  isChooseOrganizationRoute: boolean;
-  isPostSignUpRoute: boolean;
-}): boolean {
-  return !args.hasOrganization && !args.isChooseOrganizationRoute && !args.isPostSignUpRoute;
-}
-
-export function shouldShowConvexAuthenticatedRouteLoading(args: {
-  isAuthLoaded: boolean;
-  isOrganizationLoading: boolean;
-  isPostSignUpRoute: boolean;
-}): boolean {
-  return !args.isAuthLoaded || (args.isOrganizationLoading && !args.isPostSignUpRoute);
-}
-
-export function shouldCaptureConvexAuthenticatedRouteSuccess(args: {
-  isAuthLoaded: boolean;
-  isSignedIn: boolean;
-  isOrganizationLoading: boolean;
-}): boolean {
-  return args.isAuthLoaded && args.isSignedIn && !args.isOrganizationLoading;
-}
-
-export function getConvexAuthenticatedRouteRedirectPath(args: {
-  pathname: string;
-  search?: string;
-  hash?: string;
-}): string {
-  return `${args.pathname}${args.search ?? ""}${args.hash ?? ""}`;
 }
 
 function getBrowserCurrentRedirectPath(fallbackPathname: string): string {

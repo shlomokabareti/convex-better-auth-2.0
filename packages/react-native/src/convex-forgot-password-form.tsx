@@ -23,8 +23,11 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { ExpoBetterAuthClient } from "./client";
-import { useExpoAuthForgotPassword } from "./runtime";
+import {
+  useConvexAuthForgotPassword,
+  useConvexAuthClientContext,
+  type ConvexBetterAuthClient,
+} from "convex-auth-react/client";
 
 export type ExpoForgotPasswordFormStyles = {
   root?: StyleProp<ViewStyle>;
@@ -52,7 +55,7 @@ export type ExpoForgotPasswordFormCopy = {
 };
 
 export type ExpoForgotPasswordFormProps = {
-  authClient: ExpoBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   resetPasswordUrl: string;
   styles?: ExpoForgotPasswordFormStyles;
   copy?: ExpoForgotPasswordFormCopy;
@@ -72,9 +75,11 @@ const DEFAULT_COPY: Required<ExpoForgotPasswordFormCopy> = {
 };
 
 export function ConvexForgotPasswordForm(props: ExpoForgotPasswordFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient ?? null;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { requestReset, isRequesting } = useExpoAuthForgotPassword(props.authClient);
+  const { requestReset, isRequesting } = useConvexAuthForgotPassword(authClient);
   const [email, setEmail] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -32,6 +32,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "convex-auth-core": "workspace:*",
     "convex-auth-ui": "workspace:*",
     "react-dom": "^19.0.0"
   },
@@ -39,16 +40,12 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "convex": "^1.45.0",
-    "convex-better-auth": "workspace:*",
-    "convex-better-auth-adapter": "workspace:*",
     "react": "^19.0.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
     "convex": ">=1.39.0",
-    "convex-better-auth": "workspace:*",
-    "convex-better-auth-adapter": "workspace:*",
     "react": ">=19.0.0",
     "react-dom": ">=19.0.0"
   }

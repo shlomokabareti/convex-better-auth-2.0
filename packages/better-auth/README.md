@@ -1,9 +1,7 @@
 # convex-better-auth
 
-A public runtime for [Better Auth](https://www.better-auth.com) on [Convex](https://convex.dev).
+A **Better Auth → Convex Auth 2.0 migration bridge**.
 
-This package provides a generic Convex component runtime and client bridge that wraps `convex-better-auth-adapter`. It removes private identity and control-plane dependencies so any Convex app can use the same configuration patterns.
+This package wraps `convex-better-auth-adapter` and exposes a public Better Auth runtime and client on Convex. It is intentionally separate from the native packages (`convex-auth`, `convex-auth-react`, `convex-auth-react-native`) so that existing Better Auth consumers can keep running while they migrate to the Convex-native runtime.
 
-See the root [`docs/motivation.md`](../docs/motivation.md) for why this project exists.
-
-See the root workspace for the full `convex-auth`, `convex-auth-react`, and `convex-auth-react-native` packages.
+If you are starting a new project, use the native packages directly. If you are migrating from a Better Auth integration, see [`docs/migrating-from-better-auth.md`](../docs/migrating-from-better-auth.md).

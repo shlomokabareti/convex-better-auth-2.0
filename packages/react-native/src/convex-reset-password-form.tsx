@@ -21,8 +21,11 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { ExpoBetterAuthClient } from "./client";
-import { useExpoAuthResetPassword } from "./runtime";
+import {
+  useConvexAuthResetPassword,
+  useConvexAuthClientContext,
+  type ConvexBetterAuthClient,
+} from "convex-auth-react/client";
 
 export type ExpoResetPasswordFormStyles = {
   root?: StyleProp<ViewStyle>;
@@ -53,7 +56,7 @@ export type ExpoResetPasswordFormCopy = {
 };
 
 export type ExpoResetPasswordFormProps = {
-  authClient: ExpoBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   token: string;
   minPasswordLength?: number;
   styles?: ExpoResetPasswordFormStyles;
@@ -77,10 +80,12 @@ const DEFAULT_COPY: Required<ExpoResetPasswordFormCopy> = {
 };
 
 export function ConvexResetPasswordForm(props: ExpoResetPasswordFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient ?? null;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
   const minLength = props.minPasswordLength ?? 12;
-  const { resetPassword, isResetting } = useExpoAuthResetPassword(props.authClient);
+  const { resetPassword, isResetting } = useConvexAuthResetPassword(authClient);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [success, setSuccess] = useState<string | null>(null);

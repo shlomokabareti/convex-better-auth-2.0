@@ -1,5 +1,7 @@
+import { useRef } from "react";
+
 import { useAuthActions } from "./ConvexAuthProvider";
-import type { ConvexBetterAuthClient } from "./better-auth-runtime";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
 
 function toError(err: unknown): { message: string } {
   return { message: err instanceof Error ? err.message : "Unknown error" };
@@ -16,6 +18,7 @@ function toError(err: unknown): { message: string } {
  */
 export function useConvexAuthClient() {
   const actions = useAuthActions();
+  const twoFactorTokenRef = useRef<string | null>(null);
 
   const session = {
     data:
@@ -50,6 +53,7 @@ export function useConvexAuthClient() {
       email: async (args) => {
         try {
           const data = await actions.signIn({ ...args, rememberMe: false });
+          twoFactorTokenRef.current = data.twoFactorChallengeToken ?? null;
           return { data, error: null };
         } catch (err) {
           return { data: null, error: toError(err) };
@@ -72,6 +76,7 @@ export function useConvexAuthClient() {
       email: async (args) => {
         try {
           const data = await actions.signUp({ ...args, rememberMe: false });
+          twoFactorTokenRef.current = data.twoFactorChallengeToken ?? null;
           return { data, error: null };
         } catch (err) {
           return { data: null, error: toError(err) };
@@ -140,6 +145,81 @@ export function useConvexAuthClient() {
       } catch (err) {
         return { data: null, error: toError(err) };
       }
+    },
+
+    twoFactor: {
+      enable: async (args) => {
+        try {
+          const result = await actions.twoFactor.enable(args);
+          if (typeof result.error === "string") {
+            return { data: null, error: toError(result.error) };
+          }
+          return {
+            data: {
+              totpURI: result.totpURI ?? "",
+              backupCodes: result.backupCodes ?? [],
+            },
+            error: null,
+          };
+        } catch (err) {
+          return { data: null, error: toError(err) };
+        }
+      },
+      verifyTotp: async (args) => {
+        const token = twoFactorTokenRef.current;
+        if (token === null) {
+          return { data: null, error: toError("No two-factor challenge in progress") };
+        }
+        try {
+          const result = await actions.twoFactor.verifyTotp({ ...args, token });
+          if (result.token !== null) {
+            actions.setToken(result.token);
+            actions.setSessionId(result.sessionId ?? null);
+            if (result.refreshToken) {
+              actions.setRefreshToken(result.refreshToken);
+            }
+          }
+          return { data: { token: result.token }, error: null };
+        } catch (err) {
+          return { data: null, error: toError(err) };
+        }
+      },
+      verifyBackupCode: async (args) => {
+        const token = twoFactorTokenRef.current;
+        if (token === null) {
+          return { data: null, error: toError("No two-factor challenge in progress") };
+        }
+        try {
+          const result = await actions.twoFactor.verifyBackupCode({ ...args, token });
+          if (result.token !== null) {
+            actions.setToken(result.token);
+            actions.setSessionId(result.sessionId ?? null);
+            if (result.refreshToken) {
+              actions.setRefreshToken(result.refreshToken);
+            }
+          }
+          return { data: { token: result.token }, error: null };
+        } catch (err) {
+          return { data: null, error: toError(err) };
+        }
+      },
+      disable: async (args) => {
+        try {
+          const result = await actions.twoFactor.disable(args);
+          return { data: { status: result.success }, error: null };
+        } catch (err) {
+          return { data: null, error: toError(err) };
+        }
+      },
+      generateBackupCodes: async (args) => {
+        void args.password;
+        try {
+          const result = await actions.twoFactor.generateBackupCodes();
+          return { data: { status: true, backupCodes: result.backupCodes }, error: null };
+        } catch (err) {
+          return { data: null, error: toError(err) };
+        }
+      },
     },
   } satisfies ConvexBetterAuthClient;
 }

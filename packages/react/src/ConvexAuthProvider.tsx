@@ -183,6 +183,41 @@ export type NativeAuthChangeEmailArgs = {
   callbackURL?: string;
 };
 
+export type NativeAuthTwoFactorEnableArgs = {
+  token: string;
+  password: string;
+  issuer?: string;
+};
+
+export type NativeAuthTwoFactorVerifyArgs = {
+  token: string;
+  code: string;
+  trustDevice?: boolean;
+};
+
+// Two-factor verification returns a full session on success, identical to
+// a completed sign-in.
+export type NativeAuthTwoFactorVerifyResult = NativeAuthSession;
+
+export type NativeAuthTwoFactorDisableArgs = {
+  token: string;
+  password: string;
+};
+
+export type NativeAuthTwoFactorGenerateBackupCodesArgs = {
+  token: string;
+};
+
+export type NativeAuthTwoFactorGenerateBackupCodesResult = {
+  backupCodes: string[];
+};
+
+export type NativeAuthTwoFactorEnableResult = {
+  totpURI?: string;
+  backupCodes?: string[];
+  error?: string;
+};
+
 export type NativeAuthSignOutArgs = {
   token: string;
   callbackURL?: string;
@@ -198,6 +233,14 @@ export type NativeAuthUser = {
   updatedAt: number;
 };
 
+export type NativeAuthTwoFactorResult = {
+  twoFactorRedirect?: boolean;
+  twoFactorMethods?: string[];
+  twoFactorChallengeToken?: string;
+  trustDeviceToken?: string;
+  trustDeviceMaxAgeMs?: number;
+};
+
 export type NativeAuthSession = {
   token: string | null;
   refreshToken?: string;
@@ -207,7 +250,7 @@ export type NativeAuthSession = {
   sessionId?: string;
   redirect?: boolean;
   url?: string;
-};
+} & NativeAuthTwoFactorResult;
 
 export type NativeAuthSignOutResult = {
   success: boolean;
@@ -293,6 +336,36 @@ export type NativeAuthActions = {
     "public",
     NativeAuthVerifyEmailOtpArgs,
     NativeAuthVerifyEmailOtpResult
+  >;
+  twoFactorEnable?: FunctionReference<
+    "action",
+    "public",
+    NativeAuthTwoFactorEnableArgs,
+    NativeAuthTwoFactorEnableResult
+  >;
+  twoFactorVerifyTOTP?: FunctionReference<
+    "action",
+    "public",
+    NativeAuthTwoFactorVerifyArgs,
+    NativeAuthTwoFactorVerifyResult
+  >;
+  twoFactorVerifyBackupCode?: FunctionReference<
+    "action",
+    "public",
+    NativeAuthTwoFactorVerifyArgs,
+    NativeAuthTwoFactorVerifyResult
+  >;
+  twoFactorDisable?: FunctionReference<
+    "action",
+    "public",
+    NativeAuthTwoFactorDisableArgs,
+    { success: boolean }
+  >;
+  twoFactorGenerateBackupCodes?: FunctionReference<
+    "action",
+    "public",
+    NativeAuthTwoFactorGenerateBackupCodesArgs,
+    NativeAuthTwoFactorGenerateBackupCodesResult
   >;
 };
 
@@ -478,6 +551,17 @@ export function useAuthActions() {
   const sendPasswordResetAction = useAction(ctx.sendPasswordReset);
   const resetPasswordAction = useAction(ctx.resetPassword);
   const verifyPasswordAction = useAction(ctx.verifyPassword);
+  const twoFactorEnableAction = ctx.twoFactorEnable ? useAction(ctx.twoFactorEnable) : null;
+  const twoFactorVerifyTOTPAction = ctx.twoFactorVerifyTOTP
+    ? useAction(ctx.twoFactorVerifyTOTP)
+    : null;
+  const twoFactorVerifyBackupCodeAction = ctx.twoFactorVerifyBackupCode
+    ? useAction(ctx.twoFactorVerifyBackupCode)
+    : null;
+  const twoFactorDisableAction = ctx.twoFactorDisable ? useAction(ctx.twoFactorDisable) : null;
+  const twoFactorGenerateBackupCodesAction = ctx.twoFactorGenerateBackupCodes
+    ? useAction(ctx.twoFactorGenerateBackupCodes)
+    : null;
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -725,6 +809,62 @@ export function useAuthActions() {
     [verifyPasswordAction],
   );
 
+  const twoFactor = useMemo(() => {
+    const notAvailable = async () => {
+      throw new Error("Two-factor authentication is not configured");
+    };
+    return {
+      enable: twoFactorEnableAction
+        ? async (args: { password: string; issuer?: string }) => {
+            if (ctx.token === null) {
+              throw new Error("Session required to enable two-factor authentication");
+            }
+            return await twoFactorEnableAction({
+              token: ctx.token,
+              password: args.password,
+              issuer: args.issuer,
+            });
+          }
+        : notAvailable,
+      verifyTotp: twoFactorVerifyTOTPAction
+        ? async (args: NativeAuthTwoFactorVerifyArgs) => {
+            return await twoFactorVerifyTOTPAction(args);
+          }
+        : notAvailable,
+      verifyBackupCode: twoFactorVerifyBackupCodeAction
+        ? async (args: NativeAuthTwoFactorVerifyArgs) => {
+            return await twoFactorVerifyBackupCodeAction(args);
+          }
+        : notAvailable,
+      disable: twoFactorDisableAction
+        ? async (args: { password: string }) => {
+            if (ctx.token === null) {
+              throw new Error("Session required to disable two-factor authentication");
+            }
+            return await twoFactorDisableAction({
+              token: ctx.token,
+              password: args.password,
+            });
+          }
+        : notAvailable,
+      generateBackupCodes: twoFactorGenerateBackupCodesAction
+        ? async () => {
+            if (ctx.token === null) {
+              throw new Error("Session required to generate backup codes");
+            }
+            return await twoFactorGenerateBackupCodesAction({ token: ctx.token });
+          }
+        : notAvailable,
+    };
+  }, [
+    ctx,
+    twoFactorEnableAction,
+    twoFactorVerifyTOTPAction,
+    twoFactorVerifyBackupCodeAction,
+    twoFactorDisableAction,
+    twoFactorGenerateBackupCodesAction,
+  ]);
+
   const session = useQuery(
     ctx.verifySession,
     ctx.token ? { token: ctx.token, sessionId: ctx.sessionId ?? undefined } : "skip",
@@ -745,6 +885,7 @@ export function useAuthActions() {
     verifyEmailOtp,
     signOut,
     updateSession,
+    twoFactor,
     sendEmailVerification,
     verifyEmail,
     sendPasswordReset,

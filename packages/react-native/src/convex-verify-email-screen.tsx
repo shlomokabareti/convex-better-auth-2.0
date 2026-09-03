@@ -23,8 +23,12 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { ExpoBetterAuthClient } from "./client";
-import { useExpoAuthResendVerification, useExpoAuthVerifyEmail } from "./runtime";
+import {
+  useConvexAuthResendVerification,
+  useConvexAuthVerifyEmail,
+  useConvexAuthClientContext,
+  type ConvexBetterAuthClient,
+} from "convex-auth-react/client";
 
 export type ExpoVerifyEmailScreenStyles = {
   root?: StyleProp<ViewStyle>;
@@ -53,7 +57,7 @@ export type ExpoVerifyEmailScreenCopy = {
 };
 
 export type ExpoVerifyEmailScreenProps = {
-  authClient: ExpoBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   token: string;
   userEmail?: string | null;
   resendCallbackUrl?: string;
@@ -77,10 +81,12 @@ const DEFAULT_COPY: Required<ExpoVerifyEmailScreenCopy> = {
 };
 
 export function ConvexVerifyEmailScreen(props: ExpoVerifyEmailScreenProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient ?? null;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { status, error, verifyEmail } = useExpoAuthVerifyEmail(props.authClient);
-  const { resend, isResending } = useExpoAuthResendVerification(props.authClient);
+  const { status, error, verifyEmail } = useConvexAuthVerifyEmail(authClient);
+  const { resend, isResending } = useConvexAuthResendVerification(authClient);
   const [resendResult, setResendResult] = useState<string | null>(null);
 
   const hasToken = props.token.length > 0;
@@ -99,7 +105,7 @@ export function ConvexVerifyEmailScreen(props: ExpoVerifyEmailScreenProps) {
     return () => {
       cancelled = true;
     };
-  }, [props.token, props.authClient, props.onVerified, hasToken]);
+  }, [props.token, authClient, props.onVerified, hasToken]);
 
   async function handleResend() {
     setResendResult(null);

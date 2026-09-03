@@ -1,213 +1,56 @@
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  createExpoBetterAuthClient,
-  type ExpoBetterAuthClient,
-  type ExpoBetterAuthClientOptions,
-} from "./client";
-import {
-  normalizeExpoTrustedOrigin,
-  resolveExpoAuthConfig,
-  type ExpoPlatformOS,
-  type ExpoResolvedAuthConfig,
-} from "./config";
+import type {
+  ConvexBetterAuthClient,
+  ConvexAuthSessionListItem,
+  ConvexAuthState,
+  ConvexAuthUserState,
+} from "./auth-client-types";
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
-}
-
-export type ExpoAuthUser = {
-  email?: string | null;
-  id: string;
-  image?: string | null;
-  name?: string | null;
-};
-
-export type ExpoAuthSession = {
-  user?: ExpoAuthUser | null;
-};
-
-export type ExpoAuthSessionState = {
-  data?: ExpoAuthSession | null;
-  error?: unknown;
-  isPending: boolean;
-};
-
-export type ExpoAuthActionResult<Data = unknown> = {
-  data?: Data | null;
-  error?: {
-    code?: string;
-    message?: string;
-    status?: number;
-    statusText?: string;
-  } | null;
-};
-
-export type ExpoAuthRuntimeOptions = Omit<
-  ExpoBetterAuthClientOptions,
-  "baseURL" | "platformOS" | "scheme"
-> & {
-  convexSiteUrl?: string | null;
-  convexUrl?: string | null;
-  platformOS: ExpoPlatformOS;
-  scheme?: string | readonly string[] | null;
-};
-
-export type ExpoAuthRuntime = {
-  authClient: ExpoBetterAuthClient;
-  config: ExpoResolvedAuthConfig;
-  useAppAuth: () => {
-    isLoaded: boolean;
-    isSignedIn: boolean;
-    session: ExpoAuthSession | null;
-    userId: string | null;
-  };
-  useAppAuthActions: () => {
-    signInEmail: (args: { email: string; password: string }) => Promise<ExpoAuthActionResult>;
-    signInSocial: (args: { provider: string }) => Promise<ExpoAuthActionResult>;
-    signOut: () => Promise<ExpoAuthActionResult>;
-    signUpEmail: (args: {
-      email: string;
-      name: string;
-      password: string;
-    }) => Promise<ExpoAuthActionResult>;
-  };
-  useAppUser: () => {
-    isLoaded: boolean;
-    isSignedIn: boolean;
-    user: ExpoAuthUser | null;
-  };
-};
-
-export function createExpoAuthRuntime(options: ExpoAuthRuntimeOptions): ExpoAuthRuntime {
-  const config = resolveExpoAuthConfig(options);
-  const authClient = createExpoBetterAuthClient({
-    ...options,
-    baseURL: config.convexSiteUrl,
-    platformOS: config.platformOS,
-    scheme: config.scheme,
-  });
-  const sessionClient = authClient;
-  const actionClient = authClient;
-  // The expoClient plugin opens the system browser for the OAuth round trip
-  // and listens for the deep link back into the app. Better Auth needs the
-  // app's scheme-based callback URL (e.g. `plasma://`) so the provider
-  // redirect lands back inside the app rather than on the web origin.
-  const socialCallbackURL = normalizeExpoTrustedOrigin(config.scheme);
-
-  function useAppAuth() {
-    const session = sessionClient.useSession();
-    const authSession = session.data ?? null;
-    const user = authSession?.user ?? null;
-
+export function useConvexAuthUser(authClient: ConvexBetterAuthClient | null): ConvexAuthUserState {
+  if (authClient === null) {
     return {
-      isLoaded: !session.isPending,
-      isSignedIn: user !== null,
-      session: authSession,
-      userId: user?.id ?? null,
+      user: null,
+      isLoaded: false,
+      isSignedIn: false,
     };
   }
 
-  function useAppUser() {
-    const auth = useAppAuth();
-    const user = auth.session?.user ?? null;
-
-    return {
-      isLoaded: auth.isLoaded,
-      isSignedIn: auth.isSignedIn,
-      user,
-    };
-  }
-
-  function useAppAuthActions() {
-    return {
-      signInEmail: (args: { email: string; password: string }) => actionClient.signIn.email(args),
-      signInSocial: (args: { provider: string }) =>
-        actionClient.signIn.social({
-          provider: args.provider,
-          callbackURL: socialCallbackURL,
-        }),
-      signOut: () => actionClient.signOut(),
-      signUpEmail: (args: { email: string; name: string; password: string }) =>
-        actionClient.signUp.email(args),
-    };
-  }
+  const session = authClient.useSession();
+  const user = session.data?.user;
 
   return {
-    authClient,
-    config,
-    useAppAuth,
-    useAppAuthActions,
-    useAppUser,
+    user:
+      user === undefined
+        ? null
+        : {
+            id: user.id,
+            username: null,
+            fullName: user.name ?? null,
+            primaryEmailAddress: {
+              emailAddress: user.email,
+            },
+          },
+    isLoaded: !session.isPending,
+    isSignedIn: user !== undefined,
   };
 }
 
-// ── Session management hooks (PR A of #3) ─────────────────────────────
-// RN mirrors web's surface. Same hook signatures + return shapes — see
-// packages/react/src/better-auth-runtime.tsx for the source of truth.
-// Consumer code should be identical on both platforms.
+// internally. Web-first; RN exports symmetric hooks via runtime.tsx.
 
-export type ExpoAuthSessionListItem = {
-  id: string;
-  token: string;
-  userId: string;
-  expiresAt: string | Date;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  createdAt: string | Date;
-  updatedAt: string | Date;
-};
-
-type SessionManagementClient = {
-  listSessions?: () => Promise<{
-    data?: ExpoAuthSessionListItem[] | null;
-    error?: unknown;
-  }>;
-  revokeSession?: (args: { token: string }) => Promise<{
-    data?: { status?: boolean } | null;
-    error?: unknown;
-  }>;
-  revokeOtherSessions?: () => Promise<{
-    data?: { status?: boolean } | null;
-    error?: unknown;
-  }>;
-  updateUser?: (args: { name?: string; image?: string }) => Promise<{
-    data?: unknown;
-    error?: unknown;
-  }>;
-  forgetPassword?: (args: { email: string; redirectTo?: string }) => Promise<{
-    data?: unknown;
-    error?: unknown;
-  }>;
-  resetPassword?: (args: { newPassword: string; token: string }) => Promise<{
-    data?: unknown;
-    error?: unknown;
-  }>;
-  sendVerificationEmail?: (args: { email: string; callbackURL?: string }) => Promise<{
-    data?: unknown;
-    error?: unknown;
-  }>;
-  verifyEmail?: (args: { query: { token: string } }) => Promise<{
-    data?: unknown;
-    error?: unknown;
-  }>;
-  changeEmail?: (args: { newEmail: string; callbackURL?: string }) => Promise<{
-    data?: unknown;
-    error?: unknown;
-  }>;
-};
-
-export type ExpoAuthSessionListState = {
-  sessions: ExpoAuthSessionListItem[] | null;
+export type ConvexAuthSessionListState = {
+  /** All active sessions for the current user. null until loaded. */
+  sessions: ConvexAuthSessionListItem[] | null;
   isLoading: boolean;
   error: string | null;
+  /** Re-fetch the list (e.g. after a revoke). */
   refetch: () => Promise<void>;
 };
 
-export function useExpoAuthSessionList(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
-): ExpoAuthSessionListState {
-  const [sessions, setSessions] = useState<ExpoAuthSessionListItem[] | null>(null);
+export function useConvexAuthSessionList(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthSessionListState {
+  const [sessions, setSessions] = useState<ConvexAuthSessionListItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -243,15 +86,15 @@ export function useExpoAuthSessionList(
   return { sessions, isLoading, error, refetch };
 }
 
-export type ExpoAuthRevokeSessionState = {
+export type ConvexAuthRevokeSessionState = {
   revokeSession: (args: { token: string }) => Promise<{ ok: boolean; error: string | null }>;
   revokeOtherSessions: () => Promise<{ ok: boolean; error: string | null }>;
   isRevoking: boolean;
 };
 
-export function useExpoAuthRevokeSession(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
-): ExpoAuthRevokeSessionState {
+export function useConvexAuthRevokeSession(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthRevokeSessionState {
   const [isRevoking, setIsRevoking] = useState(false);
 
   const revokeSession = useCallback(
@@ -310,7 +153,7 @@ export function useExpoAuthRevokeSession(
   return { revokeSession, revokeOtherSessions, isRevoking };
 }
 
-export type ExpoAuthUpdateProfileState = {
+export type ConvexAuthUpdateProfileState = {
   updateProfile: (args: {
     name?: string;
     image?: string;
@@ -318,9 +161,9 @@ export type ExpoAuthUpdateProfileState = {
   isUpdating: boolean;
 };
 
-export function useExpoAuthUpdateProfile(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
-): ExpoAuthUpdateProfileState {
+export function useConvexAuthUpdateProfile(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthUpdateProfileState {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const updateProfile = useCallback(
@@ -354,9 +197,14 @@ export function useExpoAuthUpdateProfile(
   return { updateProfile, isUpdating };
 }
 
-// ---- Password-recovery hooks (RN mirror of web) ----
+// ---- Password-recovery hooks (PR D) ----
 
-export type ExpoAuthForgotPasswordState = {
+export type ConvexAuthForgotPasswordState = {
+  /**
+   * Request a password-reset email. The token in the email links to a
+   * page that calls `useConvexAuthResetPassword().resetPassword(...)`.
+   * `redirectTo` is the absolute URL of that reset page on this app.
+   */
   requestReset: (args: {
     email: string;
     redirectTo?: string;
@@ -364,9 +212,9 @@ export type ExpoAuthForgotPasswordState = {
   isRequesting: boolean;
 };
 
-export function useExpoAuthForgotPassword(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
-): ExpoAuthForgotPasswordState {
+export function useConvexAuthForgotPassword(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthForgotPasswordState {
   const [isRequesting, setIsRequesting] = useState(false);
 
   const requestReset = useCallback(
@@ -400,7 +248,11 @@ export function useExpoAuthForgotPassword(
   return { requestReset, isRequesting };
 }
 
-export type ExpoAuthResetPasswordState = {
+export type ConvexAuthResetPasswordState = {
+  /**
+   * Complete a password reset using a token from the recovery email.
+   * The token is typically in the URL search params on the reset page.
+   */
   resetPassword: (args: {
     newPassword: string;
     token: string;
@@ -408,9 +260,9 @@ export type ExpoAuthResetPasswordState = {
   isResetting: boolean;
 };
 
-export function useExpoAuthResetPassword(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
-): ExpoAuthResetPasswordState {
+export function useConvexAuthResetPassword(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthResetPasswordState {
   const [isResetting, setIsResetting] = useState(false);
 
   const resetPassword = useCallback(
@@ -444,20 +296,20 @@ export function useExpoAuthResetPassword(
   return { resetPassword, isResetting };
 }
 
-// ---- Email-verification hooks (RN mirror of web) ----
+// ---- Email-verification hooks ----
 
-export type ExpoAuthVerifyEmailStatus = "idle" | "verifying" | "verified" | "error";
+export type ConvexAuthVerifyEmailStatus = "idle" | "verifying" | "verified" | "error";
 
-export type ExpoAuthVerifyEmailState = {
-  status: ExpoAuthVerifyEmailStatus;
+export type ConvexAuthVerifyEmailState = {
+  status: ConvexAuthVerifyEmailStatus;
   error: string | null;
   verifyEmail: (args: { token: string }) => Promise<{ ok: boolean; error: string | null }>;
 };
 
-export function useExpoAuthVerifyEmail(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
-): ExpoAuthVerifyEmailState {
-  const [status, setStatus] = useState<ExpoAuthVerifyEmailStatus>("idle");
+export function useConvexAuthVerifyEmail(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthVerifyEmailState {
+  const [status, setStatus] = useState<ConvexAuthVerifyEmailStatus>("idle");
   const [error, setError] = useState<string | null>(null);
 
   const verifyEmail = useCallback(
@@ -495,7 +347,7 @@ export function useExpoAuthVerifyEmail(
   return { status, error, verifyEmail };
 }
 
-export type ExpoAuthResendVerificationState = {
+export type ConvexAuthResendVerificationState = {
   resend: (args: {
     email: string;
     callbackURL?: string;
@@ -503,9 +355,9 @@ export type ExpoAuthResendVerificationState = {
   isResending: boolean;
 };
 
-export function useExpoAuthResendVerification(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
-): ExpoAuthResendVerificationState {
+export function useConvexAuthResendVerification(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthResendVerificationState {
   const [isResending, setIsResending] = useState(false);
 
   const resend = useCallback(
@@ -539,9 +391,9 @@ export function useExpoAuthResendVerification(
   return { resend, isResending };
 }
 
-// ---- Email-change hooks (RN mirror) ----
+// ---- Email-change hooks ----
 
-export type ExpoAuthChangeEmailState = {
+export type ConvexAuthChangeEmailState = {
   requestChange: (args: {
     newEmail: string;
     callbackURL?: string;
@@ -549,9 +401,9 @@ export type ExpoAuthChangeEmailState = {
   isRequesting: boolean;
 };
 
-export function useExpoAuthChangeEmail(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
-): ExpoAuthChangeEmailState {
+export function useConvexAuthChangeEmail(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthChangeEmailState {
   const [isRequesting, setIsRequesting] = useState(false);
 
   const requestChange = useCallback(
@@ -586,23 +438,32 @@ export function useExpoAuthChangeEmail(
   return { requestChange, isRequesting };
 }
 
-// ---- Profile image upload hook (RN) ----
+// ---- Profile image upload hook ----
 //
-// Same shape as web. The RN flavor takes a Blob | string URI because
-// expo-image-picker / react-native-image-picker yield a local file
-// URI, not a File. Consumer's `uploadFile` converts it to a public URL.
+// The package owns the orchestration (pick → upload → save), but the
+// `uploadFile` strategy is consumer-provided so the package stays
+// storage-agnostic. The canonical Convex implementation is a thin
+// wrapper around `ctx.storage.generateUploadUrl()` + a POST; the
+// package keeps that wiring out of the auth surface so consumers
+// can swap storage without touching auth.
 
-export type ExpoAuthUploadProfileImageState = {
+export type ConvexAuthUploadProfileImageState = {
+  /**
+   * Pick a file → upload via the provided strategy → write the
+   * resulting URL onto the user's image. The whole flow flips a
+   * single `isUploading` flag so consumers don't have to thread
+   * three booleans.
+   */
   uploadAndSave: (
     file: Blob | string,
   ) => Promise<{ ok: boolean; url: string | null; error: string | null }>;
   isUploading: boolean;
 };
 
-export function useExpoAuthUploadProfileImage(
-  authClient: (ExpoBetterAuthClient & SessionManagementClient) | null,
+export function useConvexAuthUploadProfileImage(
+  authClient: ConvexBetterAuthClient | null,
   options: { uploadFile: (file: Blob | string) => Promise<string> },
-): ExpoAuthUploadProfileImageState {
+): ConvexAuthUploadProfileImageState {
   const [isUploading, setIsUploading] = useState(false);
   const { uploadFile } = options;
 
@@ -640,31 +501,40 @@ export function useExpoAuthUploadProfileImage(
   return { uploadAndSave, isUploading };
 }
 
-// ---- Two-factor (TOTP + backup codes) hooks (RN mirror of web) ----
+// ---- Two-factor (TOTP + backup codes) hooks ----
 //
-// The package's Expo client factory wires Better Auth's twoFactorClient
-// plugin automatically, so the real client carries `twoFactor.*`. We
-// guard on it anyway (same optional-augment pattern as session/email
-// methods) so a hand-built client without the plugin degrades to a
-// clear "not available" error rather than throwing.
+// Five guarded hooks covering the full 2FA surface: enroll, confirm
+// (TOTP), confirm (backup code), disable, regenerate backup codes. Each
+// returns `{ ok, error }` (plus enroll's `totpURI`/`backupCodes`) and a
+// single in-flight boolean, identical in spirit to the password-recovery
+// and session hooks above. When the auth client has no `twoFactor`
+// namespace (plugin not wired), every hook returns a clear unavailable
+// error instead of throwing.
 
-const TWO_FACTOR_UNAVAILABLE_RN = "Two-factor authentication is not available on this auth client";
+const TWO_FACTOR_UNAVAILABLE = "Two-factor authentication is not available on this auth client";
 
-export type ExpoAuthEnableTwoFactorResult = {
+export type ConvexAuthEnableTwoFactorResult = {
   ok: boolean;
+  /** otpauth:// URI to render as a QR code. null on failure. */
   totpURI: string | null;
+  /** One-time recovery codes. Show ONCE — never retrievable again. */
   backupCodes: string[] | null;
   error: string | null;
 };
 
-export type ExpoAuthEnableTwoFactorState = {
-  enable: (args: { password: string; issuer?: string }) => Promise<ExpoAuthEnableTwoFactorResult>;
+export type ConvexAuthEnableTwoFactorState = {
+  /**
+   * Begin enrollment: re-authenticates with the password, then returns
+   * the otpauth URI + backup codes. 2FA is not yet active — the user
+   * must confirm a TOTP code via `useConvexAuthVerifyTotp` first.
+   */
+  enable: (args: { password: string; issuer?: string }) => Promise<ConvexAuthEnableTwoFactorResult>;
   isEnabling: boolean;
 };
 
-export function useExpoAuthEnableTwoFactor(
-  authClient: ExpoBetterAuthClient | null,
-): ExpoAuthEnableTwoFactorState {
+export function useConvexAuthEnableTwoFactor(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthEnableTwoFactorState {
   const [isEnabling, setIsEnabling] = useState(false);
 
   const enable = useCallback(
@@ -674,7 +544,7 @@ export function useExpoAuthEnableTwoFactor(
           ok: false,
           totpURI: null,
           backupCodes: null,
-          error: TWO_FACTOR_UNAVAILABLE_RN,
+          error: TWO_FACTOR_UNAVAILABLE,
         };
       }
       setIsEnabling(true);
@@ -684,16 +554,10 @@ export function useExpoAuthEnableTwoFactor(
           const msg = result.error.message ?? "Could not enable two-factor authentication";
           return { ok: false, totpURI: null, backupCodes: null, error: msg };
         }
-        const data = asRecord(result.data);
-        const totpURI = typeof data?.totpURI === "string" ? data.totpURI : null;
-        const backupCodes =
-          Array.isArray(data?.backupCodes) && data.backupCodes.every((c) => typeof c === "string")
-            ? (data.backupCodes as string[])
-            : null;
         return {
           ok: true,
-          totpURI,
-          backupCodes,
+          totpURI: result.data?.totpURI ?? null,
+          backupCodes: result.data?.backupCodes ?? null,
           error: null,
         };
       } catch (err) {
@@ -713,7 +577,12 @@ export function useExpoAuthEnableTwoFactor(
   return { enable, isEnabling };
 }
 
-export type ExpoAuthVerifyTotpState = {
+export type ConvexAuthVerifyTotpState = {
+  /**
+   * Confirm a 6-digit TOTP code. Used BOTH to finish enrollment and to
+   * satisfy the 2FA step-up during sign-in. `trustDevice` skips 2FA on
+   * this device for the Better Auth trust window.
+   */
   verifyTotp: (args: {
     code: string;
     trustDevice?: boolean;
@@ -721,15 +590,15 @@ export type ExpoAuthVerifyTotpState = {
   isVerifying: boolean;
 };
 
-export function useExpoAuthVerifyTotp(
-  authClient: ExpoBetterAuthClient | null,
-): ExpoAuthVerifyTotpState {
+export function useConvexAuthVerifyTotp(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthVerifyTotpState {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const verifyTotp = useCallback(
     async (args: { code: string; trustDevice?: boolean }) => {
       if (authClient?.twoFactor?.verifyTotp === undefined) {
-        return { ok: false, error: TWO_FACTOR_UNAVAILABLE_RN };
+        return { ok: false, error: TWO_FACTOR_UNAVAILABLE };
       }
       setIsVerifying(true);
       try {
@@ -753,7 +622,8 @@ export function useExpoAuthVerifyTotp(
   return { verifyTotp, isVerifying };
 }
 
-export type ExpoAuthVerifyBackupCodeState = {
+export type ConvexAuthVerifyBackupCodeState = {
+  /** Satisfy 2FA step-up with a one-time backup code instead of TOTP. */
   verifyBackupCode: (args: {
     code: string;
     trustDevice?: boolean;
@@ -761,15 +631,15 @@ export type ExpoAuthVerifyBackupCodeState = {
   isVerifying: boolean;
 };
 
-export function useExpoAuthVerifyBackupCode(
-  authClient: ExpoBetterAuthClient | null,
-): ExpoAuthVerifyBackupCodeState {
+export function useConvexAuthVerifyBackupCode(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthVerifyBackupCodeState {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const verifyBackupCode = useCallback(
     async (args: { code: string; trustDevice?: boolean }) => {
       if (authClient?.twoFactor?.verifyBackupCode === undefined) {
-        return { ok: false, error: TWO_FACTOR_UNAVAILABLE_RN };
+        return { ok: false, error: TWO_FACTOR_UNAVAILABLE };
       }
       setIsVerifying(true);
       try {
@@ -796,20 +666,21 @@ export function useExpoAuthVerifyBackupCode(
   return { verifyBackupCode, isVerifying };
 }
 
-export type ExpoAuthDisableTwoFactorState = {
+export type ConvexAuthDisableTwoFactorState = {
+  /** Turn 2FA off. Requires re-authentication with the password. */
   disable: (args: { password: string }) => Promise<{ ok: boolean; error: string | null }>;
   isDisabling: boolean;
 };
 
-export function useExpoAuthDisableTwoFactor(
-  authClient: ExpoBetterAuthClient | null,
-): ExpoAuthDisableTwoFactorState {
+export function useConvexAuthDisableTwoFactor(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthDisableTwoFactorState {
   const [isDisabling, setIsDisabling] = useState(false);
 
   const disable = useCallback(
     async (args: { password: string }) => {
       if (authClient?.twoFactor?.disable === undefined) {
-        return { ok: false, error: TWO_FACTOR_UNAVAILABLE_RN };
+        return { ok: false, error: TWO_FACTOR_UNAVAILABLE };
       }
       setIsDisabling(true);
       try {
@@ -836,7 +707,11 @@ export function useExpoAuthDisableTwoFactor(
   return { disable, isDisabling };
 }
 
-export type ExpoAuthGenerateBackupCodesState = {
+export type ConvexAuthGenerateBackupCodesState = {
+  /**
+   * Regenerate the one-time recovery codes (invalidates the old set).
+   * Requires re-authentication with the password.
+   */
   generateBackupCodes: (args: { password: string }) => Promise<{
     ok: boolean;
     backupCodes: string[] | null;
@@ -845,19 +720,15 @@ export type ExpoAuthGenerateBackupCodesState = {
   isGenerating: boolean;
 };
 
-export function useExpoAuthGenerateBackupCodes(
-  authClient: ExpoBetterAuthClient | null,
-): ExpoAuthGenerateBackupCodesState {
+export function useConvexAuthGenerateBackupCodes(
+  authClient: ConvexBetterAuthClient | null,
+): ConvexAuthGenerateBackupCodesState {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateBackupCodes = useCallback(
     async (args: { password: string }) => {
       if (authClient?.twoFactor?.generateBackupCodes === undefined) {
-        return {
-          ok: false,
-          backupCodes: null,
-          error: TWO_FACTOR_UNAVAILABLE_RN,
-        };
+        return { ok: false, backupCodes: null, error: TWO_FACTOR_UNAVAILABLE };
       }
       setIsGenerating(true);
       try {
@@ -869,14 +740,9 @@ export function useExpoAuthGenerateBackupCodes(
             error: result.error.message ?? "Could not regenerate backup codes",
           };
         }
-        const data = asRecord(result.data);
-        const backupCodes =
-          Array.isArray(data?.backupCodes) && data.backupCodes.every((c) => typeof c === "string")
-            ? (data.backupCodes as string[])
-            : null;
         return {
           ok: true,
-          backupCodes,
+          backupCodes: result.data?.backupCodes ?? null,
           error: null,
         };
       } catch (err) {
@@ -896,18 +762,77 @@ export function useExpoAuthGenerateBackupCodes(
 }
 
 /**
- * Extract the base32 shared secret from an `otpauth://` URI for manual
- * authenticator entry (RN mirror of the web helper). Returns null when
- * absent. RN's URL implementation handles `otpauth://` reliably; the
- * regex fallback covers any runtime that doesn't.
+ * Extract the base32 shared secret from an `otpauth://` URI so the
+ * enroll UI can offer manual entry as a fallback to scanning the QR.
+ * Returns null if the URI has no `secret` param.
  */
 export function extractTotpSecret(totpURI: string): string | null {
   try {
     const url = new URL(totpURI);
     return url.searchParams.get("secret");
   } catch {
+    // Some authenticator URIs aren't strictly URL-parseable; fall back
+    // to a regex scrape of the secret query param.
     const match = totpURI.match(/[?&]secret=([^&]+)/i);
     const secret = match?.[1];
     return secret === undefined ? null : decodeURIComponent(secret);
   }
+}
+
+export function useAuthState(authClient: ConvexBetterAuthClient | null): ConvexAuthState {
+  if (authClient === null) {
+    return {
+      isLoaded: false,
+      isSignedIn: false,
+    };
+  }
+
+  const session = authClient.useSession();
+  return {
+    isLoaded: !session.isPending,
+    isSignedIn: session.data !== null && session.data !== undefined,
+  };
+}
+
+export function getConvexAuthActions(args: {
+  authClient: ConvexBetterAuthClient | null;
+  signInPath: string;
+  signUpPath: string;
+  assignLocation?: (url: string) => void;
+}) {
+  const assignLocation =
+    args.assignLocation ??
+    ((url: string) => {
+      if (typeof window !== "undefined") {
+        window.location.assign(url);
+      }
+    });
+
+  return {
+    signInSocial: async (options: { provider: string; callbackURL?: string }) => {
+      if (args.authClient === null) {
+        return;
+      }
+
+      await args.authClient.signIn.social({
+        provider: options.provider,
+        callbackURL: options.callbackURL,
+      });
+    },
+    signOut: async (options?: { redirectUrl?: string }) => {
+      if (args.authClient !== null) {
+        await args.authClient.signOut({
+          fetchOptions: {
+            credentials: "include",
+          },
+        });
+      }
+
+      assignLocation(options?.redirectUrl ?? args.signInPath);
+    },
+    redirectToSignIn: async (options?: { signInForceRedirectUrl?: string }) => {
+      assignLocation(options?.signInForceRedirectUrl ?? args.signInPath);
+    },
+    buildSignUpUrl: () => args.signUpPath,
+  };
 }

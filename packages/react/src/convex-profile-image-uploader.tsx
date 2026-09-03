@@ -20,10 +20,9 @@
  */
 import { useRef, useState, type ChangeEvent } from "react";
 
-import {
-  useConvexAuthUploadProfileImage,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
+import { useConvexAuthUploadProfileImage } from "./auth-client-hooks";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
+import { useConvexAuthClientContext } from "./convex-auth-client-provider";
 import { AuthCard, AuthCardContent, AuthCardHeader } from "./ui";
 
 export type ConvexProfileImageUploaderClassNames = {
@@ -46,14 +45,15 @@ export type ConvexProfileImageUploaderCopy = {
 };
 
 export type ConvexProfileImageUploaderProps = {
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   /**
-   * Consumer-provided upload strategy. Receives the picked File and
-   * MUST return the canonical URL of the uploaded image (the URL
-   * that will be stored on the user). The package never sees the
-   * storage backend.
+   * Consumer-provided upload strategy. Receives the picked file (a
+   * browser `File`/`Blob` on web, a `Blob` or a base64/URI string on
+   * React Native) and MUST return the canonical URL of the uploaded
+   * image (the URL that will be stored on the user). The package
+   * never sees the storage backend.
    */
-  uploadFile: (file: File | Blob) => Promise<string>;
+  uploadFile: (file: Blob | string) => Promise<string>;
   initialImage?: string | null;
   /** File-input `accept` attribute (defaults to image/*). */
   accept?: string;
@@ -73,10 +73,12 @@ const DEFAULT_COPY: Required<ConvexProfileImageUploaderCopy> = {
 };
 
 export function ConvexProfileImageUploader(props: ConvexProfileImageUploaderProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { uploadAndSave, isUploading } = useConvexAuthUploadProfileImage(props.authClient, {
+  const { uploadAndSave, isUploading } = useConvexAuthUploadProfileImage(authClient, {
     uploadFile: props.uploadFile,
   });
   const [currentImage, setCurrentImage] = useState(props.initialImage ?? null);
@@ -84,7 +86,7 @@ export function ConvexProfileImageUploader(props: ConvexProfileImageUploaderProp
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const isAvailable = props.authClient?.updateUser !== undefined;
+  const isAvailable = authClient?.updateUser !== undefined;
 
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
     setSuccess(null);

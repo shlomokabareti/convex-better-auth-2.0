@@ -15,7 +15,9 @@
  */
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-import { useConvexAuthResetPassword, type ConvexBetterAuthClient } from "./better-auth-runtime";
+import { useConvexAuthResetPassword } from "./auth-client-hooks";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
+import { useConvexAuthClientContext } from "./convex-auth-client-provider";
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthField, AuthInput, AuthLabel } from "./ui";
 
 export type ConvexResetPasswordFormClassNames = {
@@ -44,7 +46,7 @@ export type ConvexResetPasswordFormCopy = {
 };
 
 export type ConvexResetPasswordFormProps = {
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   /** Reset token from the recovery email (typically `?token=…`). */
   token: string;
   /**
@@ -74,17 +76,19 @@ const DEFAULT_COPY: Required<ConvexResetPasswordFormCopy> = {
 };
 
 export function ConvexResetPasswordForm(props: ConvexResetPasswordFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
   const minLength = props.minPasswordLength ?? 12;
 
-  const { resetPassword, isResetting } = useConvexAuthResetPassword(props.authClient);
+  const { resetPassword, isResetting } = useConvexAuthResetPassword(authClient);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isAvailable = props.authClient?.resetPassword !== undefined;
+  const isAvailable = authClient?.resetPassword !== undefined;
   const hasToken = props.token.length > 0;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

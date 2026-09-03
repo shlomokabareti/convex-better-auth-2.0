@@ -21,8 +21,11 @@ import {
   type ViewStyle,
 } from "react-native";
 
-import type { ExpoBetterAuthClient } from "./client";
-import { useExpoAuthChangeEmail } from "./runtime";
+import {
+  useConvexAuthChangeEmail,
+  useConvexAuthClientContext,
+  type ConvexBetterAuthClient,
+} from "convex-auth-react/client";
 
 export type ExpoChangeEmailFormStyles = {
   root?: StyleProp<ViewStyle>;
@@ -53,7 +56,7 @@ export type ExpoChangeEmailFormCopy = {
 };
 
 export type ExpoChangeEmailFormProps = {
-  authClient: ExpoBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   currentEmail?: string | null;
   verifyCallbackUrl?: string;
   styles?: ExpoChangeEmailFormStyles;
@@ -78,7 +81,9 @@ const DEFAULT_COPY: Required<ExpoChangeEmailFormCopy> = {
 export function ConvexChangeEmailForm(props: ExpoChangeEmailFormProps) {
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const s = props.styles ?? {};
-  const { requestChange, isRequesting } = useExpoAuthChangeEmail(props.authClient);
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient ?? null;
+  const { requestChange, isRequesting } = useConvexAuthChangeEmail(authClient);
   const [newEmail, setNewEmail] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -1,4 +1,4 @@
-import type { AuthRuntimeStatus } from "convex-better-auth";
+import type { AuthRuntimeStatus } from "convex-auth-core";
 
 export type AuthRuntimeContextValue = {
   status: AuthRuntimeStatus;

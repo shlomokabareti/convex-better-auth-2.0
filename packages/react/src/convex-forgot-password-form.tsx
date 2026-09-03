@@ -19,7 +19,9 @@
  */
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-import { useConvexAuthForgotPassword, type ConvexBetterAuthClient } from "./better-auth-runtime";
+import { useConvexAuthForgotPassword } from "./auth-client-hooks";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
+import { useConvexAuthClientContext } from "./convex-auth-client-provider";
 import { AuthCard, AuthCardContent, AuthCardHeader, AuthField, AuthInput, AuthLabel } from "./ui";
 
 export type ConvexForgotPasswordFormClassNames = {
@@ -45,7 +47,7 @@ export type ConvexForgotPasswordFormCopy = {
 };
 
 export type ConvexForgotPasswordFormProps = {
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   /**
    * Absolute URL of the reset-password page on this app. Better-Auth
    * appends `?token=…` to it before sending the email.
@@ -69,15 +71,17 @@ const DEFAULT_COPY: Required<ConvexForgotPasswordFormCopy> = {
 };
 
 export function ConvexForgotPasswordForm(props: ConvexForgotPasswordFormProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { requestReset, isRequesting } = useConvexAuthForgotPassword(props.authClient);
+  const { requestReset, isRequesting } = useConvexAuthForgotPassword(authClient);
   const [email, setEmail] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isAvailable = props.authClient?.forgetPassword !== undefined;
+  const isAvailable = authClient?.forgetPassword !== undefined;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

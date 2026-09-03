@@ -22,11 +22,9 @@
  */
 import { useEffect, useState } from "react";
 
-import {
-  useConvexAuthResendVerification,
-  useConvexAuthVerifyEmail,
-  type ConvexBetterAuthClient,
-} from "./better-auth-runtime";
+import { useConvexAuthResendVerification, useConvexAuthVerifyEmail } from "./auth-client-hooks";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
+import { useConvexAuthClientContext } from "./convex-auth-client-provider";
 import { AuthCard, AuthCardContent, AuthCardHeader } from "./ui";
 
 export type ConvexVerifyEmailScreenClassNames = {
@@ -52,7 +50,7 @@ export type ConvexVerifyEmailScreenCopy = {
 };
 
 export type ConvexVerifyEmailScreenProps = {
-  authClient: ConvexBetterAuthClient | null;
+  authClient?: ConvexBetterAuthClient | null;
   /** Token from the verification email's `?token=…` param. */
   token: string;
   /**
@@ -87,15 +85,17 @@ const DEFAULT_COPY: Required<ConvexVerifyEmailScreenCopy> = {
 };
 
 export function ConvexVerifyEmailScreen(props: ConvexVerifyEmailScreenProps) {
+  const contextClient = useConvexAuthClientContext();
+  const authClient = props.authClient ?? contextClient;
   const copy = { ...DEFAULT_COPY, ...props.copy };
   const cn = props.classNames ?? {};
 
-  const { status, error, verifyEmail } = useConvexAuthVerifyEmail(props.authClient);
-  const { resend, isResending } = useConvexAuthResendVerification(props.authClient);
+  const { status, error, verifyEmail } = useConvexAuthVerifyEmail(authClient);
+  const { resend, isResending } = useConvexAuthResendVerification(authClient);
   const [resendResult, setResendResult] = useState<string | null>(null);
 
   const hasToken = props.token.length > 0;
-  const isAvailable = props.authClient?.verifyEmail !== undefined;
+  const isAvailable = authClient?.verifyEmail !== undefined;
   const canResend =
     props.userEmail !== null && props.userEmail !== undefined && props.userEmail.length > 0;
 
@@ -113,7 +113,7 @@ export function ConvexVerifyEmailScreen(props: ConvexVerifyEmailScreenProps) {
     };
     // Re-run only if the token or client changes — onVerified should
     // not retrigger this effect even if the parent re-creates it.
-  }, [props.token, props.authClient, props.onVerified, isAvailable, hasToken]);
+  }, [props.token, authClient, props.onVerified, isAvailable, hasToken]);
 
   async function handleResend() {
     setResendResult(null);
