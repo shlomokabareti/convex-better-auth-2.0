@@ -10,9 +10,11 @@ const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
 const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
-function parseProvider(url: URL): string {
-  const parts = url.pathname.split("/").filter(Boolean);
-  return parts[parts.length - 1] ?? "";
+function parseProvider(url: URL, prefix: string): string {
+  const afterPrefix = url.pathname.startsWith(prefix)
+    ? url.pathname.slice(prefix.length)
+    : url.pathname;
+  return afterPrefix.split("/").filter(Boolean)[0] ?? "";
 }
 
 function buildErrorRedirect(base: string, error: string, description?: string): Response {
@@ -21,7 +23,7 @@ function buildErrorRedirect(base: string, error: string, description?: string): 
   if (description) redirect.searchParams.set("error_description", description);
   return new Response(null, {
     status: 302,
-    headers: { Location: redirect.pathname + redirect.search },
+    headers: { Location: redirect.toString() },
   });
 }
 
@@ -48,7 +50,14 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
       const url = new URL(request.url);
       const requestOrigin = url.origin;
       const trustedOrigins = getTrustedOrigins(config, requestOrigin);
-      const provider = parseProvider(url);
+      const provider = parseProvider(url, "/api/auth/signin/");
+      if (!provider) {
+        return buildErrorRedirect(
+          process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/",
+          "invalid_callback_request",
+          "Missing provider",
+        );
+      }
       const callbackURL =
         url.searchParams.get("redirectTo") ?? url.searchParams.get("callbackURL") ?? undefined;
       const errorURL = url.searchParams.get("errorURL") ?? undefined;
@@ -96,7 +105,14 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
     method: "GET",
     handler: httpActionGeneric(async (ctx, request) => {
       const url = new URL(request.url);
-      const provider = parseProvider(url);
+      const provider = parseProvider(url, "/api/auth/callback/");
+      if (!provider) {
+        return buildErrorRedirect(
+          process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/",
+          "invalid_callback_request",
+          "Missing provider",
+        );
+      }
       const error = url.searchParams.get("error");
       const errorDescription = url.searchParams.get("error_description") ?? undefined;
       const code = url.searchParams.get("code");
@@ -111,13 +127,18 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
             return undefined;
           }
         })();
-        const base = errorURL ?? process.env.SITE_URL ?? "/";
-        return buildErrorRedirect(base, error, errorDescription ?? undefined);
+        const base = errorURL ?? process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/";
+        return buildErrorRedirect(base, "provider_error", errorDescription ?? error);
       }
 
-      if (!code || !state) {
-        const base = process.env.SITE_URL ?? "/";
-        return buildErrorRedirect(base, "no_code", "Missing code or state");
+      if (!state) {
+        const base = process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/";
+        return buildErrorRedirect(base, "invalid_callback_request", "Missing state");
+      }
+
+      if (!code) {
+        const base = process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/";
+        return buildErrorRedirect(base, "no_code", "Missing code");
       }
 
       let linkingUserId: string | undefined;
