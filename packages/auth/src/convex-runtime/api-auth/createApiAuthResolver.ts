@@ -10,7 +10,7 @@ import {
   type AuthorizedApiAuthContext,
   type AuthorizedApiAuthType,
 } from "./resolveAuthorizedApiAuthContext";
-import { resolveLinkedBetterAuthMcpSession } from "./resolveLinkedBetterAuthMcpSession";
+import { resolveLinkedMcpSession } from "./resolveLinkedMcpSession";
 import type { McpSessionLike } from "./resolveMcpSessionAuthContext";
 import { resolveVerifiedUserBearerAuthContext } from "./resolveVerifiedUserBearerAuthContext";
 import { resolveApiScopeAuthorization } from "./scopeAuthorization";
@@ -416,7 +416,7 @@ async function resolveMcpApiAuth<
   const mcpConfig = requireMcpResolverConfig(config);
   const provider =
     typeof mcpConfig.provider === "function" ? mcpConfig.provider(ctx) : mcpConfig.provider;
-  const resolved = await resolveLinkedBetterAuthMcpSession({
+  const resolved = await resolveLinkedMcpSession({
     session: args.session,
     provider,
     issuer: mcpConfig.getIssuer(ctx),
@@ -431,7 +431,7 @@ async function resolveMcpApiAuth<
   return await authorizeApiAuthContext(config, ctx, {
     auth: resolved.provisionalContext,
     authType: "oauth",
-    authSubject: resolved.betterAuthUserId,
+    authSubject: resolved.subjectId,
     userId: resolved.userId,
     organizationId: resolved.organizationId,
   });

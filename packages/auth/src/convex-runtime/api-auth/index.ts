@@ -10,7 +10,7 @@ export * from "./parseApiCredential";
 export * from "./parseAuthorizationBearerToken";
 export * from "./resolveApiAuthContext";
 export * from "./resolveApiAuthContextFromRequest";
-export * from "./resolveLinkedBetterAuthMcpSession";
+export * from "./resolveLinkedMcpSession";
 export * from "./resolveMcpSessionAuthContext";
 export * from "./resolveVerifiedUserBearerAuthContext";
 export * from "./resolveStoredApiKeyCredentialForRequest";

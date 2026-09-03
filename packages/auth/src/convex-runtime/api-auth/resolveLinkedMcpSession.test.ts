@@ -3,11 +3,11 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "vitest";
 
 import { ApiAuthError } from "./errors";
-import { resolveLinkedBetterAuthMcpSession } from "./resolveLinkedBetterAuthMcpSession";
+import { resolveLinkedMcpSession } from "./resolveLinkedMcpSession";
 
-describe("resolveLinkedBetterAuthMcpSession", () => {
-  it("resolves linked Better Auth MCP user identity and organization access", async () => {
-    const context = await resolveLinkedBetterAuthMcpSession({
+describe("resolveLinkedMcpSession", () => {
+  it("resolves linked MCP user identity and organization access", async () => {
+    const context = await resolveLinkedMcpSession({
       session: {
         accessToken: "token",
         clientId: "crm-mcp-client",
@@ -45,7 +45,7 @@ describe("resolveLinkedBetterAuthMcpSession", () => {
       resourceId: "crm:mcp",
     });
 
-    assert.equal(context.betterAuthUserId, "better-auth-user-123");
+    assert.equal(context.subjectId, "better-auth-user-123");
     assert.equal(context.userId, "user_123");
     assert.equal(context.organizationId, "org_456");
     assert.deepEqual(context.permissions, ["organization:view"]);
@@ -55,7 +55,7 @@ describe("resolveLinkedBetterAuthMcpSession", () => {
   it("rejects client-only MCP sessions", async () => {
     await assert.rejects(
       () =>
-        resolveLinkedBetterAuthMcpSession({
+        resolveLinkedMcpSession({
           session: {
             accessToken: "token",
             clientId: "crm-mcp-client",
@@ -85,7 +85,7 @@ describe("resolveLinkedBetterAuthMcpSession", () => {
   it("rejects restricted linked users (account suspension fails closed)", async () => {
     await assert.rejects(
       () =>
-        resolveLinkedBetterAuthMcpSession({
+        resolveLinkedMcpSession({
           session: {
             accessToken: "token",
             clientId: "crm-mcp-client",
@@ -122,10 +122,10 @@ describe("resolveLinkedBetterAuthMcpSession", () => {
     );
   });
 
-  it("rejects unlinked Better Auth users", async () => {
+  it("rejects unlinked users", async () => {
     await assert.rejects(
       () =>
-        resolveLinkedBetterAuthMcpSession({
+        resolveLinkedMcpSession({
           session: {
             accessToken: "token",
             clientId: "crm-mcp-client",
