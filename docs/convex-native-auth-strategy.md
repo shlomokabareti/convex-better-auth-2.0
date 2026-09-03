@@ -11,6 +11,12 @@ For the recorded decisions on what is aligned with Convex Auth 2.0 and what is i
 - The bridge is the right way to ship now, but it is not the right end state. The end state is a **Convex-native auth runtime** that lives in the same database, uses the same query/subscription model as the rest of the app, and never pulls a Node auth framework into the isolate.
 - We are **not** copying Convex Auth 2.0. We are learning from its design constraints and releasing our own implementation that preserves the B2B surface we have already built.
 
+## Current status
+
+The `convex-auth` native runtime is now the default. It implements email/password, JWT/JWKS, session minting and verification, email verification, password reset, email OTP, magic links, TOTP, backup codes, and OAuth (Google, GitHub, Discord) inside the Convex isolate using Web Crypto and `jose`.
+
+The `convex-better-auth` and `convex-better-auth-adapter` packages remain as a staged migration bridge for existing Better Auth consumers. They keep auth working during a transition, but new projects should start with `convex-auth` directly.
+
 ## Why Better Auth does not fit the Convex runtime
 
 Convex functions run in one of two runtimes. The default runtime is a custom V8-based JavaScript environment, similar to Cloudflare Workers, with strict constraints:
@@ -61,9 +67,9 @@ The next step is to move **authentication** itself into Convex. Concretely:
 
 The key architectural shift is: **auth state is just Convex state**. A session becomes a row in a table. A permission check becomes a query. A login becomes a mutation or action. The client subscribes to the auth identity the same way it subscribes to any other Convex data.
 
-## What Better Auth still owns today
+## What the migration bridge still owns today
 
-As of the current release, the authentication core still lives in Better Auth:
+The `convex-better-auth` bridge package still relies on Better Auth for the auth primitives it was originally built on. This is only relevant while you are migrating; new `convex-auth` consumers use the native implementations above.
 
 - `bearer` (token transport)
 - `jwt` (JWT/JWKS signing)
@@ -114,7 +120,7 @@ Because hashing is non-deterministic and computationally expensive, it should li
 
 ## Phased roadmap
 
-This is a _strategic_ roadmap, not a committed schedule. Each phase should land behind the existing public API so consumers do not need to rewrite.
+This roadmap has been implemented for `convex-auth`. Phases 1–7 are now live, and phase 8 is complete for the native runtime: `convex-auth` does not import or depend on the `better-auth` runtime. The bridge packages (`convex-better-auth` and `convex-better-auth-adapter`) still support staged migrations.
 
 1. **Phase 0 — Stabilize the bridge (now).**
    - Release `convex-better-auth-adapter@0.13.0`, `convex-better-auth@2.0.0`, `convex-auth@1.0.0`, and siblings.
