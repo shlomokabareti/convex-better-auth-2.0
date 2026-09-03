@@ -29,7 +29,7 @@ import {
 } from "./service-auth";
 
 const DEFAULT_ACCESS_TOKEN_EXPIRES_IN_SECONDS = 60 * 60;
-const DEFAULT_IDENTITY_PROVIDER = "better-auth";
+const DEFAULT_IDENTITY_PROVIDER = "convex-auth";
 
 /**
  * Exactly the component functions this runtime calls -- not three whole namespaces.
