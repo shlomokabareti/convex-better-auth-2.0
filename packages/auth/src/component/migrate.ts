@@ -1,5 +1,4 @@
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel.js";
 import { internalMutation } from "./_generated/server.js";
 
 const legacyUserValidator = v.object({
@@ -47,123 +46,142 @@ const legacySessionValidator = v.object({
   userId: v.string(),
 });
 
+function normalizeEmail(email: string) {
+  return email.toLowerCase().trim();
+}
+
+function providerFromLegacy(providerId: string) {
+  return providerId === "credential" ? "password" : providerId;
+}
+
+function issuerFromLegacy(provider: string, legacyIssuer?: string | null) {
+  if (provider === "password") return "native";
+  return legacyIssuer ?? `${provider}`;
+}
+
 /**
- * One-time migration from the Better Auth adapter schema into the native
- * convex-auth component. Run once, then remove the adapter.
+ * Migrate a single Better Auth user into the native `users` table.
+ * Idempotent: returns the existing user if the email is already present.
  */
-export const migrateFromBetterAuth = internalMutation({
-  args: {
-    users: v.array(legacyUserValidator),
-    accounts: v.array(legacyAccountValidator),
-    sessions: v.array(legacySessionValidator),
-  },
-  returns: v.object({
-    usersCreated: v.number(),
-    identitiesCreated: v.number(),
-    accountsCreated: v.number(),
-    sessionsCreated: v.number(),
-  }),
+export const migrateUser = internalMutation({
+  args: { legacyUser: legacyUserValidator },
+  returns: v.object({ userId: v.id("users") }),
   handler: async (ctx, args) => {
-    let usersCreated = 0;
-    let identitiesCreated = 0;
-    let accountsCreated = 0;
-    let sessionsCreated = 0;
-
-    const userIdMap = new Map<string, Id<"users">>();
-    const userEmailMap = new Map<Id<"users">, string>();
-    const userEmailVerifiedMap = new Map<Id<"users">, boolean>();
-
-    for (const legacyUser of args.users) {
-      const legacyId = legacyUser._id ?? legacyUser.userId;
-      const userId = await ctx.db.insert("users", {
-        email: legacyUser.email.toLowerCase().trim(),
-        name: legacyUser.name,
-        image: legacyUser.image ?? undefined,
-        emailVerified: legacyUser.emailVerified,
-        twoFactorEnabled: legacyUser.twoFactorEnabled ?? undefined,
-        isActive: true,
-        createdAt: legacyUser.createdAt,
-        updatedAt: legacyUser.updatedAt,
-      });
-      usersCreated++;
-      const key = legacyId ?? userId;
-      userIdMap.set(key, userId);
-      userEmailMap.set(userId, legacyUser.email.toLowerCase().trim());
-      userEmailVerifiedMap.set(userId, legacyUser.emailVerified);
+    const email = normalizeEmail(args.legacyUser.email);
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", email))
+      .unique();
+    if (existing) {
+      return { userId: existing._id };
     }
 
-    for (const legacyAccount of args.accounts) {
-      const userId = userIdMap.get(legacyAccount.userId);
-      if (userId === undefined) {
-        // Account with no matching user; skip.
-        continue;
-      }
+    const userId = await ctx.db.insert("users", {
+      email,
+      name: args.legacyUser.name,
+      image: args.legacyUser.image ?? undefined,
+      emailVerified: args.legacyUser.emailVerified,
+      twoFactorEnabled: args.legacyUser.twoFactorEnabled ?? undefined,
+      isActive: true,
+      createdAt: args.legacyUser.createdAt,
+      updatedAt: args.legacyUser.updatedAt,
+    });
 
-      const provider =
-        legacyAccount.providerId === "email" ? "convex-auth" : legacyAccount.providerId;
-      const issuer = legacyAccount.issuer ?? provider;
-      const subject = legacyAccount.accountId;
-      const tokenIdentifier = `${issuer}|${subject}`;
+    return { userId };
+  },
+});
 
-      await ctx.db.insert("auth_identities", {
-        identityId: tokenIdentifier,
-        userId,
-        provider,
-        issuer,
-        subject,
-        tokenIdentifier,
-        email: userEmailMap.get(userId),
-        emailVerified: userEmailVerifiedMap.get(userId) ?? false,
-        sessionId: undefined,
-        createdAt: legacyAccount.createdAt,
-        updatedAt: legacyAccount.updatedAt,
-      });
-      identitiesCreated++;
+/**
+ * Migrate a single Better Auth account into native `auth_identities` and
+ * `authAccounts`.
+ */
+export const migrateAccount = internalMutation({
+  args: {
+    legacyAccount: legacyAccountValidator,
+    userId: v.id("users"),
+    email: v.optional(v.string()),
+    emailVerified: v.optional(v.boolean()),
+  },
+  returns: v.object({ identityId: v.id("auth_identities") }),
+  handler: async (ctx, args) => {
+    const provider = providerFromLegacy(args.legacyAccount.providerId);
+    const issuer = issuerFromLegacy(provider, args.legacyAccount.issuer);
+    const subject = provider === "password" ? args.userId : args.legacyAccount.accountId;
+    const tokenIdentifier = provider === "password" ? subject : `${issuer}|${subject}`;
 
-      await ctx.db.insert("authAccounts", {
-        userId,
-        provider,
-        issuer,
-        subject,
-        credentialHash: legacyAccount.password ?? "",
-        accessToken: legacyAccount.accessToken ?? undefined,
-        refreshToken: legacyAccount.refreshToken ?? undefined,
-        idToken: legacyAccount.idToken ?? undefined,
-        tokenType: undefined,
-        scopes: legacyAccount.scope ? [legacyAccount.scope] : undefined,
-        accessTokenExpiresAt: legacyAccount.accessTokenExpiresAt ?? undefined,
-        refreshTokenExpiresAt: legacyAccount.refreshTokenExpiresAt ?? undefined,
-        createdAt: legacyAccount.createdAt,
-        updatedAt: legacyAccount.updatedAt,
-      });
-      accountsCreated++;
+    const existing = await ctx.db
+      .query("auth_identities")
+      .withIndex("by_token_identifier", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+      .unique();
+    if (existing) {
+      return { identityId: existing._id };
     }
 
-    for (const legacySession of args.sessions) {
-      const userId = userIdMap.get(legacySession.userId);
-      if (userId === undefined) {
-        continue;
-      }
+    const identityId = await ctx.db.insert("auth_identities", {
+      identityId: tokenIdentifier,
+      userId: args.userId,
+      provider,
+      issuer,
+      subject,
+      tokenIdentifier,
+      email: args.email ? normalizeEmail(args.email) : undefined,
+      emailVerified: args.emailVerified ?? false,
+      sessionId: undefined,
+      createdAt: args.legacyAccount.createdAt,
+      updatedAt: args.legacyAccount.updatedAt,
+    });
 
-      await ctx.db.insert("authSessions", {
-        sessionId: legacySession.token,
-        userId,
-        token: legacySession.token,
-        expiresAt: legacySession.expiresAt,
-        ipAddress: legacySession.ipAddress ?? undefined,
-        userAgent: legacySession.userAgent ?? undefined,
-        revokedAt: undefined,
-        createdAt: legacySession.createdAt,
-        updatedAt: legacySession.updatedAt,
-      });
-      sessionsCreated++;
+    await ctx.db.insert("authAccounts", {
+      userId: args.userId,
+      provider,
+      issuer,
+      subject,
+      credentialHash: args.legacyAccount.password ?? "",
+      accessToken: args.legacyAccount.accessToken ?? undefined,
+      refreshToken: args.legacyAccount.refreshToken ?? undefined,
+      idToken: args.legacyAccount.idToken ?? undefined,
+      tokenType: undefined,
+      scopes: args.legacyAccount.scope ? [args.legacyAccount.scope] : undefined,
+      accessTokenExpiresAt: args.legacyAccount.accessTokenExpiresAt ?? undefined,
+      refreshTokenExpiresAt: args.legacyAccount.refreshTokenExpiresAt ?? undefined,
+      createdAt: args.legacyAccount.createdAt,
+      updatedAt: args.legacyAccount.updatedAt,
+    });
+
+    return { identityId };
+  },
+});
+
+/**
+ * Migrate a single Better Auth session into native `authSessions`.
+ */
+export const migrateSession = internalMutation({
+  args: {
+    legacySession: legacySessionValidator,
+    userId: v.id("users"),
+  },
+  returns: v.object({ sessionId: v.id("authSessions") }),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("authSessions")
+      .withIndex("by_token", (q) => q.eq("token", args.legacySession.token))
+      .unique();
+    if (existing) {
+      return { sessionId: existing._id };
     }
 
-    return {
-      usersCreated,
-      identitiesCreated,
-      accountsCreated,
-      sessionsCreated,
-    };
+    const sessionId = await ctx.db.insert("authSessions", {
+      sessionId: args.legacySession.token,
+      userId: args.userId,
+      token: args.legacySession.token,
+      expiresAt: args.legacySession.expiresAt,
+      ipAddress: args.legacySession.ipAddress ?? undefined,
+      userAgent: args.legacySession.userAgent ?? undefined,
+      revokedAt: undefined,
+      createdAt: args.legacySession.createdAt,
+      updatedAt: args.legacySession.updatedAt,
+    });
+
+    return { sessionId };
   },
 });
