@@ -318,7 +318,7 @@ describe("checkConsumerContract", () => {
     );
   });
 
-  it("does NOT flag users anchor with convexAuthUserId (legacy `better-auth` mirror)", () => {
+  it("does NOT flag users anchor with convexAuthUserId (legacy mirror)", () => {
     fixture.write(
       "schema.ts",
       [

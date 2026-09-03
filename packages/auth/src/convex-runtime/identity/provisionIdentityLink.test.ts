@@ -6,7 +6,7 @@ import { decideIdentityProvision, type ProvisionIdentityInput } from "./provisio
 
 const baseIdentity: ProvisionIdentityInput = {
   identityId: "identity_123",
-  provider: "better-auth",
+  provider: "convex-auth",
   subject: "user_123",
   issuer: "https://auth.example.com",
   tokenIdentifier: "https://auth.example.com|user_123",

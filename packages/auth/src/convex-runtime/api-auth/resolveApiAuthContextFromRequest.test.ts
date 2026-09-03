@@ -14,7 +14,7 @@ function createVerifier(): ApiTokenVerifier {
     async verifyUserBearerToken(): Promise<VerifiedUserToken> {
       return {
         credentialType: "userBearer",
-        provider: "better-auth",
+        provider: "convex-auth",
         issuer: "https://auth.example.com",
         subject: "user_123",
         tokenIdentifier: "https://auth.example.com|user_123",
