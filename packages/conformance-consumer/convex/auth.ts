@@ -23,6 +23,7 @@ export const auth = convexAuth({
   component: components.convexAuth,
   emailAndPassword: {
     enabled: true,
+    checkBreach: true,
     email: {
       from: process.env.EMAIL_FROM_ADDRESS ?? "auth@example.com",
       appOrigin: siteUrl,

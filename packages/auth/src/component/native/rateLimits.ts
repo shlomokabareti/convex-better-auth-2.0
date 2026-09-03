@@ -3,20 +3,21 @@ import { getPage } from "convex-helpers/server/pagination";
 import { mutation, query, type QueryCtx } from "../_generated/server.js";
 import schema from "../schema.js";
 
-async function getRateLimitByIdentifierAndWindow(
+async function countAttemptsInWindow(
   ctx: { db: QueryCtx["db"] },
   identifier: string,
   windowStart: number,
+  maxAttempts: number,
 ) {
   const { page } = await getPage(ctx, {
     table: "authRateLimits",
     index: "by_identifier_window",
     startIndexKey: [identifier, windowStart],
     endIndexKey: [identifier, windowStart],
-    absoluteMaxRows: 1,
+    absoluteMaxRows: maxAttempts + 1,
     schema,
   });
-  return page[0] ?? null;
+  return page.length;
 }
 
 export const recordAttempt = mutation({
@@ -28,18 +29,6 @@ export const recordAttempt = mutation({
   returns: v.object({ allowed: v.boolean(), count: v.number() }),
   handler: async (ctx, args) => {
     const now = Date.now();
-    const existing = await getRateLimitByIdentifierAndWindow(
-      ctx,
-      args.identifier,
-      args.windowStart,
-    );
-
-    if (existing) {
-      const nextCount = existing.count + 1;
-      await ctx.db.patch(existing._id, { count: nextCount, updatedAt: now });
-      return { allowed: nextCount <= args.maxAttempts, count: nextCount };
-    }
-
     await ctx.db.insert("authRateLimits", {
       identifier: args.identifier,
       windowStart: args.windowStart,
@@ -47,7 +36,14 @@ export const recordAttempt = mutation({
       createdAt: now,
       updatedAt: now,
     });
-    return { allowed: true, count: 1 };
+
+    const count = await countAttemptsInWindow(
+      ctx,
+      args.identifier,
+      args.windowStart,
+      args.maxAttempts,
+    );
+    return { allowed: count <= args.maxAttempts, count };
   },
 });
 
@@ -59,13 +55,12 @@ export const checkRateLimit = query({
   },
   returns: v.object({ allowed: v.boolean(), count: v.number() }),
   handler: async (ctx, args) => {
-    const existing = await getRateLimitByIdentifierAndWindow(
+    const count = await countAttemptsInWindow(
       ctx,
       args.identifier,
       args.windowStart,
+      args.maxAttempts,
     );
-
-    const count = existing?.count ?? 0;
     return { allowed: count < args.maxAttempts, count };
   },
 });

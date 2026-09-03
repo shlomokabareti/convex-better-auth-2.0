@@ -1,14 +1,17 @@
 import { httpActionGeneric, type HttpRouter } from "convex/server";
 import { v } from "convex/values";
 import { base64urlToBytes } from "./password.js";
-import { getJwks, verifyToken } from "./jwt.js";
+import { getJwks, mintToken, verifyToken } from "./jwt.js";
 import { parse } from "../helpers/index.js";
 import { hashToken, isTokenExpired } from "./tokens.js";
 import { handleUpdateSession } from "./updateSession.js";
 import type { NativeEmailAndPasswordFunctionReferences } from "./provider.js";
 import type { NativeMagicLinkFunctionReferences } from "./magicLink.js";
-import { toNativeAuthUser } from "./types.js";
-import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
+import {
+  type NativeAuthSession,
+  type NativeEmailAndPasswordComponentHandle,
+  toNativeAuthUser,
+} from "./types.js";
 import { isAllowedRedirectUrl } from "./callback.js";
 import { validateCsrfHeaders } from "./csrf.js";
 import { setCookieHeader, clearCookieHeader, readCookie } from "./cookies.js";
@@ -19,6 +22,22 @@ const SESSION_ID_COOKIE = "convex-auth-session-id";
 const TWO_FACTOR_PENDING_COOKIE = "convex-auth-two-factor";
 const TWO_FACTOR_TRUSTED_DEVICE_COOKIE = "convex-auth-trusted-device";
 const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+
+type NativeActionHandler<TReturn> = (ctx: unknown, args: unknown) => Promise<TReturn>;
+
+function callAction<TReturn>(ctx: unknown, action: unknown, args: unknown): Promise<TReturn> {
+  const actionFn = action as
+    | { _handler?: NativeActionHandler<TReturn>; (ctx: unknown, args: unknown): Promise<TReturn> }
+    | undefined;
+  if (typeof actionFn !== "function") {
+    throw new Error("Expected an action function");
+  }
+  const handler = actionFn._handler;
+  if (typeof handler === "function") {
+    return handler(ctx, args);
+  }
+  return actionFn(ctx, args);
+}
 
 function buildErrorRedirect(callbackURL: string, error: string): Response {
   const redirect = new URL(
@@ -135,9 +154,14 @@ function errorStatusAndReason(error: unknown): { status: number; reason: string 
     "Invalid email": { status: 400, reason: "invalid_email" },
     "Password is too short": { status: 400, reason: "password_too_short" },
     "Password is too long": { status: 400, reason: "password_too_long" },
+    "Password has been exposed in a data breach and cannot be used": {
+      status: 400,
+      reason: "breached_password",
+    },
     "User already exists": { status: 400, reason: "user_already_exists" },
     "Invalid email or password": { status: 401, reason: "invalid_email_or_password" },
     "Email not verified": { status: 401, reason: "email_not_verified" },
+    "Too many requests": { status: 429, reason: "too_many_requests" },
     "Failed to create session": { status: 500, reason: "session_creation_failed" },
     "Invalid session token": { status: 401, reason: "invalid_session" },
   };
@@ -211,163 +235,161 @@ export function addNativeAuthHttpRoutes(
   });
 
   if (actions) {
-    http.route({
-      path: "/api/auth/sign-up",
-      method: "POST",
-      handler: httpActionGeneric(async (ctx, request) => {
-        const csrf = checkCsrf(request, options);
-        if (csrf) {
-          return csrf;
-        }
+    const signUpAction = httpActionGeneric(async (ctx, request) => {
+      const csrf = checkCsrf(request, options);
+      if (csrf) {
+        return csrf;
+      }
 
-        const body = await request.json().catch(() => undefined);
+      const body = await request.json().catch(() => undefined);
 
-        let parsed: {
-          email: string;
-          password: string;
-          name: string;
-          image?: string;
-          callbackURL?: string;
-          rememberMe?: boolean;
-        };
-        try {
-          parsed = parse(
-            v.object({
-              email: v.string(),
-              password: v.string(),
-              name: v.string(),
-              image: v.optional(v.string()),
-              callbackURL: v.optional(v.string()),
-              rememberMe: v.optional(v.boolean()),
-            }),
-            body,
-          );
-        } catch {
-          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+      let parsed: {
+        email: string;
+        password: string;
+        name: string;
+        image?: string;
+        callbackURL?: string;
+        rememberMe?: boolean;
+      };
+      try {
+        parsed = parse(
+          v.object({
+            email: v.string(),
+            password: v.string(),
+            name: v.string(),
+            image: v.optional(v.string()),
+            callbackURL: v.optional(v.string()),
+            rememberMe: v.optional(v.boolean()),
+          }),
+          body,
+        );
+      } catch {
+        return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
-        let session;
-        try {
-          session = await ctx.runAction(actions.signUp, parsed);
-        } catch (error) {
-          const { status, reason } = errorStatusAndReason(error);
-          return buildErrorResponse(status, reason);
-        }
-        const secure = new URL(request.url).protocol === "https:";
+      let session;
+      try {
+        session = await callAction<NativeAuthSession>(ctx, actions.signUp, parsed);
+      } catch (error) {
+        const { status, reason } = errorStatusAndReason(error);
+        return buildErrorResponse(status, reason);
+      }
+      const secure = new URL(request.url).protocol === "https:";
 
-        const headers = new Headers({ "Content-Type": "application/json" });
-        if (session.token) {
-          const expiry = getTokenExpiry(session.token);
-          const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
-          headers.append(
-            "Set-Cookie",
-            setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure),
-          );
-        }
-        if (session.refreshToken) {
-          const maxAge = parsed.rememberMe ? REFRESH_TOKEN_MAX_AGE_SECONDS : undefined;
-          headers.append(
-            "Set-Cookie",
-            setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge, secure),
-          );
-        }
+      const headers = new Headers({ "Content-Type": "application/json" });
+      if (session.token) {
+        const expiry = getTokenExpiry(session.token);
+        const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
+        headers.append(
+          "Set-Cookie",
+          setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure),
+        );
+      }
+      if (session.refreshToken) {
+        const maxAge = parsed.rememberMe ? REFRESH_TOKEN_MAX_AGE_SECONDS : undefined;
+        headers.append(
+          "Set-Cookie",
+          setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge, secure),
+        );
+      }
 
-        return new Response(JSON.stringify(session), { status: 200, headers });
-      }),
+      return new Response(JSON.stringify(session), { status: 200, headers });
     });
 
-    http.route({
-      path: "/api/auth/sign-in",
-      method: "POST",
-      handler: httpActionGeneric(async (ctx, request) => {
-        const csrf = checkCsrf(request, options);
-        if (csrf) {
-          return csrf;
-        }
+    http.route({ path: "/api/auth/sign-up", method: "POST", handler: signUpAction });
+    http.route({ path: "/api/auth/sign-up/email", method: "POST", handler: signUpAction });
 
-        const body = await request.json().catch(() => undefined);
+    const signInAction = httpActionGeneric(async (ctx, request) => {
+      const csrf = checkCsrf(request, options);
+      if (csrf) {
+        return csrf;
+      }
 
-        let parsed: {
-          email: string;
-          password: string;
-          callbackURL?: string;
-          rememberMe?: boolean;
-          trustedDeviceToken?: string;
-        };
-        try {
-          parsed = parse(
-            v.object({
-              email: v.string(),
-              password: v.string(),
-              callbackURL: v.optional(v.string()),
-              rememberMe: v.optional(v.boolean()),
-              trustedDeviceToken: v.optional(v.string()),
-            }),
-            body,
-          );
-        } catch {
-          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+      const body = await request.json().catch(() => undefined);
 
-        parsed.trustedDeviceToken =
-          parsed.trustedDeviceToken ?? readCookie(request, TWO_FACTOR_TRUSTED_DEVICE_COOKIE);
+      let parsed: {
+        email: string;
+        password: string;
+        callbackURL?: string;
+        rememberMe?: boolean;
+        trustedDeviceToken?: string;
+      };
+      try {
+        parsed = parse(
+          v.object({
+            email: v.string(),
+            password: v.string(),
+            callbackURL: v.optional(v.string()),
+            rememberMe: v.optional(v.boolean()),
+            trustedDeviceToken: v.optional(v.string()),
+          }),
+          body,
+        );
+      } catch {
+        return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
 
-        let session;
-        try {
-          session = await ctx.runAction(actions.signIn, parsed);
-        } catch (error) {
-          const { status, reason } = errorStatusAndReason(error);
-          return buildErrorResponse(status, reason);
-        }
-        const secure = new URL(request.url).protocol === "https:";
+      parsed.trustedDeviceToken =
+        parsed.trustedDeviceToken ?? readCookie(request, TWO_FACTOR_TRUSTED_DEVICE_COOKIE);
 
-        const headers = new Headers({ "Content-Type": "application/json" });
-        if (session.token) {
-          const expiry = getTokenExpiry(session.token);
-          const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
-          headers.append(
-            "Set-Cookie",
-            setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure),
-          );
-          if (session.twoFactorChallengeToken) {
-            headers.append("Set-Cookie", clearCookieHeader(TWO_FACTOR_PENDING_COOKIE, secure));
-          }
-        }
-        if (session.refreshToken) {
-          const maxAge = parsed.rememberMe ? REFRESH_TOKEN_MAX_AGE_SECONDS : undefined;
-          headers.append(
-            "Set-Cookie",
-            setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge, secure),
-          );
-        }
+      let session;
+      try {
+        session = await callAction<NativeAuthSession>(ctx, actions.signIn, parsed);
+      } catch (error) {
+        const { status, reason } = errorStatusAndReason(error);
+        return buildErrorResponse(status, reason);
+      }
+      const secure = new URL(request.url).protocol === "https:";
+
+      const headers = new Headers({ "Content-Type": "application/json" });
+      if (session.token) {
+        const expiry = getTokenExpiry(session.token);
+        const maxAge = expiry ? Math.max(0, Math.floor((expiry - Date.now()) / 1000)) : undefined;
+        headers.append(
+          "Set-Cookie",
+          setCookieHeader(ACCESS_TOKEN_COOKIE, session.token, maxAge, secure),
+        );
         if (session.twoFactorChallengeToken) {
-          const maxAge = session.twoFactorCookieMaxAgeMs
-            ? Math.floor(session.twoFactorCookieMaxAgeMs / 1000)
-            : undefined;
-          headers.append(
-            "Set-Cookie",
-            setCookieHeader(
-              TWO_FACTOR_PENDING_COOKIE,
-              session.twoFactorChallengeToken,
-              maxAge,
-              secure,
-            ),
-          );
+          headers.append("Set-Cookie", clearCookieHeader(TWO_FACTOR_PENDING_COOKIE, secure));
         }
+      }
+      if (session.refreshToken) {
+        const maxAge = parsed.rememberMe ? REFRESH_TOKEN_MAX_AGE_SECONDS : undefined;
+        headers.append(
+          "Set-Cookie",
+          setCookieHeader(REFRESH_TOKEN_COOKIE, session.refreshToken, maxAge, secure),
+        );
+      }
+      if (session.twoFactorChallengeToken) {
+        const maxAge = session.twoFactorCookieMaxAgeMs
+          ? Math.floor(session.twoFactorCookieMaxAgeMs / 1000)
+          : undefined;
+        headers.append(
+          "Set-Cookie",
+          setCookieHeader(
+            TWO_FACTOR_PENDING_COOKIE,
+            session.twoFactorChallengeToken,
+            maxAge,
+            secure,
+          ),
+        );
+      }
 
-        if (session.url) {
-          headers.append("Location", session.url);
-        }
+      if (session.url) {
+        headers.append("Location", session.url);
+      }
 
-        return new Response(JSON.stringify(session), { status: 200, headers });
-      }),
+      return new Response(JSON.stringify(session), { status: 200, headers });
     });
+
+    http.route({ path: "/api/auth/sign-in", method: "POST", handler: signInAction });
+    http.route({ path: "/api/auth/sign-in/email", method: "POST", handler: signInAction });
 
     http.route({
       path: "/api/auth/sign-out",
@@ -408,7 +430,11 @@ export function addNativeAuthHttpRoutes(
         let result;
         try {
           result = token
-            ? await ctx.runAction(actions.signOut, { token, callbackURL: parsed.callbackURL })
+            ? await callAction<{ success: boolean; redirect?: boolean; url?: string }>(
+                ctx,
+                actions.signOut,
+                { token, callbackURL: parsed.callbackURL },
+              )
             : { success: true, redirect: false as const };
         } catch (error) {
           const { status, reason } = errorStatusAndReason(error);
@@ -465,7 +491,11 @@ export function addNativeAuthHttpRoutes(
 
         let result;
         try {
-          result = await ctx.runAction(actions.twoFactorEnable, {
+          result = await callAction<{
+            totpURI?: string;
+            backupCodes?: string[];
+            error?: string;
+          }>(ctx, actions.twoFactorEnable, {
             token,
             password: parsed.password,
             issuer: parsed.issuer,
@@ -524,7 +554,7 @@ export function addNativeAuthHttpRoutes(
 
         let session;
         try {
-          session = await ctx.runAction(actions.twoFactorVerifyTOTP, {
+          session = await callAction<NativeAuthSession>(ctx, actions.twoFactorVerifyTOTP, {
             token,
             code: parsed.code,
             trustDevice: parsed.trustDevice,
@@ -574,7 +604,7 @@ export function addNativeAuthHttpRoutes(
 
         let session;
         try {
-          session = await ctx.runAction(actions.twoFactorVerifyBackupCode, {
+          session = await callAction<NativeAuthSession>(ctx, actions.twoFactorVerifyBackupCode, {
             token,
             code: parsed.code,
             trustDevice: parsed.trustDevice,
@@ -623,7 +653,7 @@ export function addNativeAuthHttpRoutes(
 
         let result;
         try {
-          result = await ctx.runAction(actions.twoFactorDisable, {
+          result = await callAction<{ success: boolean }>(ctx, actions.twoFactorDisable, {
             token,
             password: parsed.password,
           });
@@ -674,10 +704,14 @@ export function addNativeAuthHttpRoutes(
 
         let result;
         try {
-          result = await ctx.runAction(actions.twoFactorGenerateBackupCodes, {
-            token,
-            password: parsed.password,
-          });
+          result = await callAction<{ backupCodes: string[]; error?: string }>(
+            ctx,
+            actions.twoFactorGenerateBackupCodes,
+            {
+              token,
+              password: parsed.password,
+            },
+          );
         } catch (error) {
           const { status, reason } = errorStatusAndReason(error);
           return buildErrorResponse(status, reason);
@@ -719,7 +753,7 @@ export function addNativeAuthHttpRoutes(
 
           let result;
           try {
-            result = await ctx.runAction(verifyMagicLinkAction, {
+            result = await callAction<NativeAuthSession>(ctx, verifyMagicLinkAction, {
               token,
               callbackURL,
               newUserCallbackURL: newUserCallbackURL ?? undefined,
@@ -935,13 +969,24 @@ export function addNativeAuthHttpRoutes(
   });
 
   http.route({
-    path: "/api/auth/session",
+    path: "/api/auth/convex/jwks",
+    method: "GET",
+    handler: httpActionGeneric(async () => {
+      return new Response(JSON.stringify(getJwks()), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }),
+  });
+
+  http.route({
+    path: "/api/auth/convex/token",
     method: "GET",
     handler: httpActionGeneric(async (ctx, request) => {
       const token = readCookie(request, ACCESS_TOKEN_COOKIE);
       if (!token) {
-        return new Response(JSON.stringify({ user: null, sessionId: null }), {
-          status: 200,
+        return new Response(JSON.stringify({ error: "unauthorized" }), {
+          status: 401,
           headers: { "Content-Type": "application/json" },
         });
       }
@@ -950,8 +995,8 @@ export function addNativeAuthHttpRoutes(
       try {
         payload = await verifyToken(token);
       } catch {
-        return new Response(JSON.stringify({ user: null, sessionId: null }), {
-          status: 200,
+        return new Response(JSON.stringify({ error: "unauthorized" }), {
+          status: 401,
           headers: { "Content-Type": "application/json" },
         });
       }
@@ -959,32 +1004,94 @@ export function addNativeAuthHttpRoutes(
       const userId = payload.sub;
       const sessionId = payload.sessionId;
       if (typeof userId !== "string" || typeof sessionId !== "string") {
-        return new Response(JSON.stringify({ user: null, sessionId: null }), {
-          status: 200,
+        return new Response(JSON.stringify({ error: "unauthorized" }), {
+          status: 401,
           headers: { "Content-Type": "application/json" },
         });
       }
 
       const session = await ctx.runQuery(component.native.sessions.getSessionByToken, { token });
       if (!session || session.sessionId !== sessionId || (session.expiresAt ?? 0) < Date.now()) {
-        return new Response(JSON.stringify({ user: null, sessionId: null }), {
-          status: 200,
+        return new Response(JSON.stringify({ error: "unauthorized" }), {
+          status: 401,
           headers: { "Content-Type": "application/json" },
         });
       }
 
       const user = await ctx.runQuery(component.native.users.getUserById, { userId });
       if (!user) {
-        return new Response(JSON.stringify({ user: null, sessionId: null }), {
-          status: 200,
+        return new Response(JSON.stringify({ error: "unauthorized" }), {
+          status: 401,
           headers: { "Content-Type": "application/json" },
         });
       }
 
-      return new Response(JSON.stringify({ user: toNativeAuthUser(user), sessionId }), {
+      const extra: Record<string, unknown> = {};
+      if (typeof payload.identityId === "string") {
+        extra.identityId = payload.identityId;
+      }
+
+      const convexToken = await mintToken(userId, sessionId, extra, {
+        issuer: new URL(request.url).origin,
+      });
+
+      return new Response(JSON.stringify({ token: convexToken }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }),
   });
+
+  const sessionHandler = httpActionGeneric(async (ctx, request) => {
+    const token = readCookie(request, ACCESS_TOKEN_COOKIE);
+    if (!token) {
+      return new Response(JSON.stringify({ user: null, sessionId: null }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    let payload;
+    try {
+      payload = await verifyToken(token);
+    } catch {
+      return new Response(JSON.stringify({ user: null, sessionId: null }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = payload.sub;
+    const sessionId = payload.sessionId;
+    if (typeof userId !== "string" || typeof sessionId !== "string") {
+      return new Response(JSON.stringify({ user: null, sessionId: null }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const session = await ctx.runQuery(component.native.sessions.getSessionByToken, { token });
+    if (!session || session.sessionId !== sessionId || (session.expiresAt ?? 0) < Date.now()) {
+      return new Response(JSON.stringify({ user: null, sessionId: null }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const user = await ctx.runQuery(component.native.users.getUserById, { userId });
+    if (!user) {
+      return new Response(JSON.stringify({ user: null, sessionId: null }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ user: toNativeAuthUser(user), sessionId }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  });
+
+  http.route({ path: "/api/auth/session", method: "GET", handler: sessionHandler });
+  http.route({ path: "/api/auth/get-session", method: "GET", handler: sessionHandler });
 }

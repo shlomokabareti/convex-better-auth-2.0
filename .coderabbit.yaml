@@ -1,0 +1,105 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: en-US
+tone_instructions: "Be concise. Question requirements. Prefer deletion and simplification."
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  review_details: true
+  in_progress_fortune: false
+  changed_files_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  auto_title_placeholder: "@coderabbitai"
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+    base_branches:
+      - ".*"
+
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/site/dist/**"
+    - "!**/_generated/**"
+    - "!**/*.d.ts"
+    - "!**/*.lock"
+    - "!**/*.svg"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.gif"
+    - "!**/*.ico"
+    - "!**/*.woff*"
+    - "!**/*.ttf"
+    - "!**/*.eot"
+    - "!docs/**"
+    - "!.changeset/**"
+
+  path_instructions:
+    - path: "packages/auth/src/convex-runtime/native/**"
+      instructions: |
+        This is the Convex-native auth runtime.
+        - Keep Better Auth as a one-time migration bridge only.
+        - Avoid permanent runtime translation or new Better Auth dependencies.
+        - Follow Convex Auth 2.0 architecture and never expose secrets in logs/responses.
+    - path: "packages/auth/src/component/native/**"
+      instructions: |
+        Convex component functions for the native auth runtime.
+        - Prefer idempotent mutations and race-safe writes.
+        - Respect the schema in packages/auth/src/component/schema/native.ts.
+    - path: "packages/**/*.{ts,tsx}"
+      instructions: |
+        Follow the repo AGENTS.md:
+        - pnpm only; no npm/yarn/bun.
+        - No `any`; use `unknown` and narrow.
+        - No `@ts-ignore`, `eslint-disable`, or `biome-ignore`.
+        - No new dependencies unless necessary.
+        - No comments unless asked.
+        - Vortex Auth only; Clerk is banned.
+
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+
+  tools:
+    ast-grep:
+      enabled: false
+    biome:
+      enabled: false
+    hadolint:
+      enabled: false
+    languagetool:
+      enabled: false
+    markdownlint:
+      enabled: true
+    phpstan:
+      enabled: false
+    psscriptanalyzer:
+      enabled: false
+    ruff:
+      enabled: false
+    shellcheck:
+      enabled: true
+    swiftlint:
+      enabled: false
+    github-checks:
+      enabled: true
+
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+
+chat:
+  auto_reply: true

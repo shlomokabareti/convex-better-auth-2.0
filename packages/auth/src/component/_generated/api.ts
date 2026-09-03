@@ -14,6 +14,7 @@ import type * as authMd from "../authMd.js";
 import type * as convex_src_machine_apiKeySecret from "../convex/src/machine/apiKeySecret.js";
 import type * as identity from "../identity.js";
 import type * as mcp from "../mcp.js";
+import type * as migrate from "../migrate.js";
 import type * as native_accounts from "../native/accounts.js";
 import type * as native_codes from "../native/codes.js";
 import type * as native_identities from "../native/identities.js";
@@ -52,6 +53,7 @@ const fullApi: ApiFromModules<{
   "convex/src/machine/apiKeySecret": typeof convex_src_machine_apiKeySecret;
   identity: typeof identity;
   mcp: typeof mcp;
+  migrate: typeof migrate;
   "native/accounts": typeof native_accounts;
   "native/codes": typeof native_codes;
   "native/identities": typeof native_identities;
