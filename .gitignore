@@ -17,6 +17,7 @@ dist/
 !packages/auth/src/**/*.recipe.test.ts
 !packages/react/src/*.test.ts
 !packages/react-native/src/*.test.ts
+!packages/bridge-consumer/src/**/*.test.ts
 *.vitest.ts
 CHANGELOG.md
 coverage/

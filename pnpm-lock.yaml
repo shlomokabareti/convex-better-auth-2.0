@@ -206,6 +206,22 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@edge-runtime/vm@5.0.0)(@types/node@26.4.0)(@vitest/browser-preview@4.1.10)(vite@8.2.2(@types/node@26.4.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.0)(yaml@2.9.0))
 
+  packages/bridge-consumer:
+    dependencies:
+      convex:
+        specifier: ^1.45.0
+        version: 1.45.0(react@19.2.8)
+      convex-better-auth:
+        specifier: workspace:*
+        version: link:../better-auth
+      convex-better-auth-adapter:
+        specifier: workspace:*
+        version: link:../better-auth-adapter
+    devDependencies:
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@edge-runtime/vm@5.0.0)(@types/node@26.4.0)(@vitest/browser-preview@4.1.10)(vite@8.2.2(@types/node@26.4.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.0)(yaml@2.9.0))
+
   packages/conformance-consumer:
     dependencies:
       convex:
