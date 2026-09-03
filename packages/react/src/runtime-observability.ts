@@ -1,4 +1,4 @@
-import type { AuthRuntimeStatus } from "convex-better-auth";
+import type { AuthRuntimeStatus } from "convex-auth-core";
 
 export type AuthRuntimeTransitionEvent = {
   eventName: "auth_runtime_state_changed";

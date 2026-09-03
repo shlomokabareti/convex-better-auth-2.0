@@ -1,4 +1,4 @@
-import type { AuthReadinessState, AuthRuntimeStatus } from "convex-better-auth";
+import type { AuthReadinessState, AuthRuntimeStatus } from "convex-auth-core";
 import { useConvexAuth } from "convex/react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 

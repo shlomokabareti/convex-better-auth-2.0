@@ -1,0 +1,9 @@
+refactor(react): stop importing AuthRuntimeStatus from convex-better-auth
+
+- Source AuthRuntimeStatus / AuthReadinessState from convex-auth-core
+  instead of the better-auth bridge package.
+- Add convex-auth-core as a dependency of convex-auth-react and
+  convex-auth-react-native.
+- Removes one direct default-path import of the convex-better-auth bridge.
+
+Proof: workspace typecheck, lint, and 1068 tests green.

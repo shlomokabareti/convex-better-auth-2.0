@@ -1,4 +1,4 @@
-import type { AuthReadinessState } from "convex-better-auth";
+import type { AuthReadinessState } from "convex-auth-core";
 
 import { useAuthRuntimeStatus } from "./useAuthRuntimeStatus";
 

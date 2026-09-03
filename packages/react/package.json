@@ -37,6 +37,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "convex-auth-core": "workspace:*",
     "convex-auth-ui": "workspace:*",
     "react-dom": "^19.0.0"
   },

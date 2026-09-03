@@ -1,4 +1,4 @@
-import type { AuthRuntimeStatus } from "convex-better-auth";
+import type { AuthRuntimeStatus } from "convex-auth-core";
 import { useContext } from "react";
 
 import { AuthRuntimeContext } from "./AuthRuntimeProvider";
