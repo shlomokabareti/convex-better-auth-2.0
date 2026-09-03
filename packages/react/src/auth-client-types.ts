@@ -46,6 +46,7 @@ export type ConvexBetterAuthClient = {
       email: string;
       password: string;
       callbackURL?: string;
+      rememberMe?: boolean;
     }): Promise<BetterAuthResponse>;
     social(args: { provider: string; callbackURL?: string }): Promise<BetterAuthResponse>;
   };
@@ -54,7 +55,9 @@ export type ConvexBetterAuthClient = {
       name: string;
       email: string;
       password: string;
+      image?: string;
       callbackURL?: string;
+      rememberMe?: boolean;
     }): Promise<BetterAuthResponse>;
   };
   convex?: {

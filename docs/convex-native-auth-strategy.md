@@ -52,7 +52,7 @@ The next step is to move **authentication** itself into Convex. Concretely:
 | Session minting                | `internalAdapter.createSession` in Better Auth                    | Convex action/mutation creates a token and writes the session                                    |
 | Session verification           | Better Auth middleware validates token and calls the adapter      | Convex query reads the session and cryptographically verifies a JWT                              |
 | Token signing (JWT/JWKS)       | Better Auth signs, `createConvexAuthConfig` points at Convex JWKS | Convex action signs with `crypto.subtle`; JWKS served by Convex query                            |
-| Password hashing               | Better Auth core (Node `argon2` or similar)                       | Convex action with Node runtime + `argon2`, or Web Crypto PBKDF2/Scrypt, or WASM argon2          |
+| Password hashing               | Better Auth core (Node `argon2` or similar)                       | Convex action using `@noble/hashes/argon2` (Node-free argon2id), or Web Crypto PBKDF2/Scrypt     |
 | OAuth/social login             | Better Auth `genericOAuth` plugin                                 | Convex HTTP action implements per-provider OAuth flow with `fetch`                               |
 | 2FA (TOTP / backup codes)      | Better Auth `twoFactor` plugin                                    | Convex action generates/secrets/verifies with `crypto.subtle` HMAC or a WebAssembly TOTP library |
 | Email OTP / magic link         | Better Auth plugin                                                | Convex action generates a random token, stores a hash, sends email via provider                  |
@@ -82,7 +82,7 @@ The B2B plugins (`organization`, `admin`, `api-key`, etc.) are already Convex-na
 
 - `crypto.subtle` supports PBKDF2 and Scrypt-like derivations in the default runtime.
 - `argon2` is a Node native module and cannot run in the default runtime. Options:
-  1. A Node action with the `"use node";` directive and `argon2` as an external package.
+  1. Use `@noble/hashes/argon2` (pure-JavaScript argon2id) in a Convex action — no Node runtime or `node:` imports.
   2. A WebAssembly build of argon2, imported as a `.wasm` file (counts toward bundle size).
   3. Use PBKDF2/Scrypt with high iteration counts in the default runtime.
 
@@ -207,10 +207,10 @@ This is the smallest end-to-end flow that proves the new architecture. It should
 
 1. **Schema.** Add `authSessions`, `authAccounts`, and `authRefreshTokens` tables to the `convex-auth` component (or start by writing to the existing `better-auth-adapter` component tables to avoid a migration).
 2. **Keys.** Generate an RS256 keypair locally, store `JWT_PRIVATE_KEY` and `JWKS` in the Convex deployment environment, and expose `/.well-known/jwks.json` via a Convex query.
-3. **Password hashing.** Implement a Convex Node action using `argon2` as an external package (`"use node";` in the file).
+3. **Password hashing.** Implement a Convex action using `@noble/hashes/argon2` for argon2id hashing, with no Node runtime or `node:` imports.
 4. **Sign-up / sign-in actions.** Implement `signUp`, `signIn`, `signOut`, and `store` Convex actions.
    - `signUp` hashes the password, creates a `users` row, an `auth_identities` row, and an `authAccounts` row.
-   - `signIn` verifies the password hash in a Node action, then creates an `authSessions` row and returns a signed JWT.
+   - `signIn` verifies the password hash in a Convex action, then creates an `authSessions` row and returns a signed JWT.
    - `signOut` invalidates the session.
 5. **Session verification.** Implement a Convex query `verifySession` that reads the JWT from `ctx.auth`, verifies the signature with `crypto.subtle`, and returns the user.
 6. **Client.** Add `ConvexAuthProvider` and `useAuthActions()` to `convex-auth-react` that use `useQuery`/`useAction`/`useMutation` against the new actions.

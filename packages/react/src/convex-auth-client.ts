@@ -52,7 +52,7 @@ export function useConvexAuthClient() {
     signIn: {
       email: async (args) => {
         try {
-          const data = await actions.signIn({ ...args, rememberMe: false });
+          const data = await actions.signIn({ ...args, rememberMe: args.rememberMe ?? false });
           twoFactorTokenRef.current = data.twoFactorChallengeToken ?? null;
           return { data, error: null };
         } catch (err) {
@@ -75,7 +75,7 @@ export function useConvexAuthClient() {
     signUp: {
       email: async (args) => {
         try {
-          const data = await actions.signUp({ ...args, rememberMe: false });
+          const data = await actions.signUp({ ...args, rememberMe: args.rememberMe ?? false });
           twoFactorTokenRef.current = data.twoFactorChallengeToken ?? null;
           return { data, error: null };
         } catch (err) {

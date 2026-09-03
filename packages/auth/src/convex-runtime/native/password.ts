@@ -1,16 +1,20 @@
 import { base64url } from "jose";
+import { argon2idAsync } from "@noble/hashes/argon2.js";
 import { pbkdf2 } from "@noble/hashes/pbkdf2.js";
 import { scryptAsync } from "@noble/hashes/scrypt.js";
 import { sha256 } from "@noble/hashes/sha2.js";
 
 const PBKDF2_PREFIX = "$pbkdf2$";
 const SCRYPT_PREFIX = "$scrypt$";
-const DEFAULT_SCRYPT_N = 2 ** 14;
-const DEFAULT_SCRYPT_R = 8;
-const DEFAULT_SCRYPT_P = 1;
+const ARGON2ID_PREFIX = "$argon2id$";
 const DEFAULT_DKLEN = 32;
 const DEFAULT_SALT_BYTES = 16;
 const DEFAULT_PBKDF2_ITERATIONS = 100_000;
+// OWASP-recommended baseline for argon2id: 19 MiB, 2 iterations, parallelism 1.
+const DEFAULT_ARGON2_T = 2;
+const DEFAULT_ARGON2_M = 19456;
+const DEFAULT_ARGON2_P = 1;
+const DEFAULT_ARGON2_VERSION = 0x13;
 
 export function bytesToBase64url(bytes: Uint8Array): string {
   return base64url.encode(bytes);
@@ -37,17 +41,21 @@ function generateSalt(): Uint8Array {
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = generateSalt();
-  const derived = await scryptAsync(password, salt, {
-    N: DEFAULT_SCRYPT_N,
-    r: DEFAULT_SCRYPT_R,
-    p: DEFAULT_SCRYPT_P,
+  const derived = await argon2idAsync(password, salt, {
+    t: DEFAULT_ARGON2_T,
+    m: DEFAULT_ARGON2_M,
+    p: DEFAULT_ARGON2_P,
     dkLen: DEFAULT_DKLEN,
+    version: DEFAULT_ARGON2_VERSION,
   });
-  const params = `N=${DEFAULT_SCRYPT_N},r=${DEFAULT_SCRYPT_R},p=${DEFAULT_SCRYPT_P}`;
-  return `${SCRYPT_PREFIX}${params}$${bytesToBase64url(salt)}$${bytesToBase64url(derived)}`;
+  const params = `v=${DEFAULT_ARGON2_VERSION},m=${DEFAULT_ARGON2_M},t=${DEFAULT_ARGON2_T},p=${DEFAULT_ARGON2_P}`;
+  return `${ARGON2ID_PREFIX}${params}$${bytesToBase64url(salt)}$${bytesToBase64url(derived)}`;
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  if (hash.startsWith(ARGON2ID_PREFIX)) {
+    return verifyArgon2id(password, hash);
+  }
   if (hash.startsWith(SCRYPT_PREFIX)) {
     return verifyScrypt(password, hash);
   }
@@ -55,6 +63,69 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
     return verifyPbkdf2(password, hash);
   }
   return false;
+}
+
+function parseArgon2idHash(hash: string): {
+  salt: Uint8Array;
+  expected: Uint8Array;
+  t: number;
+  m: number;
+  p: number;
+  version: number;
+} | null {
+  const parts = hash.slice(ARGON2ID_PREFIX.length).split("$");
+  if (parts.length !== 3) {
+    return null;
+  }
+  const [params, saltB64, derivedB64] = parts;
+  const opts: Record<string, number> = {};
+  for (const pair of (params ?? "").split(",")) {
+    const [key, value] = pair.split("=");
+    if (!key || !value) {
+      return null;
+    }
+    const num = parseInt(value, 10);
+    if (!Number.isFinite(num) || num < 0) {
+      return null;
+    }
+    opts[key] = num;
+  }
+  const { v: version, m, t, p } = opts;
+  if (
+    typeof version !== "number" ||
+    typeof m !== "number" ||
+    typeof t !== "number" ||
+    typeof p !== "number"
+  ) {
+    return null;
+  }
+  try {
+    const salt = base64urlToBytes(saltB64 ?? "");
+    const expected = base64urlToBytes(derivedB64 ?? "");
+    return { salt, expected, t, m, p, version };
+  } catch {
+    return null;
+  }
+}
+
+async function verifyArgon2id(password: string, hash: string): Promise<boolean> {
+  const parsed = parseArgon2idHash(hash);
+  if (!parsed) {
+    return false;
+  }
+  const { salt, expected, t, m, p, version } = parsed;
+  try {
+    const actual = await argon2idAsync(password, salt, {
+      t,
+      m,
+      p,
+      dkLen: expected.length,
+      version,
+    });
+    return timingSafeEqual(actual, expected);
+  } catch {
+    return false;
+  }
 }
 
 function parseScryptHash(hash: string): {
