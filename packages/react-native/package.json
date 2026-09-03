@@ -33,8 +33,7 @@
   },
   "dependencies": {
     "convex-auth-core": "workspace:*",
-    "convex-auth-react": "workspace:*",
-    "convex-better-auth": "workspace:*"
+    "convex-auth-react": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
@@ -49,7 +48,6 @@
     "@better-auth/expo": ">=1.7.0 <1.8.0",
     "better-auth": ">=1.7.1 <1.8.0",
     "convex": ">=1.39.0",
-    "convex-better-auth": ">=2.0.0",
     "convex-better-auth-adapter": "workspace:*",
     "expo-constants": ">=17.0.0",
     "expo-linking": ">=7.0.0",
@@ -89,6 +87,9 @@
       "optional": true
     },
     "@better-auth/expo": {
+      "optional": true
+    },
+    "better-auth": {
       "optional": true
     }
   }
