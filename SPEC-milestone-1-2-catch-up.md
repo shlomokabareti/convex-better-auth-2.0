@@ -24,7 +24,7 @@ A working native email/password flow exists in `packages/auth/src/convex-runtime
 
 ### Password hashing (Milestone 1)
 
-- `password.ts` uses `scryptSync` from `node:crypto`. Better Auth 1.7 defaults to `argon2id` via its `password` config and `ctx.context.password.hash`. The spec for Milestone 1 calls for `argon2` in a Node action.
+- `password.ts` uses `@noble/hashes` (scrypt/pbkdf2) and has no `node:` imports. Better Auth 1.7 defaults to `argon2id` via its `password` config and `ctx.context.password.hash`. The spec for Milestone 1 calls for `argon2id` via `@noble/hashes/argon2` in a Convex action, keeping the runtime Node-free.
 - Hash prefix is `$scrypt$`. Better Auth uses `$argon2id$...` or its configured hasher.
 - Switching must be backwards-compatible for already-stored scrypt hashes so existing tests/users keep working.
 
@@ -93,7 +93,7 @@ A working native email/password flow exists in `packages/auth/src/convex-runtime
 ## In scope for this catch-up
 
 1. Password hashing parity:
-   - Add `argon2` hashing in a Node action.
+   - Add `argon2id` hashing in a Convex action using `@noble/hashes/argon2` (Node-free).
    - Make `verifyPassword` recognize both `$scrypt$` (legacy) and `$argon2id$` hashes.
    - Default to argon2id for new hashes.
 
