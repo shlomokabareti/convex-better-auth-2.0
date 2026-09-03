@@ -4,19 +4,19 @@ This page lists the runtime and dependency versions `convex-better-auth-2.0` is 
 
 ## Current matrix
 
-| Package                      | Version  | Better Auth      | Convex                      | React                  | React Native / Expo                | Node        | pnpm      |
-| ---------------------------- | -------- | ---------------- | --------------------------- | ---------------------- | ---------------------------------- | ----------- | --------- |
-| `convex-better-auth-adapter` | `0.13.0` | `>=1.7.1 <1.8.0` | `>=1.39.0` (`^1.25.0` peer) | `^18.3.1 \|\| ^19.0.0` | —                                  | `>=20.12.0` | `10.25.0` |
-| `convex-better-auth`         | `2.0.0`  | `>=1.7.1 <1.8.0` | `>=1.39.0`                  | —                      | —                                  | `>=20.12.0` | `10.25.0` |
-| `convex-auth`                | `1.0.0`  | `>=1.7.1 <1.8.0` | `>=1.39.0`                  | `>=19.0.0`             | —                                  | `>=20.12.0` | `10.25.0` |
-| `convex-auth-react`          | `1.0.0`  | `>=1.7.1 <1.8.0` | `>=1.39.0`                  | `>=19.0.0`             | —                                  | `>=20.12.0` | `10.25.0` |
-| `convex-auth-react-native`   | `1.0.0`  | `>=1.7.1 <1.8.0` | `>=1.39.0`                  | `>=19.0.0`             | `@better-auth/expo >=1.7.0 <1.8.0` | `>=20.12.0` | `10.25.0` |
-| `convex-auth-core`           | `0.1.0`  | —                | `>=1.39.0`                  | —                      | —                                  | `>=20.12.0` | `10.25.0` |
-| `convex-auth-ui`             | `0.1.0`  | —                | `>=1.39.0`                  | `>=19.0.0`             | —                                  | `>=20.12.0` | `10.25.0` |
+| Package                      | Version  | Better Auth      | Convex                      | React                  | React Native / Expo | Node        | pnpm      |
+| ---------------------------- | -------- | ---------------- | --------------------------- | ---------------------- | ------------------- | ----------- | --------- |
+| `convex-better-auth-adapter` | `0.13.0` | `>=1.7.1 <1.8.0` | `>=1.39.0` (`^1.25.0` peer) | `^18.3.1 \|\| ^19.0.0` | —                   | `>=20.12.0` | `10.25.0` |
+| `convex-better-auth`         | `2.0.0`  | `>=1.7.1 <1.8.0` | `>=1.39.0`                  | —                      | —                   | `>=20.12.0` | `10.25.0` |
+| `convex-auth`                | `1.4.0`  | —                | `>=1.39.0`                  | `>=19.0.0`             | —                   | `>=20.12.0` | `10.25.0` |
+| `convex-auth-react`          | `1.3.0`  | —                | `>=1.39.0`                  | `>=19.0.0`             | —                   | `>=20.12.0` | `10.25.0` |
+| `convex-auth-react-native`   | `1.1.0`  | —                | `>=1.39.0`                  | `>=19.0.0`             | `expo-* (optional)` | `>=20.12.0` | `10.25.0` |
+| `convex-auth-core`           | `0.1.0`  | —                | `>=1.39.0`                  | —                      | —                   | `>=20.12.0` | `10.25.0` |
+| `convex-auth-ui`             | `0.1.0`  | —                | `>=1.39.0`                  | `>=19.0.0`             | —                   | `>=20.12.0` | `10.25.0` |
 
 ## What the ranges mean
 
-- **Better Auth** — the whole workspace moved to the 1.7.x line. The old `<1.7.0` constraint from `@convex-dev/better-auth` no longer applies.
+- **Better Auth** — only `convex-better-auth` and `convex-better-auth-adapter` still carry the Better Auth 1.7.x peer dependency. `convex-auth`, `convex-auth-react`, and `convex-auth-react-native` are now Better Auth-free.
 - **Convex** — `>=1.39.0` covers the modern backend system and generated component API. The adapter itself accepts `>=1.25.0`, but the other packages currently require `>=1.39.0`.
 - **React** — the React packages require React 19. The adapter also accepts React 18 for consumers who use it outside the React packages.
 - **Node** — CI runs on Node 20.12+ and Node 22. Older Node versions are not tested.

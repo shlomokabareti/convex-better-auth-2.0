@@ -4,6 +4,8 @@ A [Better Auth](https://www.better-auth.com) database adapter for [Convex](https
 
 This package is a community-owned continuation of the adapter originally developed in [`get-convex/better-auth`](https://github.com/get-convex/better-auth), including the Better Auth 1.7 migration from [`get-convex/better-auth#430`](https://github.com/get-convex/better-auth/pull/430). It is vendored here so the Convex + Better Auth bridge can keep pace with Better Auth releases while Convex Auth 2.0 matures.
 
+Most new apps should use [`convex-auth`](../packages/auth) directly. This adapter is the low-level migration bridge for existing Better Auth code.
+
 ## Install
 
 ```bash
