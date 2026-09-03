@@ -1,0 +1,18 @@
+{
+  "name": "bridge-consumer",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bundle-size": "node scripts/bundle-size.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "convex": "^1.45.0",
+    "convex-better-auth": "workspace:*",
+    "convex-better-auth-adapter": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.10"
+  }
+}

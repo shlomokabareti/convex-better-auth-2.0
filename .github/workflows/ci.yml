@@ -48,3 +48,16 @@ jobs:
 
       - name: Run tests
         run: pnpm run test
+
+      - name: Bridge bundle size
+        env:
+          CONVEX_ADMIN_KEY: ${{ secrets.CONVEX_ADMIN_KEY }}
+          CONVEX_DEPLOYMENT: dev:fast-gopher-450
+          CONVEX_URL: https://fast-gopher-450.convex.cloud
+          CONVEX_SITE_URL: https://fast-gopher-450.convex.site
+        run: |
+          if [ -z "$CONVEX_ADMIN_KEY" ]; then
+            echo "Skipping bridge bundle-size test: CONVEX_ADMIN_KEY secret is not set."
+            exit 0
+          fi
+          pnpm --filter bridge-consumer run bundle-size
