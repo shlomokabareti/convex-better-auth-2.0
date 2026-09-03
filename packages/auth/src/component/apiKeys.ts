@@ -619,7 +619,7 @@ function resolveListLimit(limit: number | undefined): number {
  * compare it. Without this, every consumer reimplements the hash-and-compare itself --
  * which is exactly what convex-payments did, and how its own auth layer drifted.
  *
- * Modelled on better-auth's `@better-auth/api-key` `verifyApiKey`, with one deliberate
+ * Modelled on common api-key verification patterns, with one deliberate
  * difference: `environment` is a typed column here rather than free-form metadata,
  * because it decides whether a request can move real money.
  *
@@ -795,7 +795,7 @@ function evaluateApiKeyLimits(
  * `vb_test_*`/`vb_live_*` itself for exactly as long as it owned its own auth.
  *
  * The plaintext is returned ONCE and never stored -- `keyStart` keeps just enough of it
- * for a dashboard to identify the key afterwards (better-auth calls this `start`).
+ * for a dashboard to identify the key afterwards (some legacy plugins call this `start`).
  */
 export const issueApiKey = mutation({
   args: {

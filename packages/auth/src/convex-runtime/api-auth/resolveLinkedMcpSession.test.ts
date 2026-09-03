@@ -12,7 +12,7 @@ describe("resolveLinkedMcpSession", () => {
         accessToken: "token",
         clientId: "crm-mcp-client",
         scopes: ["organization:read", "opportunities:read"],
-        userId: "better-auth-user-123",
+        userId: "external-user-123",
       },
       provider: "better-auth",
       issuer: "https://auth.example.com",
@@ -45,7 +45,7 @@ describe("resolveLinkedMcpSession", () => {
       resourceId: "crm:mcp",
     });
 
-    assert.equal(context.subjectId, "better-auth-user-123");
+    assert.equal(context.subjectId, "external-user-123");
     assert.equal(context.userId, "user_123");
     assert.equal(context.organizationId, "org_456");
     assert.deepEqual(context.permissions, ["organization:view"]);
@@ -90,7 +90,7 @@ describe("resolveLinkedMcpSession", () => {
             accessToken: "token",
             clientId: "crm-mcp-client",
             scopes: ["organization:read"],
-            userId: "better-auth-user-123",
+            userId: "external-user-123",
           },
           provider: "better-auth",
           issuer: "https://auth.example.com",
@@ -130,7 +130,7 @@ describe("resolveLinkedMcpSession", () => {
             accessToken: "token",
             clientId: "crm-mcp-client",
             scopes: ["organization:read"],
-            userId: "better-auth-user-123",
+            userId: "external-user-123",
           },
           provider: "better-auth",
           issuer: "https://auth.example.com",

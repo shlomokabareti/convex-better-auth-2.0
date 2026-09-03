@@ -46,8 +46,8 @@ export const apiKeyStatusValidator = v.union(v.literal("active"), v.literal("rev
 /**
  * Sandbox vs production is deliberately a TYPED COLUMN, not a scope string or metadata.
  *
- * better-auth's api-key plugin would carry this in free-form `metadata`, and that is the
- * one place we diverge from it: this field decides whether a request moves real money, so
+ * Some legacy api-key plugins carry this in free-form `metadata`; this is the
+ * one place we diverge from that pattern: this field decides whether a request moves real money, so
  * it must be indexable and impossible to typo. A key issued for sandbox must never
  * authenticate a production request.
  */

@@ -34,7 +34,7 @@ describe("assembleViewerContext", () => {
   it("assembles a generic viewer shape with resolved auth context", () => {
     const viewer = assembleViewerContext({
       identity: {
-        subject: "better-auth-user-123",
+        subject: "external-user-123",
         issuer: "https://issuer.example",
         tokenIdentifier: "issuer|identity_123",
         sessionId: "session_123",
@@ -53,7 +53,7 @@ describe("assembleViewerContext", () => {
       restrictedReason: null,
     });
 
-    assert.equal(viewer.identity.subject, "better-auth-user-123");
+    assert.equal(viewer.identity.subject, "external-user-123");
     assert.equal(viewer.localIdentity._id, "identity_123");
     assert.equal(viewer.user._id, "user_123");
     assert.equal(viewer.authContext.principal.kind, "user");

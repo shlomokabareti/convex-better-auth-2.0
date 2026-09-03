@@ -14,8 +14,8 @@ export const api_keys = defineTable({
   keyPrefix: v.string(),
   keyHash: v.string(),
   /**
-   * Leading plaintext of the issued key (e.g. "vb_test_a829"). Mirrors better-auth's
-   * `start`: enough for a dashboard to identify a key without ever storing the secret.
+   * Leading plaintext of the issued key (e.g. "vb_test_a829"). Enough for a dashboard
+   * to identify a key without ever storing the secret.
    */
   keyStart: v.optional(v.string()),
   environment: v.optional(apiKeyEnvironmentValidator),
@@ -32,7 +32,7 @@ export const api_keys = defineTable({
   status: apiKeyStatusValidator,
   lastUsedAt: v.optional(v.number()),
   lastUsedIp: v.optional(v.string()),
-  // Fixed-window rate limiting, per key. Modelled on better-auth's api-key plugin.
+  // Fixed-window rate limiting, per key.
   rateLimitEnabled: v.optional(v.boolean()),
   rateLimitTimeWindowMs: v.optional(v.number()),
   rateLimitMax: v.optional(v.number()),

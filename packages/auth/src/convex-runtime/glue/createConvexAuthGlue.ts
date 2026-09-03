@@ -7,11 +7,11 @@
  * everywhere — no more bespoke `lib/identity.ts` per repo.
  *
  * Design constraints baked in (Codex-validated against the prior
- * better-auth × convex integration mistakes):
+ * legacy (`better-auth`) × Convex integration mistakes):
  *
  *  1. Adapter pattern, NOT consumer-table reads from the package. The glue
  *     never knows table or index names; consumer injects callbacks.
- *  2. Idempotent bootstrap + self-heal. Better-Auth >=1.7.0 runs
+ *  2. Idempotent bootstrap + self-heal. legacy (`better-auth`) >=1.7.0 runs
  *     `databaseHooks.user.create.after` post-commit, so the user can be
  *     persisted while bootstrap throws. Self-heal on first authenticated
  *     resolution covers that gap.
@@ -178,7 +178,7 @@ function createConsumerGlue<TUser extends GlueUserMinimum>(
     },
     bootstrapNewUser: async () => {
       // Nothing to bootstrap in consumer mode: the user mirror is created by
-      // Better-Auth's adapter pre-commit; the glue has no other state to
+      // the legacy (`better-auth`) adapter pre-commit; the glue has no other state to
       // attach. Keep the method on the surface so the wiring shape is
       // identical between modes (forward-compat: if a consumer switches to
       // b2b later, only the config changes, not the call sites).

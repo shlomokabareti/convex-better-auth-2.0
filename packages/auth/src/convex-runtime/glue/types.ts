@@ -292,7 +292,7 @@ export type B2BModeConfig<TUser extends GlueUserMinimum, TAnchor extends GlueAnc
    * resolution + bootstrap.
    *
    * Defaults to `"convex-auth"` (the package's own provider key for
-   * native-convex-auth identities). Consumers on Better-Auth-backed
+   * native-convex-auth identities). Consumers on legacy (`better-auth`)-backed
    * provisioning (where `convex-auth/better-auth` writes
    * identity rows with `provider: "better-auth"`) MUST pass
    * `"better-auth"`. Get the right value via
@@ -365,8 +365,8 @@ export type ConsumerGlue<TUser extends GlueUserMinimum> = {
    */
   resolveViewer: (ctx: GlueCtx) => Promise<ConsumerViewer<TUser>>;
   /**
-   * Idempotent bootstrap. Call from Better-Auth `databaseHooks.user.create.after`
-   * (which Better-Auth >=1.7.0 runs POST-commit — the user is already
+   * Idempotent bootstrap. Call from the legacy (`better-auth`) `databaseHooks.user.create.after`
+   * (which `better-auth` >=1.7.0 runs POST-commit — the user is already
    * persisted). Glue ALSO self-heals on first authenticated `resolveViewer`
    * if bootstrap was skipped or failed, so this hook is best-effort, not
    * load-bearing.

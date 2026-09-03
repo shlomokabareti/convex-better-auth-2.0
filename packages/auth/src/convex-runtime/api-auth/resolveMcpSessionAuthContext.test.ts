@@ -9,7 +9,7 @@ import {
 } from "./resolveMcpSessionAuthContext";
 
 describe("resolveMcpSessionAuthContext", () => {
-  it("maps a verified Better Auth MCP user session into an OAuth auth context", () => {
+  it("maps a verified external-provider MCP user session into an OAuth auth context", () => {
     const context = resolveMcpSessionAuthContext({
       session: {
         clientId: "mcp_client_123",
