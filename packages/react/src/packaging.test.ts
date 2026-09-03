@@ -12,10 +12,7 @@ const forbiddenStrings = [
 
 describe("package public bundle", () => {
   it("does not include better-auth runtime strings in the default dist/index.js", async () => {
-    const bundle = await readFile(
-      join(import.meta.dirname, "..", "dist", "index.js"),
-      "utf8",
-    );
+    const bundle = await readFile(join(import.meta.dirname, "..", "dist", "index.js"), "utf8");
     for (const forbidden of forbiddenStrings) {
       assert.equal(
         bundle.includes(forbidden),
