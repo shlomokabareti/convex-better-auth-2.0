@@ -111,9 +111,7 @@ export async function signMcpOAuthAccessToken(args: {
     scope: args.claims.scopes.join(" "),
     azp: args.claims.clientId,
     subject_type: args.claims.subjectType ?? "user",
-    ...(args.claims.betterAuthUserId === undefined
-      ? {}
-      : { better_auth_user_id: args.claims.betterAuthUserId }),
+    ...(args.claims.subjectId === undefined ? {} : { subject_id: args.claims.subjectId }),
     resource: args.claims.resourceId,
     ...(args.claims.organizationId !== undefined ? { org_id: args.claims.organizationId } : {}),
     ...(args.claims.organizationSlug !== undefined
@@ -174,8 +172,7 @@ export async function verifyMcpOAuthAccessToken(args: {
     issuer: typeof payload.iss === "string" ? payload.iss : null,
     subject: typeof payload.sub === "string" ? payload.sub : null,
     clientId: typeof payload.azp === "string" ? payload.azp : null,
-    betterAuthUserId:
-      typeof payload.better_auth_user_id === "string" ? payload.better_auth_user_id : null,
+    subjectId: typeof payload.subject_id === "string" ? payload.subject_id : null,
     organizationId: typeof payload.org_id === "string" ? payload.org_id : null,
     organizationSlug: typeof payload.org_slug === "string" ? payload.org_slug : null,
     resourceId: typeof payload.resource === "string" ? payload.resource : null,

@@ -63,7 +63,7 @@ describe("mcp oauth runtime helpers", () => {
 
   it("signs access tokens only after linked-user reauthorization", async () => {
     const token = await signAuthorizedMcpOAuthAccessToken({
-      betterAuthUserId: "ba_user_123",
+      subjectId: "ba_user_123",
       clientId: "mcp_client_123",
       organizationId: "org_123",
       scopes: ["crm:organization:read"],
@@ -90,7 +90,7 @@ describe("mcp oauth runtime helpers", () => {
     });
 
     const unlinked = await signAuthorizedMcpOAuthAccessToken({
-      betterAuthUserId: "ba_user_123",
+      subjectId: "ba_user_123",
       clientId: "mcp_client_123",
       organizationId: "org_123",
       scopes: ["crm:organization:read"],
@@ -141,7 +141,7 @@ describe("mcp oauth runtime helpers", () => {
 
     assert.deepEqual(
       await runtime.resolveIdentityForSession({
-        betterAuthUserId: "ba_user_123",
+        subjectId: "ba_user_123",
       }),
       { userId: "user_123" },
     );
@@ -149,7 +149,7 @@ describe("mcp oauth runtime helpers", () => {
     assert.deepEqual(
       await runtime.authorize({
         identity: { userId: "user_123" },
-        betterAuthUserId: "ba_user_123",
+        subjectId: "ba_user_123",
         requestedOrganizationId: "org_123",
         requestedScopes: ["crm:organization:read"],
       }),
@@ -162,7 +162,7 @@ describe("mcp oauth runtime helpers", () => {
 
     assert.deepEqual(
       await runtime.signAccessToken({
-        betterAuthUserId: "ba_user_123",
+        subjectId: "ba_user_123",
         clientId: "mcp_client_123",
         organizationId: "org_123",
         scopes: ["crm:organization:read"],
@@ -247,7 +247,7 @@ describe("mcp oauth runtime helpers", () => {
       requireAllowedRedirectUri: () => {},
       resolveRequestedScopes: (scope) => scope.split(" "),
       resolveSessionFromToken: async () => ({
-        betterAuthUserId: "better-auth-user-1",
+        subjectId: "better-auth-user-1",
       }),
       resolveIdentityForSession: async () => ({ userId: "user-1" }),
       authorize: async ({ requestedScopes }) => ({
@@ -291,7 +291,7 @@ describe("mcp oauth runtime helpers", () => {
       requireAllowedRedirectUri: () => {},
       resolveRequestedScopes: (scope) => scope.split(" "),
       resolveSessionFromToken: async () => ({
-        betterAuthUserId: "better-auth-user-1",
+        subjectId: "better-auth-user-1",
       }),
       resolveIdentityForSession: async () => ({ userId: "user-1" }),
       authorize: async () => ({
@@ -407,7 +407,7 @@ describe("mcp oauth runtime helpers", () => {
       }),
       consumeAuthorizationCode: async () => ({
         clientId: "management-client",
-        betterAuthUserId: "better-auth-user-1",
+        subjectId: "better-auth-user-1",
         organizationId: "organization-1",
         scopes: ["crm:growth:write"],
         codeChallenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
@@ -462,7 +462,7 @@ describe("mcp oauth runtime helpers", () => {
       consumeAuthorizationCode: async () => null,
       redeemRefreshToken: async () => ({
         ok: true,
-        betterAuthUserId: "ba_user_123",
+        subjectId: "ba_user_123",
         organizationId: "org_123",
         audience: "https://api.example.com",
         resourceId: "crm-mcp",

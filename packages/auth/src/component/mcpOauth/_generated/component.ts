@@ -30,7 +30,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         { clientId: string; code: string; redirectUri: string },
         null | {
           audience: string;
-          betterAuthUserId: string;
+          subjectId: string;
           clientId: string;
           codeChallenge: string;
           codeChallengeMethod: "S256";
@@ -46,7 +46,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "internal",
         {
           audience: string;
-          betterAuthUserId: string;
+          subjectId: string;
           clientId: string;
           code: string;
           codeChallenge: string;
@@ -110,7 +110,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "internal",
         {
           audience: string;
-          betterAuthUserId: string;
+          subjectId: string;
           clientId: string;
           organizationId: string;
           resourceId: string;
@@ -159,7 +159,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         },
         | {
             audience: string;
-            betterAuthUserId: string;
+            subjectId: string;
             expiresAt: number;
             inactivityExpiresAt: number | null;
             ok: true;

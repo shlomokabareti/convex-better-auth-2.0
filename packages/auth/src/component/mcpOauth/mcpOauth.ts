@@ -39,7 +39,7 @@ const authorizationCodeResultValidator = v.union(
   v.null(),
   v.object({
     clientId: v.string(),
-    betterAuthUserId: v.string(),
+    subjectId: v.string(),
     organizationId: v.string(),
     scopes: v.array(v.string()),
     codeChallenge: v.string(),
@@ -61,7 +61,7 @@ const refreshTokenIssueResultValidator = v.object({
 const refreshTokenRedeemResultValidator = v.union(
   v.object({
     ok: v.literal(true),
-    betterAuthUserId: v.string(),
+    subjectId: v.string(),
     organizationId: v.string(),
     audience: v.string(),
     resourceId: v.string(),
@@ -174,7 +174,7 @@ function toStoredMcpOAuthRefreshTokenDoc(args: {
     familyId: args.record.familyId,
     parentTokenId: args.record.parentTokenId ?? undefined,
     clientId: args.record.clientId,
-    betterAuthUserId: args.record.betterAuthUserId,
+    subjectId: args.record.subjectId,
     organizationId: args.record.organizationId,
     scopes: [...args.record.scopes],
     audience: args.record.audience,
@@ -198,7 +198,7 @@ function toMcpOAuthRefreshTokenRecord(
     familyId: doc.familyId,
     parentTokenId: doc.parentTokenId ?? null,
     clientId: doc.clientId,
-    betterAuthUserId: doc.betterAuthUserId,
+    subjectId: doc.subjectId,
     organizationId: doc.organizationId,
     scopes: doc.scopes,
     audience: doc.audience,
@@ -217,7 +217,7 @@ export const createAuthorizationCode = mutation({
     code: v.string(),
     clientId: v.string(),
     redirectUri: v.string(),
-    betterAuthUserId: v.string(),
+    subjectId: v.string(),
     organizationId: v.string(),
     scopes: v.array(v.string()),
     codeChallenge: v.string(),
@@ -233,7 +233,7 @@ export const createAuthorizationCode = mutation({
       code: args.code,
       clientId: args.clientId,
       redirectUri: args.redirectUri,
-      betterAuthUserId: args.betterAuthUserId,
+      subjectId: args.subjectId,
       organizationId: args.organizationId,
       scopes: [...args.scopes],
       codeChallenge: args.codeChallenge,
@@ -282,7 +282,7 @@ export const consumeAuthorizationCode = mutation({
     });
     return {
       clientId: doc.clientId,
-      betterAuthUserId: doc.betterAuthUserId,
+      subjectId: doc.subjectId,
       organizationId: doc.organizationId,
       scopes: doc.scopes,
       codeChallenge: doc.codeChallenge,
@@ -456,7 +456,7 @@ export const createDynamicClient = mutation({
 export const issueRefreshToken = mutation({
   args: {
     clientId: v.string(),
-    betterAuthUserId: v.string(),
+    subjectId: v.string(),
     organizationId: v.string(),
     scopes: v.array(v.string()),
     audience: v.string(),
@@ -467,7 +467,7 @@ export const issueRefreshToken = mutation({
     const now = Date.now();
     const issued = createMcpOAuthRefreshToken({
       clientId: args.clientId,
-      betterAuthUserId: args.betterAuthUserId,
+      subjectId: args.subjectId,
       organizationId: args.organizationId,
       scopes: args.scopes,
       audience: args.audience,
@@ -618,7 +618,7 @@ export const redeemRefreshToken = mutation({
 
     return {
       ok: true as const,
-      betterAuthUserId: redeemed.record.betterAuthUserId,
+      subjectId: redeemed.record.subjectId,
       organizationId: redeemed.record.organizationId,
       audience: redeemed.record.audience,
       resourceId: redeemed.record.resourceId,

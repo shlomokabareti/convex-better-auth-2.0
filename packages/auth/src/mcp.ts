@@ -47,7 +47,7 @@ export {
   hashMcpOAuthRefreshToken,
   redeemMcpOAuthRefreshToken,
   registerMcpOAuthClient,
-} from "./compat/convex/mcp";
+} from "./convex-runtime/mcp";
 
 export type {
   McpOAuthClient,
@@ -68,4 +68,4 @@ export type {
   PkcePair,
   McpOAuthRefreshTokenRecord,
   McpOAuthStoredClientRecord,
-} from "./compat/convex/mcp";
+} from "./convex-runtime/mcp";

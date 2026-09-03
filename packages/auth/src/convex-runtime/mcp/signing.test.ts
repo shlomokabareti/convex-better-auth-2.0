@@ -49,7 +49,7 @@ describe("mcp oauth signing helpers", () => {
       subject: "user_123",
       claims: {
         clientId: "crm-mcp-dev-client",
-        betterAuthUserId: "user_123",
+        subjectId: "user_123",
         resourceId: "crm:mcp",
         scopes: ["crm:organization:read", "crm:tasks:read"],
         organizationId: "org_123",
@@ -74,7 +74,7 @@ describe("mcp oauth signing helpers", () => {
     assert.equal(verified.keyId, "crm-mcp-key-2");
     assert.equal(verified.subject, "user_123");
     assert.equal(verified.clientId, "crm-mcp-dev-client");
-    assert.equal(verified.betterAuthUserId, "user_123");
+    assert.equal(verified.subjectId, "user_123");
     assert.equal(verified.organizationId, "org_123");
     assert.equal(verified.organizationSlug, "acme");
     assert.equal(verified.resourceId, "crm:mcp");

@@ -161,7 +161,7 @@ describe("mcp oauth flow helpers", () => {
       }),
       consumeAuthorizationCode: () => ({
         clientId: "client_123",
-        betterAuthUserId: "user_123",
+        subjectId: "user_123",
         organizationId: "org_123",
         scopes: ["crm:organization:read"],
         codeChallenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
@@ -183,7 +183,7 @@ describe("mcp oauth flow helpers", () => {
       },
       authorizationCode: {
         clientId: "client_123",
-        betterAuthUserId: "user_123",
+        subjectId: "user_123",
         organizationId: "org_123",
         scopes: ["crm:organization:read"],
         codeChallenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
@@ -218,7 +218,7 @@ describe("mcp oauth flow helpers", () => {
       }),
       consumeAuthorizationCode: () => ({
         clientId: "management-client",
-        betterAuthUserId: "user_123",
+        subjectId: "user_123",
         organizationId: "org_123",
         scopes: ["crm:growth:write"],
         codeChallenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
@@ -265,7 +265,7 @@ describe("mcp oauth flow helpers", () => {
       // gate runs and is not masked by the PKCE check.
       consumeAuthorizationCode: () => ({
         clientId: "client_123",
-        betterAuthUserId: "user_123",
+        subjectId: "user_123",
         organizationId: "org_123",
         scopes: ["crm:organization:read"],
         codeChallenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
@@ -316,7 +316,7 @@ describe("mcp oauth flow helpers", () => {
           // The validator must reject rather than treat it as never-expiring.
           consumeAuthorizationCode: () => ({
             clientId: "client_123",
-            betterAuthUserId: "user_123",
+            subjectId: "user_123",
             organizationId: "org_123",
             scopes: ["crm:organization:read"],
             codeChallenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
@@ -362,7 +362,7 @@ describe("mcp oauth flow helpers", () => {
       }),
       consumeAuthorizationCode: () => ({
         clientId: "client_123",
-        betterAuthUserId: "user_123",
+        subjectId: "user_123",
         organizationId: "org_123",
         scopes: ["crm:organization:read"],
         codeChallenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
