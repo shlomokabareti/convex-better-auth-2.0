@@ -21,7 +21,7 @@ function buildErrorRedirect(base: string, error: string, description?: string): 
   if (description) redirect.searchParams.set("error_description", description);
   return new Response(null, {
     status: 302,
-    headers: { Location: redirect.pathname + redirect.search },
+    headers: { Location: redirect.toString() },
   });
 }
 
@@ -49,6 +49,13 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
       const requestOrigin = url.origin;
       const trustedOrigins = getTrustedOrigins(config, requestOrigin);
       const provider = parseProvider(url);
+      if (!provider) {
+        return buildErrorRedirect(
+          process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/",
+          "invalid_callback_request",
+          "Missing provider",
+        );
+      }
       const callbackURL =
         url.searchParams.get("redirectTo") ?? url.searchParams.get("callbackURL") ?? undefined;
       const errorURL = url.searchParams.get("errorURL") ?? undefined;
@@ -97,6 +104,13 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
     handler: httpActionGeneric(async (ctx, request) => {
       const url = new URL(request.url);
       const provider = parseProvider(url);
+      if (!provider) {
+        return buildErrorRedirect(
+          process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/",
+          "invalid_callback_request",
+          "Missing provider",
+        );
+      }
       const error = url.searchParams.get("error");
       const errorDescription = url.searchParams.get("error_description") ?? undefined;
       const code = url.searchParams.get("code");
@@ -112,12 +126,21 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
           }
         })();
         const base = errorURL ?? process.env.SITE_URL ?? "/";
-        return buildErrorRedirect(base, error, errorDescription ?? undefined);
+        return buildErrorRedirect(
+          base,
+          "provider_error",
+          errorDescription ?? error,
+        );
       }
 
-      if (!code || !state) {
+      if (!state) {
         const base = process.env.SITE_URL ?? "/";
-        return buildErrorRedirect(base, "no_code", "Missing code or state");
+        return buildErrorRedirect(base, "invalid_callback_request", "Missing state");
+      }
+
+      if (!code) {
+        const base = process.env.SITE_URL ?? "/";
+        return buildErrorRedirect(base, "no_code", "Missing code");
       }
 
       let linkingUserId: string | undefined;
