@@ -363,6 +363,29 @@ describe("Google provider", () => {
     expect(url.searchParams.get("scope")).toContain("openid");
   });
 
+  it("applies access_type=offline and a consent prompt by default", async () => {
+    const config = createGoogleConfig({ accessType: "offline" });
+    const provider = createGoogleProvider(config);
+    const url = await provider.createAuthorizationURL({
+      state: "state-token",
+      codeVerifier: await generateCodeVerifier(),
+      redirectURI: "https://app.example.com/api/auth/callback/google",
+    });
+    expect(url.searchParams.get("access_type")).toBe("offline");
+    expect(url.searchParams.get("prompt")).toBe("consent");
+  });
+
+  it("forwards the display parameter", async () => {
+    const config = createGoogleConfig({ display: "popup" });
+    const provider = createGoogleProvider(config);
+    const url = await provider.createAuthorizationURL({
+      state: "state-token",
+      codeVerifier: await generateCodeVerifier(),
+      redirectURI: "https://app.example.com/api/auth/callback/google",
+    });
+    expect(url.searchParams.get("display")).toBe("popup");
+  });
+
   it("exchanges a code for an access token", async () => {
     const config = createGoogleConfig();
     const { fetch, responses } = createMockFetch();
@@ -1284,5 +1307,113 @@ describe("addNativeOAuthHttpRoutes", () => {
     const setCookie = callbackResponse.headers.get("Set-Cookie");
     expect(setCookie).toMatch(/convex-auth-token=/);
     expect(setCookie).toMatch(/convex-auth-refresh-token=/);
+  });
+
+  it("returns invalid_callback_request when the provider is missing", async () => {
+    const config = createOAuthConfig();
+    const routes: {
+      path?: string;
+      pathPrefix?: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http = { route: (r: (typeof routes)[number]) => routes.push(r) };
+    addNativeOAuthHttpRoutes(http as unknown as import("convex/server").HttpRouter, {
+      component: createMockComponent() as unknown as NativeOAuthComponentHandle,
+      oauth: config,
+    });
+    const signinRoute = routes.find((r) => r.pathPrefix === "/api/auth/signin/")!;
+    const response = (await exec(signinRoute.handler).handler(
+      createContext(),
+      new Request("https://app.example.com/api/auth/signin/"),
+    )) as Response;
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe(
+      "https://test.convex.site/?error=invalid_callback_request&error_description=Missing+provider",
+    );
+  });
+
+  it("maps a provider error to provider_error and preserves the absolute errorURL", async () => {
+    const config = createOAuthConfig();
+    const component = createMockComponent();
+    const state = await mintOAuthState({
+      provider: "github",
+      codeVerifier: await generateCodeVerifier(),
+      errorURL: "https://app.example.com/error",
+    });
+    const routes: {
+      path?: string;
+      pathPrefix?: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http = { route: (r: (typeof routes)[number]) => routes.push(r) };
+    addNativeOAuthHttpRoutes(http as unknown as import("convex/server").HttpRouter, {
+      component: component as unknown as NativeOAuthComponentHandle,
+      oauth: config,
+    });
+    const callbackRoute = routes.find((r) => r.pathPrefix === "/api/auth/callback/")!;
+    const response = (await exec(callbackRoute.handler).handler(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      new Request(
+        `https://app.example.com/api/auth/callback/github?error=access_denied&error_description=user+denied&state=${state}`,
+      ),
+    )) as Response;
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe(
+      "https://app.example.com/error?error=provider_error&error_description=user+denied",
+    );
+  });
+
+  it("returns invalid_callback_request when state is missing", async () => {
+    const config = createOAuthConfig();
+    const routes: {
+      path?: string;
+      pathPrefix?: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http = { route: (r: (typeof routes)[number]) => routes.push(r) };
+    addNativeOAuthHttpRoutes(http as unknown as import("convex/server").HttpRouter, {
+      component: createMockComponent() as unknown as NativeOAuthComponentHandle,
+      oauth: config,
+    });
+    const callbackRoute = routes.find((r) => r.pathPrefix === "/api/auth/callback/")!;
+    const response = (await exec(callbackRoute.handler).handler(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      new Request("https://app.example.com/api/auth/callback/github?code=code-123"),
+    )) as Response;
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe(
+      "https://test.convex.site/?error=invalid_callback_request&error_description=Missing+state",
+    );
+  });
+
+  it("returns no_code when code is missing", async () => {
+    const config = createOAuthConfig();
+    const state = await mintOAuthState({
+      provider: "github",
+      codeVerifier: await generateCodeVerifier(),
+    });
+    const routes: {
+      path?: string;
+      pathPrefix?: string;
+      method: string;
+      handler: (ctx: unknown, request: Request) => Promise<Response>;
+    }[] = [];
+    const http = { route: (r: (typeof routes)[number]) => routes.push(r) };
+    addNativeOAuthHttpRoutes(http as unknown as import("convex/server").HttpRouter, {
+      component: createMockComponent() as unknown as NativeOAuthComponentHandle,
+      oauth: config,
+    });
+    const callbackRoute = routes.find((r) => r.pathPrefix === "/api/auth/callback/")!;
+    const response = (await exec(callbackRoute.handler).handler(
+      createContext() as unknown as GenericActionCtx<DataModel>,
+      new Request(`https://app.example.com/api/auth/callback/github?state=${state}`),
+    )) as Response;
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe(
+      "https://test.convex.site/?error=no_code&error_description=Missing+code",
+    );
   });
 });

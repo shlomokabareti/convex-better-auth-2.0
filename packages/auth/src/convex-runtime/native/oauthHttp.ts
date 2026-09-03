@@ -10,9 +10,11 @@ const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
 const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
-function parseProvider(url: URL): string {
-  const parts = url.pathname.split("/").filter(Boolean);
-  return parts[parts.length - 1] ?? "";
+function parseProvider(url: URL, prefix: string): string {
+  const afterPrefix = url.pathname.startsWith(prefix)
+    ? url.pathname.slice(prefix.length)
+    : url.pathname;
+  return afterPrefix.split("/").filter(Boolean)[0] ?? "";
 }
 
 function buildErrorRedirect(base: string, error: string, description?: string): Response {
@@ -48,7 +50,7 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
       const url = new URL(request.url);
       const requestOrigin = url.origin;
       const trustedOrigins = getTrustedOrigins(config, requestOrigin);
-      const provider = parseProvider(url);
+      const provider = parseProvider(url, "/api/auth/signin/");
       if (!provider) {
         return buildErrorRedirect(
           process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/",
@@ -103,7 +105,7 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
     method: "GET",
     handler: httpActionGeneric(async (ctx, request) => {
       const url = new URL(request.url);
-      const provider = parseProvider(url);
+      const provider = parseProvider(url, "/api/auth/callback/");
       if (!provider) {
         return buildErrorRedirect(
           process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/",
@@ -125,21 +127,17 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
             return undefined;
           }
         })();
-        const base = errorURL ?? process.env.SITE_URL ?? "/";
-        return buildErrorRedirect(
-          base,
-          "provider_error",
-          errorDescription ?? error,
-        );
+        const base = errorURL ?? process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/";
+        return buildErrorRedirect(base, "provider_error", errorDescription ?? error);
       }
 
       if (!state) {
-        const base = process.env.SITE_URL ?? "/";
+        const base = process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/";
         return buildErrorRedirect(base, "invalid_callback_request", "Missing state");
       }
 
       if (!code) {
-        const base = process.env.SITE_URL ?? "/";
+        const base = process.env.SITE_URL ?? process.env.CONVEX_SITE_URL ?? "/";
         return buildErrorRedirect(base, "no_code", "Missing code");
       }
 

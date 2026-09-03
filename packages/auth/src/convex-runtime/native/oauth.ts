@@ -106,6 +106,8 @@ export type GoogleProviderConfig = OAuthProviderOptions & {
   includeGrantedScopes?: boolean;
   /** Maximum age in seconds for a Google ID token. */
   maxTokenAge?: number;
+  /** Display mode for the Google consent screen. */
+  display?: "page" | "popup" | "touch" | "wap";
 };
 
 export type DiscordProfile = {
@@ -288,10 +290,16 @@ export function createGoogleProvider(config: GoogleProviderConfig): NativeOAuthP
   }
 
   const additionalParams: Record<string, string> = {};
-  if (config.accessType) additionalParams.access_type = config.accessType;
+  if (config.accessType) {
+    additionalParams.access_type = config.accessType;
+    if (config.accessType === "offline" && !config.prompt) {
+      additionalParams.prompt = "consent";
+    }
+  }
   if (config.prompt) additionalParams.prompt = config.prompt;
   if (config.loginHint) additionalParams.login_hint = config.loginHint;
   if (config.hd) additionalParams.hd = config.hd;
+  if (config.display) additionalParams.display = config.display;
   if (config.includeGrantedScopes !== false) additionalParams.include_granted_scopes = "true";
   if (config.additionalParams) {
     for (const [key, value] of Object.entries(config.additionalParams)) {
