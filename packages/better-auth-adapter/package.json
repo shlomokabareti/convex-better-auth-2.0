@@ -1,6 +1,6 @@
 {
   "name": "convex-better-auth-adapter",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "A Better Auth component for Convex.",
   "homepage": "https://github.com/shlomokabareti/convex-better-auth-2.0/tree/main/packages/better-auth-adapter#readme",
   "bugs": {
