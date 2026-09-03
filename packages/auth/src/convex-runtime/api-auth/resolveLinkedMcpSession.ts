@@ -3,7 +3,7 @@ import { ApiAuthError } from "./errors";
 import { resolveMcpSessionAuthContext, type McpSessionLike } from "./resolveMcpSessionAuthContext";
 import type { ApiAuthLookupAdapter } from "./types";
 
-export type ResolveLinkedBetterAuthMcpSessionArgs = {
+export type ResolveLinkedMcpSessionArgs = {
   session: McpSessionLike | null | undefined;
   provider: string;
   issuer: string;
@@ -16,18 +16,18 @@ export type ResolveLinkedBetterAuthMcpSessionArgs = {
   resourceId?: string | null;
 };
 
-export type LinkedBetterAuthMcpSessionResolution = {
+export type LinkedMcpSessionResolution = {
   provisionalContext: ApiResolvedAuthContext;
-  betterAuthUserId: string;
+  subjectId: string;
   userId: string;
   organizationId: string | null;
   permissions: string[];
   scopes: string[];
 };
 
-export async function resolveLinkedBetterAuthMcpSession(
-  args: ResolveLinkedBetterAuthMcpSessionArgs,
-): Promise<LinkedBetterAuthMcpSessionResolution> {
+export async function resolveLinkedMcpSession(
+  args: ResolveLinkedMcpSessionArgs,
+): Promise<LinkedMcpSessionResolution> {
   const provisionalContext = resolveMcpSessionAuthContext({
     session: args.session,
     audience: args.audience,
@@ -40,16 +40,16 @@ export async function resolveLinkedBetterAuthMcpSession(
     throw new ApiAuthError("OAUTH_SESSION_INVALID", "MCP session user is required.");
   }
 
-  const betterAuthUserId = principal.subjectId;
-  if (betterAuthUserId === null) {
+  const subjectId = principal.subjectId;
+  if (subjectId === null) {
     throw new ApiAuthError("OAUTH_SESSION_INVALID", "MCP session user is required.");
   }
 
   const linkedUser = await args.adapter.getUserByIdentity({
     provider: args.provider,
     issuer: args.issuer,
-    subject: betterAuthUserId,
-    tokenIdentifier: args.buildTokenIdentifier(betterAuthUserId, args.issuer),
+    subject: subjectId,
+    tokenIdentifier: args.buildTokenIdentifier(subjectId, args.issuer),
   });
   if (linkedUser === null) {
     throw new ApiAuthError("USER_IDENTITY_NOT_LINKED", "MCP session user is not linked.");
@@ -73,7 +73,7 @@ export async function resolveLinkedBetterAuthMcpSession(
 
   return {
     provisionalContext,
-    betterAuthUserId,
+    subjectId,
     userId: linkedUser.userId,
     organizationId: organizationAccess.organizationId,
     permissions: organizationAccess.permissions,
