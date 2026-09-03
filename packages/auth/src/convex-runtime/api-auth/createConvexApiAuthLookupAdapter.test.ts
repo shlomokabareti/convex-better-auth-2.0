@@ -37,7 +37,7 @@ describe("createConvexApiAuthLookupAdapter", () => {
     });
 
     const linkedUser = await adapter.getUserByIdentity({
-      provider: "better-auth",
+      provider: "convex-auth",
       issuer: "https://auth.example.com",
       subject: "user_123",
       tokenIdentifier: "https://auth.example.com|user_123",
@@ -68,7 +68,7 @@ describe("createConvexApiAuthLookupAdapter", () => {
       {
         reference: "getUserByIdentity",
         args: {
-          provider: "better-auth",
+          provider: "convex-auth",
           issuer: "https://auth.example.com",
           subject: "user_123",
           tokenIdentifier: "https://auth.example.com|user_123",

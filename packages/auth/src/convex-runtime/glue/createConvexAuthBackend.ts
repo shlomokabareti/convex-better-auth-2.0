@@ -141,7 +141,7 @@ export type ConvexAuthBackendAdaptersConfig<
    * invited users do NOT get an auto-minted personal org.
    */
   invitedUsersGetPersonalOrg?: boolean;
-  /** Defaults to the legacy (`better-auth`) provider key. */
+  /** Defaults to the legacy provider key. */
   identityProvider?: string;
 };
 

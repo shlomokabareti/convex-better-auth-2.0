@@ -14,7 +14,7 @@ describe("resolveLinkedMcpSession", () => {
         scopes: ["organization:read", "opportunities:read"],
         userId: "external-user-123",
       },
-      provider: "better-auth",
+      provider: "convex-auth",
       issuer: "https://auth.example.com",
       buildTokenIdentifier: (subject, issuer) => `${issuer}|${subject}`,
       adapter: {
@@ -61,7 +61,7 @@ describe("resolveLinkedMcpSession", () => {
             clientId: "crm-mcp-client",
             scopes: ["organization:read"],
           },
-          provider: "better-auth",
+          provider: "convex-auth",
           issuer: "https://auth.example.com",
           buildTokenIdentifier: (subject, issuer) => `${issuer}|${subject}`,
           adapter: {
@@ -92,7 +92,7 @@ describe("resolveLinkedMcpSession", () => {
             scopes: ["organization:read"],
             userId: "external-user-123",
           },
-          provider: "better-auth",
+          provider: "convex-auth",
           issuer: "https://auth.example.com",
           buildTokenIdentifier: (subject, issuer) => `${issuer}|${subject}`,
           adapter: {
@@ -132,7 +132,7 @@ describe("resolveLinkedMcpSession", () => {
             scopes: ["organization:read"],
             userId: "external-user-123",
           },
-          provider: "better-auth",
+          provider: "convex-auth",
           issuer: "https://auth.example.com",
           buildTokenIdentifier: (subject, issuer) => `${issuer}|${subject}`,
           adapter: {

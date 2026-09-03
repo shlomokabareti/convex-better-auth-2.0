@@ -64,7 +64,7 @@ const FORBIDDEN_TABLES = [
 /**
  * Default tables allowed to carry `convexAuth*Id` bridge columns: the local
  * `organizations` ANCHOR (maps id ↔ component organization) and the
- * `users` mirror that the legacy (`better-auth`) adapter populates via sync triggers.
+ * `users` mirror that the legacy adapter populates via sync triggers.
  */
 const DEFAULT_ANCHOR_TABLES: readonly string[] = ["organizations", "users"];
 

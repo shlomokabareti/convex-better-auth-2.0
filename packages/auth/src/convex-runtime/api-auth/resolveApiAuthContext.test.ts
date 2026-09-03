@@ -10,7 +10,7 @@ import type { ApiAuthLookupAdapter, ApiTokenVerifier } from "./types";
 function createVerifiedUserToken(): VerifiedUserToken {
   return {
     credentialType: "userBearer",
-    provider: "better-auth",
+    provider: "convex-auth",
     issuer: "https://auth.example.com",
     subject: "user_subject_123",
     tokenIdentifier: "issuer|identity_123",
