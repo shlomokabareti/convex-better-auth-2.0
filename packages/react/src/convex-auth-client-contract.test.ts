@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 
 import type { useConvexAuthClient } from "./convex-auth-client";
-import type { ConvexBetterAuthClient } from "./better-auth-runtime";
+import type { ConvexBetterAuthClient } from "./auth-client-types";
 
 type NativeClient = ReturnType<typeof useConvexAuthClient>;
 

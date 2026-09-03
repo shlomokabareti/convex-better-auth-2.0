@@ -19,16 +19,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./better-auth": {
-      "types": "./dist/better-auth.d.ts",
-      "import": "./dist/better-auth.js",
-      "default": "./dist/better-auth.js"
     }
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "build": "vp pack src/index.ts src/better-auth.ts",
+    "build": "vp pack src/index.ts",
     "test": "vitest run"
   },
   "dependencies": {
@@ -38,17 +33,13 @@
   "devDependencies": {
     "@types/react": "^19.0.0",
     "convex": "^1.45.0",
-    "convex-better-auth-adapter": "workspace:*",
     "react": "^19.0.0",
     "react-native": "^0.84.1",
     "typescript": "^5.7.0",
     "vitest": "^4.1.10"
   },
   "peerDependencies": {
-    "@better-auth/expo": ">=1.7.0 <1.8.0",
-    "better-auth": ">=1.7.1 <1.8.0",
     "convex": ">=1.39.0",
-    "convex-better-auth-adapter": "workspace:*",
     "expo-constants": ">=17.0.0",
     "expo-linking": ">=7.0.0",
     "expo-network": ">=8.0.7",
@@ -84,12 +75,6 @@
       "optional": true
     },
     "uniwind": {
-      "optional": true
-    },
-    "@better-auth/expo": {
-      "optional": true
-    },
-    "better-auth": {
       "optional": true
     }
   }
