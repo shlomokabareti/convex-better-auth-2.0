@@ -82,7 +82,7 @@ else r.bad("sign-in did not return the original user");
 const bad = await fetch(`${site}/api/auth/get-session`, {
   headers: {
     origin: ORIGIN_WEB,
-    cookie: "__Secure-better-auth.session_token=not-a-real-token",
+    cookie: "convex-auth-token=not-a-real-token",
   },
 });
 const badBody: unknown = await bad.json();

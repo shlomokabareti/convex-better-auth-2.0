@@ -177,10 +177,10 @@ describe("mcp oauth runtime helpers", () => {
     );
   });
 
-  it("reads Better Auth session token from signed cookie payload", () => {
+  it("reads session token from signed cookie payload", () => {
     const request = new Request("https://crm.test/oauth/crm-mcp/authorize", {
       headers: {
-        cookie: "better-auth.session_token=session_token_123.signature",
+        cookie: "convex-auth.session_token=session_token_123.signature",
       },
     });
 
@@ -232,7 +232,7 @@ describe("mcp oauth runtime helpers", () => {
         "https://crm.test/oauth/crm-mcp/authorize?response_type=code&client_id=management-client&redirect_uri=https%3A%2F%2Fmanagement.example.com%2Fcallback&scope=crm%3Aorganization%3Aread&code_challenge=challenge&code_challenge_method=S256",
         {
           headers: {
-            cookie: "better-auth.session_token=session_123.signature",
+            cookie: "convex-auth.session_token=session_123.signature",
           },
         },
       ),
@@ -276,7 +276,7 @@ describe("mcp oauth runtime helpers", () => {
         "https://crm.test/oauth/crm-mcp/authorize?response_type=code&client_id=management-client&redirect_uri=https%3A%2F%2Fmanagement.example.com%2Fcallback&scope=crm%3Aorganization%3Aread&code_challenge=challenge&code_challenge_method=S256",
         {
           headers: {
-            cookie: "better-auth.session_token=session_123.signature",
+            cookie: "convex-auth.session_token=session_123.signature",
           },
         },
       ),

@@ -5,7 +5,7 @@
  * permission decisions, idempotent bootstrap, self-heal). The CONSUMER owns
  * local storage (their `users` table, their `organizations` anchor) and
  * supplies thin adapter callbacks. This matches the precedent set by
- * `createConvexApiAuthLookupAdapter` and `buildBetterAuthSessionLookup` —
+ * `createConvexApiAuthLookupAdapter` —
  * package never reaches into consumer tables by name.
  *
  * Two modes, type-discriminated:

@@ -85,13 +85,11 @@ export type ConvexAuthPreflightCommandOptions = {
   rootPackageJsonPath?: string;
   webPackageJsonPath?: string;
   installedPackageJsonPath?: string;
-  betterAuthUrlEnvNames?: string[];
   convexUrlEnvNames?: string[];
   appBaseUrlEnvNames?: string[];
   appServerProbePaths?: string[];
   extraCheckFactory?: (args: {
     appBaseUrl: string | undefined;
-    betterAuthUrl: string | undefined;
     convexUrl: string | undefined;
     env: NodeJS.ProcessEnv;
     backendSetup: ConvexAuthPreflightBackendSetup | undefined;
@@ -100,7 +98,6 @@ export type ConvexAuthPreflightCommandOptions = {
 
 export type ConvexAuthPreflightBackendSetupOptions = {
   authConfigPath?: string;
-  betterAuthRuntimePath?: string;
   convexConfigPath?: string;
   httpPath?: string;
 };
@@ -254,10 +251,6 @@ function resolvePreflightUrls(env: NodeJS.ProcessEnv, options: ConvexAuthPreflig
       env,
       options.appBaseUrlEnvNames ?? ["PLAYWRIGHT_TEST_BASE_URL", "TEST_WEB_URL"],
     ),
-    betterAuthUrl: firstEnvValue(
-      env,
-      options.betterAuthUrlEnvNames ?? ["VITE_BETTER_AUTH_URL", "PRODUCTION_BETTER_AUTH_URL"],
-    ),
     convexUrl: firstEnvValue(env, options.convexUrlEnvNames ?? ["VITE_CONVEX_URL", "CONVEX_URL"]),
   };
 }
@@ -285,7 +278,7 @@ export async function runConvexAuthPreflightCommand(options: ConvexAuthPreflight
     rootPackageJson,
     webPackageJson,
   );
-  const { appBaseUrl, betterAuthUrl, convexUrl } = resolvePreflightUrls(env, options);
+  const { appBaseUrl, convexUrl } = resolvePreflightUrls(env, options);
   const backendSetup =
     options.backendSetup === false
       ? undefined
@@ -295,7 +288,6 @@ export async function runConvexAuthPreflightCommand(options: ConvexAuthPreflight
       ? undefined
       : await options.extraCheckFactory({
           appBaseUrl,
-          betterAuthUrl,
           convexUrl,
           env,
           backendSetup,
@@ -305,11 +297,10 @@ export async function runConvexAuthPreflightCommand(options: ConvexAuthPreflight
     actualPackageVersion: installedPackageJson.version ?? null,
     appServer: {
       baseUrl: appBaseUrl,
-      expectedValues: [betterAuthUrl, convexUrl].filter((value): value is string => Boolean(value)),
+      expectedValues: [convexUrl].filter((value): value is string => Boolean(value)),
       probePaths: options.appServerProbePaths,
     },
     backendSetup,
-    betterAuthUrl,
     convexUrl,
     expectedPackageVersion,
     fetchImpl: options.fetchImpl,
@@ -443,7 +434,6 @@ async function readBackendSetup(
   const convexConfigPath = options.convexConfigPath ?? "convex/convex.config.ts";
   const authConfigPath = options.authConfigPath ?? "convex/auth.config.ts";
   const httpPath = options.httpPath ?? "convex/http.ts";
-  const betterAuthRuntimePath = options.betterAuthRuntimePath ?? "convex/betterAuth.ts";
 
   return {
     files: [
@@ -465,21 +455,11 @@ async function readBackendSetup(
         content: await readOptionalText(resolve(repoRoot, httpPath)),
         requiredSnippets: ["httpRouter", "registerAuthRoutes"],
       },
-      {
-        name: "Better Auth Convex runtime",
-        path: betterAuthRuntimePath,
-        content: await readOptionalText(resolve(repoRoot, betterAuthRuntimePath)),
-        requiredSnippets: [
-          "createBetterAuthConvexRuntime",
-          "components.convexAuth",
-          "registerRoutes",
-        ],
-      },
     ],
     envGroups: [
       {
-        name: "Backend Better Auth site URL",
-        envNames: ["CONVEX_SITE_URL", "BETTER_AUTH_URL"],
+        name: "Backend Convex auth site URL",
+        envNames: ["CONVEX_SITE_URL"],
         values: env,
       },
     ],

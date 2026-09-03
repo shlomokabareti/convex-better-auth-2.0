@@ -20,7 +20,6 @@ export type AuthPreflightAppServerProbe = {
 };
 
 export type AuthPreflightOptions = {
-  betterAuthUrl?: string | null;
   backendSetup?: AuthPreflightBackendSetup;
   convexUrl?: string | null;
   expectedPackageVersion?: string | null;
@@ -57,17 +56,9 @@ export async function runAuthPreflight(
 ): Promise<AuthPreflightResult> {
   const checks: AuthPreflightCheck[] = [];
   const fetchImpl = options.fetchImpl ?? fetch;
-  const betterAuthUrl = normalizeUrl(options.betterAuthUrl);
   const convexUrl = normalizeUrl(options.convexUrl);
 
-  checks.push(requiredUrlCheck("VITE_BETTER_AUTH_URL", betterAuthUrl));
   checks.push(requiredUrlCheck("VITE_CONVEX_URL", convexUrl));
-
-  if (betterAuthUrl !== null) {
-    checks.push(await checkAuthSessionEndpoint(fetchImpl, betterAuthUrl));
-    checks.push(await checkTokenEndpoint(fetchImpl, betterAuthUrl));
-    checks.push(await checkJwksEndpoint(fetchImpl, betterAuthUrl));
-  }
 
   if (convexUrl !== null) {
     checks.push(await checkConvexDeployment(fetchImpl, convexUrl));
@@ -165,82 +156,6 @@ function requiredUrlCheck(name: string, value: string | null): AuthPreflightChec
     ok: true,
     message: value,
   };
-}
-
-async function checkAuthSessionEndpoint(fetchImpl: typeof fetch, betterAuthUrl: string) {
-  const url = new URL("./get-session", ensureTrailingSlash(betterAuthUrl)).toString();
-  const response = await fetchWithTimeout(
-    fetchImpl,
-    url,
-    { credentials: "include" },
-    DEFAULT_TIMEOUT_MS,
-  );
-
-  if (response.kind === "network-error") {
-    return errorCheck("Better Auth /get-session", `unreachable: ${response.message}`);
-  }
-
-  if (response.status === 404) {
-    return errorCheck(
-      "Better Auth /get-session",
-      "endpoint returned 404; Better Auth routes are missing.",
-    );
-  }
-
-  if (response.status >= 500) {
-    return errorCheck("Better Auth /get-session", `endpoint returned ${response.status}.`);
-  }
-
-  return passCheck("Better Auth /get-session", `reachable with status ${response.status}.`);
-}
-
-async function checkTokenEndpoint(fetchImpl: typeof fetch, betterAuthUrl: string) {
-  const url = new URL("./convex/token", ensureTrailingSlash(betterAuthUrl)).toString();
-  const response = await fetchWithTimeout(
-    fetchImpl,
-    url,
-    { credentials: "include" },
-    DEFAULT_TIMEOUT_MS,
-  );
-
-  if (response.kind === "network-error") {
-    return errorCheck("Better Auth /convex/token", `unreachable: ${response.message}`);
-  }
-
-  if (response.status === 404) {
-    return errorCheck(
-      "Better Auth /convex/token",
-      "endpoint returned 404; Convex plugin is missing.",
-    );
-  }
-
-  if (response.status >= 500) {
-    return errorCheck("Better Auth /convex/token", `endpoint returned ${response.status}.`);
-  }
-
-  return passCheck("Better Auth /convex/token", `reachable with status ${response.status}.`);
-}
-
-async function checkJwksEndpoint(fetchImpl: typeof fetch, betterAuthUrl: string) {
-  const url = new URL("./convex/jwks", ensureTrailingSlash(betterAuthUrl)).toString();
-  const response = await fetchWithTimeout(fetchImpl, url, {}, DEFAULT_TIMEOUT_MS);
-
-  if (response.kind === "network-error") {
-    return errorCheck("Better Auth /convex/jwks", `unreachable: ${response.message}`);
-  }
-
-  if (response.status === 404) {
-    return errorCheck(
-      "Better Auth /convex/jwks",
-      "endpoint returned 404; Convex plugin JWKS is missing.",
-    );
-  }
-
-  if (response.status >= 500) {
-    return errorCheck("Better Auth /convex/jwks", `endpoint returned ${response.status}.`);
-  }
-
-  return passCheck("Better Auth /convex/jwks", `reachable with status ${response.status}.`);
 }
 
 async function checkConvexDeployment(fetchImpl: typeof fetch, convexUrl: string) {
