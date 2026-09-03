@@ -59,11 +59,11 @@ The Better Auth client surface (`ConvexBetterAuthClient`) remains available thro
 
 ## Success criteria
 
-- [ ] `convex-auth-react` exports a native `ConvexAuthClient` that can replace the Better Auth client for new apps.
-- [ ] At least the sign-in, sign-up, forgot-password, reset-password, verify-email, and email-OTP forms use the native client.
-- [ ] `pnpm run typecheck && pnpm run check && pnpm run build && pnpm test` passes.
-- [ ] The default `dist/index.js` of `convex-auth-react` has no `better-auth` or `convex-better-auth-adapter` strings.
-- [ ] Existing `convex-better-auth` consumer contract test still passes.
+- [x] `convex-auth-react` exports a native `ConvexAuthClient` that can replace the Better Auth client for new apps.
+- [x] At least the sign-in, sign-up, forgot-password, reset-password, verify-email, and email-OTP forms use the native client.
+- [x] `pnpm run typecheck && pnpm run check && pnpm run build && pnpm test` passes.
+- [x] The default `dist/index.js` of `convex-auth-react` has no `better-auth` or `convex-better-auth-adapter` strings.
+- [x] Existing `convex-better-auth` consumer contract test still passes.
 
 ## Open questions
 
