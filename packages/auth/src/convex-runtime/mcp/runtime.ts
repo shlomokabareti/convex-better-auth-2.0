@@ -36,7 +36,7 @@ export type McpOAuthHttpFailure = {
 };
 
 export type McpOAuthResolvedSession = {
-  betterAuthUserId: string;
+  subjectId: string;
 };
 
 export type McpOAuthResolvedIdentity = {
@@ -73,7 +73,7 @@ export type McpOAuthTokenRequestArgs<TClient extends McpOAuthClient> = {
     | McpOAuthRefreshTokenGrantFailure
     | {
         ok: true;
-        betterAuthUserId: string;
+        subjectId: string;
         organizationId: string;
         audience: string;
         resourceId: string;
@@ -82,7 +82,7 @@ export type McpOAuthTokenRequestArgs<TClient extends McpOAuthClient> = {
       }
   >;
   signAccessToken: (input: {
-    betterAuthUserId: string;
+    subjectId: string;
     clientId: string;
     organizationId: string;
     scopes: readonly string[];
@@ -138,7 +138,7 @@ export type McpOAuthTokenRequestArgs<TClient extends McpOAuthClient> = {
   };
   issueRefreshToken: (input: {
     clientId: string;
-    betterAuthUserId: string;
+    subjectId: string;
     organizationId: string;
     scopes: readonly string[];
     audience: string;
@@ -152,12 +152,12 @@ export type McpOAuthAccessRuntime = {
   ) => Promise<McpOAuthResolvedIdentity | null>;
   authorize: (input: {
     identity: McpOAuthResolvedIdentity;
-    betterAuthUserId: string;
+    subjectId: string;
     requestedOrganizationId: string | null;
     requestedScopes: readonly string[];
   }) => Promise<McpOAuthAuthorizeAccessResult>;
   signAccessToken: (input: {
-    betterAuthUserId: string;
+    subjectId: string;
     clientId: string;
     organizationId: string;
     scopes: readonly string[];
@@ -179,7 +179,7 @@ export type McpOAuthAuthorizeAccessResult =
 
 export type CreateMcpOAuthAccessRuntimeArgs = {
   resolveIdentityForUser: (
-    betterAuthUserId: string,
+    subjectId: string,
   ) => Promise<McpOAuthResolvedIdentity | null> | McpOAuthResolvedIdentity | null;
   getAccessibleOrganizations: (
     userId: string,
@@ -196,7 +196,7 @@ export type CreateMcpOAuthAccessRuntimeArgs = {
   }) => McpOAuthErrorBody | null;
   requireAccessibleOrganization: (organizationId: string | null) => string;
   signAccessToken: (input: {
-    betterAuthUserId: string;
+    subjectId: string;
     clientId: string;
     organizationId: string;
     scopes: readonly string[];
@@ -307,29 +307,29 @@ function isHttpFailure(value: object | McpOAuthHttpFailure): value is McpOAuthHt
 }
 
 export async function signAuthorizedMcpOAuthAccessToken(args: {
-  betterAuthUserId: string;
+  subjectId: string;
   clientId: string;
   organizationId: string;
   scopes: readonly string[];
   audience: string;
   resolveIdentityForUser: (
-    betterAuthUserId: string,
+    subjectId: string,
   ) => Promise<McpOAuthResolvedIdentity | null> | McpOAuthResolvedIdentity | null;
   authorize: (input: {
     identity: McpOAuthResolvedIdentity;
-    betterAuthUserId: string;
+    subjectId: string;
     requestedOrganizationId: string | null;
     requestedScopes: readonly string[];
   }) => Promise<McpOAuthAuthorizeAccessResult> | McpOAuthAuthorizeAccessResult;
   signAccessToken: (input: {
-    betterAuthUserId: string;
+    subjectId: string;
     clientId: string;
     organizationId: string;
     scopes: readonly string[];
     audience: string;
   }) => Promise<McpOAuthSignedAccessToken> | McpOAuthSignedAccessToken;
 }): Promise<McpOAuthSignedAccessToken | McpOAuthHttpFailure> {
-  const identity = await args.resolveIdentityForUser(args.betterAuthUserId);
+  const identity = await args.resolveIdentityForUser(args.subjectId);
   if (identity === null) {
     return {
       status: 401,
@@ -342,7 +342,7 @@ export async function signAuthorizedMcpOAuthAccessToken(args: {
 
   const access = await args.authorize({
     identity,
-    betterAuthUserId: args.betterAuthUserId,
+    subjectId: args.subjectId,
     requestedOrganizationId: args.organizationId,
     requestedScopes: args.scopes,
   });
@@ -354,7 +354,7 @@ export async function signAuthorizedMcpOAuthAccessToken(args: {
   }
 
   return await args.signAccessToken({
-    betterAuthUserId: args.betterAuthUserId,
+    subjectId: args.subjectId,
     clientId: args.clientId,
     organizationId: access.organizationId,
     scopes: access.scopes,
@@ -367,7 +367,7 @@ export function createMcpOAuthAccessRuntime(
 ): McpOAuthAccessRuntime {
   return {
     resolveIdentityForSession: async (session) =>
-      await args.resolveIdentityForUser(session.betterAuthUserId),
+      await args.resolveIdentityForUser(session.subjectId),
     authorize: async ({ identity, requestedOrganizationId, requestedScopes }) =>
       await authorizeMcpOAuthAccessRequest({
         userId: identity.userId,
@@ -379,9 +379,9 @@ export function createMcpOAuthAccessRuntime(
         validateScopes: args.validateScopes,
         requireAccessibleOrganization: args.requireAccessibleOrganization,
       }),
-    signAccessToken: async ({ betterAuthUserId, clientId, organizationId, scopes, audience }) =>
+    signAccessToken: async ({ subjectId, clientId, organizationId, scopes, audience }) =>
       await signAuthorizedMcpOAuthAccessToken({
-        betterAuthUserId,
+        subjectId,
         clientId,
         organizationId,
         scopes,
@@ -430,7 +430,7 @@ export async function handleMcpOAuthAuthorizeRequest<TClient extends McpOAuthCli
   ) => Promise<McpOAuthResolvedIdentity | null> | McpOAuthResolvedIdentity | null;
   authorize: (input: {
     identity: McpOAuthResolvedIdentity;
-    betterAuthUserId: string;
+    subjectId: string;
     requestedOrganizationId: string | null;
     requestedScopes: readonly string[];
   }) => Promise<McpOAuthAuthorizeAccessResult> | McpOAuthAuthorizeAccessResult;
@@ -438,7 +438,7 @@ export async function handleMcpOAuthAuthorizeRequest<TClient extends McpOAuthCli
     code: string;
     clientId: string;
     redirectUri: string;
-    betterAuthUserId: string;
+    subjectId: string;
     organizationId: string;
     scopes: readonly string[];
     codeChallenge: string;
@@ -495,7 +495,7 @@ export async function handleMcpOAuthAuthorizeRequest<TClient extends McpOAuthCli
 
   const access = await args.authorize({
     identity,
-    betterAuthUserId: session.betterAuthUserId,
+    subjectId: session.subjectId,
     requestedOrganizationId: params.organizationId,
     requestedScopes,
   });
@@ -519,7 +519,7 @@ export async function handleMcpOAuthAuthorizeRequest<TClient extends McpOAuthCli
     code,
     clientId: params.clientId,
     redirectUri: params.redirectUri,
-    betterAuthUserId: session.betterAuthUserId,
+    subjectId: session.subjectId,
     organizationId: access.organizationId,
     scopes: access.scopes,
     codeChallenge: params.codeChallenge,
@@ -659,7 +659,7 @@ async function handleMcpOAuthRefreshTokenExchange<TClient extends McpOAuthClient
   }
 
   const token = await args.signAccessToken({
-    betterAuthUserId: redeemed.betterAuthUserId,
+    subjectId: redeemed.subjectId,
     clientId: refreshGrant.client.clientId,
     organizationId: redeemed.organizationId,
     scopes: redeemed.scopes,
@@ -697,7 +697,7 @@ async function handleMcpOAuthAuthorizationCodeExchange<TClient extends McpOAuthC
   const authorizationCode = exchange.authorizationCode;
   const [token, refreshToken] = await Promise.all([
     args.signAccessToken({
-      betterAuthUserId: authorizationCode.betterAuthUserId,
+      subjectId: authorizationCode.subjectId,
       clientId: authorizationCode.clientId,
       organizationId: authorizationCode.organizationId,
       scopes: authorizationCode.scopes,
@@ -705,7 +705,7 @@ async function handleMcpOAuthAuthorizationCodeExchange<TClient extends McpOAuthC
     }),
     args.issueRefreshToken({
       clientId: authorizationCode.clientId,
-      betterAuthUserId: authorizationCode.betterAuthUserId,
+      subjectId: authorizationCode.subjectId,
       organizationId: authorizationCode.organizationId,
       scopes: authorizationCode.scopes,
       audience: authorizationCode.audience,

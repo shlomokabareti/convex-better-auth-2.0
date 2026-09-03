@@ -68,7 +68,7 @@ export function createMcpOAuthRefreshToken(
       familyId,
       parentTokenId: args.parentTokenId ?? null,
       clientId: args.clientId,
-      betterAuthUserId: args.betterAuthUserId,
+      subjectId: args.subjectId,
       organizationId: args.organizationId,
       scopes: Array.from(new Set(args.scopes)),
       audience: args.audience,
@@ -90,7 +90,7 @@ export function rotateMcpOAuthRefreshToken(
   const now = args.now ?? Date.now();
   const next = createMcpOAuthRefreshToken({
     clientId: args.record.clientId,
-    betterAuthUserId: args.record.betterAuthUserId,
+    subjectId: args.record.subjectId,
     organizationId: args.record.organizationId,
     scopes: args.scopes ?? args.record.scopes,
     audience: args.record.audience,

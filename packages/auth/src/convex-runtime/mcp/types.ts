@@ -229,7 +229,7 @@ export type McpOAuthAuthorizeRequest = {
 
 export type McpOAuthAuthorizationCodeRecord = {
   clientId: string;
-  betterAuthUserId: string;
+  subjectId: string;
   organizationId: string;
   scopes: readonly string[];
   codeChallenge: string;
@@ -316,7 +316,7 @@ export type McpOAuthAccessTokenClaims = {
    * Absent rather than blank on purpose: anything that authorises by user id
    * then fails to find one, instead of treating a machine as a person.
    */
-  betterAuthUserId?: string;
+  subjectId?: string;
   resourceId: string;
   scopes: readonly string[];
   organizationId?: string;
@@ -338,7 +338,7 @@ export type McpOAuthAccessTokenVerificationResult = {
   issuer: string | null;
   subject: string | null;
   clientId: string | null;
-  betterAuthUserId: string | null;
+  subjectId: string | null;
   organizationId: string | null;
   organizationSlug: string | null;
   resourceId: string | null;
@@ -372,7 +372,7 @@ export type McpOAuthRefreshTokenRecord = {
   familyId: string;
   parentTokenId?: string | null;
   clientId: string;
-  betterAuthUserId: string;
+  subjectId: string;
   organizationId: string;
   scopes: readonly string[];
   audience: string;
@@ -387,7 +387,7 @@ export type McpOAuthRefreshTokenRecord = {
 
 export type McpOAuthRefreshTokenIssueArgs = {
   clientId: string;
-  betterAuthUserId: string;
+  subjectId: string;
   organizationId: string;
   scopes: readonly string[];
   audience: string;

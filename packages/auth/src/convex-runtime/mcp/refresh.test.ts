@@ -40,7 +40,7 @@ describe("mcp oauth refresh helpers", () => {
   it("creates refresh token record", () => {
     const issued = createMcpOAuthRefreshToken({
       clientId: "client_123",
-      betterAuthUserId: "user_123",
+      subjectId: "user_123",
       organizationId: "org_123",
       scopes: ["crm:organization:read", "crm:tasks:read", "crm:tasks:read"],
       audience: "crm-mcp",
@@ -61,7 +61,7 @@ describe("mcp oauth refresh helpers", () => {
         familyId: "rt_123",
         parentTokenId: null,
         clientId: "client_123",
-        betterAuthUserId: "user_123",
+        subjectId: "user_123",
         organizationId: "org_123",
         scopes: ["crm:organization:read", "crm:tasks:read"],
         audience: "crm-mcp",
@@ -79,7 +79,7 @@ describe("mcp oauth refresh helpers", () => {
   it("rotates refresh token within same family", () => {
     const current = createMcpOAuthRefreshToken({
       clientId: "client_123",
-      betterAuthUserId: "user_123",
+      subjectId: "user_123",
       organizationId: "org_123",
       scopes: ["crm:organization:read", "crm:tasks:read"],
       audience: "crm-mcp",
@@ -111,7 +111,7 @@ describe("mcp oauth refresh helpers", () => {
         familyId: "rt_123",
         parentTokenId: "rt_123",
         clientId: "client_123",
-        betterAuthUserId: "user_123",
+        subjectId: "user_123",
         organizationId: "org_123",
         scopes: ["crm:organization:read", "crm:tasks:read"],
         audience: "crm-mcp",
@@ -241,7 +241,7 @@ describe("mcp oauth refresh helpers", () => {
   it("redeems refresh token with atomic rotation contract", async () => {
     const current = createMcpOAuthRefreshToken({
       clientId: "client_123",
-      betterAuthUserId: "user_123",
+      subjectId: "user_123",
       organizationId: "org_123",
       scopes: ["crm:organization:read", "crm:tasks:read"],
       audience: "crm-mcp",
@@ -305,7 +305,7 @@ describe("mcp oauth refresh helpers", () => {
           familyId: "rt_123",
           parentTokenId: "rt_123",
           clientId: "client_123",
-          betterAuthUserId: "user_123",
+          subjectId: "user_123",
           organizationId: "org_123",
           scopes: ["crm:organization:read"],
           audience: "crm-mcp",
@@ -351,7 +351,7 @@ describe("mcp oauth refresh helpers", () => {
           familyId: "family_123",
           parentTokenId: null,
           clientId: "client_123",
-          betterAuthUserId: "user_123",
+          subjectId: "user_123",
           organizationId: "org_123",
           scopes: ["crm:organization:read"],
           audience: "crm-mcp",
@@ -396,7 +396,7 @@ describe("mcp oauth refresh helpers", () => {
   it("revokes family on concurrent rotation conflict", async () => {
     const current = createMcpOAuthRefreshToken({
       clientId: "client_123",
-      betterAuthUserId: "user_123",
+      subjectId: "user_123",
       organizationId: "org_123",
       scopes: ["crm:organization:read"],
       audience: "crm-mcp",
