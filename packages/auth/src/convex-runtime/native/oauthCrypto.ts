@@ -1,7 +1,7 @@
 import { CompactEncrypt, compactDecrypt } from "jose";
 import type { OAuthToken } from "./oauth.js";
 
-const ENCRYPTION_SALT = new TextEncoder().encode("convex-better-auth-2.0");
+const ENCRYPTION_SALT = new TextEncoder().encode("convex-auth-2.0");
 const ENCRYPTION_INFO = new TextEncoder().encode("oauth-account-tokens");
 
 export type EncryptedOAuthToken = {
