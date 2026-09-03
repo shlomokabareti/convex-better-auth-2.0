@@ -1,4 +1,4 @@
-const DEFAULT_COOKIE_PREFIX = "better-auth";
+const DEFAULT_COOKIE_PREFIX = "convex-auth";
 const SESSION_TOKEN_COOKIE_NAME = "session_token";
 
 function cookieName(prefix: string): string {

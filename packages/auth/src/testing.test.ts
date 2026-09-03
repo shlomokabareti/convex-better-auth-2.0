@@ -176,10 +176,7 @@ describe("testing helpers", () => {
     );
     await writeFile(
       join(repoRoot, ".test-env"),
-      [
-        "VITE_BETTER_AUTH_URL=https:/convex-auth.example.test/apiconvex-auth",
-        "VITE_CONVEX_URL=https://convex.example.test",
-      ].join("\n"),
+      ["VITE_CONVEX_URL=https://convex.example.test"].join("\n"),
     );
 
     const lines: string[] = [];
@@ -196,7 +193,7 @@ describe("testing helpers", () => {
       true,
     );
     assert.equal(
-      lines.some((line) => line.includes("[ERROR] Backend Better Auth site URL")),
+      lines.some((line) => line.includes("[ERROR] Backend Convex auth site URL")),
       true,
     );
   });

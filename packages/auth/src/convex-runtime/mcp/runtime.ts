@@ -404,12 +404,7 @@ export function createMcpOAuthAccessRuntime(
 }
 
 export function getMcpOAuthSessionTokenFromRequest(request: Request): string | null {
-  const signedCookie =
-    getSessionCookie(request.headers) ??
-    getSessionCookie(request.headers, {
-      cookiePrefix: "__Secure-better-auth",
-    }) ??
-    getSessionCookie(request.headers, { cookiePrefix: "__Host-better-auth" });
+  const signedCookie = getSessionCookie(request.headers);
 
   if (!signedCookie) {
     return null;
