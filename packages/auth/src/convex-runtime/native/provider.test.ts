@@ -1,5 +1,5 @@
 import { exportJWK, generateKeyPair } from "jose";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { nativeEmailAndPassword } from "./provider.js";
 import type {
   NativeAccountDoc,
@@ -141,6 +141,10 @@ function createMockComponent(): MockedComponent {
         consumeVerificationCode: vi.fn(),
         revokeVerificationCodesForUser: vi.fn(),
       },
+      rateLimits: {
+        recordAttempt: vi.fn().mockResolvedValue({ allowed: true, count: 1 }),
+        checkRateLimit: vi.fn(),
+      },
     },
   } as unknown as MockedComponent;
 }
@@ -240,7 +244,9 @@ function asComponent(component: MockedComponent): NativeEmailAndPasswordComponen
 }
 
 function createActions(component: MockedComponent, config?: NativeEmailAndPasswordConfig) {
-  return nativeEmailAndPassword(asComponent(component), config);
+  // Tests disable breach checking by default so they do not call the HIBP API.
+  const testConfig = { checkBreach: false, ...config };
+  return nativeEmailAndPassword(asComponent(component), testConfig);
 }
 
 describe("nativeEmailAndPassword", () => {
@@ -445,6 +451,114 @@ describe("nativeEmailAndPassword", () => {
     const provisionCall = component.identity.provisionFromIdentity.mock.calls[0]?.[0];
     expect(provisionCall.initialSession).toBeUndefined();
     expect(component.native.sessions.createSessionAndRefreshToken).not.toHaveBeenCalled();
+  });
+
+  describe("breach screening", () => {
+    async function sha1Hex(password: string): Promise<string> {
+      const encoder = new TextEncoder();
+      const digest = await globalThis.crypto.subtle.digest("SHA-1", encoder.encode(password));
+      return Array.from(new Uint8Array(digest))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+        .toUpperCase();
+    }
+
+    function hibpResponseFor(password: string, count = 1) {
+      return async () => {
+        const hash = await sha1Hex(password);
+        const suffix = hash.slice(5);
+        return `00001:0\n${suffix}:${count}\nFFFFF:0\n`;
+      };
+    }
+
+    beforeEach(() => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => ({ ok: true, status: 200, text: async () => "" })),
+      );
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("signUp rejects a known-breached password", async () => {
+      const component = createMockComponent();
+      const password = "password12345";
+      const fetchMock = vi.mocked(fetch);
+      fetchMock.mockImplementation(async () => ({
+        ok: true,
+        status: 200,
+        text: hibpResponseFor(password, 42),
+      }));
+
+      const { signUp } = createActions(component, { checkBreach: true });
+      const { handler } = exec(signUp);
+
+      await expect(
+        handler(createContext(), {
+          email: "shlomo@example.com",
+          password,
+          name: "Shlomo",
+        }),
+      ).rejects.toThrow("Password has been exposed in a data breach");
+
+      expect(component.identity.provisionFromIdentity).not.toHaveBeenCalled();
+    });
+
+    it("signUp accepts a non-breached password when checkBreach is enabled", async () => {
+      const component = createMockComponent();
+      const password = `not-breached-${Date.now()}`;
+      const user = makeUser();
+      component.identity.provisionFromIdentity.mockResolvedValue({
+        userId: "user_1",
+        identityId: "identity_1",
+        createdUser: true,
+        linkedExistingIdentity: false,
+        user,
+        sessionId: "session_1",
+        token: defaultToken,
+      });
+
+      const fetchMock = vi.mocked(fetch);
+      fetchMock.mockImplementation(async () => ({
+        ok: true,
+        status: 200,
+        text: async () => "00001:0\nFFFFF:0\n",
+      }));
+
+      const { signUp } = createActions(component, { checkBreach: true });
+      const { handler } = exec(signUp);
+
+      const result = (await handler(createContext(), {
+        email: "shlomo@example.com",
+        password,
+        name: "Shlomo",
+      })) as { token: string; user: { id: string } };
+
+      expect(result.token).toBe(defaultToken);
+      expect(component.identity.provisionFromIdentity).toHaveBeenCalled();
+    });
+
+    it("resetPassword rejects a known-breached password", async () => {
+      const component = createMockComponent();
+      const password = "password12345";
+      const fetchMock = vi.mocked(fetch);
+      fetchMock.mockImplementation(async () => ({
+        ok: true,
+        status: 200,
+        text: hibpResponseFor(password, 42),
+      }));
+
+      const { resetPassword } = createActions(component, { checkBreach: true });
+      const result = await exec(resetPassword).handler(createContext(), {
+        token: "reset-token",
+        newPassword: password,
+      });
+
+      expect(result).toEqual({ status: false, reason: "breached_password" });
+      expect(component.identity.resetPassword).not.toHaveBeenCalled();
+    });
   });
 
   it("signs in an existing user with a valid password", async () => {

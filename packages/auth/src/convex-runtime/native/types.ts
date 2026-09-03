@@ -360,6 +360,22 @@ export type NativeEmailAndPasswordComponentHandle = {
         string
       >;
     };
+    rateLimits: {
+      recordAttempt: FunctionReference<
+        "mutation",
+        "public" | "internal",
+        { identifier: string; windowStart: number; maxAttempts: number },
+        { allowed: boolean; count: number },
+        string
+      >;
+      checkRateLimit: FunctionReference<
+        "query",
+        "public" | "internal",
+        { identifier: string; windowStart: number; maxAttempts: number },
+        { allowed: boolean; count: number },
+        string
+      >;
+    };
     sessions: {
       createSession: FunctionReference<
         "mutation",

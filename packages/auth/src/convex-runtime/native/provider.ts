@@ -12,6 +12,7 @@ import {
   createPasswordResetEmailDraft,
 } from "../account/passwordResetEmail.js";
 import { mintToken, verifyToken } from "./jwt.js";
+import { checkPasswordBreach } from "./breach.js";
 import { hashPassword, verifyPassword as verifyPasswordHash } from "./password.js";
 import { generateVerificationToken, hashToken } from "./tokens.js";
 import { handleUpdateSession } from "./updateSession.js";
@@ -71,6 +72,19 @@ export type NativeEmailAndPasswordConfig = {
   minPasswordLength?: number;
   maxPasswordLength?: number;
   /**
+   * When `true` (default), `signUp` and `resetPassword` check new passwords
+   * against the Have I Been Pwned k-Anonymity API and reject known-breached
+   * passwords.
+   */
+  checkBreach?: boolean;
+  /**
+   * Rate limiting applied to `signIn` attempts per email address.
+   */
+  rateLimit?: {
+    windowMs?: number;
+    maxAttempts?: number;
+  };
+  /**
    * When `true` (default), `resetPassword` revokes all active sessions for the user.
    * Set to `false` to keep other sessions active after a successful reset.
    */
@@ -112,6 +126,8 @@ const DEFAULT_REFRESH_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const DONT_REMEMBER_SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_MIN_PASSWORD_LENGTH = 8;
 const DEFAULT_MAX_PASSWORD_LENGTH = 128;
+const DEFAULT_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const DEFAULT_RATE_LIMIT_MAX_ATTEMPTS = 5;
 const DEFAULT_TWO_FACTOR_BACKUP_CODES_COUNT = 10;
 const DEFAULT_TWO_FACTOR_BACKUP_CODE_BYTES = 10;
 const DEFAULT_TWO_FACTOR_SECRET_BYTES = 20;
@@ -220,7 +236,11 @@ export function nativeEmailAndPassword(
   const requireVerifiedEmail = config.requireVerifiedEmail ?? false;
   const minPasswordLength = config.minPasswordLength ?? DEFAULT_MIN_PASSWORD_LENGTH;
   const maxPasswordLength = config.maxPasswordLength ?? DEFAULT_MAX_PASSWORD_LENGTH;
+  const rateLimitWindowMs = config.rateLimit?.windowMs ?? DEFAULT_RATE_LIMIT_WINDOW_MS;
+  const rateLimitMaxAttempts = config.rateLimit?.maxAttempts ?? DEFAULT_RATE_LIMIT_MAX_ATTEMPTS;
+  const checkBreach = config.checkBreach ?? true;
   const onExistingUserSignUp = config.onExistingUserSignUp;
+  const BREACH_ERROR_MESSAGE = "Password has been exposed in a data breach and cannot be used";
 
   const shouldReturnGenericDuplicateResponse = requireVerifiedEmail || autoSignIn === false;
   const shouldSkipAutoSignIn = shouldReturnGenericDuplicateResponse;
@@ -295,6 +315,13 @@ export function nativeEmailAndPassword(
             ? "Password is too short"
             : "Password is too long",
         );
+      }
+
+      if (checkBreach) {
+        const breachResult = await checkPasswordBreach(args.password);
+        if (breachResult.breached) {
+          throw new Error(BREACH_ERROR_MESSAGE);
+        }
       }
 
       // Hash the password before the transaction so both the success and
@@ -443,6 +470,16 @@ export function nativeEmailAndPassword(
       const normalizedEmail = args.email.trim().toLowerCase();
       if (!isValidEmail(normalizedEmail)) {
         throw new Error("Invalid email");
+      }
+
+      const windowStart = Math.floor(Date.now() / rateLimitWindowMs) * rateLimitWindowMs;
+      const rateLimit = await ctx.runMutation(component.native.rateLimits.recordAttempt, {
+        identifier: `sign-in:${normalizedEmail}`,
+        windowStart,
+        maxAttempts: rateLimitMaxAttempts,
+      });
+      if (!rateLimit.allowed) {
+        throw new Error("Too many requests");
       }
 
       const auth = await ctx.runQuery(component.identity.getUserAndAccount, {
@@ -769,6 +806,14 @@ export function nativeEmailAndPassword(
       }
 
       const tokenHash = await hashToken(args.token);
+
+      if (checkBreach) {
+        const breachResult = await checkPasswordBreach(args.newPassword);
+        if (breachResult.breached) {
+          return { status: false, reason: "breached_password" };
+        }
+      }
+
       const credentialHash = await hashPassword(args.newPassword);
 
       const result = await ctx.runMutation(component.identity.resetPassword, {

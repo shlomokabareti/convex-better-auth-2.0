@@ -1191,7 +1191,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         { clientId: string; code: string; redirectUri: string },
         null | {
           audience: string;
-          subjectId: string;
           clientId: string;
           codeChallenge: string;
           codeChallengeMethod: "S256";
@@ -1199,6 +1198,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           organizationId: string;
           resourceId: string;
           scopes: Array<string>;
+          subjectId: string;
         },
         Name
       >;
@@ -1207,7 +1207,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "internal",
         {
           audience: string;
-          subjectId: string;
           clientId: string;
           code: string;
           codeChallenge: string;
@@ -1218,6 +1217,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           resourceId: string;
           scopes: Array<string>;
           state?: string;
+          subjectId: string;
         },
         { code: string },
         Name
@@ -1271,11 +1271,11 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         "internal",
         {
           audience: string;
-          subjectId: string;
           clientId: string;
           organizationId: string;
           resourceId: string;
           scopes: Array<string>;
+          subjectId: string;
         },
         {
           expiresAt: number;
@@ -1320,7 +1320,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         },
         | {
             audience: string;
-            subjectId: string;
             expiresAt: number;
             inactivityExpiresAt: number | null;
             ok: true;
@@ -1328,6 +1327,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             refreshToken: string;
             resourceId: string;
             scopes: Array<string>;
+            subjectId: string;
           }
         | {
             body: { error: string; error_description?: string };
