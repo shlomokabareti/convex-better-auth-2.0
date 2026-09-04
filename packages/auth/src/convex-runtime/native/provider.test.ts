@@ -142,7 +142,7 @@ function createMockComponent(): MockedComponent {
         revokeVerificationCodesForUser: vi.fn(),
       },
       rateLimits: {
-        recordAttempt: vi.fn().mockResolvedValue({ allowed: true, count: 1 }),
+        recordAttempt: vi.fn().mockResolvedValue({ allowed: true, count: 0 }),
         checkRateLimit: vi.fn(),
       },
     },

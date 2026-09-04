@@ -364,14 +364,14 @@ export type NativeEmailAndPasswordComponentHandle = {
       recordAttempt: FunctionReference<
         "mutation",
         "public" | "internal",
-        { identifier: string; windowStart: number; maxAttempts: number },
+        { identifier: string; windowStart: number; windowMs: number; maxAttempts: number },
         { allowed: boolean; count: number },
         string
       >;
       checkRateLimit: FunctionReference<
         "query",
         "public" | "internal",
-        { identifier: string; windowStart: number; maxAttempts: number },
+        { identifier: string; windowStart: number; windowMs: number; maxAttempts: number },
         { allowed: boolean; count: number },
         string
       >;

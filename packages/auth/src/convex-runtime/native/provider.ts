@@ -476,6 +476,7 @@ export function nativeEmailAndPassword(
       const rateLimit = await ctx.runMutation(component.native.rateLimits.recordAttempt, {
         identifier: `sign-in:${normalizedEmail}`,
         windowStart,
+        windowMs: rateLimitWindowMs,
         maxAttempts: rateLimitMaxAttempts,
       });
       if (!rateLimit.allowed) {

@@ -188,6 +188,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@convex-dev/rate-limiter": "^0.3.2",
     "@noble/hashes": "^2.4.0",
     "convex-auth-core": "workspace:*",
     "convex-helpers": "^0.1.80",

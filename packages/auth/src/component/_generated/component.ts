@@ -1548,7 +1548,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         checkRateLimit: FunctionReference<
           "query",
           "internal",
-          { identifier: string; maxAttempts: number; windowStart: number },
+          {
+            identifier: string;
+            maxAttempts: number;
+            windowMs: number;
+            windowStart: number;
+          },
           { allowed: boolean; count: number },
           Name
         >;
@@ -1562,7 +1567,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         recordAttempt: FunctionReference<
           "mutation",
           "internal",
-          { identifier: string; maxAttempts: number; windowStart: number },
+          {
+            identifier: string;
+            maxAttempts: number;
+            windowMs: number;
+            windowStart: number;
+          },
           { allowed: boolean; count: number },
           Name
         >;

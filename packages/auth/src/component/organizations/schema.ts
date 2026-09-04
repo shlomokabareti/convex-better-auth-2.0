@@ -9,7 +9,6 @@ import {
 import {
   authAccounts,
   authMagicLinkTokens,
-  authRateLimits,
   authRefreshTokens,
   authSessions,
   authVerificationCodes,
@@ -23,7 +22,6 @@ export default defineSchema({
   authRefreshTokens,
   authVerificationCodes,
   authVerifiers,
-  authRateLimits,
   authMagicLinkTokens,
   organizations,
   organization_roles,
