@@ -24,7 +24,6 @@ describe("feature-gated component schemas", () => {
       "authRefreshTokens",
       "authVerificationCodes",
       "authVerifiers",
-      "authRateLimits",
       "authMagicLinkTokens",
     ]);
   });

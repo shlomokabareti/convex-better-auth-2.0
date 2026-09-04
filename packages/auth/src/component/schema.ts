@@ -35,7 +35,6 @@ import {
 import {
   authAccounts,
   authMagicLinkTokens,
-  authRateLimits,
   authRefreshTokens,
   authSessions,
   authVerificationCodes,
@@ -90,6 +89,5 @@ export default defineSchema({
   mcp_oauth_revoked_families,
   authVerificationCodes,
   authVerifiers,
-  authRateLimits,
   authMagicLinkTokens,
 });

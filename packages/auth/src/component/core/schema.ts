@@ -3,7 +3,6 @@ import { auth_identities, users } from "../schema/users.js";
 import {
   authAccounts,
   authMagicLinkTokens,
-  authRateLimits,
   authRefreshTokens,
   authSessions,
   authVerificationCodes,
@@ -18,6 +17,5 @@ export default defineSchema({
   authRefreshTokens,
   authVerificationCodes,
   authVerifiers,
-  authRateLimits,
   authMagicLinkTokens,
 });

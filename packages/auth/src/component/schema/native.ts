@@ -77,16 +77,6 @@ export const authVerifiers = defineTable({
   .index("by_verifier_id", ["verifierId"])
   .index("by_expires_at", ["expiresAt"]);
 
-export const authRateLimits = defineTable({
-  identifier: v.string(),
-  windowStart: v.number(),
-  count: v.number(),
-  createdAt: v.number(),
-  updatedAt: v.number(),
-})
-  .index("by_identifier_window", ["identifier", "windowStart"])
-  .index("by_window", ["windowStart"]);
-
 export const authMagicLinkTokens = defineTable({
   email: v.string(),
   name: v.optional(v.string()),
