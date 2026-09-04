@@ -47,4 +47,16 @@ export {
   type TwilioSmsOtpSenderOptions,
   type TwilioSmsSenderOptions,
 } from "../providers/twilio.js";
+export {
+  processConvexWebhookDelivery,
+  DEFAULT_WEBHOOK_MAX_ATTEMPTS,
+  DEFAULT_WEBHOOK_PROCESSING_LIMIT,
+  DEFAULT_WEBHOOK_STALE_AFTER_MS,
+  type ConvexWebhookProcessorEndpoint,
+  type ConvexWebhookProcessorDelivery,
+  type ConvexWebhookFetch,
+  type ConvexWebhookFetchResponse,
+  type ProcessConvexWebhookDeliveryArgs,
+  type ProcessConvexWebhookDeliveryResult,
+} from "../webhooks/deliveryProcessor.js";
 export type { NativeEmailAndPasswordComponentHandle, NativeOAuthComponentHandle } from "./types.js";
