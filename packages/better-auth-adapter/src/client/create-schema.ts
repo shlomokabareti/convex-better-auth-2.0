@@ -12,7 +12,7 @@ const resolveCdTarget = (relativeDir: string | null, cwdBasename: string): strin
 
 // Manually add fields to index on for schema generation,
 // all fields in the schema specialFields are automatically indexed
-export const indexFields = {
+const indexFields = {
   account: [
     "accountId",
     ["accountId", "providerId"],

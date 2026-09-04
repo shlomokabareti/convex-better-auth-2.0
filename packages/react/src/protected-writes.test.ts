@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-import type { AuthRuntimeStatus } from "@convex-auth/internal-core";
+import type { AuthRuntimeStatus } from "convex-auth-core";
 import { describe, it } from "vitest";
 
 import {

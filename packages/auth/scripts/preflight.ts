@@ -55,7 +55,7 @@ function readValue(argv: readonly string[], index: number, flag: string): string
 function backendSetupFromConvexDir(convexDir: string): ConvexAuthPreflightBackendSetupOptions {
   const base = convexDir.replace(/\/+$/, "");
   return {
-    authConfigPath: `${base}/auth.config.ts`,
+    authConfigPath: `${base}/auth.ts`,
     convexConfigPath: `${base}/convex.config.ts`,
     httpPath: `${base}/http.ts`,
   };

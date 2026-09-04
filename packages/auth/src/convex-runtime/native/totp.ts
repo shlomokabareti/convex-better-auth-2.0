@@ -31,7 +31,7 @@ function canonicalAlgorithm(algorithm: string): keyof typeof hashFns {
   return normalized;
 }
 
-export function hmacFunction(algorithm: string, key: Uint8Array, message: Uint8Array): Uint8Array {
+function hmacFunction(algorithm: string, key: Uint8Array, message: Uint8Array): Uint8Array {
   return hmac(hashFns[canonicalAlgorithm(algorithm)], key, message);
 }
 
@@ -81,16 +81,6 @@ export async function generateTOTP(
 
 export function getCurrentTOTPCounter(period = DEFAULT_PERIOD, now = Date.now()): number {
   return Math.floor(now / 1000 / period);
-}
-
-export async function getCurrentTOTP(
-  secret: Uint8Array,
-  config: TOTPConfig = {},
-  now = Date.now(),
-): Promise<string> {
-  const period = config.period ?? DEFAULT_PERIOD;
-  const counter = getCurrentTOTPCounter(period, now);
-  return generateTOTP(secret, counter, config);
 }
 
 export async function verifyTOTP(

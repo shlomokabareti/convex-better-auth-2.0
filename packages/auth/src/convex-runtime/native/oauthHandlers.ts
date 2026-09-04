@@ -89,7 +89,7 @@ export type NativeOAuthCallbackErrorResult = {
 
 const DEFAULT_SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-export function getProvider(config: NativeOAuthConfig, providerId: string): NativeOAuthProvider {
+function getProvider(config: NativeOAuthConfig, providerId: string): NativeOAuthProvider {
   if (providerId === "github" && config.github) {
     return createGitHubProvider(config.github);
   }
@@ -102,7 +102,7 @@ export function getProvider(config: NativeOAuthConfig, providerId: string): Nati
   throw new Error(`Unsupported OAuth provider: ${providerId}`);
 }
 
-export function getRedirectURI(config: NativeOAuthConfig, provider: NativeOAuthProvider): string {
+function getRedirectURI(config: NativeOAuthConfig, provider: NativeOAuthProvider): string {
   if (config.redirectURI) return config.redirectURI;
   const siteUrl = process.env.CONVEX_SITE_URL;
   if (!siteUrl) {
