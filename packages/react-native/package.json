@@ -27,7 +27,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "convex-auth-core": "workspace:*",
     "convex-auth-react": "workspace:*"
   },
   "devDependencies": {

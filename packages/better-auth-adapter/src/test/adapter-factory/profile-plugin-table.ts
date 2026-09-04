@@ -1,7 +1,7 @@
 import { createTestSuite } from "@better-auth/test-utils/adapter";
 import { getNormalTestSuiteTests } from "./basic.js";
 
-export const PLUGIN_TABLE_NORMAL_TESTS = [
+const PLUGIN_TABLE_NORMAL_TESTS = [
   "create - should apply default values to fields",
   "create - should return null for nullable foreign keys",
   "create - should support arrays",

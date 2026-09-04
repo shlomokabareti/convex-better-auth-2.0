@@ -3,7 +3,7 @@ import { expect } from "vitest";
 import { getNormalTestSuiteTests } from "./basic.js";
 import { AUTH_FLOW_DEFAULT_BETTER_AUTH_OPTIONS, getAuthFlowSuiteTests } from "./auth-flow.js";
 
-export const ADDITIONAL_FIELDS_NORMAL_TESTS = [
+const ADDITIONAL_FIELDS_NORMAL_TESTS = [
   "deleteMany - should delete many models with numeric values",
   "findMany - should find many models with sortBy",
   "findMany - should find many models with sortBy and limit",
@@ -11,7 +11,7 @@ export const ADDITIONAL_FIELDS_NORMAL_TESTS = [
   "findOne - should find a model with additional fields",
 ] as const;
 
-export const ADDITIONAL_FIELDS_AUTH_FLOW_TEST = "should sign up with additional fields" as const;
+const ADDITIONAL_FIELDS_AUTH_FLOW_TEST = "should sign up with additional fields" as const;
 
 const pickTests = (
   tests: ReturnType<typeof getNormalTestSuiteTests>,

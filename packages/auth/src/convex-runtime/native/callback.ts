@@ -1,4 +1,4 @@
-export function normalizeTrustedOrigins(origins: string[]): string[] {
+function normalizeTrustedOrigins(origins: string[]): string[] {
   return origins
     .map((origin) => {
       try {

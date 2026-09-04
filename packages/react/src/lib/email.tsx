@@ -6,9 +6,9 @@ export type EmailProps = {
   muted?: boolean;
 };
 
-export type EmailButtonProps = AnchorHTMLAttributes<HTMLAnchorElement>;
+type ButtonProps = AnchorHTMLAttributes<HTMLAnchorElement>;
 
-export function EmailButton(props: EmailButtonProps) {
+export function Button(props: ButtonProps) {
   return (
     <a
       {...props}
@@ -25,8 +25,6 @@ export function EmailButton(props: EmailButtonProps) {
     </a>
   );
 }
-
-export const Button = EmailButton;
 
 export function EmailHeading(props: HTMLAttributes<HTMLHeadingElement>) {
   return <h1 {...props} style={{ margin: "0 0 16px" }} />;
@@ -49,14 +47,6 @@ export function EmailText(props: EmailProps) {
   const { muted, ...rest } = props;
   return <p {...rest} style={{ margin: "0 0 12px", color: muted ? "#666" : undefined }} />;
 }
-
-export type EmailDraft = {
-  html: string;
-  text: string;
-  from: string;
-  to: string;
-  subject: string;
-};
 
 export function renderEmail(element: ReactNode): string {
   return `<!doctype html>${renderToStaticMarkup(<>{element}</>)}`;

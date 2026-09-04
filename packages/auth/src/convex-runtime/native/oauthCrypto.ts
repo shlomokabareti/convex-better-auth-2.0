@@ -15,7 +15,7 @@ export type EncryptedOAuthToken = {
 
 let cachedKey: Uint8Array | undefined;
 
-export async function getOAuthTokenEncryptionKey(): Promise<Uint8Array> {
+async function getOAuthTokenEncryptionKey(): Promise<Uint8Array> {
   if (cachedKey) {
     return cachedKey;
   }
