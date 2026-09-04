@@ -19,7 +19,7 @@ A public, Convex-native auth platform for [Convex](https://convex.dev), with a [
 
 ## Status
 
-Public — `convex-auth` is at `1.2.0` and the Better Auth 1.7 adapter is at `0.13.0`. The Convex-native runtime (email/password, Google/GitHub/Discord OAuth, TOTP 2FA, backup codes, trusted devices, sessions, and refresh tokens) is passing full conformance and is ready for alpha use. The Better Auth compatibility bridge remains pre-1.0 while the community validates it against Better Auth releases.
+Public — `convex-auth` is at `1.6.0` and the `convex-better-auth-adapter` is at `0.13.2`. The Convex-native runtime (email/password, Google/GitHub/Discord OAuth, TOTP 2FA, backup codes, trusted devices, sessions, and refresh tokens) is passing full conformance and is ready for alpha use. The Better Auth compatibility bridge remains pre-1.0 while the community validates it against Better Auth releases.
 
 ## Why this exists
 
@@ -53,7 +53,13 @@ All packages are independently buildable and published under the Apache-2.0 lice
 
 The native flow is the intended end state of this repository. The Better Auth bridge below is still available for teams that need it while migrating.
 
-### 1. Set environment variables
+### 1. Install
+
+```bash
+pnpm add convex-auth convex-auth-react convex
+```
+
+### 2. Set environment variables
 
 Generate an RS256 keypair and set it in your Convex deployment:
 
@@ -75,19 +81,32 @@ convex env set DISCORD_CLIENT_ID '...'
 convex env set DISCORD_CLIENT_SECRET '...'
 ```
 
-### 2. Mount the component
+### 3. Mount the component
 
 ```ts
 // convex/convex.config.ts
-import { defineComponents } from "convex/server";
-import auth from "convex-auth/component";
+import { defineApp } from "convex/server";
+import { v } from "convex/values";
+import auth from "convex-auth/convex.config";
 
-export default defineComponents({
-  auth,
+const app = defineApp({
+  env: {
+    JWT_PRIVATE_KEY: v.string(),
+    JWKS: v.string(),
+  },
 });
+
+app.use(auth, {
+  env: {
+    JWT_PRIVATE_KEY: app.env.JWT_PRIVATE_KEY,
+    JWKS: app.env.JWKS,
+  },
+});
+
+export default app;
 ```
 
-### 3. Configure auth in `convex/auth.ts`
+### 4. Configure auth in `convex/auth.ts`
 
 ```ts
 // convex/auth.ts
@@ -147,7 +166,7 @@ export const {
 } = auth;
 ```
 
-### 4. Wire HTTP routes in `convex/http.ts`
+### 5. Wire HTTP routes in `convex/http.ts`
 
 ```ts
 // convex/http.ts
@@ -160,12 +179,12 @@ auth.addHttpRoutes(http);
 export default http;
 ```
 
-### 5. Wrap the React app
+### 6. Wrap the React app
 
 ```tsx
 // src/main.tsx
 import { ConvexReactClient, ConvexProvider } from "convex/react";
-import { ConvexAuthProvider } from "convex-auth/react";
+import { ConvexAuthClientProvider } from "convex-auth/react";
 import { api } from "../convex/_generated/api";
 import App from "./App";
 
@@ -174,21 +193,15 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
 function Root() {
   return (
     <ConvexProvider client={convex}>
-      <ConvexAuthProvider
-        actions={{
-          signUp: api.auth.signUp,
-          signIn: api.auth.signIn,
-          signOut: api.auth.signOut,
-        }}
-      >
+      <ConvexAuthClientProvider actions={api.auth}>
         <App />
-      </ConvexAuthProvider>
+      </ConvexAuthClientProvider>
     </ConvexProvider>
   );
 }
 ```
 
-### 6. Use the actions in components
+### 7. Use the actions in components
 
 ```tsx
 // src/SignIn.tsx
@@ -221,6 +234,17 @@ export function SignIn() {
   );
 }
 ```
+
+### 8. Validate your setup
+
+The `convex-auth` CLI ships with `check` (consumer contract) and `preflight` (live install verification):
+
+```bash
+pnpm dlx convex-auth check
+pnpm dlx convex-auth preflight
+```
+
+`check` validates that your `convex/` files do not accidentally import internal exports. `preflight` verifies that `VITE_CONVEX_URL` / `CONVEX_URL`, `CONVEX_SITE_URL`, and the component mount are set up correctly.
 
 Email verification and password reset are one-click via the `/api/auth/verify-email` and `/api/auth/reset-password/:token` HTTP routes. The user clicks the link, the route validates the token, and the browser is redirected to `callbackURL` with the token (reset only) or success state (verification). In production `sendEmail` should call Resend/Postmark/SES/etc.
 
