@@ -21,6 +21,12 @@ function extractTokenFromEmailDraft(draft: EmailDraft): string | null {
 
 export const auth = convexAuth({
   component: components.convexAuth,
+  captcha: process.env.TURNSTILE_SECRET_KEY
+    ? {
+        provider: "cloudflare-turnstile",
+        secretKey: process.env.TURNSTILE_SECRET_KEY,
+      }
+    : undefined,
   emailAndPassword: {
     enabled: true,
     checkBreach: true,

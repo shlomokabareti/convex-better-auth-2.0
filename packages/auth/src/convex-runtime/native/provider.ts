@@ -27,6 +27,8 @@ import {
   toNativeAuthUser,
   type VerificationCodeType,
 } from "./types.js";
+import { verifyCaptchaResponse, type CaptchaConfig } from "./captcha.js";
+export type { CaptchaConfig, CaptchaProvider } from "./captcha.js";
 
 export type EmailDraft = {
   from: string;
@@ -91,6 +93,11 @@ export type NativeEmailAndPasswordConfig = {
   revokeSessionsOnPasswordReset?: boolean;
   onExistingUserSignUp?: (data: { user: NativeAuthUser }) => Promise<void>;
   onPasswordReset?: (data: { user: NativeAuthUser }) => Promise<void>;
+  /**
+   * Optional CAPTCHA gating for sign-up and password-reset endpoints.
+   * Supports the same providers as Better Auth's captcha plugin.
+   */
+  captcha?: CaptchaConfig;
 };
 
 export type NativeEmailAndPasswordActions = ReturnType<typeof nativeEmailAndPassword>;
@@ -125,6 +132,20 @@ const EMAIL_REGEX =
 
 function isValidEmail(email: string): boolean {
   return EMAIL_REGEX.test(email);
+}
+
+async function requireCaptcha(
+  config: CaptchaConfig | undefined,
+  captchaToken: string | undefined,
+): Promise<void> {
+  if (!config) return;
+  if (!captchaToken) {
+    throw new Error("Captcha response is required");
+  }
+  const result = await verifyCaptchaResponse(config, captchaToken);
+  if (!result.ok) {
+    throw new Error(result.reason);
+  }
 }
 
 function buildGenericDuplicateResponse(
@@ -274,6 +295,7 @@ export function nativeEmailAndPassword(
       image: v.optional(v.string()),
       callbackURL: v.optional(v.string()),
       rememberMe: v.optional(v.boolean()),
+      captchaToken: v.optional(v.string()),
     },
     returns: nativeAuthSessionValidator,
     handler: async (ctx, args) => {
@@ -283,6 +305,8 @@ export function nativeEmailAndPassword(
       if (disableSignUp) {
         throw new Error("Sign up is disabled");
       }
+
+      await requireCaptcha(config.captcha, args.captchaToken);
 
       const now = Date.now();
       const normalizedEmail = args.email.trim().toLowerCase();
@@ -729,6 +753,7 @@ export function nativeEmailAndPassword(
     args: {
       email: v.string(),
       redirectTo: v.optional(v.string()),
+      captchaToken: v.optional(v.string()),
     },
     returns: v.object({
       status: v.union(v.literal("queued"), v.literal("not_configured"), v.literal("failed")),
@@ -736,6 +761,7 @@ export function nativeEmailAndPassword(
       emailId: v.optional(v.string()),
     }),
     handler: async (ctx, args) => {
+      await requireCaptcha(config.captcha, args.captchaToken);
       return queueVerificationEmail(ctx, {
         email: args.email,
         type: "password_reset",

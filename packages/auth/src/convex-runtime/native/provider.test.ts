@@ -1519,4 +1519,57 @@ describe("nativeEmailAndPassword", () => {
       );
     });
   });
+
+  describe("captcha", () => {
+    it("rejects sign-up without a captcha token when captcha is enabled", async () => {
+      const component = createMockComponent();
+      const { signUp } = createActions(component, {
+        checkBreach: false,
+        captcha: { provider: "cloudflare-turnstile", secretKey: "x" },
+      });
+      const { handler } = exec(signUp);
+      await expect(
+        handler(createContext(), {
+          email: "captcha@example.com",
+          password: DEFAULT_PASSWORD,
+          name: "C",
+        }),
+      ).rejects.toThrow("Captcha response is required");
+    });
+
+    it("signs up when captcha token passes provider verification", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          text: async () => JSON.stringify({ success: true }),
+        }),
+      );
+
+      const component = createMockComponent();
+      component.identity.provisionFromIdentity.mockResolvedValue({
+        userId: "user_1",
+        identityId: "identity_1",
+        createdUser: true,
+        linkedExistingIdentity: false,
+        user: makeUser(),
+        sessionId: "session_1",
+        token: defaultToken,
+      });
+
+      const { signUp } = createActions(component, {
+        checkBreach: false,
+        captcha: { provider: "cloudflare-turnstile", secretKey: "x" },
+      });
+      const { handler } = exec(signUp);
+      const result = (await handler(createContext(), {
+        email: "captcha@example.com",
+        password: DEFAULT_PASSWORD,
+        name: "C",
+        captchaToken: "test-token",
+      })) as { token?: string };
+
+      expect(result.token).toBe(defaultToken);
+      expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+    });
+  });
 });

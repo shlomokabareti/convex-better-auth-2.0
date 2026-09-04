@@ -1,10 +1,9 @@
 /**
- * Opt-in captcha conformance proof (official Better Auth captcha
- * plugin). Auto-skips if captcha is not enabled on the deployment
- * (sign-up without a token succeeds).
+ * Opt-in captcha conformance proof for native `convex-auth`. Auto-skips if
+ * captcha is not enabled on the deployment (sign-up without a token succeeds).
  *
  * Recommended scoping (matches the package default): sign-up +
- * password-reset only. Sign-in MUST NOT be gated — it would 400 every
+ * request-password-reset only. Sign-in MUST NOT be gated — it would 400 every
  * programmatic / native / MCP caller that cannot present a token.
  * This proof asserts that constraint.
  */
@@ -55,7 +54,24 @@ const pw = strongPassword("cap");
   }
 }
 
-// (2) sign-up WITH a token: the deployment validates against the
+// (2) request-password-reset WITHOUT captcha token must also be blocked
+{
+  const r1b = await fetch(`${site}/api/auth/request-password-reset`, {
+    method: "POST",
+    headers: J(),
+    body: JSON.stringify({
+      email: uniqueEmail("capa"),
+    }),
+  });
+  const body = await r1b.text();
+  if (r1b.status >= 400 && /captcha|missing|response/i.test(body)) {
+    r.ok(`request-password-reset WITHOUT captcha token rejected (HTTP ${r1b.status})`);
+  } else {
+    r.bad(`request-password-reset WITHOUT token NOT blocked (HTTP ${r1b.status})`);
+  }
+}
+
+// (3) sign-up WITH a token: the deployment validates against the
 //     provider (always-pass test secret -> success; always-fail -> 4xx).
 //     Either is a valid PASS for "real provider verification ran" — the
 //     point is the gate dispatched, not which test secret was wired.
@@ -76,7 +92,7 @@ const pw = strongPassword("cap");
   }
 }
 
-// (3) sign-in WITHOUT a token MUST still work (non-regression: the
+// (4) sign-in WITHOUT a token MUST still work (non-regression: the
 //     deliberate scoping protects programmatic / native / MCP callers).
 {
   const email = uniqueEmail("capc");
