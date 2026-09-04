@@ -123,7 +123,7 @@ Because hashing is non-deterministic and computationally expensive, it should li
 This roadmap has been implemented for `convex-auth`. Phases 1–7 are now live, and phase 8 is complete for the native runtime: `convex-auth` does not import or depend on the `better-auth` runtime. The bridge packages (`convex-better-auth` and `convex-better-auth-adapter`) still support staged migrations.
 
 1. **Phase 0 — Stabilize the bridge (now).**
-   - Release `convex-better-auth-adapter@0.13.0`, `convex-better-auth@2.0.0`, `convex-auth@1.0.0`, and siblings.
+   - Release `convex-better-auth-adapter@0.13.2`, `convex-better-auth@2.0.2`, `convex-auth@1.6.0`, and siblings.
    - Confirm `registerRoutesLazy` and subpath imports keep the bundle under Convex limits.
 
 2. **Phase 1 — Convex-first client.**
@@ -204,7 +204,7 @@ The strategic roadmap is long. The _right now_ milestones are deliberately small
 ### Milestone 0 — Ship the bridge
 
 - Unblock the release by replacing the GitHub `NPM_TOKEN` with an npm Automation token that has **Publish** scope.
-- Publish `convex-better-auth-adapter@0.13.0`, `convex-better-auth@2.0.0`, `convex-auth@1.0.0`, and siblings.
+- Publish `convex-better-auth-adapter@0.13.2`, `convex-better-auth@2.0.2`, `convex-auth@1.6.0`, and siblings.
 - This is a release, not a rewrite.
 
 ### Milestone 1 — Native email/password sign-in
