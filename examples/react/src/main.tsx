@@ -10,7 +10,7 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ConvexProvider client={convex}>
-      <ConvexAuthClientProvider actions={api.auth as any}>
+      <ConvexAuthClientProvider actions={api.auth}>
         <App />
       </ConvexAuthClientProvider>
     </ConvexProvider>
