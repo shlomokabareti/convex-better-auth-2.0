@@ -15,6 +15,14 @@ The server listens on `http://localhost:3000` by default.
 ## Environment
 
 - `CONVEX_URL` — your Convex deployment URL.
+- `CONVEX_SITE_URL` — your Convex HTTP actions site URL (used for OAuth callback URLs).
+
+Copy `.env.example` to `.env.local` and fill in the values. OAuth credentials are set on the Convex deployment itself:
+
+```bash
+pnpm dlx convex env set GITHUB_CLIENT_ID '...'
+pnpm dlx convex env set GITHUB_CLIENT_SECRET '...'
+```
 
 For the shared example deployment:
 

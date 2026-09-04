@@ -2,6 +2,13 @@
 
 Each example is a runnable workspace under `examples/`. They share the same live `convex-auth` deployment and use `convex-auth` from the workspace.
 
+Copy the `.env.example` in each example to `.env.local` and fill in your Convex deployment URL. If you want OAuth, also set the provider credentials on your deployment:
+
+```bash
+cp examples/oauth/.env.example examples/oauth/.env.local
+pnpm dlx convex env set GITHUB_CLIENT_ID '...'
+```
+
 ## React
 
 `examples/react` is a Vite + React sign-up/sign-in form.
