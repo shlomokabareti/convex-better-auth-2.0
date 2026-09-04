@@ -14,4 +14,15 @@ export default defineConfig({
     },
     extensions: [".web.tsx", ".web.ts", ".web.jsx", ".web.js", ".tsx", ".ts", ".jsx", ".js"],
   },
+  optimizeDeps: {
+    exclude: [
+      "expo",
+      "expo-constants",
+      "expo-linking",
+      "expo-modules-core",
+      "expo-network",
+      "expo-secure-store",
+      "expo-web-browser",
+    ],
+  },
 });
