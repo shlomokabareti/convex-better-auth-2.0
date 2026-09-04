@@ -5,6 +5,8 @@ import type { NativeOAuthComponentHandle } from "./types.js";
 import { verifyToken } from "./jwt.js";
 import { isAllowedRedirectUrl } from "./callback.js";
 import { setCookieHeader, readCookie } from "./cookies.js";
+import { parse } from "../helpers/index.js";
+import { v } from "convex/values";
 
 const ACCESS_TOKEN_COOKIE = "convex-auth-token";
 const REFRESH_TOKEN_COOKIE = "convex-auth-refresh-token";
@@ -97,6 +99,93 @@ export function addNativeOAuthHttpRoutes(http: HttpRouter, config: NativeOAuthHt
         status: 302,
         headers: { Location: result.url },
       });
+    }),
+  });
+
+  http.route({
+    path: "/api/auth/sign-in/social",
+    method: "POST",
+    handler: httpActionGeneric(async (_ctx, request) => {
+      const body = await request.json().catch(() => undefined);
+      let parsed: {
+        provider: string;
+        callbackURL?: string;
+        errorURL?: string;
+        newUserURL?: string;
+        requestSignUp?: boolean;
+        link?: boolean;
+      };
+      try {
+        parsed = parse(
+          v.object({
+            provider: v.string(),
+            callbackURL: v.optional(v.string()),
+            errorURL: v.optional(v.string()),
+            newUserURL: v.optional(v.string()),
+            requestSignUp: v.optional(v.boolean()),
+            link: v.optional(v.boolean()),
+          }),
+          body,
+        );
+      } catch {
+        return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const url = new URL(request.url);
+      const requestOrigin = url.origin;
+      const trustedOrigins = getTrustedOrigins(config, requestOrigin);
+
+      if (
+        parsed.callbackURL &&
+        !isAllowedRedirectUrl(parsed.callbackURL, requestOrigin, trustedOrigins)
+      ) {
+        return new Response(JSON.stringify({ success: false, reason: "invalid_callback_url" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (
+        parsed.errorURL &&
+        !isAllowedRedirectUrl(parsed.errorURL, requestOrigin, trustedOrigins)
+      ) {
+        return new Response(JSON.stringify({ success: false, reason: "invalid_error_url" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (
+        parsed.newUserURL &&
+        !isAllowedRedirectUrl(parsed.newUserURL, requestOrigin, trustedOrigins)
+      ) {
+        return new Response(JSON.stringify({ success: false, reason: "invalid_new_user_url" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      try {
+        const result = await handleSignIn(config.oauth, {
+          provider: parsed.provider,
+          callbackURL: parsed.callbackURL,
+          errorURL: parsed.errorURL,
+          newUserURL: parsed.newUserURL,
+          requestSignUp: parsed.requestSignUp,
+          link: parsed.link,
+        });
+        return new Response(JSON.stringify(result), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "unknown";
+        return new Response(JSON.stringify({ success: false, reason: message }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
     }),
   });
 
