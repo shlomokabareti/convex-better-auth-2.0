@@ -187,7 +187,11 @@ function checkPackageVersion(
     return passCheck("Package version", actualPackageVersion);
   }
 
-  if (expectedPackageVersion.startsWith("link:") || expectedPackageVersion.startsWith("file:")) {
+  if (
+    expectedPackageVersion.startsWith("link:") ||
+    expectedPackageVersion.startsWith("file:") ||
+    expectedPackageVersion.startsWith("workspace:")
+  ) {
     return passCheck(
       "Package version",
       `local dependency ${expectedPackageVersion} resolved to package version ${actualPackageVersion}.`,

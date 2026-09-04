@@ -447,13 +447,13 @@ async function readBackendSetup(
         name: "Convex auth config",
         path: authConfigPath,
         content: await readOptionalText(resolve(repoRoot, authConfigPath)),
-        requiredSnippets: ["createConvexAuthConfig", "providers"],
+        requiredSnippets: ["convexAuth", 'from "convex-auth/convex"'],
       },
       {
         name: "Convex HTTP auth routes",
         path: httpPath,
         content: await readOptionalText(resolve(repoRoot, httpPath)),
-        requiredSnippets: ["httpRouter", "registerAuthRoutes"],
+        requiredSnippets: ["httpRouter", "auth.addHttpRoutes"],
       },
     ],
     envGroups: [
