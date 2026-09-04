@@ -33,7 +33,7 @@ const J = () => ({ "content-type": "application/json", origin: ORIGIN_WEB });
 // from a provider-specific not-found that still proves the handler ran.
 async function describeResponse(res: Response): Promise<string> {
   try {
-    return JSON.stringify(await res.json());
+    return JSON.stringify(await res.clone().json());
   } catch {
     return (await res.text()).slice(0, 200);
   }

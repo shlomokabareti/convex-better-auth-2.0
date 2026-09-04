@@ -1281,9 +1281,13 @@ describe("addNativeOAuthHttpRoutes", () => {
       oauth: config,
     });
 
-    expect(routes).toHaveLength(2);
+    expect(routes).toHaveLength(3);
     const signinRoute = routes.find((r) => r.pathPrefix === "/api/auth/signin/")!;
     const callbackRoute = routes.find((r) => r.pathPrefix === "/api/auth/callback/")!;
+    const socialRoute = routes.find(
+      (r) => r.path === "/api/auth/sign-in/social" && r.method === "POST",
+    )!;
+    expect(socialRoute).toBeDefined();
 
     const signinResponse = (await exec(signinRoute.handler).handler(
       createContext(),
