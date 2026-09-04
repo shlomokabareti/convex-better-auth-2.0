@@ -803,12 +803,10 @@ export function addNativeAuthHttpRoutes(
           if (result.sessionId) {
             redirect.searchParams.set("sessionId", result.sessionId);
           }
+          headers.set("Location", redirect.toString());
           return new Response(null, {
             status: 302,
-            headers: {
-              ...Object.fromEntries(headers),
-              Location: redirect.toString(),
-            },
+            headers,
           });
         }),
       });
