@@ -49,6 +49,10 @@ function printHelp(): void {
       "    Run the auth install/runtime preflight from the repo root.\n" +
       "    Defaults: --repo-root . and --convex-dir ./convex.\n" +
       "    Use -- after flags to run a command only after preflight passes.\n\n" +
+      "  migrate better-auth [--dry-run] [--cutover] [--resume]\n" +
+      "                      [--from-component <name>] [--auth-component <name>]\n" +
+      "    One-time migration from @convex-dev/better-auth to convex-auth.\n" +
+      "    --cutover rewrites convex.convex.config.ts/http.ts and removes legacy packages.\n\n" +
       "  help\n" +
       "    Print this help.\n\n" +
       "Why this CLI exists:\n" +
@@ -57,7 +61,8 @@ function printHelp(): void {
       "      --convex-dir ./apps/backend/convex\n" +
       "  Now:\n" +
       "    pnpm dlx convex-auth check --convex-dir ./apps/backend/convex\n" +
-      "    pnpm dlx convex-auth preflight --repo-root . --convex-dir ./apps/backend/convex\n",
+      "    pnpm dlx convex-auth preflight --repo-root . --convex-dir ./apps/backend/convex\n" +
+      "    pnpm dlx convex-auth migrate better-auth --dry-run\n",
   );
 }
 
