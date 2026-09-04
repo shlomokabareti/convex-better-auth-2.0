@@ -10,6 +10,12 @@ const DEFAULT_AUTH_RUNTIME_TIMEOUT_MS = 15000;
 const DEFAULT_POLL_INTERVAL_MS = 100;
 const DEFAULT_TEST_BASE_URL = "http://127.0.0.1:4173";
 const DEFAULT_PACKAGE_NAME = "convex-auth";
+const DEFAULT_WEB_PACKAGE_JSON_CANDIDATES = [
+  "apps/web/package.json",
+  "examples/react/package.json",
+  "web/package.json",
+  "package.json",
+];
 const DEFAULT_SIGN_IN_PATH = "/sign-in";
 const DEFAULT_SIGN_IN_URL_PATTERN = /\/sign-in(?:\/|$|\?)/;
 const DEFAULT_EMAIL_INPUT_SELECTOR =
@@ -265,9 +271,7 @@ export async function runConvexAuthPreflightCommand(options: ConvexAuthPreflight
   const rootPackageJson = await readPackageJson(
     options.rootPackageJsonPath ?? resolve(options.repoRoot, "package.json"),
   );
-  const webPackageJson = await readPackageJson(
-    options.webPackageJsonPath ?? resolve(options.repoRoot, "apps/web/package.json"),
-  );
+  const webPackageJson = await findWebPackageJson(options.repoRoot, options.webPackageJsonPath);
   const installedPackageJson = await readPackageJson(
     options.installedPackageJsonPath ??
       resolve(options.repoRoot, "node_modules", ...packageName.split("/"), "package.json"),
@@ -498,6 +502,19 @@ async function readPackageJson(path: string): Promise<PackageJson> {
     version:
       typeof Reflect.get(value, "version") === "string" ? Reflect.get(value, "version") : undefined,
   };
+}
+
+async function findWebPackageJson(repoRoot: string, explicitPath?: string): Promise<PackageJson> {
+  if (explicitPath) {
+    return readPackageJson(explicitPath);
+  }
+  for (const candidate of DEFAULT_WEB_PACKAGE_JSON_CANDIDATES) {
+    const path = resolve(repoRoot, candidate);
+    if (existsSync(path)) {
+      return readPackageJson(path);
+    }
+  }
+  return {};
 }
 
 function readStringRecord(value: unknown): Record<string, string> | undefined {
