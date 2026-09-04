@@ -456,6 +456,90 @@ export function addNativeAuthHttpRoutes(
     });
 
     http.route({
+      path: "/api/auth/request-password-reset",
+      method: "POST",
+      handler: httpActionGeneric(async (ctx, request) => {
+        const csrf = checkCsrf(request, options);
+        if (csrf) {
+          return csrf;
+        }
+
+        const body = await request.json().catch(() => undefined);
+        let parsed: { email: string; redirectTo?: string };
+        try {
+          parsed = parse(
+            v.object({
+              email: v.string(),
+              redirectTo: v.optional(v.string()),
+            }),
+            body,
+          );
+        } catch {
+          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        try {
+          const result = await callAction(ctx, actions.sendPasswordReset, {
+            email: parsed.email,
+            redirectTo: parsed.redirectTo,
+          });
+          return new Response(JSON.stringify(result), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (error) {
+          const { status, reason } = errorStatusAndReason(error);
+          return buildErrorResponse(status, reason);
+        }
+      }),
+    });
+
+    http.route({
+      path: "/api/auth/send-verification-email",
+      method: "POST",
+      handler: httpActionGeneric(async (ctx, request) => {
+        const csrf = checkCsrf(request, options);
+        if (csrf) {
+          return csrf;
+        }
+
+        const body = await request.json().catch(() => undefined);
+        let parsed: { email: string; callbackURL?: string };
+        try {
+          parsed = parse(
+            v.object({
+              email: v.string(),
+              callbackURL: v.optional(v.string()),
+            }),
+            body,
+          );
+        } catch {
+          return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        try {
+          const result = await callAction(ctx, actions.sendEmailVerification, {
+            email: parsed.email,
+            callbackURL: parsed.callbackURL,
+          });
+          return new Response(JSON.stringify(result), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (error) {
+          const { status, reason } = errorStatusAndReason(error);
+          return buildErrorResponse(status, reason);
+        }
+      }),
+    });
+
+    http.route({
       path: "/api/auth/two-factor/enable",
       method: "POST",
       handler: httpActionGeneric(async (ctx, request) => {
