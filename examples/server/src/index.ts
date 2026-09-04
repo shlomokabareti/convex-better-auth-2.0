@@ -2,8 +2,6 @@ import "dotenv/config";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { ConvexHttpClient } from "convex/browser";
-import { FunctionReference } from "convex/server";
-import type { NativeAuthActions } from "convex-auth/react";
 import { api } from "../convex/_generated/api";
 
 const convexUrl = process.env.CONVEX_URL;
@@ -14,16 +12,10 @@ if (convexUrl === undefined || convexUrl.length === 0) {
 const app = new Hono();
 const convex = new ConvexHttpClient(convexUrl);
 
-type OAuthStartRef = FunctionReference<
-  "action",
-  "public",
-  { provider: string; callbackURL?: string; errorURL?: string },
-  { url: string }
->;
-
-type AuthApi = NativeAuthActions & { signInWithRedirect: OAuthStartRef };
-
-const auth = api.auth as unknown as AuthApi;
+const signInWithRedirect = api.auth.signInWithRedirect;
+if (signInWithRedirect === undefined) {
+  throw new Error("OAuth is not configured in convex/auth.ts");
+}
 
 app.get("/", (c) => c.json({ ok: true, message: "convex-auth server example" }));
 
@@ -33,20 +25,20 @@ app.post("/auth/sign-up", async (c) => {
     email: string;
     password: string;
   }>();
-  const session = await convex.action(auth.signUp, { name, email, password });
+  const session = await convex.action(api.auth.signUp, { name, email, password });
   return c.json(session);
 });
 
 app.post("/auth/sign-in", async (c) => {
   const { email, password } = await c.req.json<{ email: string; password: string }>();
-  const session = await convex.action(auth.signIn, { email, password });
+  const session = await convex.action(api.auth.signIn, { email, password });
   return c.json(session);
 });
 
 app.post("/auth/oauth/:provider", async (c) => {
   const provider = c.req.param("provider");
   const { callbackURL, errorURL } = await c.req.json<{ callbackURL?: string; errorURL?: string }>();
-  const { url } = await convex.action(auth.signInWithRedirect, {
+  const { url } = await convex.action(signInWithRedirect, {
     provider,
     callbackURL,
     errorURL,
@@ -56,7 +48,7 @@ app.post("/auth/oauth/:provider", async (c) => {
 
 app.post("/auth/sign-out", async (c) => {
   const { token, callbackURL } = await c.req.json<{ token: string; callbackURL?: string }>();
-  const result = await convex.action(auth.signOut, { token, callbackURL });
+  const result = await convex.action(api.auth.signOut, { token, callbackURL });
   return c.json(result);
 });
 

@@ -307,7 +307,7 @@ export type NativeAuthActions = {
     { token?: string; sessionId?: string },
     { user?: NativeAuthUser; sessionId?: string }
   >;
-  signInMagicLink: FunctionReference<
+  signInMagicLink?: FunctionReference<
     "action",
     "public",
     NativeAuthSignInMagicLinkArgs,
@@ -325,13 +325,13 @@ export type NativeAuthActions = {
     NativeAuthOAuthCallbackArgs,
     NativeAuthOAuthCallbackResult
   >;
-  sendVerificationOtp: FunctionReference<
+  sendVerificationOtp?: FunctionReference<
     "action",
     "public",
     NativeAuthSendVerificationOtpArgs,
     NativeAuthSendResult
   >;
-  verifyEmailOtp: FunctionReference<
+  verifyEmailOtp?: FunctionReference<
     "action",
     "public",
     NativeAuthVerifyEmailOtpArgs,
@@ -541,9 +541,11 @@ export function useAuthActions() {
 
   const signUpAction = useAction(ctx.signUp);
   const signInAction = useAction(ctx.signIn);
-  const signInMagicLinkAction = useAction(ctx.signInMagicLink);
-  const sendVerificationOtpAction = useAction(ctx.sendVerificationOtp);
-  const verifyEmailOtpAction = useAction(ctx.verifyEmailOtp);
+  const signInMagicLinkAction = ctx.signInMagicLink ? useAction(ctx.signInMagicLink) : null;
+  const sendVerificationOtpAction = ctx.sendVerificationOtp
+    ? useAction(ctx.sendVerificationOtp)
+    : null;
+  const verifyEmailOtpAction = ctx.verifyEmailOtp ? useAction(ctx.verifyEmailOtp) : null;
   const signOutAction = useAction(ctx.signOut);
   const updateSessionAction = useAction(ctx.updateSession);
   const sendEmailVerificationAction = useAction(ctx.sendEmailVerification);
@@ -603,6 +605,9 @@ export function useAuthActions() {
 
   const signInWithMagicLink = useCallback(
     async (args: NativeAuthSignInMagicLinkArgs) => {
+      if (!signInMagicLinkAction) {
+        throw new Error("Magic link authentication is not configured");
+      }
       setIsLoading(true);
       try {
         return await signInMagicLinkAction(args);
@@ -651,6 +656,9 @@ export function useAuthActions() {
 
   const signInWithEmailOtp = useCallback(
     async (args: NativeAuthSendVerificationOtpArgs) => {
+      if (!sendVerificationOtpAction) {
+        throw new Error("Email OTP authentication is not configured");
+      }
       setIsLoading(true);
       try {
         return await sendVerificationOtpAction({ ...args, type: args.type ?? "sign-in" });
@@ -663,6 +671,9 @@ export function useAuthActions() {
 
   const sendVerificationOtp = useCallback(
     async (args: NativeAuthSendVerificationOtpArgs) => {
+      if (!sendVerificationOtpAction) {
+        throw new Error("Email OTP authentication is not configured");
+      }
       setIsLoading(true);
       try {
         return await sendVerificationOtpAction(args);
@@ -675,6 +686,9 @@ export function useAuthActions() {
 
   const changeEmail = useCallback(
     async (args: NativeAuthChangeEmailArgs) => {
+      if (!sendVerificationOtpAction) {
+        throw new Error("Email OTP authentication is not configured");
+      }
       const trimmed = args.newEmail.trim().toLowerCase();
       if (trimmed.length === 0) {
         throw new Error("Invalid email");
@@ -694,6 +708,9 @@ export function useAuthActions() {
 
   const verifyEmailOtp = useCallback(
     async (args: NativeAuthVerifyEmailOtpArgs) => {
+      if (!verifyEmailOtpAction) {
+        throw new Error("Email OTP authentication is not configured");
+      }
       setIsLoading(true);
       try {
         const result = await verifyEmailOtpAction(args);

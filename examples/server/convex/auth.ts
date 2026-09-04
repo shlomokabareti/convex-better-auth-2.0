@@ -68,4 +68,6 @@ export const {
   twoFactorGenerateBackupCodes,
   isAuthenticated,
   verifySession,
+  signInWithRedirect,
+  callback,
 } = auth;

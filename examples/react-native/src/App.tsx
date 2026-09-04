@@ -1,22 +1,25 @@
 import { useState } from "react";
 import { View, TextInput, Button, Text } from "react-native";
-import { ConvexReactClient, ConvexProvider } from "convex/react";
-import { ConvexAuthClientProvider, useAuthActions } from "convex-auth-react-native";
-import { api } from "../convex/_generated/api";
-
-const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!);
+import { useAuthActions } from "convex-auth/react-native";
 
 function SignIn() {
-  const { signIn, signUp, isLoading, isAuthenticated } = useAuthActions();
+  const { signIn, signUp, signOut, isLoading, isAuthenticated } = useAuthActions();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   if (isAuthenticated) {
-    return <Text>Signed in.</Text>;
+    return (
+      <View style={{ padding: 24 }}>
+        <Text>Signed in.</Text>
+        <Button title="Sign out" onPress={() => signOut({})} />
+      </View>
+    );
   }
 
   return (
-    <View style={{ padding: 24 }}>
+    <View style={{ padding: 24, gap: 12 }}>
+      <TextInput value={name} onChangeText={setName} placeholder="Name" autoCapitalize="none" />
       <TextInput value={email} onChangeText={setEmail} placeholder="Email" autoCapitalize="none" />
       <TextInput
         value={password}
@@ -25,17 +28,15 @@ function SignIn() {
         secureTextEntry
       />
       <Button title="Sign in" disabled={isLoading} onPress={() => signIn({ email, password })} />
-      <Button title="Sign up" disabled={isLoading} onPress={() => signUp({ email, password })} />
+      <Button
+        title="Sign up"
+        disabled={isLoading}
+        onPress={() => signUp({ name, email, password })}
+      />
     </View>
   );
 }
 
 export default function App() {
-  return (
-    <ConvexProvider client={convex}>
-      <ConvexAuthClientProvider actions={api.auth}>
-        <SignIn />
-      </ConvexAuthClientProvider>
-    </ConvexProvider>
-  );
+  return <SignIn />;
 }

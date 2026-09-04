@@ -2,17 +2,22 @@ import type { HttpRouter } from "convex/server";
 import { addNativeAuthHttpRoutes } from "./http.js";
 import { addNativeOAuthHttpRoutes } from "./oauthHttp.js";
 import { nativeOAuth } from "./oauthActions.js";
-import type { NativeOAuthConfig, NativeOAuthFunctionReferences } from "./oauthActions.js";
+import type { NativeOAuthActions, NativeOAuthConfig } from "./oauthActions.js";
 import { nativeEmailAndPassword } from "./provider.js";
 import type {
+  NativeEmailAndPasswordActions,
   NativeEmailAndPasswordConfig,
   NativeEmailAndPasswordFunctionReferences,
 } from "./provider.js";
 import { nativeAuthQueries, type NativeAuthQueries } from "./queries.js";
 import { nativeMagicLink } from "./magicLink.js";
-import type { NativeMagicLinkConfig, NativeMagicLinkFunctionReferences } from "./magicLink.js";
+import type {
+  NativeMagicLinkActions,
+  NativeMagicLinkConfig,
+  NativeMagicLinkFunctionReferences,
+} from "./magicLink.js";
 import { nativeEmailOtp } from "./emailOtp.js";
-import type { NativeEmailOtpConfig, NativeEmailOtpFunctionReferences } from "./emailOtp.js";
+import type { NativeEmailOtpActions, NativeEmailOtpConfig } from "./emailOtp.js";
 import type { ComponentApi as FullComponentApi } from "../../component/_generated/component.js";
 import type { ComponentApi as CoreComponentApi } from "../../component/core/_generated/component.js";
 import type { ComponentApi as OrganizationsComponentApi } from "../../component/organizations/_generated/component.js";
@@ -48,16 +53,20 @@ export type ConvexAuthConfig =
       component?: never;
     });
 
-export type ConvexAuth = NativeEmailAndPasswordFunctionReferences &
-  NativeMagicLinkFunctionReferences &
-  NativeEmailOtpFunctionReferences &
-  NativeAuthQueries & {
-    signInWithRedirect?: NativeOAuthFunctionReferences["signIn"];
-    callback?: NativeOAuthFunctionReferences["callback"];
+type ConfigActions<TConfig extends ConvexAuthConfig> = NativeEmailAndPasswordActions &
+  NativeAuthQueries &
+  (TConfig extends { magicLink: NativeMagicLinkConfig } ? NativeMagicLinkActions : {}) &
+  (TConfig extends { emailOtp: NativeEmailOtpConfig } ? NativeEmailOtpActions : {}) &
+  (TConfig extends { oauth: NativeOAuthConfig }
+    ? { signInWithRedirect: NativeOAuthActions["signIn"]; callback: NativeOAuthActions["callback"] }
+    : {}) & {
     addHttpRoutes(http: HttpRouter): void;
   };
 
-export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
+export type ConvexAuth<TConfig extends ConvexAuthConfig = ConvexAuthConfig> =
+  ConfigActions<TConfig>;
+
+export function convexAuth<TConfig extends ConvexAuthConfig>(config: TConfig): ConvexAuth<TConfig> {
   const component = config.component ?? config.components?.core;
   if (!component) {
     throw new Error("convexAuth: either config.component or config.components.core is required.");
@@ -109,5 +118,5 @@ export function convexAuth(config: ConvexAuthConfig): ConvexAuth {
     },
   };
 
-  return auth as unknown as ConvexAuth;
+  return auth as unknown as ConvexAuth<TConfig>;
 }

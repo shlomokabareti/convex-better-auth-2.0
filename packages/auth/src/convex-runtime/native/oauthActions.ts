@@ -7,19 +7,11 @@ import { handleCallback, handleSignIn, type NativeOAuthConfig } from "./oauthHan
 
 export type { NativeOAuthConfig } from "./oauthHandlers.js";
 
-export type NativeOAuthActions = {
-  signIn: ReturnType<typeof action>;
-  callback: ReturnType<typeof action>;
-};
-
 export type NativeOAuthFunctionReferences = {
   [K in keyof NativeOAuthActions]: FunctionReference<"action", "public">;
 };
 
-export function nativeOAuth(
-  component: NativeOAuthComponentHandle,
-  config: NativeOAuthConfig,
-): NativeOAuthActions {
+export function nativeOAuth(component: NativeOAuthComponentHandle, config: NativeOAuthConfig) {
   const signIn = action({
     args: {
       provider: v.string(),
@@ -86,3 +78,5 @@ export function nativeOAuth(
 
   return { signIn, callback };
 }
+
+export type NativeOAuthActions = ReturnType<typeof nativeOAuth>;

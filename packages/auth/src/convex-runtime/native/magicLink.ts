@@ -42,11 +42,6 @@ export type NativeMagicLinkConfig = {
   refreshTokenTtlMs?: number;
 };
 
-export type NativeMagicLinkActions = {
-  signInMagicLink: ReturnType<typeof action>;
-  verifyMagicLink: ReturnType<typeof action>;
-};
-
 export type NativeMagicLinkFunctionReferences = {
   [K in keyof NativeMagicLinkActions]: FunctionReference<"action", "public">;
 };
@@ -97,7 +92,7 @@ function buildMagicLinkUrl(
 export function nativeMagicLink(
   component: NativeEmailAndPasswordComponentHandle,
   config: NativeMagicLinkConfig,
-): NativeMagicLinkActions {
+) {
   const enabled = config.enabled ?? true;
   const expiresInMs = config.expiresInMs ?? MAGIC_LINK_TOKEN_TTL_MS;
   const disableSignUp = config.disableSignUp ?? false;
@@ -251,3 +246,5 @@ export function nativeMagicLink(
 
   return { signInMagicLink, verifyMagicLink };
 }
+
+export type NativeMagicLinkActions = ReturnType<typeof nativeMagicLink>;

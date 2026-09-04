@@ -12,17 +12,22 @@ pnpm add convex-auth-react-native convex-auth convex
 
 ```tsx
 import { ConvexReactClient, ConvexProvider } from "convex/react";
-import { ConvexAuthClientProvider } from "convex-auth-react-native";
+import { ExpoConvexAuthProvider } from "convex-auth/react-native";
 import { api } from "../convex/_generated/api";
 
 const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!);
 
+const storage = {
+  getItem: (key: string) => SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+};
+
 function App() {
   return (
     <ConvexProvider client={convex}>
-      <ConvexAuthClientProvider actions={api.auth}>
+      <ExpoConvexAuthProvider actions={api.auth} storage={storage}>
         <App />
-      </ConvexAuthClientProvider>
+      </ExpoConvexAuthProvider>
     </ConvexProvider>
   );
 }
@@ -30,22 +35,24 @@ function App() {
 
 ## Storage
 
-React Native uses `SecureStore` for the token and refresh token. `convex-auth-react-native` sets this up by default.
+React Native uses `expo-secure-store` (or an equivalent storage backend) for the token and refresh token. `ExpoConvexAuthProvider` accepts any sync `getItem`/`setItem` storage.
 
 ## Sign-in form
 
 ```tsx
 import { useState } from "react";
 import { View, TextInput, Button } from "react-native";
-import { useAuthActions } from "convex-auth-react-native";
+import { useAuthActions } from "convex-auth/react-native";
 
 export function SignIn() {
-  const { signIn, isLoading } = useAuthActions();
+  const { signIn, signUp, isLoading } = useAuthActions();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   return (
     <View>
+      <TextInput value={name} onChangeText={setName} placeholder="Name" />
       <TextInput value={email} onChangeText={setEmail} placeholder="Email" />
       <TextInput
         value={password}
@@ -54,6 +61,11 @@ export function SignIn() {
         secureTextEntry
       />
       <Button title="Sign in" disabled={isLoading} onPress={() => signIn({ email, password })} />
+      <Button
+        title="Sign up"
+        disabled={isLoading}
+        onPress={() => signUp({ name, email, password })}
+      />
     </View>
   );
 }
@@ -61,5 +73,5 @@ export function SignIn() {
 
 ## See also
 
-- `examples/react-native` for a minimal Expo app.
+- `examples/react-native` for a runnable `react-native-web` + Vite app.
 - `docs/examples.md` for all runnable examples.
