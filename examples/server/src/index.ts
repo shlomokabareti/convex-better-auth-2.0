@@ -19,37 +19,79 @@ if (signInWithRedirect === undefined) {
 
 app.get("/", (c) => c.json({ ok: true, message: "convex-auth server example" }));
 
+function errorReason(err: unknown) {
+  if (!(err instanceof Error)) return "unknown";
+  const match = err.message.match(/(?:Uncaught )?Error: (.+?)(?:\n|$)/);
+  return match ? match[1].trim() : err.message;
+}
+
+function errorResponse(err: unknown, status: 400 | 401) {
+  return { body: { success: false, reason: errorReason(err) } as const, status };
+}
+
 app.post("/auth/sign-up", async (c) => {
-  const { name, email, password } = await c.req.json<{
-    name: string;
-    email: string;
-    password: string;
-  }>();
-  const session = await convex.action(api.auth.signUp, { name, email, password });
-  return c.json(session);
+  try {
+    const { name, email, password } = await c.req.json<{
+      name: string;
+      email: string;
+      password: string;
+    }>();
+    if (!name || !email || !password) {
+      return c.json({ success: false, reason: "missing_fields" }, 400);
+    }
+    const session = await convex.action(api.auth.signUp, { name, email, password });
+    return c.json(session);
+  } catch (err) {
+    const { body, status } = errorResponse(err, 400);
+    return c.json(body, status);
+  }
 });
 
 app.post("/auth/sign-in", async (c) => {
-  const { email, password } = await c.req.json<{ email: string; password: string }>();
-  const session = await convex.action(api.auth.signIn, { email, password });
-  return c.json(session);
+  try {
+    const { email, password } = await c.req.json<{ email: string; password: string }>();
+    if (!email || !password) {
+      return c.json({ success: false, reason: "missing_fields" }, 400);
+    }
+    const session = await convex.action(api.auth.signIn, { email, password });
+    return c.json(session);
+  } catch (err) {
+    const { body, status } = errorResponse(err, 401);
+    return c.json(body, status);
+  }
 });
 
 app.post("/auth/oauth/:provider", async (c) => {
-  const provider = c.req.param("provider");
-  const { callbackURL, errorURL } = await c.req.json<{ callbackURL?: string; errorURL?: string }>();
-  const { url } = await convex.action(signInWithRedirect, {
-    provider,
-    callbackURL,
-    errorURL,
-  });
-  return c.json({ url });
+  try {
+    const provider = c.req.param("provider");
+    const { callbackURL, errorURL } = await c.req.json<{
+      callbackURL?: string;
+      errorURL?: string;
+    }>();
+    const { url } = await convex.action(signInWithRedirect, {
+      provider,
+      callbackURL,
+      errorURL,
+    });
+    return c.json({ url });
+  } catch (err) {
+    const { body, status } = errorResponse(err, 400);
+    return c.json(body, status);
+  }
 });
 
 app.post("/auth/sign-out", async (c) => {
-  const { token, callbackURL } = await c.req.json<{ token: string; callbackURL?: string }>();
-  const result = await convex.action(api.auth.signOut, { token, callbackURL });
-  return c.json(result);
+  try {
+    const { token, callbackURL } = await c.req.json<{ token: string; callbackURL?: string }>();
+    if (!token) {
+      return c.json({ success: false, reason: "missing_token" }, 400);
+    }
+    const result = await convex.action(api.auth.signOut, { token, callbackURL });
+    return c.json(result);
+  } catch (err) {
+    const { body, status } = errorResponse(err, 401);
+    return c.json(body, status);
+  }
 });
 
 const port = Number(process.env.PORT ?? "3000");
