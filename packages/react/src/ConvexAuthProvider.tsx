@@ -517,18 +517,17 @@ export function ConvexAuthProvider(props: ConvexAuthProviderProps) {
     return () => clearTimeout(timeout);
   }, [token, refreshToken, updateSessionAction]);
 
-  const value = useMemo(
-    () => ({
-      ...props.actions,
-      token,
-      setToken,
-      refreshToken,
-      setRefreshToken,
-      sessionId,
-      setSessionId,
-    }),
-    [props.actions, token, refreshToken, sessionId],
-  );
+  const value = useMemo(() => {
+    const state = { token, setToken, refreshToken, setRefreshToken, sessionId, setSessionId };
+    return new Proxy(props.actions, {
+      get(target, prop, receiver) {
+        if (typeof prop === "string" && prop in state) {
+          return (state as Record<string, unknown>)[prop];
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+    }) as unknown as ConvexAuthContextValue;
+  }, [props.actions, token, refreshToken, sessionId]);
   return <ConvexAuthContext.Provider value={value}>{props.children}</ConvexAuthContext.Provider>;
 }
 
