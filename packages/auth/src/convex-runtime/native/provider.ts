@@ -93,22 +93,7 @@ export type NativeEmailAndPasswordConfig = {
   onPasswordReset?: (data: { user: NativeAuthUser }) => Promise<void>;
 };
 
-export type NativeEmailAndPasswordActions = {
-  signUp: ReturnType<typeof action>;
-  signIn: ReturnType<typeof action>;
-  signOut: ReturnType<typeof action>;
-  updateSession: ReturnType<typeof action>;
-  sendEmailVerification: ReturnType<typeof action>;
-  verifyEmail: ReturnType<typeof action>;
-  sendPasswordReset: ReturnType<typeof action>;
-  resetPassword: ReturnType<typeof action>;
-  verifyPassword: ReturnType<typeof action>;
-  twoFactorEnable: ReturnType<typeof action>;
-  twoFactorVerifyTOTP: ReturnType<typeof action>;
-  twoFactorVerifyBackupCode: ReturnType<typeof action>;
-  twoFactorDisable: ReturnType<typeof action>;
-  twoFactorGenerateBackupCodes: ReturnType<typeof action>;
-};
+export type NativeEmailAndPasswordActions = ReturnType<typeof nativeEmailAndPassword>;
 
 export type NativeEmailAndPasswordFunctionReferences = {
   [K in keyof NativeEmailAndPasswordActions]: FunctionReference<"action", "public">;
@@ -221,7 +206,7 @@ function resolveEmailConfig(args: NativeEmailAndPasswordConfig): {
 export function nativeEmailAndPassword(
   component: NativeEmailAndPasswordComponentHandle,
   config: NativeEmailAndPasswordConfig = {},
-): NativeEmailAndPasswordActions {
+) {
   const emailConfig = resolveEmailConfig(config);
   const verificationCodeTtlMs = config.verificationCodeTtlMs ?? DEFAULT_VERIFICATION_CODE_TTL_MS;
   const passwordResetCodeTtlMs =

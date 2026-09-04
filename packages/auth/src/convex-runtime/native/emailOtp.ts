@@ -66,11 +66,6 @@ export type NativeEmailOtpConfig = {
   maxPasswordLength?: number;
 };
 
-export type NativeEmailOtpActions = {
-  sendVerificationOtp: ReturnType<typeof action>;
-  verifyEmailOtp: ReturnType<typeof action>;
-};
-
 export type NativeEmailOtpFunctionReferences = {
   [K in keyof NativeEmailOtpActions]: FunctionReference<"action", "public">;
 };
@@ -118,7 +113,7 @@ function toVerificationCodeType(type: EmailOtpType): VerificationCodeType {
 export function nativeEmailOtp(
   component: NativeEmailAndPasswordComponentHandle,
   config: NativeEmailOtpConfig,
-): NativeEmailOtpActions {
+) {
   const enabled = config.enabled ?? true;
   const expiresInMs = config.expiresInMs ?? EMAIL_OTP_TTL_MS;
   const disableSignUp = config.disableSignUp ?? false;
@@ -431,3 +426,5 @@ export function nativeEmailOtp(
 
   return { sendVerificationOtp, verifyEmailOtp };
 }
+
+export type NativeEmailOtpActions = ReturnType<typeof nativeEmailOtp>;

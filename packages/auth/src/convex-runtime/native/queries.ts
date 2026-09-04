@@ -4,14 +4,7 @@ import { verifyToken } from "./jwt.js";
 import type { NativeEmailAndPasswordComponentHandle, NativeSessionDoc } from "./types.js";
 import { nativeAuthUserValidator, toNativeAuthUser } from "./types.js";
 
-export type NativeAuthQueries = {
-  verifySession: ReturnType<typeof query>;
-  isAuthenticated: ReturnType<typeof query>;
-};
-
-export function nativeAuthQueries(
-  component: NativeEmailAndPasswordComponentHandle,
-): NativeAuthQueries {
+export function nativeAuthQueries(component: NativeEmailAndPasswordComponentHandle) {
   const verifySession = query({
     args: {
       token: v.optional(v.string()),
@@ -110,3 +103,5 @@ async function resolveSessionFromAuth(
   );
   return active ?? null;
 }
+
+export type NativeAuthQueries = ReturnType<typeof nativeAuthQueries>;
