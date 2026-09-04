@@ -55,6 +55,7 @@ export default defineConfig({
         cli: "scripts/cli.ts",
         "check-consumer-contract": "scripts/check-consumer-contract.ts",
         preflight: "scripts/preflight.ts",
+        "migrate-better-auth": "scripts/migrate-better-auth.ts",
       },
       format: "esm",
       dts: false,

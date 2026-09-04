@@ -9,6 +9,7 @@
  *   pnpm dlx convex-auth check                # consumer-contract checker
  *   pnpm dlx convex-auth check --convex-dir ./apps/backend/convex
  *   pnpm dlx convex-auth preflight            # install/runtime preflight
+ *   pnpm dlx convex-auth migrate better-auth  # one-time migration from @convex-dev/better-auth
  *
  * Subcommands:
  *   check    Run the cold consumer-contract checker against ./convex
@@ -16,6 +17,8 @@
  *            role/invitation data the component owns.
  *   preflight
  *            Run the install/runtime preflight against the consumer repo.
+ *   migrate better-auth
+ *            Migrate legacy Better Auth data into convex-auth and cut over.
  *   help     Print this help.
  *
  * The CLI is intentionally minimal. Each subcommand is a thin wrapper
@@ -89,6 +92,14 @@ function main(): void {
     }
     case "preflight": {
       runScript("preflight", rest);
+      return;
+    }
+    case "migrate": {
+      if (rest[0] !== "better-auth") {
+        process.stderr.write("convex-auth: 'migrate' requires subcommand 'better-auth'\n\n");
+        process.exit(2);
+      }
+      runScript("migrate-better-auth", rest.slice(1));
       return;
     }
     default: {
