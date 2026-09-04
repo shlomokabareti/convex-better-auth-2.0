@@ -164,6 +164,10 @@ function errorStatusAndReason(error: unknown): { status: number; reason: string 
     "Too many requests": { status: 429, reason: "too_many_requests" },
     "Failed to create session": { status: 500, reason: "session_creation_failed" },
     "Invalid session token": { status: 401, reason: "invalid_session" },
+    "Captcha response is required": { status: 400, reason: "missing_captcha_response" },
+    captcha_rejected: { status: 403, reason: "captcha_rejected" },
+    missing_captcha_response: { status: 400, reason: "missing_captcha_response" },
+    invalid_provider_response: { status: 400, reason: "captcha_verification_failed" },
   };
   return map[message] ?? { status: 500, reason: "unknown" };
 }
@@ -243,6 +247,8 @@ export function addNativeAuthHttpRoutes(
 
       const body = await request.json().catch(() => undefined);
 
+      const captchaToken = request.headers.get("x-captcha-response") ?? undefined;
+
       let parsed: {
         email: string;
         password: string;
@@ -250,6 +256,7 @@ export function addNativeAuthHttpRoutes(
         image?: string;
         callbackURL?: string;
         rememberMe?: boolean;
+        captchaToken?: string;
       };
       try {
         parsed = parse(
@@ -260,9 +267,13 @@ export function addNativeAuthHttpRoutes(
             image: v.optional(v.string()),
             callbackURL: v.optional(v.string()),
             rememberMe: v.optional(v.boolean()),
+            captchaToken: v.optional(v.string()),
           }),
           body,
         );
+        if (captchaToken && !parsed.captchaToken) {
+          parsed.captchaToken = captchaToken;
+        }
       } catch {
         return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
           status: 400,
@@ -465,15 +476,21 @@ export function addNativeAuthHttpRoutes(
         }
 
         const body = await request.json().catch(() => undefined);
-        let parsed: { email: string; redirectTo?: string };
+        const captchaToken = request.headers.get("x-captcha-response") ?? undefined;
+
+        let parsed: { email: string; redirectTo?: string; captchaToken?: string };
         try {
           parsed = parse(
             v.object({
               email: v.string(),
               redirectTo: v.optional(v.string()),
+              captchaToken: v.optional(v.string()),
             }),
             body,
           );
+          if (captchaToken && !parsed.captchaToken) {
+            parsed.captchaToken = captchaToken;
+          }
         } catch {
           return new Response(JSON.stringify({ success: false, reason: "invalid_body" }), {
             status: 400,

@@ -5,6 +5,7 @@ import { nativeOAuth } from "./oauthActions.js";
 import type { NativeOAuthActions, NativeOAuthConfig } from "./oauthActions.js";
 import { nativeEmailAndPassword } from "./provider.js";
 import type {
+  CaptchaConfig,
   NativeEmailAndPasswordActions,
   NativeEmailAndPasswordConfig,
   NativeEmailAndPasswordFunctionReferences,
@@ -25,6 +26,7 @@ import type { NativeEmailAndPasswordComponentHandle } from "./types.js";
 
 type ConvexAuthConfigBase = {
   emailAndPassword?: NativeEmailAndPasswordConfig;
+  captcha?: CaptchaConfig;
   oauth?: NativeOAuthConfig;
   magicLink?: NativeMagicLinkConfig;
   emailOtp?: NativeEmailOtpConfig;
@@ -72,7 +74,10 @@ export function convexAuth<TConfig extends ConvexAuthConfig>(config: TConfig): C
     throw new Error("convexAuth: either config.component or config.components.core is required.");
   }
 
-  const emailAndPasswordActions = nativeEmailAndPassword(component, config.emailAndPassword);
+  const emailAndPasswordActions = nativeEmailAndPassword(component, {
+    ...config.emailAndPassword,
+    captcha: config.emailAndPassword?.captcha ?? config.captcha,
+  });
   const authQueries = nativeAuthQueries(component);
   const magicLinkActions = config.magicLink
     ? nativeMagicLink(component, config.magicLink)
